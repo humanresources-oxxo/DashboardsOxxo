@@ -16,4 +16,4 @@ body .dashboards-grid{gap:12px!important}body .dashboards-section__header{margin
   max-width:none;
   padding-inline:0;
 }
-.home-search-row input{max-width:none}
+.home-search-row input{max-width:420px}
