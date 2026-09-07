@@ -421,7 +421,7 @@ body.mi-modal-open{overflow:hidden}
 
 @media print{
   @page{size:landscape;margin:8mm}
-  body{background:#fff!important}.topbar,.mt-hero,.mt-picker,.empty-state,footer,.mascota-chat,.png-export-ui{display:none!important}
+  body{background:#fff!important}.topbar,.mt-hero,.mt-picker,.empty-state,footer,.png-export-ui{display:none!important}
   .page{max-width:none!important;padding:0!important}.ficha{margin:0!important;border:1px solid #ddd!important;border-radius:0!important;box-shadow:none!important;overflow:visible!important}
   .ficha__grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:7px!important;padding:8px!important}.mi-section{break-inside:avoid;padding:9px!important;background:#fff!important}.mi-months,.mi-detail-btn,.mi-detail-hidden{display:none!important}
   .mt-summary-groups{gap:7px!important;padding:8px!important}.ficha__alertas{padding:8px!important}.mt-glossary{display:none!important}

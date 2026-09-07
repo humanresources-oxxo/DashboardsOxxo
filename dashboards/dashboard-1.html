@@ -12,7 +12,6 @@
   <link rel="icon" type="image/png" href="../assets/favicon.png" />
   <link rel="apple-touch-icon" href="../assets/favicon.png" />
   <link rel="stylesheet" href="../css/global.css?v=20260820f" />
-  <link rel="stylesheet" href="../css/mascota-chat.css?v=20260818a" />
   <style>
     .page { max-width:1500px; margin:0 auto; padding:18px 20px 36px; }
 
@@ -1790,7 +1789,6 @@
 
   <script src="../js/config.js?v=20260903commitments1"></script>
 <script src="../js/core.js?v=20260904locale1"></script>
-<script src="../js/mascota-chat.js?v=20260805d"></script>
 <script>
 const TAB = OXXO.SHEETS_CONFIG.TABS.d1;
 
@@ -1822,7 +1820,7 @@ function gv(row,map,k,fb=''){const key=map[k];const v=key?row[key]:undefined;ret
 function gn(row,map,k){const v=String(gv(row,map,k,0));const n=Number(v.replace(/[^0-9.-]/g,''));return isNaN(n)?0:n;}
 // Delegado a core.js (OXXO.metricsDiasVacantesValue): misma implementacion
 // exacta, compartida con el pipeline metricsD1Rows/metricsApplyD1Defaults
-// que usan el generador RAE y la mascota-chatbot.
+// que usa el generador RAE.
 function diasVacantesValue(value){
   return OXXO.metricsDiasVacantesValue(value);
 }

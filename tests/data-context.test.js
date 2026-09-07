@@ -136,7 +136,7 @@ assert.equal(OXXO.systemNoticeMatches({ target: 'dashboard:dashboard-13' }, OXXO
 
 // Todos los formatos que pueden llegar desde Excel/Sheets deben producir la
 // misma clave mensual. Esto protege los selectores de Dashboard 1, Dashboard
-// 2, Mi Tienda, Mi Dashboard, RAE y la mascota.
+// 2, Mi Tienda, Mi Dashboard y RAE.
 const septemberSerial = Math.round((Date.UTC(2026, 8, 1) - Date.UTC(1899, 11, 30)) / 86400000);
 [
   'sep-26', 'septiembre 2026', 'September 2026', '2026-09', '2026/09/01',
