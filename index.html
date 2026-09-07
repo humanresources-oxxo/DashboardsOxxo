@@ -2444,6 +2444,7 @@
       }
     }
   </style>
+<link rel="stylesheet" href="css/home-executive.css?v=20260907exec1">
 </head>
 <body data-area="rh">
 
@@ -2522,47 +2523,18 @@
 <!-- ══════════════════════════════════════════════
      SECCIÓN: DASHBOARDS DIARIOS
 ══════════════════════════════════════════════════ -->
-<section class="executive-overview" aria-label="Resumen ejecutivo">
-  <div class="executive-shell">
-    <div class="executive-head">
-      <div>
-        <div class="executive-kicker">Vista ejecutiva</div>
-        <h2 class="executive-title">Estado operativo de talento</h2>
-        <div class="executive-subtitle">
-          Lectura rápida para priorizar seguimiento: vacantes, bajas, estructura, tiempo extra,
-          ausentismos y TREO en un solo punto de entrada.
-        </div>
-      </div>
-      <div class="executive-chip">Plaza Oaxaca · Google Sheets</div>
+<section class="home-executive" aria-label="Resumen ejecutivo operativo">
+  <div class="home-executive-shell">
+    <div class="home-heading">
+      <div><span class="home-eyebrow">Vista ejecutiva · Recursos Humanos</span><h2>¿Qué requiere atención?</h2><p>Indicadores del alcance activo y siguientes pasos para revisar con el equipo.</p></div>
+      <span id="home-scope">Cargando alcance…</span>
     </div>
-
-    <div class="executive-layout">
-      <div class="exec-left">
-        <div class="exec-metric-grid">
-          <div class="exec-metric" data-code="01">
-            <div class="exec-metric__label">Dashboards activos</div>
-            <div class="exec-metric__value">15</div>
-            <div class="exec-metric__note">11 RH · 2 Comercial · 2 Administrativo</div>
-          </div>
-          <div class="exec-metric" data-code="02">
-            <div class="exec-metric__label">Cobertura de datos</div>
-            <div class="exec-metric__value" id="exec-coverage">—</div>
-            <div class="exec-metric__note" id="exec-coverage-note">Validando configuración</div>
-          </div>
-          <div class="exec-metric" data-code="03">
-            <div class="exec-metric__label">Última revisión</div>
-            <div class="exec-metric__value" id="exec-check-time">—</div>
-            <div class="exec-metric__note">Sesión actual</div>
-          </div>
-          <div class="exec-metric" data-code="04">
-            <div class="exec-metric__label">Prioridad</div>
-            <div class="exec-metric__value">Mes</div>
-            <div class="exec-metric__note">Revisar filtros al mes más reciente</div>
-          </div>
-        </div>
-
-      </div>
+    <div id="home-operational" class="home-kpis" aria-busy="true"><p>Cargando indicadores…</p></div>
+    <div class="home-panels">
+      <section class="home-panel"><h3>Tiendas que requieren atención</h3><div id="home-priorities">Consultando estructura…</div><a class="home-open" href="dashboards/dashboard-3.html">Ver todas las tiendas →</a></section>
+      <section class="home-panel"><h3>Siguientes pasos</h3><div id="home-next">Preparando seguimiento…</div></section>
     </div>
+    <div class="home-bottom"><div><p id="home-data-status" class="home-note" role="status">Consultando fuentes…</p><p class="home-note">Metas y variaciones: pendientes de una definición común y de históricos comparables.</p></div><button id="home-retry" type="button">Volver a consultar</button></div>
   </div>
 </section>
 
@@ -3030,6 +3002,7 @@
 <!-- Scripts -->
   <script src="js/config.js?v=20260903commitments1"></script>
 <script src="js/core.js?v=20260904locale1"></script>
+<script src="js/home-executive.js?v=20260907exec1"></script>
 <script src="js/mascota-chat.js?v=20260805d"></script>
 <script>
   // ── RELOJ EN TOPBAR ──
