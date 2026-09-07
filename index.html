@@ -2445,6 +2445,7 @@
     }
   </style>
 <link rel="stylesheet" href="css/home-executive.css?v=20260907compact1">
+<link rel="stylesheet" href="css/home-navigation.css?v=20260907nav1">
 </head>
 <body data-area="rh">
 
@@ -2523,6 +2524,11 @@
 <!-- ══════════════════════════════════════════════
      SECCIÓN: DASHBOARDS DIARIOS
 ══════════════════════════════════════════════════ -->
+<section class="home-navigation" aria-label="Buscar y guardar tableros">
+  <div class="home-search-row"><label for="home-search">Buscar tablero</label><input id="home-search" type="search" placeholder="Vacaciones, bajas, inventarios…" autocomplete="off" aria-controls="home-search-results"><button id="home-search-clear" type="button" hidden>Limpiar</button></div>
+  <div class="home-favorites-row"><strong>★ Favoritos</strong><div id="home-favorites"></div></div>
+  <p id="home-search-status" role="status"></p><div id="home-search-results" hidden></div>
+</section>
 <section class="home-executive" aria-label="Resumen ejecutivo operativo">
   <div class="home-executive-shell">
     <div class="home-heading">
@@ -2530,8 +2536,8 @@
       <span id="home-scope">Cargando alcance…</span>
     </div>
     <div id="home-operational" class="home-kpis" aria-busy="true"><p>Cargando indicadores…</p></div>
-    <details class="home-details"><summary>Ver tiendas críticas y siguientes pasos</summary><div class="home-panels">
-      <section class="home-panel"><h3>Tiendas que requieren atención</h3><div id="home-priorities">Consultando estructura…</div><a class="home-open" href="dashboards/dashboard-3.html">Ver todas las tiendas →</a></section>
+    <details class="home-details"><summary id="home-details-label">Ver tiendas críticas y siguientes pasos</summary><div class="home-panels">
+      <section class="home-panel"><h3 id="home-priority-title">Tiendas que requieren atención</h3><div id="home-priorities">Consultando estructura…</div><a id="home-all-stores" class="home-open" href="dashboards/dashboard-3.html">Ver todas las tiendas →</a></section>
       <section class="home-panel"><h3>Siguientes pasos</h3><div id="home-next">Preparando seguimiento…</div></section>
     </div>
     <div class="home-bottom"><div><p id="home-data-status" class="home-note" role="status">Consultando fuentes…</p><p class="home-note">Metas y variaciones: pendientes de una definición común y de históricos comparables.</p></div><button id="home-retry" type="button">Volver a consultar</button></div></details>
@@ -2936,6 +2942,7 @@
       document.querySelectorAll('.folder-panel').forEach(function(p){ p.hidden = true; });
       document.querySelectorAll('[data-folder-group="' + area + '"]').forEach(function(p){ p.hidden = false; });
       document.body.dataset.area = area;
+      document.dispatchEvent(new CustomEvent('oxxo:area-change', { detail: area }));
       try { localStorage.setItem('oxxo-dashboard-area', area); } catch(e) {}
     }
 
@@ -3002,7 +3009,8 @@
 <!-- Scripts -->
   <script src="js/config.js?v=20260903commitments1"></script>
 <script src="js/core.js?v=20260904locale1"></script>
-<script src="js/home-executive.js?v=20260907exec1"></script>
+<script src="js/home-navigation.js?v=20260907nav1"></script>
+<script src="js/home-executive.js?v=20260907nav1"></script>
 <script src="js/mascota-chat.js?v=20260805d"></script>
 <script>
   // ── RELOJ EN TOPBAR ──
@@ -3055,7 +3063,7 @@
       if (!el) return;
       const data = config[configId];
       if (data && data.ultima_actualizacion) {
-        el.textContent = data.ultima_actualizacion;
+        el.textContent = OXXO_HOME.formatDate(data.ultima_actualizacion);
         el.classList.remove('is-empty');
       } else {
         el.textContent = 'Sin fecha registrada';

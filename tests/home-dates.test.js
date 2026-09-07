@@ -1,0 +1,17 @@
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const vm = require('node:vm');
+const path = require('node:path');
+const context = { window: {}, document: { addEventListener() {} } };
+vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../js/home-navigation.js'), 'utf8'), context);
+const { formatDate, normalize } = context.window.OXXO_HOME;
+assert.equal(formatDate('2026-09-04T06:00:36.000Z'), '4 sep 2026');
+assert.equal(formatDate('2026-09-04T00:00:00.000Z'), '4 sep 2026');
+assert.equal(formatDate('2026-09'), 'sep 2026');
+assert.equal(formatDate('7/sept/2026'), '7 sep 2026');
+assert.equal(formatDate('04/09/2026'), '4 sep 2026');
+assert.equal(formatDate('Semana 36'), 'Semana 36');
+assert.equal(formatDate('2026-02-30'), '2026-02-30');
+assert.equal(formatDate(''), '');
+assert.equal(normalize(' VACACIÓN '), 'vacacion');
+console.log('Fechas legibles sin desplazar días por zona horaria y búsqueda sin acentos OK');

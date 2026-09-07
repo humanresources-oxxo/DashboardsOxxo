@@ -5,7 +5,7 @@ const path = require('node:path');
 const source = fs.readFileSync(path.join(__dirname, '../js/home-executive.js'), 'utf8');
 const elements = new Map();
 const get = id => {
-  if (!elements.has(id)) elements.set(id, { innerHTML: '', textContent: '', setAttribute() {} });
+  if (!elements.has(id)) elements.set(id, { innerHTML: '', textContent: '', style: {}, setAttribute() {} });
   return elements.get(id);
 };
 const OXXO = {
@@ -18,7 +18,7 @@ const OXXO = {
   metricsD7Rows: async () => ({ rows: [{ a: 10, t: 10 }, { a: 0, t: 90 }], activosKey: 'a', treoKey: 't' }),
   loadSystemConfig: async () => ({}), getScopeLabel: () => 'Plaza de prueba',
 };
-const context = { OXXO, document: { getElementById: get, addEventListener() {} } };
+const context = { window: {}, OXXO, document: { getElementById: get, addEventListener() {} } };
 vm.runInNewContext(source.replace("  document.addEventListener('DOMContentLoaded', load);", '  globalThis.testAPI = { load, summarize, criticalStores };'), context);
 (async () => {
   const { load, summarize } = context.testAPI;
@@ -35,5 +35,17 @@ vm.runInNewContext(source.replace("  document.addEventListener('DOMContentLoaded
   OXXO.metricsD3Rows = async () => null;
   await load();
   assert.match(get('home-priorities').innerHTML, /No hay información suficiente/);
+  context.document.body = { dataset: { area: 'comercial' } };
+  OXXO.SHEETS_CONFIG = { TABS: { c14: 'commercial', promos: 'promos', inventories: 'inventory', s9: 'cash' } };
+  OXXO.fetchSheetData = async tab => tab === 'commercial' ? [{ Tienda: 'A' }, { Tienda: 'A' }, { Tienda: 'B' }] : [{ Titulo: 'Ejemplo' }];
+  await load();
+  assert.match(get('home-operational').innerHTML, /Tiendas con avance comercial<\/span><strong>2/);
+  assert.match(get('home-operational').innerHTML, /Promociones publicadas/);
+  assert.doesNotMatch(get('home-operational').innerHTML, /Vacantes activas/);
+  context.document.body.dataset.area = 'administrativo';
+  await load();
+  assert.match(get('home-operational').innerHTML, /Registros de inventario/);
+  assert.match(get('home-operational').innerHTML, /Movimientos de caja/);
+  assert.match(get('home-data-status').textContent, /todos los cortes/);
   console.log('Portada: totales, porcentajes ponderados, fuentes fallidas, ceros y escape OK');
 })().catch(error => { console.error(error); process.exitCode = 1; });
