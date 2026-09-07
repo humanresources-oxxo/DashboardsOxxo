@@ -704,10 +704,11 @@
     const crKey = K(h, ['Cr de tienda', 'Cr de Tienda', 'CR de Tienda']);
     const noPersKey = K(h, ['Nº personal', 'N personal', 'No Personal']);
     const empleadoKey = K(h, ['Empleados', 'Empleado']);
+    const puestoKey = K(h, ['Puesto_Correcto', 'Puesto']);
     const certRealKeys = {};
     CERT_COLS.forEach((c) => { certRealKeys[c.key] = K(h, [c.key]) || c.key; });
     raw.forEach((r) => OXXO.applyAsesorCatalog(r, CATALOG, { asesorKey, tiendaKey: unidadKey, crKey }));
-    DATA.d8 = { rows: raw, asesorKey, unidadKey, tiendaKey: unidadKey, crKey, noPersKey, empleadoKey, certRealKeys };
+    DATA.d8 = { rows: raw, asesorKey, unidadKey, tiendaKey: unidadKey, crKey, noPersKey, empleadoKey, puestoKey, certRealKeys };
     addTiendas(raw, unidadKey, crKey);
   }
   function capValue(row, certKey, certRealKeys) {
@@ -752,6 +753,22 @@
         <td class="center">${n(c.comp)}</td>
         <td class="center">${c.pct === null ? 'N/A' : c.pct + '%'}</td>
       </tr>`).join('') : emptyRow(4, 'Sin datos de certificaciones.');
+    // Quien tiene el pendiente: el resumen por certificacion dice CUANTO
+    // falta, no A QUIEN perseguir. Se arma la lista por persona (el mismo
+    // detalle que abre Dashboard 8) y se habilita el boton que la abre.
+    const personas = OXXO_FICHA.capEmpleados(rows, {
+      noPersKey: d.noPersKey, empleadoKey: d.empleadoKey, tiendaKey: d.tiendaKey,
+      crKey: d.crKey, asesorKey: d.asesorKey, puestoKey: d.puestoKey, certRealKeys: d.certRealKeys,
+    });
+    // En esta ficha la tienda es fija: la columna util es el puesto.
+    OXXO_FICHA.setCapEmpleados(personas, { titulo: 'Capacidades 2026', contexto: 'Puesto' });
+    const botonEmp = document.querySelector('.cap-emp-abrir[data-panel="d8"]');
+    if (botonEmp) {
+      botonEmp.hidden = !personas.length;
+      botonEmp.textContent = personas.length
+        ? `Ver detalle por empleado (${n(personas.length)})`
+        : 'Ver detalle por empleado';
+    }
     return rows.length ? { capPct: pctGlobal, empleados, pendientes, critica: critica ? critica.label : '' } : null;
   }
 
