@@ -31,8 +31,6 @@ body.hr-dashboard .topbar {
   border-radius: 18px !important;
   background: rgba(255,255,255,.86) !important;
   box-shadow: 0 14px 38px rgba(82,32,27,.10), inset 0 1px 0 #fff !important;
-  -webkit-backdrop-filter: blur(20px) saturate(135%) !important;
-  backdrop-filter: blur(20px) saturate(135%) !important;
 }
 
 body.hr-dashboard .topbar__logo {
@@ -135,8 +133,6 @@ body.hr-dashboard .state-box {
     radial-gradient(circle at 4% 0%, rgba(247,25,38,.035), transparent 25%),
     linear-gradient(145deg, rgba(255,255,255,.96), rgba(255,250,247,.88)) !important;
   box-shadow: var(--hr-shadow), inset 0 1px 0 #fff !important;
-  -webkit-backdrop-filter: blur(18px) saturate(118%) !important;
-  backdrop-filter: blur(18px) saturate(118%) !important;
   transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease !important;
 }
 
@@ -396,8 +392,6 @@ body.hr-dashboard .hr-insights {
     radial-gradient(circle at 0 0, rgba(247,25,38,.055), transparent 26%),
     rgba(255,255,255,.88);
   box-shadow: 0 15px 38px rgba(91,32,27,.09), inset 0 1px 0 #fff;
-  -webkit-backdrop-filter: blur(18px) saturate(118%);
-  backdrop-filter: blur(18px) saturate(118%);
 }
 
 body.hr-dashboard .hr-insights__head {

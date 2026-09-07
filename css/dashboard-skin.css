@@ -332,8 +332,6 @@
   /* ── SUPERFICIES DE VIDRIO (incluye .bajas-panel) ── */
   .kpi-card, .chart-card, .card, .panel, .bajas-panel{
     background: var(--hb-glass) !important;
-    -webkit-backdrop-filter: var(--hb-blur);
-    backdrop-filter: var(--hb-blur);
     border: 1px solid var(--hb-brd) !important;
     border-radius: 18px !important;
     box-shadow: var(--hb-sh), inset 0 1px 1px var(--hb-hi) !important;
@@ -398,8 +396,6 @@
     color: #fff !important;
     border: 1px solid rgba(255,255,255,0.42) !important;
     background: rgba(255,255,255,0.14) !important;
-    -webkit-backdrop-filter: blur(14px) saturate(140%);
-    backdrop-filter: blur(14px) saturate(140%);
     border-radius: 999px !important;
     box-shadow: inset 0 1px 1px rgba(255,255,255,0.25) !important;
     transition: background .2s ease, color .2s ease;
@@ -460,8 +456,6 @@ body {
   background:
     linear-gradient(145deg, rgba(247,25,38,0.82), rgba(142,0,8,0.68)) !important;
   box-shadow: 0 18px 44px rgba(155,0,8,0.16), inset 0 1px 0 rgba(255,255,255,0.28) !important;
-  -webkit-backdrop-filter: blur(20px) saturate(140%) !important;
-  backdrop-filter: blur(20px) saturate(140%) !important;
 }
 
 .topbar__brand,
@@ -536,8 +530,6 @@ body {
   background:
     linear-gradient(135deg, rgba(247,25,38,0.94), rgba(158,0,8,0.88)) !important;
   box-shadow: 0 16px 38px rgba(155,0,8,0.14), inset 0 1px 0 rgba(255,255,255,0.24) !important;
-  -webkit-backdrop-filter: blur(18px) saturate(140%) !important;
-  backdrop-filter: blur(18px) saturate(140%) !important;
 }
 
 .hero,
@@ -614,8 +606,6 @@ body {
   background:
     linear-gradient(145deg, var(--index-glass-strong), var(--index-glass)) !important;
   box-shadow: var(--index-shadow), inset 0 1px 0 rgba(255,255,255,0.82) !important;
-  -webkit-backdrop-filter: blur(18px) saturate(135%) !important;
-  backdrop-filter: blur(18px) saturate(135%) !important;
 }
 
 .card-head,
@@ -896,8 +886,6 @@ body::before {
   border: 1px solid var(--exec-line) !important;
   background: var(--exec-surface) !important;
   box-shadow: 0 8px 22px rgba(28, 17, 14, 0.055) !important;
-  -webkit-backdrop-filter: none !important;
-  backdrop-filter: none !important;
 }
 
 .kpi-card {
@@ -1193,7 +1181,6 @@ body::before {
   border: 1px solid rgba(255,255,255,.72) !important;
   background: linear-gradient(135deg, rgba(255,255,255,.86), rgba(255,249,243,.58)) !important;
   box-shadow: 0 18px 42px rgba(80,34,20,.10), inset 0 1px 0 rgba(255,255,255,.78) !important;
-  backdrop-filter: blur(18px);
 }
 
 .topbar::before {
@@ -1262,7 +1249,6 @@ body::before {
     0 20px 48px rgba(80,34,20,.10),
     0 1px 0 rgba(255,255,255,.86) inset,
     0 0 0 1px rgba(217,31,45,.045) !important;
-  backdrop-filter: blur(14px);
 }
 
 .card:hover,
@@ -2684,8 +2670,6 @@ body:has(#main-tbl) .side-panel .stat-card {
   position: absolute;
   inset: 0;
   background: rgba(33, 19, 18, .42);
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
 }
 
 .png-export-dialog {

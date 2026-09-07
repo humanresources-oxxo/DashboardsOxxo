@@ -3033,7 +3033,7 @@ function initScopeSelector() {
       const style = document.createElement('style');
       style.id = 'oxxo-scope-selector-style';
       style.textContent = `
-        .oxxo-scope-selector{--scope-accent:#d81928;display:flex;align-items:center;gap:9px;font-family:inherit;color:#342927;background:rgba(255,255,255,.95) !important;border:1px solid rgba(255,255,255,.72) !important;box-shadow:0 12px 30px rgba(70,24,24,.16),inset 0 1px 0 #fff;backdrop-filter:blur(16px)}
+        .oxxo-scope-selector{--scope-accent:#d81928;display:flex;align-items:center;gap:9px;font-family:inherit;color:#342927;background:rgba(255,255,255,.95) !important;border:1px solid rgba(255,255,255,.72) !important;box-shadow:0 12px 30px rgba(70,24,24,.16),inset 0 1px 0 #fff}
         .oxxo-scope-selector[data-area="comercial"]{--scope-accent:#126b95}
         .oxxo-scope-selector[data-area="administrativo"]{--scope-accent:#69539d}
         .oxxo-scope-selector--floating{position:fixed;right:18px;bottom:18px;z-index:9990;max-width:min(760px,calc(100vw - 36px));padding:8px;border-radius:18px}
