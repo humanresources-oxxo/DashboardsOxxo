@@ -419,6 +419,9 @@ function clearSheetDataCache(tabName) {
     // es poco frecuente, así que se invalida el libro local completo para que
     // ninguna vista conserve una variante regional anterior.
     void deletePersistentRows();
+    if (key === SHEETS_CONFIG.CONFIG_SHEET) {
+      systemConfigPromise = null;
+    }
     if (key === (SHEETS_CONFIG.CATALOG_SHEET || 'Catalogo_Asesores')) {
       asesorCatalogPromise = null;
     }
@@ -429,6 +432,7 @@ function clearSheetDataCache(tabName) {
   } else {
     sheetDataCache.clear();
     void deletePersistentRows();
+    systemConfigPromise = null;
     asesorCatalogPromise = null;
     reasignacionesPromise = null;
   }
@@ -1055,7 +1059,35 @@ function normalizarFecha(val) {
   return v;
 }
 
+// La pestana Configuracion la piden varias piezas de la misma pantalla (el
+// index, las tarjetas de home-navigation y el resumen ejecutivo), y cada una
+// disparaba su propia descarga: dos peticiones medidas por carga del index
+// para leer exactamente el mismo CSV. Se memoiza igual que el catalogo de
+// asesores y las reasignaciones -- una sola lectura por vista, compartida --
+// y clearSheetDataCache() la libera para que "Reintentar" y las publicaciones
+// nuevas la vuelvan a leer.
+let systemConfigPromise = null;
 async function loadSystemConfig() {
+  if (systemConfigPromise) return systemConfigPromise;
+  systemConfigPromise = (async () => {
+    let config = {};
+    try {
+      config = await readSystemConfig();
+    } catch (error) {
+      console.warn('[OXXO] No se pudo leer la configuracion del sistema:', error);
+    }
+    // Una lectura fallida (red caida, hoja sin el encabezado esperado) devuelve
+    // {} y NO se memoiza: antes cada llamador tenia su propio intento y esa
+    // segunda oportunidad se conserva. Solo se comparte una lectura buena.
+    if (!config || !Object.keys(config).length) {
+      systemConfigPromise = null;
+      return {};
+    }
+    return config;
+  })();
+  return systemConfigPromise;
+}
+async function readSystemConfig() {
   const url = buildSheetURL(SHEETS_CONFIG.CONFIG_SHEET);
   let csv;
   try {
