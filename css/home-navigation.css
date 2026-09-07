@@ -26,3 +26,89 @@ body .dashboards-grid{gap:12px!important}body .dashboards-section__header{margin
 .topbar-search #home-search-results:not([hidden]){position:absolute;left:0;right:0;top:100%;display:grid;grid-template-columns:1fr;max-height:55vh;overflow:auto;padding:10px;margin:8px 0 0;background:#fffaf6;color:#302421;border:1px solid #dfcbbf;border-radius:12px;box-shadow:0 12px 28px #30181030;z-index:20}
 .topbar-search input:focus-visible{outline:2px solid #f8ca55;outline-offset:2px}
 @media(max-width:760px){body .topbar{flex-wrap:wrap!important}.topbar-search{order:3;flex-basis:100%;max-width:none;margin-inline:0}.topbar-search .home-search-row input{max-width:none}}
+
+/* ─────────────────────────────────────────────────────────────
+   Buscador de la barra superior
+   Vive sobre el rojo del hero, asi que necesita affordance propia:
+   lupa dentro del campo, boton de limpiar integrado (antes era un
+   boton suelto al lado, que competia por espacio y duplicaba la "x"
+   nativa de Chrome, que ademas sale azul y rompe la paleta), anillo
+   de foco con contraste sobre rojo y atajo de teclado visible.
+   ───────────────────────────────────────────────────────────── */
+.topbar-search .home-search-row{position:relative;flex-wrap:nowrap;gap:0}
+
+.topbar-search .home-search-row input#home-search{
+  width:100%;max-width:none;
+  height:40px;
+  padding:0 74px 0 40px;          /* lupa a la izquierda, acciones a la derecha */
+  font-size:13.5px;font-weight:650;line-height:40px;
+  color:#3a2320;background-color:#fff;
+  border:1px solid transparent;border-radius:12px;
+  box-shadow:0 1px 2px rgba(74,12,16,.16), 0 6px 16px rgba(74,12,16,.14);
+  transition:box-shadow .16s ease, background-color .16s ease;
+  /* lupa como fondo: no agrega un nodo mas al DOM ni una peticion */
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23A8756B' stroke-width='2.2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-3.6-3.6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:13px 50%;background-size:16px 16px;
+}
+.topbar-search .home-search-row input#home-search::placeholder{color:#9c817a;font-weight:600}
+.topbar-search .home-search-row input#home-search:hover{box-shadow:0 1px 2px rgba(74,12,16,.2),0 8px 20px rgba(74,12,16,.2)}
+.topbar-search .home-search-row input#home-search:focus{
+  outline:none;
+  box-shadow:0 0 0 3px rgba(255,255,255,.55), 0 8px 22px rgba(74,12,16,.26);
+}
+/* La "x" nativa de WebKit sale azul y se encima con el boton propio */
+.topbar-search input#home-search::-webkit-search-cancel-button,
+.topbar-search input#home-search::-webkit-search-decoration{-webkit-appearance:none;appearance:none}
+
+/* Limpiar: pasa de boton suelto a accion dentro del campo */
+.topbar-search .home-search-row button#home-search-clear{
+  position:absolute;top:50%;right:9px;transform:translateY(-50%);
+  display:grid;place-items:center;
+  width:24px;height:24px;padding:0;
+  font-size:0;color:#8a5c53;
+  background:#f6ebe6;border:0;border-radius:50%;cursor:pointer;
+  transition:background-color .14s ease,color .14s ease;
+}
+.topbar-search .home-search-row button#home-search-clear::before{
+  content:"";width:11px;height:11px;
+  background:currentColor;
+  -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3' stroke-linecap='round'%3E%3Cpath d='M6 6l12 12M18 6L6 18'/%3E%3C/svg%3E") center/contain no-repeat;
+  mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3' stroke-linecap='round'%3E%3Cpath d='M6 6l12 12M18 6L6 18'/%3E%3C/svg%3E") center/contain no-repeat;
+}
+.topbar-search .home-search-row button#home-search-clear:hover{background:#ecd8d1;color:#742129}
+.topbar-search .home-search-row button#home-search-clear[hidden]{display:none}
+
+/* Pista del atajo: solo cuando el campo esta vacio y sin foco */
+.topbar-search .home-search-kbd{
+  position:absolute;top:50%;right:12px;transform:translateY(-50%);
+  padding:3px 7px;border-radius:6px;
+  border:1px solid #e6d3cb;background:#faf2ee;
+  color:#9c817a;font:800 10.5px/1 var(--font-body,inherit);
+  pointer-events:none;transition:opacity .14s ease;
+}
+.topbar-search .home-search-row:focus-within .home-search-kbd,
+.topbar-search .home-search-row.has-query .home-search-kbd{opacity:0}
+
+/* Resultados: lista plana en vez de tarjetas dentro de una tarjeta */
+.topbar-search #home-search-results:not([hidden]){
+  padding:6px;gap:0;background:#fff;border-color:#eddcd4;border-radius:14px;
+  box-shadow:0 16px 34px rgba(48,24,16,.22);
+}
+.topbar-search #home-search-results>a{
+  display:block;padding:10px 12px;border:0;border-radius:9px;background:transparent;
+  font-size:13px;font-weight:750;line-height:1.3;
+}
+.topbar-search #home-search-results>a+a{box-shadow:inset 0 1px 0 #f3e6e0}
+.topbar-search #home-search-results>a small{
+  display:block;margin-top:3px;font-size:11.5px;font-weight:500;color:#7d675f;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.topbar-search #home-search-results>a:hover,
+.topbar-search #home-search-results>a:focus-visible,
+.topbar-search #home-search-results>a[data-active]{
+  background:#fff4f0;outline:none;box-shadow:inset 0 0 0 1px #f3d3c9;
+}
+@media(max-width:700px){
+  .topbar-search .home-search-kbd{display:none}
+  .topbar-search .home-search-row input#home-search{padding-right:42px}
+}
