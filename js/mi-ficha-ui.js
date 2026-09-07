@@ -152,10 +152,12 @@
   }
 
   // ── Combobox de una sola opcion (busca + selecciona una) ──
-  function mountSingleSelect(rootId, values, { onChange, placeholder, searchId, searchPlaceholder } = {}) {
+  function mountSingleSelect(rootId, values, { onChange, placeholder, searchId, searchPlaceholder, pinnedValue } = {}) {
     const root = document.getElementById(rootId);
     if (!root) return null;
     const allValues = [...new Set(values)].sort((a, b) => String(a).localeCompare(String(b), 'es'));
+    const pinnedIndex = allValues.indexOf(pinnedValue);
+    if (pinnedIndex > 0) allValues.unshift(allValues.splice(pinnedIndex, 1)[0]);
     let selected = '';
     const ph = placeholder || 'Selecciona una opción';
     const sid = searchId || `${rootId}-search`;

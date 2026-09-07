@@ -41,6 +41,7 @@
   // ── Estado global (se carga una sola vez) ─────────────
   let CATALOG = null;
   const ASESORES = new Set();
+  const TODOS_ASESORES = 'Todos los asesores';
   const DATA = {};
   let activeAsesor = '';
   let asesorSelectControl = null;
@@ -53,6 +54,7 @@
     });
   }
   function rowsFor(d, asesor) {
+    if (asesor === TODOS_ASESORES) return filasDeAsesores(d);
     return d.rows.filter((r) => V(r, d.asesorKey) === asesor);
   }
 
@@ -591,9 +593,9 @@
     const tiles = INDICADORES.map((ind) => {
       const valor = cifras[ind.id];
       if (valor === null) return '';
-      const cmp = desviacion(ind, S);
+      const cmp = activeAsesor === TODOS_ASESORES ? null : desviacion(ind, S);
       const tono = cmp ? tonoPorDesvio(cmp.d) : '';
-      const nota = cmp ? `${ind.fmt(cmp.valor)} · plaza ${ind.fmt(cmp.plaza)}` : '';
+      const nota = activeAsesor === TODOS_ASESORES ? 'Consolidado · ' + OXXO.getScopeLabel() : (cmp ? `${ind.fmt(cmp.valor)} · plaza ${ind.fmt(cmp.plaza)}` : '');
       return rkTile(valor, ind.label, tono, nota);
     });
     document.getElementById('ficha-resumen').innerHTML = tiles.join('');
@@ -604,7 +606,7 @@
     // ordenados por que tan lejos esta. Antes se listaba todo lo que fuera
     // distinto de cero, asi que 10 de 11 asesores mostraban 7 u 8 alertas
     // y la seccion no distinguia a nadie.
-    const desvios = INDICADORES
+    const desvios = (activeAsesor === TODOS_ASESORES ? [] : INDICADORES)
       .map((ind) => ({ ind, cmp: desviacion(ind, S) }))
       .filter((x) => x.cmp && x.cmp.d >= 0.12)
       .sort((a, b) => b.cmp.d - a.cmp.d)
@@ -615,11 +617,14 @@
     const a = [];
     if (S.d3 && S.d3.criticas) a.push({ t: 'is-bad', txt: `${S.d3.criticas} tienda${S.d3.criticas > 1 ? 's' : ''} en estructura crítica` });
     a.push(...desvios);
-    document.getElementById('ficha-alertas').innerHTML = chipsHTML(a, 'Vas igual o mejor que la plaza en todo');
+    document.getElementById('ficha-alertas').innerHTML = activeAsesor === TODOS_ASESORES && !a.length
+      ? '' : chipsHTML(a, 'Vas igual o mejor que la plaza en todo');
   }
   function renderIdentidad(asesor, S) {
     document.getElementById('ficha-asesor-title').textContent = asesor;
     document.getElementById('ficha-meta').innerHTML = metaHTML([
+      ['Alcance', asesor === TODOS_ASESORES ? OXXO.getScopeLabel() : ''],
+      ['Asesores', asesor === TODOS_ASESORES ? String(ASESORES.size) : ''],
       ['Tiendas', S.d7 && S.d7.tiendas ? String(S.d7.tiendas) : (S.d3 && S.d3.tiendas ? String(S.d3.tiendas) : '')],
       ['Colaboradores', S.d5 && S.d5.colaboradores ? String(S.d5.colaboradores) : ''],
       ['Estructura SAP', S.d7 && S.d7.sap ? String(S.d7.sap) : ''],
@@ -632,7 +637,7 @@
         ? '✔ Estructura alineada'
         : `${S.d7.alineadas} de ${S.d7.tiendas} alineadas`;
     } else {
-      st.textContent = 'Ficha del asesor';
+      st.textContent = asesor === TODOS_ASESORES ? 'Desglose total' : 'Ficha del asesor';
     }
   }
 
@@ -653,13 +658,14 @@
 
   function mountAsesorSelector() {
     const previous = activeAsesor;
-    asesorSelectControl = mountSingleSelect('mi-asesor-select', [...ASESORES], {
-      placeholder: 'Selecciona tu nombre',
+    asesorSelectControl = mountSingleSelect('mi-asesor-select', [TODOS_ASESORES, ...ASESORES], {
+      pinnedValue: TODOS_ASESORES,
+      placeholder: 'Selecciona un asesor o todos',
       searchId: 'mi-asesor-search',
-      searchPlaceholder: 'Buscar tu nombre...',
+      searchPlaceholder: 'Buscar asesor...',
       onChange: renderFor,
     });
-    if (previous && ASESORES.has(previous)) {
+    if (previous && (previous === TODOS_ASESORES || ASESORES.has(previous))) {
       asesorSelectControl?.setValue(previous);
       renderFor(previous);
     }
