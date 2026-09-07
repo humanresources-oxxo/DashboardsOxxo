@@ -663,13 +663,13 @@
       .dashboards-grid { grid-template-columns: 1fr; }
       .dashboards-section { padding: 24px 16px; }
     }
-  
+
     .topbar__meta {
       display: flex;
       align-items: center;
       gap: 12px;
     }
-  
+
     /* GLASS MORPH MINIMAL - index */
     :root {
       --glass-bg: #fff5ea;
@@ -1063,7 +1063,7 @@
         padding: 28px 12px 24px;
       }
     }
-  
+
     /* Full-width refinement */
     :root {
       --page-gutter: clamp(12px, 1.65vw, 28px);
@@ -1145,7 +1145,7 @@
         grid-template-columns: 1fr;
       }
     }
-  
+
     /* Red topbar refinement */
     .topbar {
       background:
@@ -1177,7 +1177,7 @@
     .topbar__meta {
       color: rgba(255,255,255,0.76) !important;
     }
-  
+
     /* Original OXXO logo */
     .topbar__logo {
       width: 132px !important;
@@ -1204,7 +1204,7 @@
         height: 56px !important;
       }
     }
-  
+
     /* Integrated hero section - not a card */
     .hero {
       width: 100% !important;
@@ -1237,7 +1237,7 @@
         padding-inline: 18px !important;
       }
     }
-  
+
     /* Header over hero */
     .topbar {
       position: absolute !important;
@@ -1272,7 +1272,7 @@
         padding-top: 140px !important;
       }
     }
-  
+
     /* More transparent header over hero */
     .topbar {
       min-height: 74px !important;
@@ -1300,7 +1300,7 @@
         height: 50px !important;
       }
     }
-  
+
     /* Esquinas mas cerradas */
     .system-bar__inner,
     .db-card,
@@ -1316,7 +1316,7 @@
     .db-card__icon {
       border-radius: 10px !important;
     }
-  
+
     /* Dashboard cards: industrial glass tiles */
     .dashboards-section {
       padding-top: clamp(18px, 2.4vw, 32px) !important;
@@ -2445,7 +2445,7 @@
     }
   </style>
 <link rel="stylesheet" href="css/home-executive.css?v=20260907compact1">
-<link rel="stylesheet" href="css/home-navigation.css?v=20260907search2">
+<link rel="stylesheet" href="css/home-navigation.css?v=20260907topsearch1">
 </head>
 <body data-area="rh">
 
@@ -2460,6 +2460,7 @@
       <div class="topbar__subtitle">Plaza Oaxaca-ByPamsb</div>
     </div>
   </div>
+  <div class="topbar-search"><div class="home-search-row"><label for="home-search">Buscar tablero</label><input id="home-search" type="search" placeholder="Vacaciones, bajas, inventarios…" autocomplete="off" aria-controls="home-search-results"><button id="home-search-clear" type="button" hidden>Limpiar</button></div><p id="home-search-status" role="status"></p><div id="home-search-results" hidden></div></div>
   <div class="topbar__meta">
     <a href="admin.html" class="topbar__back">Panel Admin</a>
     <span id="topbar-time"></span>
@@ -2525,9 +2526,9 @@
      SECCIÓN: DASHBOARDS DIARIOS
 ══════════════════════════════════════════════════ -->
 <section class="home-navigation" aria-label="Buscar y guardar tableros">
-  <div class="home-search-row"><label for="home-search">Buscar tablero</label><input id="home-search" type="search" placeholder="Vacaciones, bajas, inventarios…" autocomplete="off" aria-controls="home-search-results"><button id="home-search-clear" type="button" hidden>Limpiar</button></div>
+
   <div class="home-favorites-row"><strong>★ Favoritos</strong><div id="home-favorites"></div></div>
-  <p id="home-search-status" role="status"></p><div id="home-search-results" hidden></div>
+
 </section>
 <section class="home-executive" aria-label="Resumen ejecutivo operativo">
   <div class="home-executive-shell">
