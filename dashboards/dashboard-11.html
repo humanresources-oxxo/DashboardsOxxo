@@ -84,11 +84,53 @@ async function loadRoster(){
     byPlaza.get(plaza).add(asesor);
   });
   ROSTER_BY_PLAZA=byPlaza;
+  ROSTER_CACHE.clear();
 }
-function rosterForActiveScope(){
-  const scope=OXXO.getActiveDataScope();
-  const entry=[...ROSTER_BY_PLAZA.entries()].find(([plaza])=>OXXO.matchesScopeValue(plaza,'plaza',scope));
-  return entry?entry[1]:null;
+// El selector de asesor se arma con el MISMO criterio que el panel
+// "Cumplimiento por asesor": solo los ATs del roster de la plaza. Antes se
+// llenaba con todo lo que trajera la columna Asesor de la hoja, que incluye
+// a quien haya registrado una entrada o salida en una tienda de la plaza sin
+// ser AT de aqui (coberturas, encargados, gente de otra plaza cubriendo);
+// por eso aparecian nombres que no correspondian. Si esa plaza todavia no
+// tiene roster en Compromisos_Bajas no se filtra nada, igual que el panel.
+function poblarSelectAsesores(){
+  const select=document.getElementById('filtro-asesor');
+  if(!select)return;
+  const nombres=[...new Set(BASE.filter(esAsesorDeLaPlaza).map(r=>val(r,COL.asesor)).filter(Boolean))]
+    .sort((a,b)=>String(a).localeCompare(String(b),'es'));
+  const previo=select.value;
+  select.innerHTML='<option value="">Todos los asesores</option>';
+  nombres.forEach(a=>{const o=document.createElement('option');o.value=a;o.textContent=a;select.appendChild(o)});
+  // Si el asesor elegido ya no esta en la lista (era uno de los que sobraban),
+  // se vuelve a "Todos" para no dejar el tablero filtrado por un nombre que
+  // ya no se puede ver ni deseleccionar.
+  select.value=nombres.includes(previo)?previo:'';
+  return select.value!==previo;
+}
+// El roster se aplica FILA POR FILA, segun la plaza de esa fila, no una sola
+// vez para toda la vista. Compromisos_Bajas hoy solo tiene cargada Plaza
+// Oaxaca: resolviendo un unico roster para el alcance activo, en vista Region
+// se filtraba las cinco plazas contra el roster de Oaxaca y desaparecian los
+// ATs de las otras cuatro, aunque sus tiendas si aparecieran en la tabla.
+// Asi, cada plaza usa el suyo y la que aun no tiene roster no se filtra.
+const ROSTER_CACHE=new Map();
+function rosterDePlaza(nombrePlaza){
+  const clave=String(nombrePlaza||'').trim();
+  if(ROSTER_CACHE.has(clave))return ROSTER_CACHE.get(clave);
+  let encontrado=null;
+  for(const [plaza,asesores] of ROSTER_BY_PLAZA){
+    if(OXXO.matchesScopeValue(clave,'plaza',{level:'plaza',plaza})||norm(plaza)===norm(clave)
+       ||norm(clave).includes(norm(plaza))||norm(plaza).includes(norm(clave))){encontrado=asesores;break}
+  }
+  ROSTER_CACHE.set(clave,encontrado);
+  return encontrado;
+}
+// true = la fila la firma un AT formal de SU plaza (o esa plaza aun no tiene
+// roster, en cuyo caso no se filtra nada, igual que antes).
+function esAsesorDeLaPlaza(row){
+  const roster=rosterDePlaza(val(row,COL.plaza));
+  if(!roster)return true;
+  return roster.has(norm(val(row,COL.asesor)||''));
 }
 const norm=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9%]+/g,' ').trim();
 const key=(row,names)=>{const entries=Object.keys(row||{}).map(k=>[norm(k),k]);for(const name of names){const n=norm(name);const hit=entries.find(([x])=>x===n||x.includes(n));if(hit)return hit[1]}return ''};
@@ -107,7 +149,7 @@ document.getElementById('kpi-section').innerHTML=kpi('Cumplimiento total',pctTex
 document.getElementById('insights').innerHTML=`<article class="insight" style="--tone:#ed1c2e;--tone-bg:#fff2f3;--tone-line:#f5c9cd"><span class="insight-dot"></span><div><strong>Prioridad inmediata</strong><p>${critical} tiendas están por debajo de 50%.</p></div></article><article class="insight" style="--tone:#f47b20;--tone-bg:#fff7ed;--tone-line:#f4dac0"><span class="insight-dot"></span><div><strong>Salidas rezagadas</strong><p>${gap===null?'Sin datos suficientes':`La salida está ${Math.abs(gap).toFixed(1)} puntos ${gap>=0?'debajo de la entrada':'arriba de la entrada'}.`}</p></div></article><article class="insight" style="--tone:#176d98;--tone-bg:#eff8fc;--tone-line:#cce3ee"><span class="insight-dot"></span><div><strong>Calidad de la base</strong><p>${quality?`${quality} filas requieren validación por superar 100%.`:'Todos los porcentajes están dentro de rango.'}</p></div></article>`;
 renderMix();renderAdvisors();renderTable()}
 function renderMix(){const ranges=['Sobresaliente','En seguimiento','Prioridad','Critico'].map(s=>[s,STATUS_COLOR[s]]),counts=ranges.map(([s])=>VIEW.filter(r=>statusOf(pct(val(r,COL.total)))===s).length),total=Math.max(1,VIEW.length),p1=counts[0]/total*100,p2=p1+counts[1]/total*100,p3=p2+counts[2]/total*100;const ring=document.getElementById('mix-ring');ring.style.setProperty('--p1',p1+'%');ring.style.setProperty('--p2',p2+'%');ring.style.setProperty('--p3',p3+'%');document.getElementById('ring-total').textContent=VIEW.length;document.getElementById('mix-chip').textContent=`${VIEW.length} tiendas`;document.getElementById('mix-legend').innerHTML=ranges.map(([name,color],i)=>`<div class="legend-row"><i style="--c:${color}"></i><span>${name}</span><b>${counts[i]}</b><em>${VIEW.length?Math.round(counts[i]/VIEW.length*100):0}%</em></div>`).join('')}
-function renderAdvisors(){const roster=rosterForActiveScope();const rows=roster?VIEW.filter(r=>roster.has(norm(val(r,COL.asesor)||''))):VIEW;const groups=new Map;rows.forEach(r=>{const a=val(r,COL.asesor)||'Sin asesor';if(!groups.has(a))groups.set(a,[]);groups.get(a).push(r)});const list=[...groups].map(([name,rows])=>({name,avg:average(rows,COL.total),stores:rows.length})).sort((a,b)=>(a.avg??999)-(b.avg??999));// Los promedios de esta base pueden pasar de 100% (marcajes duplicados en la
+function renderAdvisors(){const rows=VIEW.filter(esAsesorDeLaPlaza);const groups=new Map;rows.forEach(r=>{const a=val(r,COL.asesor)||'Sin asesor';if(!groups.has(a))groups.set(a,[]);groups.get(a).push(r)});const list=[...groups].map(([name,rows])=>({name,avg:average(rows,COL.total),stores:rows.length})).sort((a,b)=>(a.avg??999)-(b.avg??999));// Los promedios de esta base pueden pasar de 100% (marcajes duplicados en la
 // fuente). Recortando la barra en 100% todos los asesores fuera de rango se
 // dibujaban identicos y el panel dejaba de comparar: se escala contra el
 // maximo real y se marca donde queda el 100% para no perder la referencia.
@@ -120,8 +162,15 @@ async function initDashboard(){try{OXXO.renderDownloadButton('hero-download','d1
 // gviz de Sheets va lento. Se pide en paralelo, sin esperarla: si llega
 // despues del primer render, se vuelve a pintar solo el panel de asesores;
 // si BASE nunca se llego a cargar, el then no hace nada visible.
-loadRoster().then(()=>{if(BASE.length){VIEW=filtered();renderAdvisors();}}).catch(()=>{});
-const data=await OXXO.fetchSheetData(OXXO.SHEETS_CONFIG.TABS.d11);if(data===null)throw new Error('No se pudo conectar con Google Sheets');if(!data.length){document.getElementById('kpi-section').innerHTML='<div class="state">La hoja todavía no tiene datos publicados.</div>';return}const h=data[0];COL={semana:key(h,['Semana','Fecha']),zona:key(h,['Zona']),region:key(h,['Region']),plaza:key(h,['Plaza']),asesor:key(h,['Asesor']),tienda:key(h,['Tienda']),entradas:key(h,['% Cumpl Reg Entradas']),salidas:key(h,['% Cumpl Reg Salidas']),total:key(h,['% Cumpl Reg Total']),status:key(h,['Estatus']),quality:key(h,['Alerta Calidad'])};BASE=data.filter(r=>String(val(r,COL.tienda)||'').trim());WEEK=String(val(BASE[0]||{},COL.semana)||'SEMANA ACTUAL').toUpperCase();const scope=OXXO.getActiveDataScope?.();document.getElementById('corte-badge').textContent=`⟳ ${WEEK} · ${scope?.level==='region'?'Región Tabasco':scope?.plaza||'Plaza seleccionada'}`;const select=document.getElementById('filtro-asesor');[...new Set(BASE.map(r=>val(r,COL.asesor)).filter(Boolean))].sort().forEach(a=>{const o=document.createElement('option');o.value=a;o.textContent=a;select.appendChild(o)});render();OXXO.updateFooterTime('load-time')}catch(error){console.error('[D11]',error);document.getElementById('kpi-section').innerHTML=`<div class="state"><div><strong>No se pudo cargar el tablero.</strong><br><button class="action" type="button" data-oxxo-retry style="margin-top:12px">Reintentar</button></div></div>`}}
+loadRoster().then(()=>{if(!BASE.length)return;
+  // El roster llega despues del primer render: hay que rehacer el selector
+  // (ya sin los nombres que no son de la plaza) y, si eso cambio el filtro
+  // activo, repintar todo y no solo el panel de asesores.
+  const cambioElFiltro=poblarSelectAsesores();
+  if(cambioElFiltro){render();return;}
+  VIEW=filtered();renderAdvisors();
+}).catch(()=>{});
+const data=await OXXO.fetchSheetData(OXXO.SHEETS_CONFIG.TABS.d11);if(data===null)throw new Error('No se pudo conectar con Google Sheets');if(!data.length){document.getElementById('kpi-section').innerHTML='<div class="state">La hoja todavía no tiene datos publicados.</div>';return}const h=data[0];COL={semana:key(h,['Semana','Fecha']),zona:key(h,['Zona']),region:key(h,['Region']),plaza:key(h,['Plaza']),asesor:key(h,['Asesor']),tienda:key(h,['Tienda']),entradas:key(h,['% Cumpl Reg Entradas']),salidas:key(h,['% Cumpl Reg Salidas']),total:key(h,['% Cumpl Reg Total']),status:key(h,['Estatus']),quality:key(h,['Alerta Calidad'])};BASE=data.filter(r=>String(val(r,COL.tienda)||'').trim());WEEK=String(val(BASE[0]||{},COL.semana)||'SEMANA ACTUAL').toUpperCase();const scope=OXXO.getActiveDataScope?.();document.getElementById('corte-badge').textContent=`⟳ ${WEEK} · ${scope?.level==='region'?'Región Tabasco':scope?.plaza||'Plaza seleccionada'}`;poblarSelectAsesores();render();OXXO.updateFooterTime('load-time')}catch(error){console.error('[D11]',error);document.getElementById('kpi-section').innerHTML=`<div class="state"><div><strong>No se pudo cargar el tablero.</strong><br><button class="action" type="button" data-oxxo-retry style="margin-top:12px">Reintentar</button></div></div>`}}
 ['filtro-asesor','filtro-estatus'].forEach(id=>document.getElementById(id).addEventListener('change',render));document.getElementById('filtro-tienda').addEventListener('input',render);document.getElementById('limpiar').addEventListener('click',()=>{document.getElementById('filtro-asesor').value='';document.getElementById('filtro-estatus').value='';document.getElementById('filtro-tienda').value='';render()});document.addEventListener('DOMContentLoaded',initDashboard);
 window.buildExcelSheets=async()=>[{name:'KPIs',rows:OXXO.scrapeKpiCards('kpi-section')},{name:'Detalle por tienda',rows:OXXO.scrapeHtmlTable('#detail-table')}];
 </script>

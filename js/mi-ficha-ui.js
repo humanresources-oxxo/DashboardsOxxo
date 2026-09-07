@@ -214,6 +214,128 @@
     };
   }
 
+  // ── Capacidades 2026: detalle por persona ──────────────
+  // Los paneles de Capacidades de las dos fichas resumian por certificacion
+  // (4 renglones) y ahi se acababa: no habia forma de ver QUIEN tiene un
+  // pendiente, que es justo lo que sirve para actuar. Dashboard 8 si lo
+  // tiene, en un modal por empleado; estas piezas lo traen a las fichas.
+  // Viven aqui, y no copiadas en cada pagina, porque las dos las usan igual
+  // y la lista de certificaciones tiene que ser la misma en las tres
+  // pantallas.
+  const CAP_CERT_COLS = [
+    { key: 'Promedio de Código de Ética 2026', label: 'Código de Ética' },
+    { key: 'Promedio de Seguridad en la persona 2026', label: 'Seguridad en la Persona' },
+    { key: 'Promedio de PLD2026Certificacion', label: 'PLD 2026' },
+    { key: 'Promedio de ModuloCercaSiempre2026', label: 'Módulo Cerca Siempre' },
+  ];
+  // Una celda vacia significa "no le aplica", que NO es lo mismo que 0
+  // (pendiente). Por eso devuelve null y no cero: mezclarlos hunde el
+  // porcentaje de gente a la que simplemente no le toca ese modulo.
+  function capValue(row, certKey, certRealKeys) {
+    const raw = row[(certRealKeys && certRealKeys[certKey]) || certKey];
+    if (raw === undefined || raw === null || String(raw).trim() === '') return null;
+    const value = OXXO.metricsNum(raw);
+    return Number.isFinite(value) ? value : null;
+  }
+
+  // Agrupa las filas por persona. La fuente publica una fila por empleado,
+  // pero se agrupa por Nº personal de todos modos: si la base llega a traer
+  // duplicados, una persona no debe contar dos veces ni aparecer repetida.
+  function capEmpleados(rows, keys = {}) {
+    const porPersona = new Map();
+    (rows || []).forEach((row) => {
+      const noPers = String(row[keys.noPersKey] ?? '').trim();
+      const nombre = String(row[keys.empleadoKey] ?? '').trim();
+      const id = noPers || nombre;
+      if (!id) return;
+      if (!porPersona.has(id)) {
+        porPersona.set(id, {
+          id, noPers, nombre: nombre || 'Empleado sin nombre',
+          tienda: String(row[keys.tiendaKey] ?? row[keys.unidadKey] ?? '').trim(),
+          cr: String(row[keys.crKey] ?? '').trim(),
+          asesor: String(row[keys.asesorKey] ?? '').trim(),
+          puesto: String(row[keys.puestoKey] ?? '').trim(),
+          certs: CAP_CERT_COLS.map((c) => ({ label: c.label, valor: null })),
+        });
+      }
+      const persona = porPersona.get(id);
+      CAP_CERT_COLS.forEach((c, i) => {
+        const valor = capValue(row, c.key, keys.certRealKeys);
+        // Entre filas duplicadas gana el avance mayor.
+        if (valor !== null && (persona.certs[i].valor === null || valor > persona.certs[i].valor)) {
+          persona.certs[i].valor = valor;
+        }
+      });
+    });
+    return [...porPersona.values()].map((persona) => {
+      const aplican = persona.certs.filter((c) => c.valor !== null);
+      const completas = aplican.filter((c) => c.valor >= 1);
+      return {
+        ...persona,
+        aplican: aplican.length,
+        completas: completas.length,
+        pendientes: aplican.length - completas.length,
+        pct: aplican.length ? Math.round((completas.length / aplican.length) * 100) : null,
+      };
+    }).sort((a, b) => (a.pct ?? 101) - (b.pct ?? 101) || a.nombre.localeCompare(b.nombre));
+  }
+
+  function capBadge(pct) {
+    if (pct === null) return '<span class="cap-pill na">N/A</span>';
+    const cls = pct >= 90 ? 'verde' : pct >= 60 ? 'amarillo' : 'rojo';
+    return `<span class="cap-pill ${cls}">${pct}%</span>`;
+  }
+
+  // Tabla-indice: una persona por renglon, las de menor cumplimiento
+  // primero, porque son las que hay que perseguir. Cada renglon abre su
+  // propio detalle.
+  // La columna de contexto cambia segun la ficha: en "Mi Tienda" la tienda
+  // es siempre la misma y no informa nada, asi que ahi va el puesto; en
+  // "Mi Dashboard" (agrupado por asesor) lo util es de que tienda es cada
+  // persona.
+  const CAP_CONTEXTO = { Tienda: 'tienda', Asesor: 'asesor', Puesto: 'puesto' };
+  function capEmpleadosTablaHTML(empleados, columnaContexto = 'Tienda') {
+    const campo = CAP_CONTEXTO[columnaContexto] || 'tienda';
+    const filas = (empleados || []).map((e, i) => `<tr class="cap-emp-row" data-cap-emp="${i}" tabindex="0" role="button" title="Ver certificación por certificación">
+        <td>${esc(e.nombre)}${e.noPers ? `<small class="cap-emp-id">Nº ${esc(e.noPers)}</small>` : ''}</td>
+        <td>${esc(e[campo] || '—')}</td>
+        <td class="center">${e.completas}/${e.aplican}</td>
+        <td class="center">${e.pendientes ? `<b class="cap-pend">${e.pendientes}</b>` : '—'}</td>
+        <td class="center">${capBadge(e.pct)}</td>
+      </tr>`).join('');
+    return `<table class="tbl cap-emp-tabla">
+      <thead><tr><th>Empleado</th><th>${esc(columnaContexto)}</th><th class="center">Completadas</th><th class="center">Pendientes</th><th class="center">Cumplimiento</th></tr></thead>
+      <tbody>${filas || emptyRow(5, 'Sin empleados en capacidades.')}</tbody>
+    </table>`;
+  }
+
+  // Ficha de una persona: el mismo desglose que abre Dashboard 8.
+  function capEmpleadoDetalleHTML(e) {
+    if (!e) return '';
+    const chips = [['Nº personal', e.noPers], ['Puesto', e.puesto], ['Tienda', e.tienda], ['CR', e.cr], ['Asesor', e.asesor]]
+      .filter(([, value]) => String(value || '').trim())
+      .map(([label, value]) => `<div class="cap-emp-chip"><span>${esc(label)}</span><b>${esc(value)}</b></div>`).join('');
+    const filas = e.certs.map((c) => {
+      if (c.valor === null) return `<tr><td>${esc(c.label)}</td><td class="center">—</td><td class="center"><span class="cap-pill na">No aplica</span></td></tr>`;
+      const avance = Math.round(c.valor * 100);
+      const cls = c.valor >= 1 ? 'verde' : c.valor > 0 ? 'amarillo' : 'rojo';
+      const txt = c.valor >= 1 ? 'Completada' : c.valor > 0 ? 'En proceso' : 'Pendiente';
+      return `<tr><td>${esc(c.label)}</td><td class="center">${avance}%</td><td class="center"><span class="cap-pill ${cls}">${txt}</span></td></tr>`;
+    }).join('');
+    return `<div class="cap-emp-detalle">
+      <div class="mi-stats">
+        ${statTile(e.pct === null ? '—' : e.pct + '%', 'Cumplimiento')}
+        ${statTile(`${e.completas}/${e.aplican}`, 'Completadas')}
+        ${statTile(String(e.pendientes), 'Pendientes', e.pendientes ? 'rojo' : 'verde')}
+      </div>
+      ${chips ? `<div class="cap-emp-chips">${chips}</div>` : ''}
+      <table class="tbl">
+        <thead><tr><th>Certificación</th><th class="center">Avance</th><th class="center">Estatus</th></tr></thead>
+        <tbody>${filas}</tbody>
+      </table>
+    </div>`;
+  }
+
   // ── Modal de detalle (TODOS los paneles con "Ver detalle" o con acordeon
   //    por mes usan este mismo modal en vez de expandir en la tarjeta) ──
   // openModal acepta un elemento (se clona, ej. la tabla oculta de un panel
@@ -259,6 +381,24 @@
     // transición no siempre acepta foco en el primer frame (Chrome).
     setTimeout(() => document.getElementById('mi-modal-close')?.focus(), 250);
   }
+  // Registro de la ultima lista de capacidades pintada, para que el modal
+  // sepa a que persona corresponde el renglon en el que hicieron clic.
+  let capLista = [], capTitulo = 'Capacidades 2026', capContexto = 'Tienda';
+  function setCapEmpleados(lista, { titulo, contexto } = {}) {
+    capLista = Array.isArray(lista) ? lista : [];
+    if (titulo) capTitulo = titulo;
+    if (contexto) capContexto = contexto;
+  }
+  function abrirCapLista() {
+    openModal(`${capTitulo} · detalle por empleado`, capEmpleadosTablaHTML(capLista, capContexto));
+  }
+  function abrirCapEmpleado(indice) {
+    const persona = capLista[indice];
+    if (!persona) return;
+    openModal(`${persona.nombre} · certificaciones`,
+      `<button type="button" class="cap-emp-volver">&larr; Volver a la lista</button>` + capEmpleadoDetalleHTML(persona));
+  }
+
   function initDetailModal() {
     modalOverlay = document.getElementById('mi-modal-overlay');
     if (!modalOverlay) return;
@@ -268,12 +408,32 @@
     modalMetaEl = document.getElementById('mi-modal-meta');
     modalBodyEl = document.getElementById('mi-modal-body');
     document.addEventListener('click', (e) => {
+      // Capacidades va PRIMERO: su boton comparte la clase .mi-detail-btn
+      // para verse igual que los demas, pero su contenido se arma al vuelo
+      // en vez de clonar una tabla oculta. Si se evaluara despues, el
+      // manejador generico buscaria un data-modal-target que no existe y
+      // abriria el modal vacio.
+      if (e.target.closest('.cap-emp-abrir')) { abrirCapLista(); return; }
       const btn = e.target.closest('.mi-detail-btn');
       if (btn) {
         openModal(btn.dataset.modalTitle, document.getElementById(btn.dataset.modalTarget));
         return;
       }
+      // Volver de la ficha de una persona a la lista de empleados.
+      if (e.target.closest('.cap-emp-volver')) { abrirCapLista(); return; }
+      const fila = e.target.closest('.cap-emp-row');
+      if (fila) { abrirCapEmpleado(Number(fila.dataset.capEmp)); return; }
       if (e.target === modalOverlay || e.target.closest('#mi-modal-close')) closeModal();
+    });
+    // La tabla de empleados se navega tambien con teclado: los renglones son
+    // role="button", asi que Enter y Espacio tienen que abrirlos igual que
+    // el clic.
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      const fila = e.target.closest?.('.cap-emp-row');
+      if (!fila) return;
+      e.preventDefault();
+      abrirCapEmpleado(Number(fila.dataset.capEmp));
     });
     document.addEventListener('keydown', (e) => {
       if (!modalOverlay.classList.contains('show')) return;
@@ -297,5 +457,7 @@
     movInfo, movPill, estatusCell,
     rkTile, toneByCount, tonePct, chipsHTML, metaHTML,
     mountSingleSelect, openModal, closeModal,
+    CAP_CERT_COLS, capValue, capEmpleados, capEmpleadosTablaHTML, capEmpleadoDetalleHTML,
+    setCapEmpleados, abrirCapLista,
   };
 })();

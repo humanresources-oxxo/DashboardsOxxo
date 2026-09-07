@@ -334,8 +334,16 @@
     const diasKey = K(h, ['Dias', 'Días']);
     const nombreKey = K(h, ['Nombre del empleado o candidato', 'Nombre del empleado']);
     const noPersKey = K(h, ['N de personal', 'N de Personal', 'No de personal', 'N° de personal']);
+    // Dashboard 6 muestra la SEMANA MAS RECIENTE (su filtro de semana arranca
+    // en "Semana mas reciente"); esta ficha se quedaba con la hoja completa y
+    // sumaba todas las semanas publicadas. Con seis semanas en la base, un
+    // asesor con 24 ausentismos en la semana vigente aparecia con 248. Se usa
+    // el mismo helper que el tablero para que las dos pantallas corten igual.
+    const semanaKey = K(h, ['Semana']);
+    const semana = semanaKey ? OXXO.metricsLatestSemanaNumerica(raw, semanaKey) : '';
+    const rows = semana ? raw.filter((r) => String(V(r, semanaKey) || '').trim() === semana) : raw;
     raw.forEach((r) => OXXO.applyAsesorCatalog(r, CATALOG, { asesorKey, tiendaKey, crKey }));
-    DATA.d6 = { rows: raw, asesorKey, tiendaKey, tipoKey, diasKey, nombreKey, noPersKey };
+    DATA.d6 = { rows, semana, asesorKey, tiendaKey, tipoKey, diasKey, nombreKey, noPersKey };
     addAsesores(raw.map((r) => V(r, asesorKey)));
   }
   function renderD6(asesor) {
@@ -344,7 +352,11 @@
     if (!d) { el.classList.remove('show'); return null; }
     const rows = rowsFor(d, asesor);
     el.classList.add('show');
-    document.getElementById('badge-d6').textContent = plural(rows.length, 'registro', 'registros');
+    // El badge decia solo "N registros", sin periodo: no habia forma de notar
+    // que estaba sumando semanas. Ahora dice de que corte son.
+    document.getElementById('badge-d6').textContent = d.semana
+      ? `${d.semana} · ${plural(rows.length, 'registro', 'registros')}`
+      : plural(rows.length, 'registro', 'registros');
     const empleados = new Set(rows.map((r) => V(r, d.noPersKey) || V(r, d.nombreKey))).size;
     const totDias = rows.reduce((s, r) => s + (parseFloat(V(r, d.diasKey)) || 0), 0);
     const faltas = rows.filter((r) => OXXO.metricsNormText(V(r, d.tipoKey)).includes('FALTA')).length;
@@ -437,10 +449,11 @@
     const crKey = K(h, ['Cr de tienda', 'Cr de Tienda', 'CR de Tienda']);
     const noPersKey = K(h, ['Nº personal', 'N personal', 'No Personal']);
     const empleadoKey = K(h, ['Empleados', 'Empleado']);
+    const puestoKey = K(h, ['Puesto_Correcto', 'Puesto']);
     const certRealKeys = {};
     CERT_COLS.forEach((c) => { certRealKeys[c.key] = K(h, [c.key]) || c.key; });
     raw.forEach((r) => OXXO.applyAsesorCatalog(r, CATALOG, { asesorKey, tiendaKey: unidadKey, crKey }));
-    DATA.d8 = { rows: raw, asesorKey, unidadKey, noPersKey, empleadoKey, certRealKeys };
+    DATA.d8 = { rows: raw, asesorKey, unidadKey, tiendaKey: unidadKey, crKey, noPersKey, empleadoKey, puestoKey, certRealKeys };
     addAsesores(raw.map((r) => V(r, asesorKey)));
   }
   function capValue(row, certKey, certRealKeys) {
@@ -477,6 +490,21 @@
         <td class="center">${n(c.comp)}</td>
         <td class="center">${c.pct === null ? 'N/A' : c.pct + '%'}</td>
       </tr>`).join('') : emptyRow(4, 'Sin datos de certificaciones.');
+    // Quien tiene el pendiente: el resumen por certificacion dice CUANTO
+    // falta, no A QUIEN perseguir. Se arma la lista por persona (el mismo
+    // detalle que abre Dashboard 8) y se habilita el boton que la abre.
+    const personas = OXXO_FICHA.capEmpleados(rows, {
+      noPersKey: d.noPersKey, empleadoKey: d.empleadoKey, tiendaKey: d.tiendaKey,
+      crKey: d.crKey, asesorKey: d.asesorKey, puestoKey: d.puestoKey, certRealKeys: d.certRealKeys,
+    });
+    OXXO_FICHA.setCapEmpleados(personas, { titulo: 'Capacidades 2026', contexto: 'Tienda' });
+    const botonEmp = document.querySelector('.cap-emp-abrir[data-panel="d8"]');
+    if (botonEmp) {
+      botonEmp.hidden = !personas.length;
+      botonEmp.textContent = personas.length
+        ? `Ver detalle por empleado (${n(personas.length)})`
+        : 'Ver detalle por empleado';
+    }
     return rows.length ? { capPct: pctGlobal, empleados } : null;
   }
 

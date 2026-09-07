@@ -704,10 +704,11 @@
     const crKey = K(h, ['Cr de tienda', 'Cr de Tienda', 'CR de Tienda']);
     const noPersKey = K(h, ['Nº personal', 'N personal', 'No Personal']);
     const empleadoKey = K(h, ['Empleados', 'Empleado']);
+    const puestoKey = K(h, ['Puesto_Correcto', 'Puesto']);
     const certRealKeys = {};
     CERT_COLS.forEach((c) => { certRealKeys[c.key] = K(h, [c.key]) || c.key; });
     raw.forEach((r) => OXXO.applyAsesorCatalog(r, CATALOG, { asesorKey, tiendaKey: unidadKey, crKey }));
-    DATA.d8 = { rows: raw, asesorKey, unidadKey, tiendaKey: unidadKey, crKey, noPersKey, empleadoKey, certRealKeys };
+    DATA.d8 = { rows: raw, asesorKey, unidadKey, tiendaKey: unidadKey, crKey, noPersKey, empleadoKey, puestoKey, certRealKeys };
     addTiendas(raw, unidadKey, crKey);
   }
   function capValue(row, certKey, certRealKeys) {
@@ -752,6 +753,22 @@
         <td class="center">${n(c.comp)}</td>
         <td class="center">${c.pct === null ? 'N/A' : c.pct + '%'}</td>
       </tr>`).join('') : emptyRow(4, 'Sin datos de certificaciones.');
+    // Quien tiene el pendiente: el resumen por certificacion dice CUANTO
+    // falta, no A QUIEN perseguir. Se arma la lista por persona (el mismo
+    // detalle que abre Dashboard 8) y se habilita el boton que la abre.
+    const personas = OXXO_FICHA.capEmpleados(rows, {
+      noPersKey: d.noPersKey, empleadoKey: d.empleadoKey, tiendaKey: d.tiendaKey,
+      crKey: d.crKey, asesorKey: d.asesorKey, puestoKey: d.puestoKey, certRealKeys: d.certRealKeys,
+    });
+    // En esta ficha la tienda es fija: la columna util es el puesto.
+    OXXO_FICHA.setCapEmpleados(personas, { titulo: 'Capacidades 2026', contexto: 'Puesto' });
+    const botonEmp = document.querySelector('.cap-emp-abrir[data-panel="d8"]');
+    if (botonEmp) {
+      botonEmp.hidden = !personas.length;
+      botonEmp.textContent = personas.length
+        ? `Ver detalle por empleado (${n(personas.length)})`
+        : 'Ver detalle por empleado';
+    }
     return rows.length ? { capPct: pctGlobal, empleados, pendientes, critica: critica ? critica.label : '' } : null;
   }
 
@@ -1008,7 +1025,14 @@
     const totalKey = K(h, ['% Cumpl Reg Total']);
     const estatusKey = K(h, ['Estatus']);
     const calidadKey = K(h, ['Alerta Calidad']);
-    DATA.d11 = { rows: raw, tiendaKey, asesorKey, fechaKey, entradasKey, salidasKey, totalKey, estatusKey, calidadKey };
+    // Hoy la hoja publica una sola semana, asi que no filtrar no se notaba;
+    // en cuanto acumule una segunda, los promedios de entradas/salidas
+    // mezclarian semanas y el badge mostraria la semana de la primera fila
+    // que tocara, no la vigente. Se corta a la mas reciente, igual que
+    // Dashboard 11.
+    const semana = fechaKey ? OXXO.metricsLatestSemanaNumerica(raw, fechaKey) : '';
+    const rows = semana ? raw.filter((r) => String(V(r, fechaKey) || '').trim() === semana) : raw;
+    DATA.d11 = { rows, semana, tiendaKey, asesorKey, fechaKey, entradasKey, salidasKey, totalKey, estatusKey, calidadKey };
     addTiendas(raw, tiendaKey);
   }
   function renderD11(tienda) {
@@ -1024,7 +1048,7 @@
       tbody.innerHTML = emptyRow(6, 'Tu tienda no aparece en Cumplimiento de Marcajes.');
       return null;
     }
-    setSectionBadge('badge-d11', 'Corte', V(rows[0], d.fechaKey) || 'Sin fecha', 'is-current');
+    setSectionBadge('badge-d11', 'Corte', d.semana || V(rows[0], d.fechaKey) || 'Sin fecha', 'is-current');
     const avg = (key) => {
       const vals = rows.map((r) => pctVal(V(r, key))).filter((v) => v !== null);
       return vals.length ? Math.round(vals.reduce((s, v) => s + v, 0) / vals.length) : null;

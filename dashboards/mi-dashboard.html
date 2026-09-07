@@ -159,6 +159,7 @@
       <details class="mi-detail"><summary></summary>
         <div class="tbl-wrap"><table class="tbl" id="tbl-d8"><thead><tr><th>Certificación</th><th class="center">Aplicables</th><th class="center">Completados</th><th class="center">%</th></tr></thead><tbody></tbody></table></div>
       </details>
+      <button type="button" class="mi-detail-btn cap-emp-abrir" data-panel="d8" hidden>Ver detalle por empleado</button>
     </div>
 
     </div>
@@ -169,6 +170,31 @@
     <div class="dash-footer__update"><div class="dash-footer__update-dot"></div>
       Datos cargados: <span id="load-time">—</span></div>
     <div>Solo lectura · Google Sheets · Plaza Oaxaca</div>
+  </div>
+</div>
+
+<div class="mi-modal-overlay" id="mi-modal-overlay" aria-hidden="true">
+  <div class="mi-modal" role="dialog" aria-modal="true" aria-labelledby="mi-modal-title" aria-describedby="mi-modal-context" tabindex="-1">
+    <div class="mi-modal__head">
+      <div class="mi-modal__heading">
+        <span class="mi-modal__heading-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M4 5h16v14H4z"></path><path d="M4 10h16M9 5v14"></path></svg>
+        </span>
+        <div class="mi-modal__titles">
+          <div class="mi-modal__eyebrow">Detalle del indicador</div>
+          <h3 id="mi-modal-title"></h3>
+          <p class="mi-modal__context" id="mi-modal-context"></p>
+        </div>
+      </div>
+      <button type="button" class="mi-modal__close" id="mi-modal-close" aria-label="Cerrar modal">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg>
+      </button>
+    </div>
+    <div class="mi-modal__body" id="mi-modal-body"></div>
+    <div class="mi-modal__foot">
+      <span class="mi-modal__meta" id="mi-modal-meta"></span>
+      <span class="mi-modal__hint"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 12h8M12 8l-4 4 4 4M12 8l4 4-4 4"></path></svg><span>Desliza para consultar todas las columnas</span></span>
+    </div>
   </div>
 </div>
 
