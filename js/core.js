@@ -244,6 +244,13 @@ function applyDataContextDefaults(row, { columns = [] } = {}) {
 // Google Sheets publica cada pestaña como CSV accesible
 // ─────────────────────────────────────────────────────────────
 function activeScopeQuery(tabName, options = {}) {
+  // Una consulta explicita manda sobre el filtro de plaza: quien la arma ya
+  // decidio exactamente que filas necesita (por ejemplo una agregacion
+  // server-side con group by, para no bajar la hoja entera). Viaja en el mismo
+  // parametro tq, asi que entra tal cual a la llave de cache y nunca se
+  // confunde con la lectura normal de la misma pestana.
+  const customQuery = typeof options.query === 'string' ? options.query.trim() : '';
+  if (customQuery) return customQuery;
   if (options.scoped === false) return '';
   const column = String(SHEETS_CONFIG.SCOPED_GVIZ_COLUMNS?.[tabName] || '').trim().toUpperCase();
   if (!/^[A-Z]+$/.test(column)) return '';
