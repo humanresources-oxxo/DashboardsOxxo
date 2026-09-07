@@ -49,8 +49,23 @@ function getScopeCatalog() {
   })).filter((region) => region.name);
 }
 
+// Se llama millones de veces por carga: scopeRowValue() la invoca por cada
+// columna de cada fila contra cada alias, y las hojas publican decenas de
+// columnas (Dashboard_1 trae 44). Como siempre son los mismos nombres de
+// columna y de plaza, el resultado se memoiza: en el perfil de CPU de
+// Dashboard 1 esta funcion sola costaba 2.3 s de los 8.3 s de trabajo.
+// El dominio es chico (nombres de columna, plazas, regiones); aun asi se
+// pone un tope para que ningun dato raro haga crecer el mapa sin limite.
+const SCOPE_TOKEN_CACHE = new Map();
+const SCOPE_TOKEN_CACHE_MAX = 5000;
 function normalizeScopeToken(value) {
-  return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  const raw = String(value || '');
+  const hit = SCOPE_TOKEN_CACHE.get(raw);
+  if (hit !== undefined) return hit;
+  const token = raw.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  if (SCOPE_TOKEN_CACHE.size >= SCOPE_TOKEN_CACHE_MAX) SCOPE_TOKEN_CACHE.clear();
+  SCOPE_TOKEN_CACHE.set(raw, token);
+  return token;
 }
 
 function normalizeDataScope(scope = {}) {
@@ -381,18 +396,31 @@ async function readPersistentRows(cacheKey) {
     return null;
   }
 }
+// Guardar la base en Cache Storage exige serializarla completa, y JSON.stringify
+// es sincrono: en el perfil de CPU de Dashboard 1 esa serializacion bloqueaba
+// el hilo principal 1.5 s mientras el usuario esperaba ver sus datos. La cache
+// solo sirve para la NAVEGACION SIGUIENTE, nunca para la pantalla actual, asi
+// que se escribe cuando el navegador esta desocupado. Si la persona se va antes
+// de que haya un hueco, simplemente no se guarda: la siguiente vista vuelve a
+// leer de la red, que es exactamente lo que pasaba sin cache.
+function cuandoEsteDesocupado(tarea) {
+  if (typeof window.requestIdleCallback === 'function') window.requestIdleCallback(tarea, { timeout: 4000 });
+  else setTimeout(tarea, 0);
+}
 async function writePersistentRows(cacheKey, rows, savedAt = Date.now()) {
   const request = persistentCacheRequest(cacheKey);
   if (!request || !Array.isArray(rows)) return;
-  try {
-    const cache = await caches.open(SHEET_PERSISTENT_CACHE);
-    await cache.put(request, new Response(JSON.stringify({ rows, savedAt }), {
-      headers: { 'Content-Type': 'application/json; charset=utf-8' }
-    }));
-  } catch (error) {
-    // La cache es una optimizacion: una cuota llena nunca debe impedir cargar.
-    console.warn('[OXXO] No se pudo guardar la cache local:', error);
-  }
+  cuandoEsteDesocupado(async () => {
+    try {
+      const cache = await caches.open(SHEET_PERSISTENT_CACHE);
+      await cache.put(request, new Response(JSON.stringify({ rows, savedAt }), {
+        headers: { 'Content-Type': 'application/json; charset=utf-8' }
+      }));
+    } catch (error) {
+      // La cache es una optimizacion: una cuota llena nunca debe impedir cargar.
+      console.warn('[OXXO] No se pudo guardar la cache local:', error);
+    }
+  });
 }
 async function deletePersistentRows(cacheKey) {
   if (!('caches' in window)) return;
