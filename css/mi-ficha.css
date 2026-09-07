@@ -44,7 +44,7 @@
 @keyframes mtPulse{50%{opacity:.58}}
 
 .mt-picker{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}
-.mi-tienda-page .mt-picker{position:sticky;top:8px;z-index:35;width:max-content;max-width:100%;padding:8px 10px;border:1px solid rgba(130,54,38,.12);border-radius:15px;background:rgba(255,250,246,.9);box-shadow:0 10px 28px rgba(78,29,21,.09);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+.mi-tienda-page .mt-picker{position:sticky;top:8px;z-index:35;width:max-content;max-width:100%;padding:8px 10px;border:1px solid rgba(130,54,38,.12);border-radius:15px;background:rgba(255,250,246,.9);box-shadow:0 10px 28px rgba(78,29,21,.09);}
 .mt-picker__label{font-size:10.5px;font-weight:800;letter-spacing:.13em;text-transform:uppercase;color:var(--mt-muted)}
 #mi-tienda-select,#mi-asesor-select{flex:0 1 360px;min-width:240px}
 
@@ -60,7 +60,7 @@
    dashboard. Los paneles son tiles con gap y align-items:start:
    antes compartian filas de grid y se estiraban a la altura del
    mas alto, dejando huecos grandes en los paneles cortos. */
-.ficha{background:rgba(255,255,255,.72);-webkit-backdrop-filter:blur(22px) saturate(118%);backdrop-filter:blur(22px) saturate(118%);border:1px solid rgba(255,255,255,.7);border-radius:20px;overflow:hidden;box-shadow:0 16px 44px rgba(117,23,23,.12);margin-bottom:18px}
+.ficha{background:rgba(255,255,255,.72);border:1px solid rgba(255,255,255,.7);border-radius:20px;overflow:hidden;box-shadow:0 16px 44px rgba(117,23,23,.12);margin-bottom:18px}
 
 .ficha__head{background:linear-gradient(126deg,#F71926 0%,#D91F2D 54%,#A9111B 100%);color:#fff;padding:16px 22px}
 .ficha__head-top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
@@ -264,7 +264,7 @@
 .mi-detail-btn::after{content:' ⤢';font-size:9px}
 .mi-detail-hidden{display:none}
 
-.mi-modal-overlay{position:fixed;inset:0;background:rgba(34,10,10,.66);-webkit-backdrop-filter:blur(8px) saturate(.75);backdrop-filter:blur(8px) saturate(.75);display:flex;align-items:center;justify-content:center;z-index:200;padding:24px;opacity:0;visibility:hidden;pointer-events:none;transition:opacity .22s ease,visibility .22s ease}
+.mi-modal-overlay{position:fixed;inset:0;background:rgba(34,10,10,.66);display:flex;align-items:center;justify-content:center;z-index:200;padding:24px;opacity:0;visibility:hidden;pointer-events:none;transition:opacity .22s ease,visibility .22s ease}
 .mi-modal-overlay.show{opacity:1;visibility:visible;pointer-events:auto}
 body.mi-modal-open{overflow:hidden}
 .mi-modal{position:relative;background:#FFFDFC;border:1px solid rgba(255,255,255,.72);border-radius:24px;width:min(94vw,920px);max-height:min(88vh,760px);display:flex;flex-direction:column;overflow:hidden;box-shadow:0 30px 90px rgba(34,10,10,.42),0 4px 18px rgba(34,10,10,.14);transform:translateY(18px) scale(.975);opacity:0;transition:transform .24s cubic-bezier(.2,.8,.2,1),opacity .18s ease}
