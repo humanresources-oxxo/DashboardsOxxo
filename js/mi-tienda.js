@@ -1025,7 +1025,14 @@
     const totalKey = K(h, ['% Cumpl Reg Total']);
     const estatusKey = K(h, ['Estatus']);
     const calidadKey = K(h, ['Alerta Calidad']);
-    DATA.d11 = { rows: raw, tiendaKey, asesorKey, fechaKey, entradasKey, salidasKey, totalKey, estatusKey, calidadKey };
+    // Hoy la hoja publica una sola semana, asi que no filtrar no se notaba;
+    // en cuanto acumule una segunda, los promedios de entradas/salidas
+    // mezclarian semanas y el badge mostraria la semana de la primera fila
+    // que tocara, no la vigente. Se corta a la mas reciente, igual que
+    // Dashboard 11.
+    const semana = fechaKey ? OXXO.metricsLatestSemanaNumerica(raw, fechaKey) : '';
+    const rows = semana ? raw.filter((r) => String(V(r, fechaKey) || '').trim() === semana) : raw;
+    DATA.d11 = { rows, semana, tiendaKey, asesorKey, fechaKey, entradasKey, salidasKey, totalKey, estatusKey, calidadKey };
     addTiendas(raw, tiendaKey);
   }
   function renderD11(tienda) {
@@ -1041,7 +1048,7 @@
       tbody.innerHTML = emptyRow(6, 'Tu tienda no aparece en Cumplimiento de Marcajes.');
       return null;
     }
-    setSectionBadge('badge-d11', 'Corte', V(rows[0], d.fechaKey) || 'Sin fecha', 'is-current');
+    setSectionBadge('badge-d11', 'Corte', d.semana || V(rows[0], d.fechaKey) || 'Sin fecha', 'is-current');
     const avg = (key) => {
       const vals = rows.map((r) => pctVal(V(r, key))).filter((v) => v !== null);
       return vals.length ? Math.round(vals.reduce((s, v) => s + v, 0) / vals.length) : null;
