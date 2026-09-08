@@ -552,7 +552,13 @@
   .riesgo-dot.alto{background:var(--semaforo-rojo)}
   .riesgo-dot.medio{background:var(--semaforo-amarillo)}
   .riesgo-dot.bajo{background:var(--semaforo-verde)}
-  td.col-vac{display:flex;align-items:center;gap:9px;min-width:120px}
+  /* El flex va en un envoltorio DENTRO de la celda, nunca en el <td>. Con
+     display:flex el td deja de ser table-cell: no estira a la altura de la
+     fila (medido: 55px contra 59.3px de sus hermanas), asi que su fondo se
+     quedaba corto en cada renglon y la columna de Vacantes se veia desfasada
+     media franja respecto al resto de la tabla. */
+  td.col-vac{min-width:120px}
+  td.col-vac .vac-cell{display:flex;align-items:center;gap:9px}
   td.col-vac .vac-num{font-family:var(--font-display);font-size:16px;font-weight:900;min-width:16px;text-align:right}
   td.col-vac .vac-bar{flex:1;height:7px;border-radius:99px;background:#F4EBE7;overflow:hidden}
   td.col-vac .vac-bar i{display:block;height:100%;border-radius:99px;background:var(--semaforo-rojo)}
@@ -2571,7 +2577,7 @@ function renderVacantesPorAsesorDias(allData){
     const ancho = maxCarga ? Math.max(6, Math.round(v.count/maxCarga*100)) : 0;
     return `<tr data-asesor="${escapeAttr(a)}" title="Ver detalle de ${escapeAttr(a)}">
       <td><span class="riesgo-dot ${riesgo}" aria-label="Riesgo ${riesgo}"></span>${OXXO.escHtml(OXXO.truncate(a,34))}</td>
-      <td class="col-vac"><span class="vac-num">${v.count}</span><span class="vac-bar"><i class="${riesgo}" style="width:${ancho}%"></i></span></td>
+      <td class="col-vac"><span class="vac-cell"><span class="vac-num">${v.count}</span><span class="vac-bar"><i class="${riesgo}" style="width:${ancho}%"></i></span></span></td>
       <td class="text-center">${prom}</td>
       <td class="text-center">${v.diasCount ? v.maxDias : '—'}</td>
       <td class="text-center">${v.verde?`<span class="va-badge verde">${v.verde}</span>`:'—'}</td>
@@ -2594,7 +2600,7 @@ function renderVacantesPorAsesorDias(allData){
     <tbody>${rows}</tbody>
     <tfoot><tr>
       <td>Total general</td>
-      <td class="col-vac"><span class="vac-num">${total.count}</span></td>
+      <td class="col-vac"><span class="vac-cell"><span class="vac-num">${total.count}</span></span></td>
       <td class="text-center">${promTotal}</td>
       <td class="text-center">${total.diasCount ? total.maxDias : '—'}</td>
       <td class="text-center">${total.verde||'—'}</td>
