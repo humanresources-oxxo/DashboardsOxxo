@@ -112,3 +112,43 @@ body .dashboards-grid{gap:12px!important}body .dashboards-section__header{margin
   .topbar-search .home-search-kbd{display:none}
   .topbar-search .home-search-row input#home-search{padding-right:42px}
 }
+/* Proporciones del catálogo y ritmo entre secciones. */
+body .dashboards-section{max-width:1600px!important;padding-inline:clamp(0px,1.5vw,24px)}
+body .dashboards-grid{margin-top:14px;gap:16px!important}
+body .dashboards-section .section-divider{margin:28px 0!important}
+body .dashboards-section__header{margin-bottom:0!important}
+.home-card-wrap .db-card{padding:18px!important;gap:10px!important}
+.home-card-wrap .db-card__desc{max-width:48ch}
+.hero__stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px!important;max-width:520px}
+.hero__stats .hero__stat{min-width:0;padding:14px 12px}
+.hero__stats .hero__stat-label{font-size:11px;letter-spacing:.04em;line-height:1.3}
+@media(max-width:1149px) and (min-width:981px){
+  #grid-diarios{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media(max-width:640px){
+  body .dashboards-section{padding-inline:0!important}
+  body .dashboards-grid{gap:12px!important}
+  .home-card-wrap .db-card{padding:16px!important;min-height:0!important}
+  .home-card-wrap .db-card__title{min-height:0}
+  .home-card-wrap .db-card__desc{font-size:13px!important}
+  .hero__stats{gap:8px!important;margin-top:24px}
+  .hero__stats .hero__stat{padding:12px 8px}
+  .hero__stats .hero__stat-label{font-size:10px;letter-spacing:0}
+  .hero__stats .hero__stat-value{font-size:30px}
+  .hero__sub{text-shadow:0 1px 4px #380006;line-height:1.5}
+  .folder-tab{flex-direction:column;font-size:10px;line-height:1.2}
+  .folder-tab__label{line-height:1.2}
+  .home-favorite-toggle{width:36px;height:36px}
+  .home-card-wrap .db-card__top{padding-right:38px!important}
+}
+/* Evita que resultados largos ensanchen el menú del buscador. */
+.topbar-search #home-search-results{overflow-x:hidden}
+.topbar-search #home-search-results>a{min-width:0}
+@media(max-width:380px){
+  body > .topbar .topbar__logo{width:54px!important;height:34px!important}
+  body > .topbar .topbar__title{font-size:17px!important}
+  body > .topbar .topbar__brand{gap:5px!important}
+  body > .topbar .topbar__meta{gap:2px!important}
+  body > .topbar .topbar__back{padding:5px!important;font-size:9px!important}
+  body > .topbar #topbar-time{width:28px;font-size:8px!important}
+}
