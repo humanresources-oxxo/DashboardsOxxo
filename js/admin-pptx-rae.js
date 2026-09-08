@@ -481,31 +481,51 @@
     return slide;
   }
 
-  function buildD1(pptx, d, dateLabel){
+  // Diseño compartido únicamente por Vacantes y Bajas; conserva sus datos y corte.
+  function buildPeopleSummary(pptx, d, dateLabel, title){
     const slide = pptx.addSlide();
-    slide.background = { color: WHITE };
-    addHeader(slide, 'VACANTES', dateLabel);
-    addHeroKpi(slide, MARGIN_X, 1.25, 4.55, 1.35, d.total, 'VACANTES TOTALES', 'en tiendas filtradas · Plaza Oaxaca');
-    addDoughnutCard(pptx, slide, MARGIN_X, 2.8, 4.55, 2.5, 'Distribución por puesto', [
-      { label: 'Ayudante', value: d.byPuesto.Ayudante, color: GOLD },
-      { label: 'Encargado', value: d.byPuesto.Encargado, color: ORANGE },
-      { label: 'Lider', value: d.byPuesto.Lider, color: RED },
-    ]);
-    addRankingList(slide, 5.35, 1.25, 7.55, 5.75, 'Vacantes por Asesor', d.ranking, `${d.total} vacantes totales`);
+    slide.background = { color: 'FFFCF8' };
+    const text = (value,x,y,w,h,size,color=TEXT,bold=false,extra={}) => slide.addText(String(value),
+      { x,y,w,h,fontFace:'Arial',fontSize:size,color,bold,margin:0,breakLine:false,fit:'shrink',...extra });
+    const rect = (x,y,w,h,color) => slide.addShape('rect',{x,y,w,h,line:{color,transparency:100},fill:{color}});
+    rect(0,0,PAGE_W,.09,RED);
+    text('OXXO  /  RECURSOS HUMANOS',.5,.3,7,.25,10,RED,true);
+    text('Plaza Oaxaca',10,.3,2.8,.25,10,MUTED,false,{align:'right'});
+    text(title,.5,.83,8,.58,30,DARK,true);
+    text(dateLabel || 'Corte no informado',8.5,.97,4.3,.3,12,MUTED,false,{align:'right'});
+    rect(.5,1.62,12.3,.015,'E5DCD6');
+    text(d.total,.5,1.98,3.8,.98,64,RED,true);
+    text(title === 'Vacantes' ? 'POSICIONES VACANTES' : 'BAJAS OPERATIVAS',.53,3.04,3.7,.3,12,DARK,true);
+    text('Total del corte seleccionado',.53,3.43,3.7,.3,11,MUTED);
+    text('Distribución por puesto',.53,4.18,3.7,.32,15,DARK,true);
+    const groups=[['Ayudante',GOLD],['Encargado',ORANGE],['Lider',RED],['Otro',MUTED]];
+    const total = groups.reduce((sum,[key])=>sum+(Number(d.byPuesto[key])||0),0);
+    groups.forEach(([key,color],i)=>{
+      const y=4.8+i*.44, value=Number(d.byPuesto[key])||0;
+      rect(.53,y+.075,.09,.16,color);
+      text(key === 'Lider' ? 'Líder' : key,.75,y,1.65,.28,12);
+      text(value,2.5,y,.6,.28,13,DARK,true,{align:'right'});
+      text(total ? Math.round(value/total*100)+'%' : '—',3.22,y,.7,.28,11,MUTED,false,{align:'right'});
+    });
+    rect(4.4,1.97,.015,4.76,'E5DCD6');
+    text('Por asesor',4.8,2.02,4,.35,18,DARK,true);
+    text('Hasta 15 asesores · mayor a menor',8.4,2.08,4.4,.25,10,MUTED,false,{align:'right'});
+    const items = d.ranking || [], max=Math.max(1,...items.map(item=>item.value));
+    const rowH=Math.min(.53,4.12/Math.max(1,items.length));
+    if(!items.length) text('Sin registros en este corte',4.8,2.8,7,.5,15,MUTED);
+    items.forEach((item,i)=>{
+      const y=2.65+i*rowH;
+      text(item.name,4.8,y,4.35,rowH*.85,items.length>12?11:12,TEXT);
+      rect(9.45,y+rowH*.3,2.65,.07,'EDE6DF');
+      if(item.value>0) rect(9.45,y+rowH*.3,2.65*item.value/max,.07,RED);
+      text(item.value,12.22,y,.58,rowH*.85,12,DARK,true,{align:'right'});
+    });
+    text('OXXO · Uso interno',.5,7.04,4,.2,9,MUTED);
+    text('El total incluye todos los asesores del corte',7.3,7.04,5.5,.2,9,MUTED,false,{align:'right'});
   }
 
-  function buildD2(pptx, d, dateLabel){
-    const slide = pptx.addSlide();
-    slide.background = { color: WHITE };
-    addHeader(slide, 'BAJAS', dateLabel);
-    addRankingList(slide, MARGIN_X, 1.25, 6.85, 5.75, 'Bajas por Asesor', d.ranking, `${d.total} bajas totales`);
-    addDoughnutCard(pptx, slide, 8.3, 1.25, 4.6, 5.75, 'Bajas por Puesto', [
-      { label: 'Ayudante', value: d.byPuesto.Ayudante, color: GOLD },
-      { label: 'Encargado', value: d.byPuesto.Encargado, color: ORANGE },
-      { label: 'Lider', value: d.byPuesto.Lider, color: RED },
-      { label: 'Otro', value: d.byPuesto.Otro, color: MUTED },
-    ]);
-  }
+  function buildD1(pptx, d, dateLabel){ buildPeopleSummary(pptx,d,dateLabel,'Vacantes'); }
+  function buildD2(pptx, d, dateLabel){ buildPeopleSummary(pptx,d,dateLabel,'Bajas'); }
 
   function buildD3(pptx, d, dateLabel){
     const slide = pptx.addSlide();
