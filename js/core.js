@@ -2634,7 +2634,7 @@ async function metricsD1Rows(allMonths = false) {
     });
   const base = metricsApplyD1Defaults(stepCatalog, { tiendaKey, asesorKey, puestoKey, diasKey });
   const currentMonth = metricsFilterLatestMonth(raw, r => metricsRowMonthKeyD1(r, mesKey, fechaKey)).mes;
-  if (allMonths) return { rows: base, mes: '', currentMonth, asesorKey, puestoKey, tiendaKey, mesKey, fechaKey };
+  if (allMonths) return { rows: base, mes: '', months: [...new Set(raw.map(r => metricsRowMonthKeyD1(r, mesKey, fechaKey)).filter(Boolean))].sort(), currentMonth, asesorKey, puestoKey, tiendaKey, mesKey, fechaKey };
   // El corte vigente se determina con la fuente completa del alcance, no con
   // las vacantes que sobrevivieron los filtros. Si el mes actual tiene cero
   // vacantes operativas (caso real: Tuxtla, agosto 2026), elegir el ultimo mes
@@ -2696,26 +2696,30 @@ async function metricsAprovechamientoPorAT() {
   return map;
 }
 
-// Filas de Dashboard 2 (Bajas) ya filtradas por BAJA/Oaxaca y al mes mas
-// reciente, igual que dataD2() en admin-pptx-rae.js.
-async function metricsD2Rows() {
+// Bajas: mismos filtros predeterminados de dashboard-2, con todos los asesores.
+// Un mes solicitado sin registros nunca se sustituye por otro.
+async function metricsD2Rows(targetMes = '') {
   const raw = await fetchSheetData(SHEETS_CONFIG.TABS.d2);
   if (!raw || !raw.length) return null;
   const mesKey = metricsFindKey(raw[0], ['Mes']);
   const asesorKey = metricsFindKey(raw[0], ['Asesor']);
   const puestoKey = metricsFindKey(raw[0], ['Puesto']);
   const medidaKey = metricsFindKey(raw[0], ['Denominación Medida', 'Denominacion Medida', 'Medida', 'Med.']);
-  const plazaKey = metricsFindKey(raw[0], ['Plaza']);
   const fechaKey = metricsFindKey(raw[0], ['Fecha']);
-  const asesorCrudoOk = raw.filter(r => String(metricsVal(r, asesorKey) || '').trim() && metricsNormText(metricsVal(r, asesorKey)).replace(/[^A-Z]/g, '') !== 'TIMOTEOANTONIOPEREZ');
-  const base = metricsFilterBajasD2(asesorCrudoOk, { medidaKey, plazaKey });
-  const { mes, rows: byMonth } = metricsFilterLatestMonth(base, r => metricsRowMonthKeyD2(r, mesKey, fechaKey));
-  const rows = byMonth.filter(r => {
-    const asesor = metricsNormText(metricsVal(r, asesorKey));
-    if (!asesor || asesor.includes('SIN ASESOR')) return false;
-    return metricsTipoPuesto(metricsVal(r, puestoKey)) !== 'Otro';
-  });
-  return { rows, mes, asesorKey, puestoKey };
+  const tiendaKey = metricsFindKey(raw[0], ['Tienda', 'Unidad org']);
+  const catalog = await loadAsesorCatalog();
+  const mapped = raw.map(r => { const copy = {...r}; if (asesorKey) copy[asesorKey] = resolveAsesorD1(catalog, {tienda: metricsVal(r, tiendaKey), asesor: metricsVal(r, asesorKey)}); return copy; });
+  let base = metricsFilterBajasD2(mapped.filter(r => Object.values(r).some(v => String(v ?? '').trim())), {medidaKey});
+  if (puestoKey) {
+    const operativos = base.filter(r => /AYUDANTE|ENCARGADO|LIDER/.test(metricsNormText(metricsVal(r, puestoKey))));
+    if (operativos.length) base = operativos;
+  }
+  const monthOf = r => metricsRowMonthKeyD2(r, mesKey, fechaKey);
+  const months = [...new Set(base.map(monthOf).filter(Boolean))].sort();
+  if (targetMes && !months.includes(targetMes)) return null;
+  const mes = targetMes || months.at(-1) || '';
+  const rows = mes ? base.filter(r => monthOf(r) === mes) : base;
+  return { rows, mes, asesorKey, puestoKey, tiendaKey };
 }
 
 // Filas de Dashboard 7 (TREO) ya filtradas por catalogo y timoteo.

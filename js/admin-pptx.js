@@ -37,26 +37,9 @@
   }
 
   async function kpiD1(){
-    const raw = await OXXO.fetchSheetData(OXXO.SHEETS_CONFIG.TABS.d1);
-    if(!raw || !raw.length) return null;
-    const mesKey = findKey(raw[0], ['Mes']);
-    const puestoKey = findKey(raw[0], ['Descripcion de Posicion','Puesto']);
-    const asesorKey = findKey(raw[0], ['Asesor']);
-    const tiendaKey = findKey(raw[0], ['Tienda','Unidad org']);
-    const crKey = findKey(raw[0], ['CR TIENDA','CR']);
-    const fechaKey = findKey(raw[0], ['Fecha']);
-    const diasKey = findKey(raw[0], ['Dias Vacantes','Dias_Vacantes']);
-    // Misma logica verificada de dataD1() en admin-pptx-rae.js: catalogo de
-    // 255 tiendas, excluir timoteoantonioperez, y los 3 filtros DEFAULT de
-    // dashboard-1.html (puesto exacto, tienda no-entrenamiento/operaciones,
-    // antiguedad>=1 dia).
-    const asesorCatalog = await OXXO.loadAsesorCatalog();
-    const stepCatalog = raw
-      .filter(r => String(val(r, tiendaKey)||'').trim() && String(val(r, tiendaKey)||'').trim() !== 'Sin tienda')
-      .filter(r => OXXO.isTiendaValid(asesorCatalog, val(r, tiendaKey), val(r, crKey)))
-      .map(r => { const copy={...r}; copy[asesorKey]=OXXO.resolveAsesorD1(asesorCatalog,{cr:val(copy,crKey),tienda:val(copy,tiendaKey),asesor:val(copy,asesorKey)}); return copy; });
-    const base = OXXO.metricsApplyD1Defaults(stepCatalog, { tiendaKey, asesorKey, puestoKey, diasKey });
-    const { mes, rows } = filterLatestMonth(base, r => rowMonthKeyD1(r, mesKey, fechaKey));
+    const source = await OXXO.metricsD1Rows();
+    if (!source) return null;
+    const { rows, mes, puestoKey, asesorKey } = source;
     const byPuesto = { Lider: 0, Encargado: 0, Ayudante: 0, Otro: 0 };
     rows.forEach(r => { byPuesto[tipoPuesto(val(r, puestoKey))]++; });
     return {
@@ -72,34 +55,13 @@
   }
 
   async function kpiD2(){
-    const raw = await OXXO.fetchSheetData(OXXO.SHEETS_CONFIG.TABS.d2);
-    if(!raw || !raw.length) return null;
-    const mesKey = findKey(raw[0], ['Mes']);
-    const asesorKey = findKey(raw[0], ['Asesor']);
-    const puestoKey = findKey(raw[0], ['Puesto']);
-    const medidaKey = findKey(raw[0], ['Denominación Medida','Denominacion Medida','Medida','Med.']);
-    const plazaKey = findKey(raw[0], ['Plaza']);
-    const fechaKey = findKey(raw[0], ['Fecha']);
-    // Igual que filterData() en dashboard-2.html: si la hoja trae columna
-    // de Medida, quedarse solo con BAJA; si trae Plaza, quedarse solo con
-    // Oaxaca. Cada filtro solo se aplica si existe la columna y deja al
-    // menos una fila.
-    const asesorCrudoOk = raw.filter(r => String(val(r, asesorKey)||'').trim() && normText(val(r, asesorKey)).replace(/[^A-Z]/g,'') !== 'TIMOTEOANTONIOPEREZ');
-    const base = OXXO.metricsFilterBajasD2(asesorCrudoOk, { medidaKey, plazaKey });
-    const { mes, rows: byMonth } = filterLatestMonth(base, r => rowMonthKeyD2(r, mesKey, fechaKey));
-    const rows = byMonth.filter(r => {
-      const asesor = normText(val(r, asesorKey));
-      if(!asesor || asesor.includes('SIN ASESOR')) return false;
-      const puesto = tipoPuesto(val(r, puestoKey));
-      return puesto !== 'Otro';
-    });
-    const byPuesto = { Lider: 0, Encargado: 0, Ayudante: 0 };
+    const source = await OXXO.metricsD2Rows();
+    if (!source) return null;
+    const { rows, mes, puestoKey, asesorKey } = source;
+    const byMonth = rows;
+    const byPuesto = { Lider: 0, Encargado: 0, Ayudante: 0, Otro: 0 };
     rows.forEach(r => { byPuesto[tipoPuesto(val(r, puestoKey))]++; });
-    // Ranking de Plazas ("🏆 Ranking de Plazas" del Dashboard 2): Oaxaca =
-    // total de bajas del mes ANTES de excluir 'Otro' puesto/sin asesor (i.e.
-    // byMonth.length, igual que renderPlazas() en dashboard-2.html usa
-    // BASE_BAJAS_DATA ya filtrada solo a Oaxaca, sin esa exclusion extra) +
-    // las demas plazas capturadas a mano en Dashboard_2_Otras_Plazas.
+    // El total local usa las mismas filas que la diapositiva de bajas.
     const plazaRanking = [{ plaza: 'Oaxaca', bajas: byMonth.length }];
     try {
       const otras = await OXXO.fetchSheetData(OXXO.SHEETS_CONFIG.TABS.d2otras,{scoped:false});
@@ -121,7 +83,7 @@
         { label: 'Encargado', value: String(byPuesto.Encargado) },
         { label: 'Lider', value: String(byPuesto.Lider) },
       ],
-      chart: { title: 'Bajas por Puesto', labels: ['Ayudante','Encargado','Lider'], values: [byPuesto.Ayudante, byPuesto.Encargado, byPuesto.Lider] },
+      chart: { title: 'Bajas por Puesto', labels: ['Ayudante','Encargado','Lider','Otro'], values: [byPuesto.Ayudante, byPuesto.Encargado, byPuesto.Lider, byPuesto.Otro] },
       ranking: { title: 'Bajas por Asesor', items: rankCount(rows, asesorKey, 20) },
       plazaRanking,
     };
@@ -189,8 +151,12 @@
     const semanaKey = findKey(raw[0], ['Semana']);
     const horasKey = findKey(raw[0], ['Cantidad']);
     const tipoKey = findKey(raw[0], ['Textos homologados']);
-    const semana = latestByKey(raw, semanaKey);
-    const rows = semana ? raw.filter(r => String(r[semanaKey]||'').trim() === semana) : raw;
+    const catalog = await OXXO.loadAsesorCatalog();
+    const period = OXXO.metricsPreparePeriodSource(raw, catalog, {
+      semanaKey, mesKey: findKey(raw[0], ['Mes']), anoKey: findKey(raw[0], ['Ano','Año']),
+      asesorKey: findKey(raw[0], ['Asesor']), tiendaKey: findKey(raw[0], ['Tienda']), crKey: findKey(raw[0], ['Cr de Tienda','CR'])
+    });
+    const rows = period.currentRows, semana = period.currentPeriod;
     const totalHoras = rows.reduce((s,r) => s + num(val(r, horasKey)), 0);
     const byTipo = { Doble: 0, Triple: 0, Descanso: 0, Sencillo: 0 };
     // Clasificacion normalizada (sin acentos/espacios), igual que dashboard-4.html, para que
@@ -205,7 +171,7 @@
       else byTipo.Sencillo += horas;
     });
     return {
-      label: 'Total Horas TE', value: OXXO.formatNum(totalHoras), sub: semana ? `Semana ${semana}` : 'Plaza Oaxaca',
+      label: 'Total Horas TE', value: OXXO.formatNum(totalHoras), sub: semana ? semana : 'Plaza Oaxaca',
       secondary: [
         { label: 'Doble', value: OXXO.formatNum(byTipo.Doble) },
         { label: 'Triple', value: OXXO.formatNum(byTipo.Triple) },
@@ -245,18 +211,17 @@
     const denomKey = findKey(raw[0], ['Denominacion']);
     const tiendaKey = findKey(raw[0], ['Tienda']);
     const crKey = findKey(raw[0], ['Cr de Tienda','CR de Tienda']);
-    // Igual que dashboard-6.html: filtrar por el catalogo de 255 tiendas
-    // autorizadas (filterValidTiendas) antes de elegir semana/sumar dias.
-    const asesorCatalog = await OXXO.loadAsesorCatalog();
-    const base = raw.filter(r => OXXO.isTiendaValid(asesorCatalog, val(r, tiendaKey), val(r, crKey)));
-    // Semana mas reciente por orden NUMERICO, igual que dashboard-6.html.
-    const semana = OXXO.metricsLatestSemanaNumerica(base, semanaKey);
-    const rows = semana ? base.filter(r => String(val(r, semanaKey)||'').trim() === semana) : base;
+    const catalog = await OXXO.loadAsesorCatalog();
+    const period = OXXO.metricsPreparePeriodSource(raw, catalog, {
+      semanaKey, mesKey: findKey(raw[0], ['Mes']), anoKey: findKey(raw[0], ['Ano','Año']),
+      asesorKey: findKey(raw[0], ['Asesor']), tiendaKey: findKey(raw[0], ['Tienda']), crKey: findKey(raw[0], ['Cr de Tienda','CR'])
+    });
+    const rows = period.currentRows, semana = period.currentPeriod;
     const totalDias = rows.reduce((s,r) => s + num(val(r, diasKey)), 0);
     const byTipo = { Faltas: 0, Incapacidades: 0, Vacaciones: 0, Permisos: 0, Accidentes: 0, Otro: 0 };
     rows.forEach(r => { byTipo[tipoAusentismo(val(r, denomKey))] += num(val(r, diasKey)); });
     return {
-      label: 'Días Ausentes', value: OXXO.formatNum(Math.round(totalDias)), sub: semana ? `Semana ${semana}` : 'Plaza Oaxaca',
+      label: 'Días Ausentes', value: OXXO.formatNum(Math.round(totalDias)), sub: semana ? semana : 'Plaza Oaxaca',
       secondary: [
         { label: 'Faltas', value: OXXO.formatNum(Math.round(byTipo.Faltas)) },
         { label: 'Incapacidades', value: OXXO.formatNum(Math.round(byTipo.Incapacidades)) },

@@ -57,45 +57,11 @@
     return [...sums.entries()].map(([name, sum]) => ({ name, value: sum / counts.get(name) })).sort((a,b) => b.value - a.value).slice(0, limit);
   }
   async function dataD1(targetMes = ''){
-    const raw = await OXXO.fetchSheetData(OXXO.SHEETS_CONFIG.TABS.d1);
-    if(!raw || !raw.length) return null;
-    const mesKey = findKey(raw[0], ['Mes']);
-    const puestoKey = findKey(raw[0], ['Descripcion de Posicion','Puesto']);
-    const asesorKey = findKey(raw[0], ['Asesor']);
-    const tiendaKey = findKey(raw[0], ['Tienda','Unidad org']);
-    const crKey = findKey(raw[0], ['CR TIENDA','CR']);
-    const fechaKey = findKey(raw[0], ['Fecha']);
-    const diasKey = findKey(raw[0], ['Dias Vacantes','Dias_Vacantes']);
-    // dashboard-1.html filtra TODA la base cargada (no solo el mes activo) por:
-    // tienda no vacia, excluir 'timoteoantonioperez', y el catalogo de 255
-    // tiendas autorizadas (isTiendaValid). Sin esto se cuentan filas de
-    // tiendas/plazas que el dashboard real nunca muestra.
-    const asesorCatalog = await OXXO.loadAsesorCatalog();
-    const stepTienda = raw.filter(r => String(val(r, tiendaKey)||'').trim() && String(val(r, tiendaKey)||'').trim() !== 'Sin tienda');
-    const stepCatalog = stepTienda
-      .filter(r => OXXO.isTiendaValid(asesorCatalog, val(r, tiendaKey), val(r, crKey)))
-      .map(r => { const copy={...r}; copy[asesorKey]=OXXO.resolveAsesorD1(asesorCatalog,{cr:val(copy,crKey),tienda:val(copy,tiendaKey),asesor:val(copy,asesorKey)}); return copy; });
-    // dashboard-1.html arranca con la seleccion DEFAULT de sus 3 filtros
-    // "todo seleccionado" (Asesor, Puesto, Tienda), y esos defaults SI
-    // excluyen filas (no son "todo, sin filtrar"):
-    // - Puesto: solo los 6 valores exactos de DEFAULT_PUESTOS (texto crudo de
-    //   "Descripcion de Posicion", NO "contiene AYUDANTE/ENCARGADO/LIDER").
-    //   Puestos reales como "AYUDANTE APERTURA", "AYUDANTE BANCA",
-    //   "AYUDANTE TIENDA ENTRENAMIENTO" NO son ninguno de los 6 y quedan
-    //   fuera del total por defecto.
-    // - Tienda: excluye nombres que contengan "entrenamiento" u
-    //   "operaciones" (isDefaultExcludedTienda), mostrado como "Tiendas
-    //   operativas" en el filtro.
-    // - Asesor: 'Sin Asesor Asignado' se asigna a Timoteo para D1.
-    // - Antiguedad ("Dias Vacantes"): el default selecciona los 6 umbrales
-    //   ['30','21','15','7','3','1'] (unión: pasa si dias>=ALGUNO de esos
-    //   valores). El umbral minimo es "mas de 1 dia", asi que una vacante con
-    //   dias===0 (recien abierta el mismo dia, "vacante desde <hoy>") NO
-    //   cumple NINGUNO de los 6 y queda excluida del total por defecto.
-    //   'nuevas' (esTiendaNueva: dias>500 o sin Fecha) tampoco esta en el
-    //   default, asi que esas tambien se excluyen.
-    const base = OXXO.metricsApplyD1Defaults(stepCatalog, { tiendaKey, asesorKey, puestoKey, diasKey });
-    const { mes, rows } = filterLatestMonth(base, r => rowMonthKeyD1(r, mesKey, fechaKey), targetMes);
+    const source = await OXXO.metricsD1Rows(true);
+    if (!source || (targetMes && !source.months.includes(targetMes))) return null;
+    const { puestoKey, asesorKey } = source;
+    const mes = targetMes || source.currentMonth;
+    const rows = source.rows.filter(r => rowMonthKeyD1(r, source.mesKey, source.fechaKey) === mes);
     const byPuesto = { Lider: 0, Encargado: 0, Ayudante: 0, Otro: 0 };
     rows.forEach(r => { byPuesto[tipoPuesto(val(r, puestoKey))]++; });
     return {
@@ -106,44 +72,9 @@
   }
 
   async function dataD2(targetMes = ''){
-    const raw = await OXXO.fetchSheetData(OXXO.SHEETS_CONFIG.TABS.d2);
-    if(!raw || !raw.length) return null;
-    const mesKey = findKey(raw[0], ['Mes']);
-    const asesorKey = findKey(raw[0], ['Asesor']);
-    const puestoKey = findKey(raw[0], ['Puesto']);
-    const medidaKey = findKey(raw[0], ['Denominación Medida','Denominacion Medida','Medida','Med.']);
-    const plazaKey = findKey(raw[0], ['Plaza']);
-    const fechaKey = findKey(raw[0], ['Fecha']);
-    const tiendaKey = findKey(raw[0], ['Tienda','Unidad org']);
-    // Igual que initDashboard() en dashboard-2.html: primero se descarta la fila
-    // cuyo Asesor crudo ya es 'Timoteo Antonio Perez' literal, y LUEGO se
-    // resuelve el Asesor real de cada fila contra el catalogo por Tienda (D2 no
-    // trae CR) via resolveAsesorD1. Sin este paso, las bajas de tiendas sin AT
-    // vigente que el catalogo reatribuye a Timoteo (regla Anadelia/herencia) se
-    // perdian del conteo en vez de contarse bajo Timoteo -- el total de esta
-    // funcion quedaba por debajo del "Total Bajas" real del dashboard (11 bajas
-    // de diferencia detectadas en una revision).
-    const asesorCatalog = await OXXO.loadAsesorCatalog();
-    const rawSinTimoteoLiteral = raw.filter(r => normText(val(r, asesorKey)).replace(/[^A-Z]/g,'') !== 'TIMOTEOANTONIOPEREZ');
-    rawSinTimoteoLiteral.forEach(r => {
-      r[asesorKey] = OXXO.resolveAsesorD1(asesorCatalog, { tienda: val(r, tiendaKey), asesor: val(r, asesorKey) });
-    });
-    // Igual que filterData() en dashboard-2.html: si la hoja trae columna de
-    // Medida, quedarse solo con movimientos de BAJA; si trae Plaza, quedarse
-    // solo con Oaxaca. Cada filtro solo se aplica si existe la columna y deja
-    // al menos una fila (mismo criterio "solo si aplica" del dashboard).
-    const base = OXXO.metricsFilterBajasD2(rawSinTimoteoLiteral, { medidaKey, plazaKey });
-    const { mes, rows: byMonth } = filterLatestMonth(base, r => rowMonthKeyD2(r, mesKey, fechaKey), targetMes);
-    // 'Sin Asesor Asignado' que sobrevive a resolveAsesorD1 es el caso legitimo
-    // sin reatribucion (tiendas de Entrenamiento/Operaciones): se excluye igual
-    // que defaultAsesorSelection() en dashboard-2.html, que lo quita por
-    // defecto. Puesto NO se filtra: el dashboard no excluye "Otro" por
-    // defecto, y Total Bajas cuenta cada fila igual que aqui (Otro se rastrea
-    // aparte en byPuesto, sin aparecer en el donut, igual que dataD1()).
-    const rows = byMonth.filter(r => {
-      const asesor = normText(val(r, asesorKey));
-      return asesor && !asesor.includes('SIN ASESOR');
-    });
+    const source = await OXXO.metricsD2Rows(targetMes);
+    if (!source) return null;
+    const { rows, mes, puestoKey, asesorKey } = source;
     const byPuesto = { Lider: 0, Encargado: 0, Ayudante: 0, Otro: 0 };
     rows.forEach(r => { byPuesto[tipoPuesto(val(r, puestoKey))]++; });
     return {
@@ -253,6 +184,7 @@
       .slice(0, 15);
 
     return {
+      sub: fecha ? `Corte ${fecha}` : 'Corte no informado',
       pct, completas, incompletas, criticas,
       plazas: plazas.slice(0, 5),
       ranking,
@@ -331,6 +263,7 @@
     const subDotadas = rows.filter(r => num(val(r, activosKey)) < num(val(r, treoKey))).length;
     const sobreDotadas = rows.filter(r => num(val(r, activosKey)) > num(val(r, treoKey))).length;
     return {
+      sub: 'Vigente: TREO + D1',
       total, alineadas, subir, bajar, posSubir, posBajar,
       totalTreo, totalActivos, totalVacantes, cobertura,
       subDotadas, sobreDotadas,
@@ -350,7 +283,7 @@
     slide.addText(title, { x: MARGIN_X, y: 0, w: 7.5, h: HEADER_H, fontSize, bold: true, color: WHITE, fontFace: 'Arial', valign: 'middle', margin: 0 });
     slide.addShape('roundRect', { x: 8.05, y: 0.26, w: 2.55, h: 0.42, rectRadius: 0.08, fill: { color: GOLD }, line: { type: 'none' } });
     slide.addText('Plaza Oaxaca', { x: 8.05, y: 0.26, w: 2.55, h: 0.42, fontSize: 13, bold: true, color: BADGETEXT, fontFace: 'Arial', align: 'center', valign: 'middle', margin: 0 });
-    slide.addText(`OXXO · Uso Interno · ${dateLabel}`, { x: 10.7, y: 0, w: 2.2, h: HEADER_H, fontSize: 10, color: SUBTLE, fontFace: 'Arial', align: 'right', valign: 'middle', margin: 0 });
+    slide.addText(`OXXO · Uso Interno · ${dateLabel}`, { x: 10.7, y: 0, w: 2.2, h: HEADER_H, fontSize: 10, color: SUBTLE, fontFace: 'Arial', align: 'right', valign: 'middle', margin: 0, fit: 'shrink' });
   }
 
   function addSectionTitle(slide, x, y, w, text, rightText){
@@ -544,7 +477,7 @@
     const slide = pptx.addSlide();
     slide.background = { color: WHITE };
     addHeader(slide, title, dateLabel);
-    slide.addText('Sin datos disponibles en Google Sheets', { x: MARGIN_X, y: 3, w: PAGE_W - MARGIN_X*2, h: 0.6, fontSize: 18, color: MUTED, align: 'center', fontFace: 'Arial' });
+    slide.addText('Sin datos disponibles para este corte; no se sustituyó por otro periodo', { x: MARGIN_X, y: 3, w: PAGE_W - MARGIN_X*2, h: 0.6, fontSize: 18, color: MUTED, align: 'center', fontFace: 'Arial' });
     return slide;
   }
 
@@ -570,6 +503,7 @@
       { label: 'Ayudante', value: d.byPuesto.Ayudante, color: GOLD },
       { label: 'Encargado', value: d.byPuesto.Encargado, color: ORANGE },
       { label: 'Lider', value: d.byPuesto.Lider, color: RED },
+      { label: 'Otro', value: d.byPuesto.Otro, color: MUTED },
     ]);
   }
 
@@ -692,7 +626,7 @@
       for(const d of DASHBOARDS){
         try {
           const data = await d.fetch();
-          if(data) d.build(pptx, data, dateLabel);
+          if(data) d.build(pptx, data, data.sub || 'Corte no informado');
           else emptySlide(pptx, d.title, dateLabel);
         } catch(e){
           console.error('Error generando slide', d.title, e);

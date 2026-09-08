@@ -136,7 +136,7 @@
     const d2 = await OXXO.metricsD2Rows();
     if(!d2) return null;
     const rows = d2.rows.filter(r => esMismoAsesor(r, d2.asesorKey, nombre));
-    const byPuesto = { Lider: 0, Encargado: 0, Ayudante: 0 };
+    const byPuesto = { Lider: 0, Encargado: 0, Ayudante: 0, Otro: 0 };
     rows.forEach(r => { byPuesto[tipoPuesto(val(r, d2.puestoKey))]++; });
     return { total: rows.length, byPuesto, mes: d2.mes };
   }
@@ -202,6 +202,7 @@
       { label: 'Ayudante', value: d.byPuesto.Ayudante, color: GOLD },
       { label: 'Encargado', value: d.byPuesto.Encargado, color: ORANGE },
       { label: 'Lider', value: d.byPuesto.Lider, color: RED },
+      { label: 'Otro', value: d.byPuesto.Otro, color: MUTED },
     ]);
   }
 
