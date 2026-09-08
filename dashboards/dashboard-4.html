@@ -365,7 +365,8 @@
 </div>
 
   <script src="../js/config.js?v=20260903commitments1"></script>
-<script src="../js/core.js?v=20260904locale1"></script>
+<script src="../js/core.js?v=20260908consistency1"></script>
+<script src="../js/metrics-periods.js?v=20260908consistency1"></script>
 <script>
 const TAB = OXXO.SHEETS_CONFIG.TABS.s4;
 const ALIASES_D4 = {
@@ -750,21 +751,22 @@ document.getElementById('clear-filter').onclick = ()=>setFilter(null);
 
 async function initDashboard() {
   OXXO.renderDownloadButton('hero-download','s4');
-  const data = await OXXO.fetchSheetData(TAB);
+  let data = await OXXO.fetchSheetData(TAB);
   if(data===null){['kpi-section','ranking-container','tabla-detalle'].forEach(id=>OXXO.showError(id,'No se pudo conectar.'));return;}
   if(data.length===0){['kpi-section','ranking-container','tabla-detalle'].forEach(id=>OXXO.showEmpty(id));return;}
   C = buildColsD4(data[0]);
   const asesorCatalog = await OXXO.loadAsesorCatalog();
-  data.forEach(row => OXXO.applyAsesorCatalog(row, asesorCatalog, { asesorKey:C.asesor, tiendaKey:C.tienda, crKey:C.cr }));
-  BASE_DATA = OXXO.filterValidTiendas(data, asesorCatalog, C.tienda, C.cr);
-  // Populate dropdowns
-  const semanas = sortSemanas([...new Set(data.map(r=>String(r[C.semana] || '').trim()).filter(Boolean))]);
+  const period = OXXO.metricsPreparePeriodSource(data, asesorCatalog, { asesorKey:C.asesor, tiendaKey:C.tienda, crKey:C.cr, mesKey:C.mes, anoKey:C.año, semanaKey:C.semana });
+  data = period.rows.map(row => ({ ...row, __oxxoPeriod: period.periodOf(row) }));
+  C.semana = '__oxxoPeriod';
+  BASE_DATA = data;
+  const semanas = period.periods;
   DEFAULT_SEMANA = semanas[0] || '';
   DROP_SEMANA = DEFAULT_SEMANA;
   const selSemana = document.getElementById('filtro-semana');
-  semanas.forEach(s=>{ const o=document.createElement('option');o.value=s;o.textContent=semanaLabel(s);selSemana.appendChild(o); });
+  semanas.forEach(s=>{ const o=document.createElement('option');o.value=s;o.textContent=s;selSemana.appendChild(o); });
   selSemana.value = DEFAULT_SEMANA;
-  document.getElementById('semana-badge').textContent = DEFAULT_SEMANA ? 'Sem ' + DEFAULT_SEMANA + ' - Plaza Oaxaca' : 'Semanal - Plaza Oaxaca';
+  document.getElementById('semana-badge').textContent = DEFAULT_SEMANA ? DEFAULT_SEMANA + ' · ' + OXXO.getScopeLabel() : 'Semanal - Plaza Oaxaca';
 
   const asesores = [...new Set(data.map(r=>r[C.asesor]).filter(Boolean))].sort();
   const tiendas  = [...new Set(data.map(r=>r[C.tienda]).filter(Boolean))].sort();

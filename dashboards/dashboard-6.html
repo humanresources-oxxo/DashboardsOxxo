@@ -248,7 +248,8 @@
 </div>
 
   <script src="../js/config.js?v=20260903commitments1"></script>
-<script src="../js/core.js?v=20260904locale1"></script>
+<script src="../js/core.js?v=20260908consistency1"></script>
+<script src="../js/metrics-periods.js?v=20260908consistency1"></script>
 <script>
 const TAB = OXXO.SHEETS_CONFIG.TABS.s6;
 
@@ -540,24 +541,17 @@ async function initDashboard() {
   if(data.length===0){['kpi-section','ranking-asesores','tabla-detalle'].forEach(id=>OXXO.showEmpty(id));return;}
   C = buildColsD6(data[0]);
   const asesorCatalog = await OXXO.loadAsesorCatalog();
-  data.forEach(row => OXXO.applyAsesorCatalog(row, asesorCatalog, { asesorKey:C.asesor, tiendaKey:C.tienda, crKey:C.cr }));
-  data = OXXO.filterValidTiendas(data, asesorCatalog, C.tienda, C.cr);
-
-  // Conservamos el historico para permitir cambiar de semana. La vista inicia en la
-  // semana mas reciente, evitando mezclar periodos en las KPIs y graficas.
-  LATEST_SEMANA = OXXO.metricsLatestSemanaNumerica(data, C.semana) || '';
+  const period = OXXO.metricsPreparePeriodSource(data, asesorCatalog, { asesorKey:C.asesor, tiendaKey:C.tienda, crKey:C.cr, mesKey:C.mes, anoKey:C.año, semanaKey:C.semana });
+  data = period.rows.map(row => ({ ...row, __oxxoPeriod: period.periodOf(row) }));
+  C.semana = '__oxxoPeriod';
   BASE_DATA = data;
+  LATEST_SEMANA = period.currentPeriod;
 
   // Poblar filtros
   const asesores  = [...new Set(data.map(r=>r[C.asesor]).filter(Boolean))].sort();
   const tipos     = [...new Set(data.map(r=>r[C.tipo]).filter(Boolean))].sort();
   const funciones = [...new Set(data.map(r=>r[C.funcion]).filter(Boolean))].sort();
-  const semanas   = [...new Set(data.map(r=>String(r[C.semana]||'').trim()).filter(Boolean))]
-    .sort((a,b) => {
-      const na = Number((a.match(/\d+/)||[])[0]) || 0;
-      const nb = Number((b.match(/\d+/)||[])[0]) || 0;
-      return nb - na || b.localeCompare(a,'es');
-    });
+  const semanas = period.periods;
 
   asesorFilterHandle = OXXO.mountAsesorFilter('filtro-asesor', asesores, {
     onChange: (selected) => { SELECTED_ASESORES = selected; renderAll(); },

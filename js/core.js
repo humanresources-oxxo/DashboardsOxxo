@@ -2633,12 +2633,13 @@ async function metricsD1Rows(allMonths = false) {
       return copy;
     });
   const base = metricsApplyD1Defaults(stepCatalog, { tiendaKey, asesorKey, puestoKey, diasKey });
-  if (allMonths) return { rows: base, mes: '', asesorKey, puestoKey, tiendaKey, mesKey, fechaKey };
+  const currentMonth = metricsFilterLatestMonth(raw, r => metricsRowMonthKeyD1(r, mesKey, fechaKey)).mes;
+  if (allMonths) return { rows: base, mes: '', currentMonth, asesorKey, puestoKey, tiendaKey, mesKey, fechaKey };
   // El corte vigente se determina con la fuente completa del alcance, no con
   // las vacantes que sobrevivieron los filtros. Si el mes actual tiene cero
   // vacantes operativas (caso real: Tuxtla, agosto 2026), elegir el ultimo mes
   // dentro de `base` podia retroceder silenciosamente a un periodo anterior.
-  const mes = metricsFilterLatestMonth(raw, r => metricsRowMonthKeyD1(r, mesKey, fechaKey)).mes;
+  const mes = currentMonth;
   const rows = mes ? base.filter(r => metricsRowMonthKeyD1(r, mesKey, fechaKey) === mes) : base;
   return { rows, mes, asesorKey, puestoKey, tiendaKey, mesKey, fechaKey };
 }

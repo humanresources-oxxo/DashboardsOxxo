@@ -53,9 +53,10 @@
       ASESORES.add(t);
     });
   }
+  const lookupRows = OXXO.metricsCreateRowLookup();
   function rowsFor(d, asesor) {
     if (asesor === TODOS_ASESORES) return filasDeAsesores(d);
-    return d.rows.filter((r) => V(r, d.asesorKey) === asesor);
+    return lookupRows(d, asesor, r => V(r, d.asesorKey), CATALOG);
   }
 
   // ── D1 · Vacantes Diarias (mismo pipeline que dashboard-1.html) ──
@@ -124,7 +125,8 @@
       const operativos = base.filter((r) => { const p = OXXO.metricsNormText(V(r, puestoKey)); return p.includes('AYUDANTE') || p.includes('ENCARGADO') || p.includes('LIDER') || p.includes('LÍDER'); });
       if (operativos.length) base = operativos;
     }
-    const { mes, rows } = OXXO.metricsFilterLatestMonth(base, (r) => OXXO.metricsRowMonthKeyD2(r, mesKey, fechaKey));
+    const { mes } = OXXO.metricsFilterLatestMonth(raw, (r) => OXXO.metricsRowMonthKeyD2(r, mesKey, fechaKey));
+    const rows = mes ? base.filter(r => OXXO.metricsRowMonthKeyD2(r, mesKey, fechaKey) === mes) : base;
     DATA.d2 = { rows, mes, asesorKey, tiendaKey, puestoKey, motivoKey, detalleKey, fechaKey };
     addAsesores(rows.map((r) => V(r, asesorKey)));
   }
@@ -219,7 +221,7 @@
 
   // ── D4 · Tiempo Extra (mismo pipeline que dashboard-4.html) ──
   async function loadD4() {
-    const raw = await OXXO.fetchSheetData(OXXO.SHEETS_CONFIG.TABS.s4);
+    let raw = await OXXO.fetchSheetData(OXXO.SHEETS_CONFIG.TABS.s4);
     if (!raw || !raw.length) { DATA.d4 = null; return; }
     const h = raw[0];
     const asesorKey = K(h, ['Asesor']);
@@ -228,12 +230,12 @@
     const semanaKey = K(h, ['Semana']);
     const horasKey = K(h, ['Cantidad']);
     const importeKey = K(h, ['Importe']);
-    raw.forEach((r) => OXXO.applyAsesorCatalog(r, CATALOG, { asesorKey, tiendaKey, crKey }));
-    const semanas = [...new Set(raw.map((r) => String(V(r, semanaKey) || '').trim()).filter(Boolean))];
-    semanas.sort((a, b) => semanaRank(b) - semanaRank(a));
-    const semana = semanas[0] || '';
-    const rows = semana ? raw.filter((r) => String(V(r, semanaKey) || '').trim() === semana) : raw;
-    DATA.d4 = { rows, semana, asesorKey, tiendaKey, horasKey, importeKey };
+    const mesKey = K(h, ['Mes']);
+    const anoKey = K(h, ['Ano', 'Año']);
+    const period = OXXO.metricsPreparePeriodSource(raw, CATALOG, { asesorKey, tiendaKey, crKey, mesKey, anoKey, semanaKey });
+    raw = period.rows;
+    const rows = period.currentRows, semana = period.currentPeriod;
+    DATA.d4 = { period, rows, semana, asesorKey, tiendaKey, horasKey, importeKey };
     addAsesores(rows.map((r) => V(r, asesorKey)));
   }
   function renderD4(asesor) {
@@ -322,9 +324,9 @@
     return { colaboradores: rows.length, diasVac: totDias, vencidos, proximos };
   }
 
-  // ── D6 · Ausentismos (mismo pipeline que dashboard-6.html; sin filtro de semana por defecto) ──
+  // ── D6 · Ausentismos (mismo corte semanal que dashboard-6.html) ──
   async function loadD6() {
-    const raw = await OXXO.fetchSheetData(OXXO.SHEETS_CONFIG.TABS.s6);
+    let raw = await OXXO.fetchSheetData(OXXO.SHEETS_CONFIG.TABS.s6);
     if (!raw || !raw.length) { DATA.d6 = null; return; }
     const h = raw[0];
     const asesorKey = K(h, ['Asesor']);
@@ -334,16 +336,13 @@
     const diasKey = K(h, ['Dias', 'Días']);
     const nombreKey = K(h, ['Nombre del empleado o candidato', 'Nombre del empleado']);
     const noPersKey = K(h, ['N de personal', 'N de Personal', 'No de personal', 'N° de personal']);
-    // Dashboard 6 muestra la SEMANA MAS RECIENTE (su filtro de semana arranca
-    // en "Semana mas reciente"); esta ficha se quedaba con la hoja completa y
-    // sumaba todas las semanas publicadas. Con seis semanas en la base, un
-    // asesor con 24 ausentismos en la semana vigente aparecia con 248. Se usa
-    // el mismo helper que el tablero para que las dos pantallas corten igual.
+    const mesKey = K(h, ['Mes']);
+    const anoKey = K(h, ['Ano', 'Año']);
     const semanaKey = K(h, ['Semana']);
-    const semana = semanaKey ? OXXO.metricsLatestSemanaNumerica(raw, semanaKey) : '';
-    const rows = semana ? raw.filter((r) => String(V(r, semanaKey) || '').trim() === semana) : raw;
-    raw.forEach((r) => OXXO.applyAsesorCatalog(r, CATALOG, { asesorKey, tiendaKey, crKey }));
-    DATA.d6 = { rows, semana, asesorKey, tiendaKey, tipoKey, diasKey, nombreKey, noPersKey };
+    const period = OXXO.metricsPreparePeriodSource(raw, CATALOG, { asesorKey, tiendaKey, crKey, mesKey, anoKey, semanaKey });
+    raw = period.rows;
+    const rows = period.currentRows, semana = period.currentPeriod;
+    DATA.d6 = { period, rows, semana, asesorKey, tiendaKey, tipoKey, diasKey, nombreKey, noPersKey };
     addAsesores(raw.map((r) => V(r, asesorKey)));
   }
   function renderD6(asesor) {
@@ -441,7 +440,7 @@
     { key: 'Promedio de ModuloCercaSiempre2026', label: 'Módulo Cerca Siempre' },
   ];
   async function loadD8() {
-    const raw = await OXXO.fetchSheetData(OXXO.SHEETS_CONFIG.TABS.d8);
+    let raw = await OXXO.fetchSheetData(OXXO.SHEETS_CONFIG.TABS.d8);
     if (!raw || !raw.length) { DATA.d8 = null; return; }
     const h = raw[0];
     const asesorKey = K(h, ['Asesor_Correcto', 'Asesor']);
@@ -453,6 +452,7 @@
     const certRealKeys = {};
     CERT_COLS.forEach((c) => { certRealKeys[c.key] = K(h, [c.key]) || c.key; });
     raw.forEach((r) => OXXO.applyAsesorCatalog(r, CATALOG, { asesorKey, tiendaKey: unidadKey, crKey }));
+    raw = OXXO.filterValidTiendas(raw, CATALOG, unidadKey, crKey);
     DATA.d8 = { rows: raw, asesorKey, unidadKey, tiendaKey: unidadKey, crKey, noPersKey, empleadoKey, puestoKey, certRealKeys };
     addAsesores(raw.map((r) => V(r, asesorKey)));
   }

@@ -24,6 +24,7 @@ let source = fs.readFileSync(path.join(__dirname, '../js/mi-dashboard.js'), 'utf
 source = source.replace('  OXXO.setRetryHandler(init);', `
   window.testAPI = { DATA, ASESORES, TODOS_ASESORES, rowsFor, renderFor, mountAsesorSelector };
   OXXO.setRetryHandler(init);`);
+vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../js/metrics-periods.js'), 'utf8'), context);
 vm.runInNewContext(source, context);
 const api = context.window.testAPI;
 api.ASESORES.add('Ana');

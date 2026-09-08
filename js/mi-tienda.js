@@ -75,11 +75,7 @@
   // "ago-26" o fechas completas) no reconoce ese formato y regresa ''. Como
   // el numero de mes ya viene al inicio del texto, es mas simple y confiable
   // leerlo directo que intentar generalizar el helper compartido.
-  function mesKeyFromMesAno(mesRaw, anoRaw) {
-    const mm = String(mesRaw || '').match(/^(\d{1,2})/);
-    const yyyy = String(anoRaw || '').match(/(\d{4})/);
-    return (mm && yyyy) ? `${yyyy[1]}-${mm[1].padStart(2, '0')}` : '';
-  }
+  function mesKeyFromMesAno(mesRaw, anoRaw) { return OXXO.metricsMonthFromParts(mesRaw, anoRaw); }
   function renderMonthsAccordion(container, rows, monthKeyFn, { titulo, summaryHtml, theadHtml, rowsHtml }) {
     if (!rows.length) { container.innerHTML = ''; return; }
     const porMes = new Map();
@@ -128,8 +124,9 @@
   function rowKey(row, d) {
     return canonKey(d.crKey ? V(row, d.crKey) : '', V(row, d.tiendaKey));
   }
+  const lookupRows = OXXO.metricsCreateRowLookup();
   function rowsFor(d, tienda) {
-    return d.rows.filter((r) => rowKey(r, d) === tienda);
+    return lookupRows(d, tienda, r => rowKey(r, d), CATALOG);
   }
   function addTiendas(rows, tiendaKey, crKey) {
     if (!tiendaKey) return;
@@ -152,10 +149,10 @@
     const d1 = await OXXO.metricsD1Rows(true);
     if (!d1) { DATA.d1 = null; return; }
     const diasKey = d1.rows[0] ? K(d1.rows[0], ['Dias Vacantes', 'Dias_Vacantes']) : null;
-    const fechaKey = d1.rows[0] ? K(d1.rows[0], ['Fecha']) : null;
+    const fechaKey = d1.fechaKey;
     const crKey = d1.rows[0] ? K(d1.rows[0], ['CR TIENDA', 'CR']) : null;
     const statusKey = d1.rows[0] ? K(d1.rows[0], ['Status ocupacion', 'Status ocupación', 'Estatus ocupacion']) : null;
-    const currentMonth = OXXO.metricsFilterLatestMonth(d1.rows, (r) => OXXO.metricsRowMonthKeyD1(r, d1.mesKey, fechaKey)).mes;
+    const currentMonth = d1.currentMonth || '';
     DATA.d1 = { ...d1, diasKey, fechaKey, crKey, statusKey, currentMonth };
     addTiendas(d1.rows, d1.tiendaKey, crKey);
   }
@@ -225,7 +222,7 @@
       const operativos = base.filter((r) => { const p = OXXO.metricsNormText(V(r, puestoKey)); return p.includes('AYUDANTE') || p.includes('ENCARGADO') || p.includes('LIDER') || p.includes('LÍDER'); });
       if (operativos.length) base = operativos;
     }
-    const currentMonth = OXXO.metricsFilterLatestMonth(base, (r) => OXXO.metricsRowMonthKeyD2(r, mesKey, fechaKey)).mes;
+    const currentMonth = OXXO.metricsFilterLatestMonth(raw, (r) => OXXO.metricsRowMonthKeyD2(r, mesKey, fechaKey)).mes;
     DATA.d2 = { rows: base, asesorKey, tiendaKey, puestoKey, motivoKey, detalleKey, fechaKey, mesKey, currentMonth };
     addTiendas(base, tiendaKey);
   }
@@ -337,7 +334,7 @@
 
   // ── D4 · Tiempo Extra (mismo pipeline que dashboard-4.html) ──
   async function loadD4() {
-    const raw = await OXXO.fetchSheetData(OXXO.SHEETS_CONFIG.TABS.s4);
+    let raw = await OXXO.fetchSheetData(OXXO.SHEETS_CONFIG.TABS.s4);
     if (!raw || !raw.length) { DATA.d4 = null; return; }
     const h = raw[0];
     const asesorKey = K(h, ['Asesor']);
@@ -350,13 +347,10 @@
     const horasKey = K(h, ['Cantidad']);
     const importeKey = K(h, ['Importe']);
     const conceptoKey = K(h, ['Textos homologados', 'Texto homologado']);
-    raw.forEach((r) => OXXO.applyAsesorCatalog(r, CATALOG, { asesorKey, tiendaKey, crKey }));
-    const monthOf = (r) => mesKeyFromMesAno(V(r, mesKey), V(r, anoKey));
-    const currentMonth = [...new Set(raw.map(monthOf).filter(Boolean))].sort().slice(-1)[0] || '';
-    const currentMonthRows = currentMonth ? raw.filter((r) => monthOf(r) === currentMonth) : [];
-    const currentWeek = [...new Set(currentMonthRows.map((r) => String(V(r, semanaKey) || '').trim()).filter(Boolean))]
-      .sort((a, b) => semanaRank(b) - semanaRank(a))[0] || '';
-    DATA.d4 = { rows: raw, asesorKey, tiendaKey, crKey, nombreKey, semanaKey, mesKey, anoKey, horasKey, importeKey, conceptoKey, currentMonth, currentWeek };
+    const period = OXXO.metricsPreparePeriodSource(raw, CATALOG, { asesorKey, tiendaKey, crKey, mesKey, anoKey, semanaKey });
+    raw = period.rows;
+    const currentMonth = period.currentMonth, currentWeek = period.currentWeek;
+    DATA.d4 = { period, rows: raw, asesorKey, tiendaKey, crKey, nombreKey, semanaKey, mesKey, anoKey, horasKey, importeKey, conceptoKey, currentMonth, currentWeek };
     addTiendas(raw, tiendaKey, crKey);
   }
   function semanaRank(value) {
@@ -383,7 +377,7 @@
     const rowsMes = mesVigente ? allRows.filter((r) => mesKeyFn(r) === mesVigente) : [];
     const previousRowsMes = mesVigente ? allRows.filter((r) => mesKeyFn(r) === previousMonthKey(mesVigente)) : [];
     const semana = d.currentWeek || '';
-    const rows = semana ? rowsMes.filter((r) => String(V(r, d.semanaKey) || '').trim() === semana) : rowsMes;
+    const rows = allRows.filter(r => d.period.periodOf(r) === d.period.currentPeriod);
     const corteD4 = semana ? `${/sem/i.test(semana) ? semana : 'Sem ' + semana} · ${mesLabel(mesVigente)}` : (mesVigente ? mesLabel(mesVigente) : 'Sin fecha');
     setSectionBadge('badge-d4', 'Corte', corteD4, 'is-current');
     const totHoras = rows.reduce((s, r) => s + numParse(V(r, d.horasKey)), 0);
@@ -484,7 +478,7 @@
 
   // ── D6 · Ausentismos (mismo pipeline que dashboard-6.html) ──
   async function loadD6() {
-    const raw = await OXXO.fetchSheetData(OXXO.SHEETS_CONFIG.TABS.s6);
+    let raw = await OXXO.fetchSheetData(OXXO.SHEETS_CONFIG.TABS.s6);
     if (!raw || !raw.length) { DATA.d6 = null; return; }
     const h = raw[0];
     const asesorKey = K(h, ['Asesor']);
@@ -497,10 +491,11 @@
     const puestoKey = K(h, ['Puesto']);
     const mesKey = K(h, ['Mes']);
     const anoKey = K(h, ['Ano', 'Año']);
-    raw.forEach((r) => OXXO.applyAsesorCatalog(r, CATALOG, { asesorKey, tiendaKey, crKey }));
-    const monthOf = (r) => mesKeyFromMesAno(V(r, mesKey), V(r, anoKey));
-    const currentMonth = [...new Set(raw.map(monthOf).filter(Boolean))].sort().slice(-1)[0] || '';
-    DATA.d6 = { rows: raw, asesorKey, tiendaKey, crKey, tipoKey, diasKey, nombreKey, noPersKey, puestoKey, mesKey, anoKey, currentMonth };
+    const semanaKey = K(h, ['Semana']);
+    const period = OXXO.metricsPreparePeriodSource(raw, CATALOG, { asesorKey, tiendaKey, crKey, mesKey, anoKey, semanaKey });
+    raw = period.rows;
+    const currentMonth = period.currentMonth, currentWeek = period.currentWeek;
+    DATA.d6 = { period, rows: raw, asesorKey, tiendaKey, crKey, tipoKey, diasKey, nombreKey, noPersKey, puestoKey, mesKey, anoKey, currentMonth };
     addTiendas(raw, tiendaKey, crKey);
   }
   function renderD6(tienda) {
@@ -511,19 +506,20 @@
     el.classList.add('show');
     const mesKeyFn = (r) => mesKeyFromMesAno(V(r, d.mesKey), V(r, d.anoKey));
     const mesVigente = d.currentMonth || '';
-    const rows = mesVigente ? allRows.filter((r) => mesKeyFn(r) === mesVigente) : [];
+    const monthRows = mesVigente ? allRows.filter((r) => mesKeyFn(r) === mesVigente) : [];
+    const rows = allRows.filter(r => d.period.periodOf(r) === d.period.currentPeriod);
     const previousRows = mesVigente ? allRows.filter((r) => mesKeyFn(r) === previousMonthKey(mesVigente)) : [];
-    setSectionBadge('badge-d6', 'Corte', mesVigente ? mesLabel(mesVigente) : 'Sin fecha', 'is-current');
+    setSectionBadge('badge-d6', 'Corte semanal', d.period.currentPeriod || 'Sin fecha', 'is-current');
     const empleados = new Set(rows.map((r) => V(r, d.noPersKey) || V(r, d.nombreKey))).size;
     const totDias = rows.reduce((s, r) => s + (parseFloat(V(r, d.diasKey)) || 0), 0);
     const previousDays = previousRows.reduce((s, r) => s + (parseFloat(V(r, d.diasKey)) || 0), 0);
-    const trend = trendHTML(totDias, previousDays, 'Días ausentes vs. mes anterior');
+    const trend = trendHTML(monthRows.reduce((sum, r) => sum + (parseFloat(V(r, d.diasKey)) || 0), 0), previousDays, 'Días del mes vs. mes anterior');
     const faltas = rows.filter((r) => OXXO.metricsNormText(V(r, d.tipoKey)).includes('FALTA')).length;
     const porTipo = {};
     rows.forEach((r) => { const tipo = V(r, d.tipoKey) || 'Sin tipo'; porTipo[tipo] = (porTipo[tipo] || 0) + (parseFloat(V(r, d.diasKey)) || 0); });
     if (!rows.length) {
       document.getElementById('stats-d6').innerHTML = '';
-      document.getElementById('viz-d6').innerHTML = trend + clearBox('Sin ausentismos registrados este mes');
+      document.getElementById('viz-d6').innerHTML = trend + clearBox('Sin ausentismos registrados en el corte semanal');
     } else {
       document.getElementById('stats-d6').innerHTML =
         statTile(n(empleados), 'Empleados', 'rojo') +
@@ -696,7 +692,7 @@
     { key: 'Promedio de ModuloCercaSiempre2026', label: 'Módulo Cerca Siempre' },
   ];
   async function loadD8() {
-    const raw = await OXXO.fetchSheetData(OXXO.SHEETS_CONFIG.TABS.d8);
+    let raw = await OXXO.fetchSheetData(OXXO.SHEETS_CONFIG.TABS.d8);
     if (!raw || !raw.length) { DATA.d8 = null; return; }
     const h = raw[0];
     const asesorKey = K(h, ['Asesor_Correcto', 'Asesor']);
@@ -708,6 +704,7 @@
     const certRealKeys = {};
     CERT_COLS.forEach((c) => { certRealKeys[c.key] = K(h, [c.key]) || c.key; });
     raw.forEach((r) => OXXO.applyAsesorCatalog(r, CATALOG, { asesorKey, tiendaKey: unidadKey, crKey }));
+    raw = OXXO.filterValidTiendas(raw, CATALOG, unidadKey, crKey);
     DATA.d8 = { rows: raw, asesorKey, unidadKey, tiendaKey: unidadKey, crKey, noPersKey, empleadoKey, puestoKey, certRealKeys };
     addTiendas(raw, unidadKey, crKey);
   }
@@ -1182,85 +1179,34 @@
   }
 
   // A diferencia del resumen (un indicador -> una tarjeta) y las alertas (un
-  // indicador -> un chip), esto combina 2+ indicadores de DISTINTAS fuentes
-  // en una sola historia -- el tipo de lectura que antes exigia comparar a
-  // mano varios paneles (ej. "el ausentismo esta detras de la brecha de
-  // estructura", "la rotacion se esta pagando en tiempo extra"). Cada regla
-  // se apaga sola si a la tienda le falta alguna de las fuentes que cruza.
+  // Cruza únicamente meses coincidentes; una coincidencia no demuestra causalidad.
   function renderLecturaCruzada(S) {
-    const insights = [];
-
-    if (S.d3 && S.d6 && Number.isFinite(S.d3.ec) && Number.isFinite(S.d3.ecSin)) {
-      const brecha = S.d3.ecSin - S.d3.ec;
-      if (brecha >= 10 && S.d6.diasAus > 0) {
-        insights.push({
-          level: brecha >= 20 ? 'high' : 'medium',
-          title: `El ausentismo explica ${brecha} pts de la brecha de estructura`,
-          detail: `Sin su impacto, Equipo Completo subiría de ${S.d3.ec}% a ${S.d3.ecSin}%. Ya van ${n(S.d6.diasAus)} días de ausentismo este mes.`,
-        });
-      }
-    }
-
-    if (S.d1?.vacantes > 0 && S.d2?.bajas > 0 && S.d4?.horas > 0) {
-      insights.push({
-        level: S.d4.horas >= 20 ? 'high' : 'medium',
-        title: 'La rotación se está pagando en tiempo extra',
-        detail: `${S.d1.vacantes} vacante${S.d1.vacantes > 1 ? 's' : ''} sin cubrir y ${S.d2.bajas} baja${S.d2.bajas > 1 ? 's' : ''} este mes coinciden con ${n(S.d4.horas)}h de tiempo extra${S.d4.gasto ? ` ($${n(S.d4.gasto)})` : ''}.`,
-      });
-    } else if (S.d6?.diasAus >= 10 && S.d4?.horas >= 20) {
-      // Misma idea que la anterior pero sin vacantes/bajas de por medio: el
-      // ausentismo puro cubierto con TE. No se agregan las dos a la vez
-      // para no contar la misma historia de tiempo extra dos veces.
-      insights.push({
-        level: 'medium',
-        title: 'El ausentismo se está cubriendo con tiempo extra',
-        detail: `${n(S.d6.diasAus)} días de ausentismo (${n(S.d6.ausentes)} persona${S.d6.ausentes > 1 ? 's' : ''}) coinciden con ${n(S.d4.horas)}h de tiempo extra${S.d4.gasto ? ` ($${n(S.d4.gasto)})` : ''}.`,
-      });
-    }
-
-    if (S.d7?.mov?.cls === 'bajar' && S.d1?.vacantes > 0) {
-      insights.push({
-        level: 'medium',
-        title: 'TREO sugiere bajar estructura, pero hay vacantes activas',
-        detail: `La estructura óptima pide bajar ${Math.abs(S.d7.dif)} posición${Math.abs(S.d7.dif) > 1 ? 'es' : ''}; antes de cubrir ${S.d1.vacantes > 1 ? 'las' : 'la'} ${S.d1.vacantes} vacante${S.d1.vacantes > 1 ? 's' : ''}, valida si de verdad se necesita${S.d1.vacantes > 1 ? 'n' : ''}.`,
-      });
-    }
-
-    if (S.inventarios?.ratio > .005 && S.d9?.faltante > 0) {
-      insights.push({
-        level: S.inventarios.ratio > .01 ? 'high' : 'medium',
-        title: 'Dos señales de control interno al mismo tiempo',
-        detail: `Merma de inventario al ${invPercent(S.inventarios.ratio)} y $${n(S.d9.faltante)} en faltantes de caja este periodo.`,
-      });
-    }
-
-    if (S.d8?.pendientes > 0 && S.d2?.bajas > 0) {
-      insights.push({
-        level: 'medium',
-        title: 'Posible personal nuevo sin capacitación completa',
-        detail: `${S.d2.bajas} baja${S.d2.bajas > 1 ? 's' : ''} este mes y ${n(S.d8.pendientes)} persona${S.d8.pendientes > 1 ? 's' : ''} con certificaciones pendientes: revisa si el equipo ya completó lo básico.`,
-      });
-    }
-
-    if (S.d11 && S.d11.cumplTotal != null && S.d11.cumplTotal < 80 && S.d6?.faltas > 0) {
-      insights.push({
-        level: S.d11.cumplTotal < 60 ? 'high' : 'medium',
-        title: 'El checador podría no reflejar el ausentismo real',
-        detail: `Cumplimiento de registro al ${S.d11.cumplTotal}%; con ese nivel, conviene confirmar ${S.d6.faltas > 1 ? `las ${S.d6.faltas} faltas detectadas` : 'la falta detectada'} antes de actuar sobre ${S.d6.faltas > 1 ? 'ellas' : 'ella'}.`,
-      });
-    }
-
     const container = document.getElementById('ficha-cruzado');
     if (!container) return;
-    const list = insights.length
-      ? insights.map((i) => signalHTML(i.level, i.title, i.detail)).join('')
-      : signalHTML('low', 'Sin señales cruzadas', 'Los indicadores de esta tienda no muestran, por ahora, patrones combinados que requieran atención.');
-    container.innerHTML = `
-      <div class="mt-current-head">
-        <div><span class="mt-current-head__eyebrow">Lectura cruzada</span><strong>Qué está pasando de fondo</strong></div>
-        <span class="mt-current-head__note">Combina varios indicadores a la vez</span>
-      </div>
-      <div class="mt-cruzado-list">${list}</div>`;
+    const tienda = tKey(activeTiendaDisplay);
+    const sources = ['d1', 'd4', 'd6'].map(key => {
+      const d = DATA[key];
+      if (SOURCE_STATE[key] !== 'loaded' || !d) return { ready: false };
+      const rows = rowsFor(d, tienda);
+      const month = d.currentMonth;
+      const value = key === 'd1'
+        ? rows.filter(r => OXXO.metricsRowMonthKeyD1(r, d.mesKey, d.fechaKey) === month).length
+        : rows.filter(r => d.period.monthOf(r) === month).reduce((sum, r) => sum + numParse(V(r, key === 'd4' ? d.horasKey : d.diasKey)), 0);
+      return { ready: key === 'd1' || Boolean(key === 'd4' ? d.horasKey : d.diasKey), month, value };
+    });
+    const result = OXXO.metricsCrossSignals(sources);
+    let title, detail;
+    if (result.status === 'missing') {
+      title = 'Cruce pendiente de datos';
+      detail = 'Se necesitan las fuentes de vacantes, tiempo extra y ausentismos. Una fuente pendiente o no disponible no se interpreta como cero.';
+    } else if (result.status === 'different') {
+      title = 'Las fuentes tienen cortes distintos';
+      detail = ['Vacantes', 'Tiempo extra', 'Ausentismos'].map((label, i) => label + ': ' + (sources[i].month || 'sin fecha')).join(' · ') + '. El cruce se habilita cuando coinciden los meses.';
+    } else {
+      title = result.signals >= 2 ? 'Coinciden señales de cobertura en el mes' : 'Sin coincidencia de varias señales en el mes';
+      detail = result.month + ': ' + n(result.values[0]) + ' vacantes, ' + n(result.values[1]) + ' horas de tiempo extra y ' + n(result.values[2]) + ' días de ausentismo. Tiempo extra y ausentismos son acumulados mensuales; sus fichas muestran el corte semanal. La coincidencia no demuestra una causa: revisa cobertura y turnos antes de actuar.';
+    }
+    container.innerHTML = '<div class="mt-current-head"><div><span class="mt-current-head__eyebrow">Lectura cruzada</span><strong>Cobertura de la tienda</strong></div></div><div class="mt-cruzado-list">' + signalHTML(result.status === 'ready' && result.signals >= 2 ? 'medium' : 'low', title, detail) + '</div>';
   }
 
   function renderIdentidad(tiendaDisplay, S) {
@@ -1313,14 +1259,20 @@
     }
   }
 
+  const renderedSources = new Map();
   function renderSource(key, renderer, tienda) {
     const state = SOURCE_STATE[key];
+    const previous = renderedSources.get(key);
+    if (previous && previous.tienda === tienda && previous.data === DATA[key] && previous.state === state && previous.catalog === CATALOG) return previous.result;
     if (state === 'pending' || state === 'failed') {
       sectionState(key, state);
+      renderedSources.delete(key);
       return null;
     }
     sectionState(key, 'loaded');
-    return renderer(tienda);
+    const result = renderer(tienda);
+    renderedSources.set(key, { tienda, data: DATA[key], state, catalog: CATALOG, result });
+    return result;
   }
 
   function scheduleProgressiveRender() {
