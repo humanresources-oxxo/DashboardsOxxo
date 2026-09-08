@@ -745,9 +745,9 @@ function monthLabel(key){
   return `${names[+m[2]-1]} ${m[1]}`;
 }
 let BASE_BAJAS_DATA = [];
-// Filas crudas (solo timoteoantonioperez excluido + asesor resuelto por
-// catalogo), ANTES del filtro de Medida/Puesto de filterData(). Sirve unica-
-// mente para calcular que meses existen de verdad -- ver uniqueFilterOptions.
+// Filas crudas (con el asesor ya resuelto por catalogo), ANTES del filtro de
+// Medida/Puesto de filterData(). Sirve unicamente para calcular que meses
+// existen de verdad -- ver uniqueFilterOptions.
 let RAW_BAJAS_DATA = [];
 let BAJAS_COLS = {};
 // Boton local "Ver todas las plazas" del panel Ranking/Comparativo de
@@ -777,7 +777,12 @@ function asesorOptionsList(data, cols){
   return arr;
 }
 function defaultAsesorSelection(data, cols){
-  return asesorOptionsList(data, cols).filter(v => v !== SIN_ASESOR);
+  // Arranca con TODOS los asesores, incluido "Sin asesor asignado" (bajas de
+  // tiendas de Entrenamiento y Operaciones). Antes esas quedaban fuera por
+  // defecto y la tarjeta "Total Bajas" no era el total: eran bajas reales que
+  // no aparecian en ningun KPI y nada en pantalla lo decia. Se sigue pudiendo
+  // des-seleccionar a mano desde el filtro de asesor.
+  return asesorOptionsList(data, cols);
 }
 function passesAsesorFilter(row, cols){
   if(!SELECTED_ASESORES) return true;
@@ -1798,7 +1803,8 @@ async function loadDenominaciones(rawData){
       : rawData;
     if(!raw || !raw.length) return;
     const cols = buildColsGeneric(raw, ALIASES_DENOM);
-    const rows = raw.filter(r => denomRowValida(r, cols) && cleanKey(val(r,cols,'asesor',''))!=='timoteoantonioperez').map(r => {
+    // Misma correccion que en initDashboard: no se descarta a nadie por su nombre.
+    const rows = raw.filter(r => denomRowValida(r, cols)).map(r => {
       const posAntDesc = val(r, cols, 'posAnt','');
       const posActDesc = val(r, cols, 'posAct','');
       const jAnt = jerarquiaPuesto(posAntDesc), jAct = jerarquiaPuesto(posActDesc);
@@ -1926,24 +1932,33 @@ async function initDashboard(){
   if(raw === null){ ['kpi-section','tabla-detalle'].forEach(id=>OXXO.showError(id,'No se pudo conectar con Google Sheets.')); return; }
   if(!raw.length){ ['kpi-section','tabla-detalle'].forEach(id=>OXXO.showEmpty(id)); return; }
   const cols = buildCols(raw);
-  const rawSinTimoteo = raw.filter(row => cleanKey(val(row, cols, 'asesor', '')) !== 'timoteoantonioperez');
+  // NO se descarta ninguna fila por el nombre de su asesor. Hasta aqui habia
+  // un filter que borraba toda baja cuyo Asesor fuera Timoteo Antonio Perez:
+  // 79 de 895 filas de Plaza Oaxaca (8.8% de la base; 7 solo en sep-26). Se
+  // revisaron una por una y son bajas reales -- nombre, Nº de personal, tienda
+  // y motivo distintos, sin duplicados -- asi que el tablero reportaba de
+  // menos. Ademas contradecia al comentario de aqui abajo, que dice justo lo
+  // contrario: que a ese asesor se le ATRIBUYEN las bajas sin asesor. Entro
+  // sin comentario propio dentro de un commit de otro tema (112a9e2, sobre el
+  // switch de Alcance), asi que fue un descuido, no una regla de negocio.
+  const filasBajas = raw;
   // Corregir el asesor de cada baja contra el catalogo por Tienda (D2 no trae CR):
   // asi las bajas se agrupan bajo el asesor que realmente tiene esa tienda hoy,
   // igual que el resto de dashboards. resolveAsesorD1 aplica la regla completa:
   // "Sin Asesor Asignado" (de tienda real sin AT vigente, crudo o via catalogo)
   // se atribuye a Timoteo; Entrenamiento/Operaciones se queda con su propio
   // "Sin Asesor Asignado" en vez de fusionarse.
-  rawSinTimoteo.forEach(row => {
+  filasBajas.forEach(row => {
     if(!cols.asesor) return;
     row[cols.asesor] = OXXO.resolveAsesorD1(asesorCatalog, {
       tienda: cols.tienda ? row[cols.tienda] : '',
       asesor: row[cols.asesor],
     });
   });
-  const data = filterData(rawSinTimoteo, cols);
+  const data = filterData(filasBajas, cols);
   if(!data.length){ ['kpi-section','tabla-detalle'].forEach(id=>OXXO.showEmpty(id)); return; }
 
-  RAW_BAJAS_DATA = rawSinTimoteo;
+  RAW_BAJAS_DATA = filasBajas;
   BASE_BAJAS_DATA = data;
   BAJAS_COLS = cols;
   if(rawOtras && rawOtras.length) OTRAS_PLAZAS_DATA = rawOtras;
