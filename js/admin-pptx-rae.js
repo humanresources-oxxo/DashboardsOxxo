@@ -474,10 +474,9 @@
   }
 
   function emptySlide(pptx, title, dateLabel){
-    const slide = pptx.addSlide();
-    slide.background = { color: WHITE };
-    addHeader(slide, title, dateLabel);
-    slide.addText('Sin datos disponibles para este corte; no se sustituyó por otro periodo', { x: MARGIN_X, y: 3, w: PAGE_W - MARGIN_X*2, h: 0.6, fontSize: 18, color: MUTED, align: 'center', fontFace: 'Arial' });
+    const {slide,text}=editorialSlide(pptx,title,dateLabel);
+    text('Sin datos disponibles',.5,2.75,11.8,.7,30,DARK,true);
+    text('No hay información para este corte; no se sustituyó por otro periodo.',.5,3.75,11.8,.65,18,MUTED);
     return slide;
   }
 
@@ -527,51 +526,97 @@
   function buildD1(pptx, d, dateLabel){ buildPeopleSummary(pptx,d,dateLabel,'Vacantes'); }
   function buildD2(pptx, d, dateLabel){ buildPeopleSummary(pptx,d,dateLabel,'Bajas'); }
 
+  function editorialSlide(pptx, title, dateLabel){
+    const slide=pptx.addSlide();
+    slide.background={color:'FFFCF8'};
+    const text=(value,x,y,w,h,size,color=TEXT,bold=false,extra={})=>slide.addText(String(value),
+      {x,y,w,h,fontFace:'Arial',fontSize:size,color,bold,margin:0,fit:'shrink',...extra});
+    const rect=(x,y,w,h,color)=>slide.addShape('rect',{x,y,w,h,line:{color,transparency:100},fill:{color}});
+    rect(0,0,PAGE_W,.09,RED);
+    text('OXXO  /  RECURSOS HUMANOS',.5,.3,7,.25,10,RED,true);
+    text('Plaza Oaxaca',10,.3,2.8,.25,10,MUTED,false,{align:'right'});
+    text(title,.5,.83,8.5,.58,30,DARK,true);
+    text(dateLabel||'Corte no informado',9.1,.91,3.7,.48,11,MUTED,false,{align:'right'});
+    rect(.5,1.62,12.3,.015,'E5DCD6');
+    text('OXXO · Uso interno',.5,7.04,4,.2,9,MUTED);
+    return {slide,text,rect};
+  }
+
   function buildD3(pptx, d, dateLabel){
-    const slide = pptx.addSlide();
-    slide.background = { color: WHITE };
-    addHeader(slide, 'APROVECHAMIENTO DE ESTRUCTURA', dateLabel);
-    addSectionTitle(slide, MARGIN_X, 1.2, 6.85, 'Aprovechamiento por Plaza', 'Meta 95%');
-    const gW = (6.85 - 0.2 * 4) / 5;
-    d.plazas.forEach((p, i) => addGaugeCard(slide, MARGIN_X + i * (gW + 0.2), 1.65, gW, 1.4, p.value, p.name));
-    // Un asesor por fila cabe holgado hasta ~10; con 11+ se le da toda la
-    // altura restante hasta la base del panel derecho (mismo fondo que
-    // 'Estatus con impacto de ausentismo') en vez de dejar espacio muerto.
-    addPctRankingList(slide, MARGIN_X, 3.2, 6.85, 3.8, 'Aprovechamiento por AT', d.ranking, 'Meta 95%');
-    addDoughnutCard(pptx, slide, 8.3, 1.2, 4.6, 5.8, 'Estatus con impacto de ausentismo', [
-      { label: 'Completas', value: d.completas, color: GREEN },
-      { label: 'Incompletas', value: d.incompletas, color: GOLD },
-      { label: 'Criticas', value: d.criticas, color: RED },
-    ]);
+    const {text,rect}=editorialSlide(pptx,'Aprovechamiento de estructura',dateLabel);
+    text(d.pct.toFixed(1)+'%',.5,1.98,3.85,.9,56,RED,true);
+    text('EQUIPO COMPLETO · OAXACA',.53,2.98,3.7,.28,11,DARK,true);
+    text('Meta de referencia: 95%',.53,3.34,3.7,.25,11,MUTED);
+    text('Tiendas por estatus',.53,3.83,3.7,.3,15,DARK,true);
+    [['Completas',d.completas,GREEN],['Incompletas',d.incompletas,GOLD],['Críticas',d.criticas,RED]].forEach(([label,value,color],i)=>{
+      const y=4.25+i*.32;
+      rect(.53,y+.07,.09,.14,color);
+      text(label,.75,y,2.45,.25,11);
+      text(value,3.2,y,.7,.25,12,DARK,true,{align:'right'});
+    });
+    text('Comparativo por plaza',.53,5.42,3.7,.28,14,DARK,true);
+    (d.plazas||[]).forEach((p,i)=>{
+      const y=5.83+i*.2;
+      text(p.name,.53,y,2.55,.2,10);
+      text(p.value.toFixed(1)+'%',3.05,y,.9,.2,10,DARK,true,{align:'right'});
+    });
+    rect(4.4,1.97,.015,4.86,'E5DCD6');
+    text('Equipo completo por asesor',4.8,2.02,5.6,.35,18,DARK,true);
+    text('Hasta 15 asesores',10.5,2.08,2.3,.25,10,MUTED,false,{align:'right'});
+    const items=d.ranking||[], rowH=Math.min(.53,4.12/Math.max(1,items.length));
+    if(!items.length) text('Sin registros disponibles',4.8,2.8,7,.5,15,MUTED);
+    items.forEach((item,i)=>{
+      const y=2.65+i*rowH, color=item.value>=95?GREEN:(item.value>=85?ORANGE:RED);
+      text(item.name,4.8,y,4.35,rowH*.85,items.length>12?11:12);
+      rect(9.45,y+rowH*.3,2.3,.07,'EDE6DF');
+      if(item.value>0) rect(9.45,y+rowH*.3,2.3*Math.min(item.value,100)/100,.07,color);
+      text(item.value.toFixed(1)+'%',11.88,y,.92,rowH*.85,11,DARK,true,{align:'right'});
+    });
   }
 
   function buildD7(pptx, d, dateLabel){
-    const slide = pptx.addSlide();
-    slide.background = { color: WHITE };
-    addHeader(slide, 'TREO · ESTRUCTURA', dateLabel);
-    // Coordenadas exactas de RAE_BASE.pptx: bloque de 8 tarjetas (2 filas x 4
-    // columnas de 1.83x2.05in) confinado a la izquierda, con la tarjeta de
-    // Alineacion Global a la derecha ocupando el alto completo de ambas filas.
-    const cardW = 1.83, cardH = 2.05, gapX = 0.22, gapY = 0.25;
-    const xs = [MARGIN_X, MARGIN_X + (cardW + gapX), MARGIN_X + 2 * (cardW + gapX), MARGIN_X + 3 * (cardW + gapX)];
-    const row1Y = 1.28, row2Y = row1Y + cardH + gapY;
+    const {text,rect}=editorialSlide(pptx,'TREO · Estructura',dateLabel);
+    text(d.cobertura.toFixed(0)+'%',.5,1.98,3.85,.9,56,RED,true);
+    text('COBERTURA DE ESTRUCTURA',.53,2.98,3.7,.28,11,DARK,true);
+    text(OXXO.formatNum(d.totalActivos)+' activos / '+OXXO.formatNum(d.totalTreo)+' posiciones TREO',.53,3.4,3.7,.6,12,MUTED);
+    text('Tiendas del alcance',.53,4.38,3.7,.3,14,DARK,true);
+    text(OXXO.formatNum(d.total),.53,4.81,3.7,.62,34,DARK,true);
+    text('Posiciones vacantes',.53,5.66,3.7,.3,14,DARK,true);
+    text(OXXO.formatNum(d.totalVacantes),.53,6.05,3.7,.62,34,RED,true);
+    rect(4.4,1.97,.015,4.86,'E5DCD6');
+    text('Alineación de estructura',4.8,2.02,7.9,.35,18,DARK,true);
+    text('Tiendas',10.1,2.55,.95,.25,10,MUTED,false,{align:'right'});
+    text('Ajuste de posiciones',11.2,2.55,1.6,.25,10,MUTED,false,{align:'right'});
+    const rows=[['Alineadas',d.alineadas,GREEN,'Sin ajuste'],['Por subir',d.subir,GOLD,'+'+OXXO.formatNum(Math.round(d.posSubir))],['Por bajar',d.bajar,RED,'−'+OXXO.formatNum(Math.round(d.posBajar))]];
+    rows.forEach(([label,value,color,adjustment],i)=>{
+      const y=3.08+i*.66;
+      text(label,4.8,y,2.3,.32,14);
+      rect(7.3,y+.13,2.4,.09,'EDE6DF');
+      if(value>0 && d.total>0) rect(7.3,y+.13,2.4*Math.min(value/d.total,1),.09,color);
+      text(value,10.1,y,.95,.32,17,DARK,true,{align:'right'});
+      text(adjustment,11.2,y,1.6,.32,12,MUTED,false,{align:'right'});
+    });
+    rect(4.8,5.08,8,.015,'E5DCD6');
+    text('Dotación de personal',4.8,5.4,7.9,.3,16,DARK,true);
+    text('Subdotadas',4.8,5.99,3.5,.27,12);
+    text('Sobredotadas',9,5.99,3.8,.27,12);
+    text(d.subDotadas,4.8,6.35,1.25,.42,26,RED,true);
+    text('Activos < TREO',6.15,6.47,2.15,.22,10,MUTED);
+    text(d.sobreDotadas,9,6.35,1.25,.42,26,DARK,true);
+    text('Activos > TREO',10.35,6.47,2.45,.22,10,MUTED);
+  }
 
-    addMetricCard(slide, xs[0], row1Y, cardW, cardH, 'Total Tiendas', d.total, 'Plaza Oaxaca');
-    addMetricCard(slide, xs[1], row1Y, cardW, cardH, 'Cobertura Estructura', `${d.cobertura.toFixed(0)}%`, `${OXXO.formatNum(d.totalActivos)} de ${OXXO.formatNum(d.totalTreo)} posiciones`);
-    addMetricCard(slide, xs[2], row1Y, cardW, cardH, 'Alineadas', d.alineadas, `${d.total ? Math.round(d.alineadas/d.total*100) : 0}% del total`);
-    addMetricCard(slide, xs[3], row1Y, cardW, cardH, 'Vacantes Totales', OXXO.formatNum(d.totalVacantes), 'En tiendas filtradas');
-    addMetricCard(slide, xs[0], row2Y, cardW, cardH, 'Por Subir ▲', d.subir, `+${OXXO.formatNum(Math.round(d.posSubir))} posiciones a agregar`);
-    addMetricCard(slide, xs[1], row2Y, cardW, cardH, 'Por Bajar ▼', d.bajar, `-${OXXO.formatNum(Math.round(d.posBajar))} posiciones a liberar`);
-    addMetricCard(slide, xs[2], row2Y, cardW, cardH, 'Sub-dotadas', d.subDotadas, 'Activos < TREO');
-    addMetricCard(slide, xs[3], row2Y, cardW, cardH, 'Sobre-dotadas', d.sobreDotadas, 'Activos > TREO');
-
-    const rightX = xs[3] + cardW + 0.35, rightW = PAGE_W - MARGIN_X - rightX;
-    addTreoAlignmentCard(pptx, slide, rightX, 1.25, rightW, 4.55, [
-      { label: 'Alineada', value: d.alineadas, color: GREEN },
-      { label: 'Subir', value: d.subir, color: GOLD },
-      { label: 'Bajar', value: d.bajar, color: RED },
-    ]);
-    addNoteCard(slide, rightX, 5.95, rightW, 1.05, 'Cobertura de estructura sobre TREO', `${d.cobertura.toFixed(0)}% de cobertura`);
+  function buildCover(pptx, dateLabel){
+    const {text,rect}=editorialSlide(pptx,'Presentación RAE',dateLabel);
+    text('Indicadores de recursos humanos',.5,2.5,11.9,.8,34,DARK,true);
+    text('Plaza Oaxaca',.5,3.52,11.9,.5,22,RED,true);
+    const sections=['Vacantes','Bajas','Aprovechamiento','TREO'];
+    sections.forEach((label,i)=>{
+      const x=.5+i*3.1;
+      rect(x,5.23,2.8,.035,i===0?RED:'E5DCD6');
+      text('0'+(i+1),x,5.54,2.8,.45,23,RED,true);
+      text(label,x,6.15,2.8,.4,15,DARK,true);
+    });
   }
 
   const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
@@ -636,11 +681,7 @@
       const pptx = new window.PptxGenJS();
       pptx.layout = 'LAYOUT_WIDE'; // 13.333in x 7.5in, igual que RAE_BASE.pptx
 
-      const title = pptx.addSlide();
-      title.background = { color: RED };
-      title.addText('Presentación RAE', { x: 0.8, y: 2.3, w: 11.7, h: 1.3, fontSize: 40, bold: true, color: 'FFFFFF', fontFace: 'Arial' });
-      title.addText('Indicadores clave · Plaza Oaxaca', { x: 0.8, y: 3.7, w: 11.7, h: 0.5, fontSize: 20, color: 'FFD7D5', fontFace: 'Arial' });
-      title.addText(today.toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' }), { x: 0.8, y: 6.4, w: 11.7, h: 0.4, fontSize: 13, color: 'FFD7D5', fontFace: 'Arial' });
+      buildCover(pptx, today.toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' }));
 
       const DASHBOARDS = buildDashboardList(mesD1, mesD2);
       for(const d of DASHBOARDS){
