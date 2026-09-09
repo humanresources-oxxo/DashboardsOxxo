@@ -258,15 +258,23 @@
     if(!sel) return;
     sel.innerHTML = '<option value="">Cargando asesores…</option>';
     try {
-      const [d1, d2, d3, d7] = await Promise.all([
+      const [d1, d2, d3, d7, catalogo] = await Promise.all([
         OXXO.metricsD1Rows(), OXXO.metricsD2Rows(), OXXO.metricsD3Rows(), OXXO.metricsD7Rows(),
+        OXXO.loadAsesorCatalog(),
       ]);
       const nombres = new Map(); // clave normalizada -> nombre "bonito" (title-case si existe)
       const agregar = (rows, key) => {
         if(!rows) return;
         rows.rows.forEach(r => {
-          const nombre = String(val(r, key) || '').trim();
+          // El nombre se normaliza con la MISMA regla que el resto del sitio
+          // (resolveAsesorD1 aplica el renombre Anadelia -> Timoteo). No todas
+          // las fuentes lo traen ya resuelto -- Dashboard 3 conserva el nombre
+          // crudo -- y por eso el selector seguia ofreciendo generar una
+          // presentacion a nombre de una asesora que ya no esta.
+          const nombre = String(OXXO.resolveAsesorD1(catalogo, { asesor: val(r, key) }) || '').trim();
           if(!nombre) return;
+          // "Sin Asesor Asignado" no es una persona: no se le hace ficha.
+          if(normText(nombre).replace(/[^A-Z]/g, '').includes('SINASESOR')) return;
           const clave = normText(nombre);
           const actual = nombres.get(clave);
           // Preferir la grafia con mayusculas/minusculas mixtas (mas legible

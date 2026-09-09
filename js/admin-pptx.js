@@ -123,6 +123,11 @@
     rows.forEach(r => {
       const name = String(OXXO.resolveAsesorD1(asesorCatalog, { cr: val(r, crKey), tienda: val(r, tiendaKey), asesor: val(r, asesorKey) }) || '').trim();
       if(!name) return;
+      // "Sin Asesor Asignado" no es una persona: son las tiendas sin AT
+      // vigente que resolveAsesorD1 no pudo reatribuir (Entrenamiento y
+      // Operaciones). Agrupadas encabezaban el ranking con 100%, presentadas
+      // como el mejor AT de la plaza arriba de todas las personas reales.
+      if(normText(name).replace(/[^A-Z]/g, '').includes('SINASESOR')) return;
       if(!byAsesor.has(name)) byAsesor.set(name, { total: 0, completas: 0 });
       const acc = byAsesor.get(name);
       acc.total++;
