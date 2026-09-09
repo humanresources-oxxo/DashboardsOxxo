@@ -49,7 +49,7 @@
         { label: 'Encargado', value: String(byPuesto.Encargado) },
         { label: 'Ayudante', value: String(byPuesto.Ayudante) },
       ],
-      chart: { title: 'Vacantes por Puesto', labels: ['Lider','Encargado','Ayudante'], values: [byPuesto.Lider, byPuesto.Encargado, byPuesto.Ayudante] },
+      chart: { title: 'Vacantes por Puesto', labels: ['Lider','Encargado','Ayudante','Otro'], values: [byPuesto.Lider, byPuesto.Encargado, byPuesto.Ayudante, byPuesto.Otro] },
       ranking: { title: 'Vacantes por Asesor', items: rankCount(rows, asesorKey, 20) },
     };
   }
@@ -130,11 +130,10 @@
     });
     const ranking = [...byAsesor.entries()]
       .map(([name, v]) => ({ name, value: v.total > 0 ? (v.completas / v.total * 100) : 0 }))
-      .filter(x => x.value > 0)
       .sort((a,b) => b.value - a.value)
       .slice(0, 20);
     return {
-      label: 'Aprovechamiento General', value: pct.toFixed(2) + '%', sub: 'Plaza Oaxaca',
+      label: 'Aprovechamiento General', value: pct.toFixed(2) + '%', sub: fecha ? 'Corte '+fecha : 'Corte no informado',
       secondary: [
         { label: 'Completas', value: String(completas) },
         { label: 'Incompletas', value: String(incompletas) },
@@ -193,7 +192,7 @@
       if(buckets[b] !== undefined) buckets[b]++;
     });
     return {
-      label: 'Días Restantes de Vacaciones', value: OXXO.formatNum(Math.round(totalDias)), sub: 'Plaza Oaxaca',
+      label: 'Días Restantes de Vacaciones', value: OXXO.formatNum(Math.round(totalDias)), sub: 'Base vigente · Corte no informado',
       secondary: [
         { label: 'Vencidos', value: String(buckets['ya vencieron sus dias']) },
         { label: 'Vencen 0-50 días', value: String(buckets['0 a 50 dias']) },
@@ -227,7 +226,7 @@
         { label: 'Incapacidades', value: OXXO.formatNum(Math.round(byTipo.Incapacidades)) },
         { label: 'Vacaciones', value: OXXO.formatNum(Math.round(byTipo.Vacaciones)) },
       ],
-      chart: { title: 'Días Ausentes por Tipo', labels: ['Faltas','Incapacidades','Vacaciones','Permisos','Accidentes'], values: [byTipo.Faltas, byTipo.Incapacidades, byTipo.Vacaciones, byTipo.Permisos, byTipo.Accidentes], type: 'pie' },
+      chart: { title: 'Días Ausentes por Tipo', labels: ['Faltas','Incapacidades','Vacaciones','Permisos','Accidentes','Otro'], values: [byTipo.Faltas, byTipo.Incapacidades, byTipo.Vacaciones, byTipo.Permisos, byTipo.Accidentes, byTipo.Otro], type: 'pie' },
     };
   }
 
@@ -258,7 +257,7 @@
     });
     const pct = total > 0 ? (alineadas / total * 100) : 0;
     return {
-      label: 'Alineación Global TREO', value: pct.toFixed(1) + '%', sub: 'Plaza Oaxaca',
+      label: 'Alineación Global TREO', value: pct.toFixed(1) + '%', sub: 'TREO vigente · Corte no informado',
       secondary: [
         { label: 'Alineadas', value: String(alineadas) },
         { label: 'Por Subir', value: String(subir) },
@@ -278,118 +277,91 @@
     { name: 'Dashboard 7 · TREO', fn: kpiD7 },
   ];
 
-  const RED = 'F71926';
-  const DARK = '211312';
-  const GRAY = '7A4A42';
-  const PALETTE = ['F71926','F07B22','F6B73C','1DB954','0066CC','8B4CF7','9E9E9E'];
+  const RED='CC0000', DARK='2B1714', GRAY='777777';
+  const PALETTE=['CC0000','EE7203','FFC400','00A878','0066CC','777777'];
+
+  function slideFrame(pptx, title, period){
+    const slide=pptx.addSlide(); slide.background={color:'FFFCF8'};
+    const text=(value,x,y,w,h,size=12,color=DARK,bold=false,extra={})=>slide.addText(String(value),
+      {x,y,w,h,fontFace:'Arial',fontSize:size,color,bold,margin:0,fit:'shrink',...extra});
+    const rect=(x,y,w,h,color)=>slide.addShape('rect',{x,y,w,h,fill:{color},line:{color,transparency:100}});
+    rect(0,0,13.333,.09,RED);
+    text('OXXO  /  FORO BIENESTAR',.5,.3,7,.25,10,RED,true);
+    text('Plaza Oaxaca',10,.3,2.8,.25,10,GRAY,false,{align:'right'});
+    text(title.replace(/^Dashboard \d+ · /,''),.5,.83,8.2,.58,30,DARK,true);
+    text(period||'Corte no informado',8.9,.89,3.9,.5,11,GRAY,false,{align:'right'});
+    rect(.5,1.62,12.3,.015,'E5DCD6');
+    text('OXXO · Uso interno',.5,7.04,4,.2,9,GRAY);
+    return {slide,text,rect};
+  }
+
+  function drawRows(frame, title, items, pct=false, start=0, count=items.length, scaleMax=0){
+    const {text,rect}=frame;
+    text(title,4.8,2.02,7.9,.36,18,DARK,true);
+    text(count ? 'Registros '+(start+1)+'–'+(start+items.length)+' de '+count : 'Sin registros',4.8,2.43,7.9,.23,10,GRAY);
+    const rowH=Math.min(.61,3.9/Math.max(1,items.length));
+    const max=pct?100:Math.max(1,scaleMax,...items.map(i=>Number(i.value)||0));
+    items.forEach((item,i)=>{
+      const y=2.89+i*rowH, value=Number(item.value)||0;
+      text(item.name,4.8,y,4.35,rowH*.87,items.length>12?11:12);
+      rect(9.45,y+rowH*.31,2.3,.07,'EDE6DF');
+      const color=pct?(value>=95?'00A878':value>=85?'EE7203':RED):RED;
+      if(value>0) rect(9.45,y+rowH*.31,2.3*Math.min(value/max,1),.07,color);
+      text(pct?value.toFixed(1)+'%':OXXO.formatNum(value),11.88,y,.92,rowH*.87,11,DARK,true,{align:'right'});
+    });
+  }
 
   function addKpiSlide(pptx, name, kpi){
-    const slide = pptx.addSlide();
-    slide.background = { color: 'FFF8EF' };
-    slide.addText(name, { x: 0.4, y: 0.3, w: 9.2, h: 0.5, fontSize: 22, bold: true, color: DARK, fontFace: 'Arial' });
-
-    if(!kpi){
-      slide.addText('Sin datos disponibles', { x: 0.4, y: 2.3, w: 9.2, h: 0.6, fontSize: 22, color: GRAY, align: 'center', fontFace: 'Arial' });
-      return;
-    }
-
-    // KPI principal (izquierda)
-    slide.addText(kpi.value, { x: 0.4, y: 1.0, w: 4.2, h: 1.3, fontSize: 56, bold: true, color: RED, align: 'center', fontFace: 'Arial' });
-    slide.addText(kpi.label, { x: 0.4, y: 2.25, w: 4.2, h: 0.45, fontSize: 15, color: DARK, align: 'center', fontFace: 'Arial', bold: true });
-    slide.addText(kpi.sub || '', { x: 0.4, y: 2.65, w: 4.2, h: 0.35, fontSize: 11, color: GRAY, align: 'center', fontFace: 'Arial' });
-
-    // KPIs secundarios (debajo del principal)
-    (kpi.secondary || []).forEach((s, i) => {
-      const y = 3.15 + i * 0.62;
-      slide.addShape(pptx.ShapeType.roundRect, { x: 0.4, y, w: 4.2, h: 0.52, fill: { color: 'FFFFFF' }, line: { color: 'EFE2DC', width: 1 }, rectRadius: 0.08 });
-      slide.addText(s.label, { x: 0.55, y: y + 0.06, w: 2.6, h: 0.4, fontSize: 12, color: GRAY, fontFace: 'Arial', valign: 'middle' });
-      slide.addText(s.value, { x: 3.1, y: y + 0.06, w: 1.4, h: 0.4, fontSize: 14, bold: true, color: DARK, align: 'right', fontFace: 'Arial', valign: 'middle' });
-    });
-
-    // Derecha: si hay un ranking real por asesor/AT (Vacantes, Bajas,
-    // Aprovechamiento), se muestra esa lista con barras en vez de la
-    // gráfica genérica de 3 categorías — es la info que de verdad se usa en
-    // el Foro Bienestar.
-    if(kpi.ranking && kpi.ranking.items && kpi.ranking.items.length){
-      addRankingList(pptx, slide, 4.85, 0.9, 4.75, 4.25, kpi.ranking.title, kpi.ranking.items, { pct: !!kpi.ranking.pct });
-    } else if(kpi.chart && kpi.chart.values.some(v => v > 0)){
-      const chartType = kpi.chart.type === 'pie' ? pptx.ChartType.pie : pptx.ChartType.bar;
-      const dataSeries = [{ name: kpi.chart.title, labels: kpi.chart.labels, values: kpi.chart.values }];
-      slide.addText(kpi.chart.title, { x: 4.9, y: 0.9, w: 4.7, h: 0.35, fontSize: 13, bold: true, color: DARK, fontFace: 'Arial' });
-      slide.addChart(chartType, dataSeries, {
-        x: 4.85, y: 1.25, w: 4.75, h: 3.9,
-        chartColors: PALETTE,
-        showLegend: true, legendPos: 'b', legendFontSize: 9,
-        showValue: kpi.chart.type === 'pie',
-        dataLabelFontSize: 10,
-        catAxisLabelFontSize: 10,
-        valAxisLabelFontSize: 10,
+    const ranking=kpi && kpi.ranking;
+    const items=ranking && ranking.items || [];
+    // Hasta 15 nombres por página; el resto continúa sin recortar personas.
+    const pages=Math.max(1,Math.ceil(items.length/15));
+    for(let page=0;page<pages;page++){
+      const frame=slideFrame(pptx,name,kpi && kpi.sub), {text,rect}=frame;
+      if(!kpi){
+        text('Sin datos disponibles',.5,2.75,11.8,.7,30,DARK,true);
+        text('No se pudo obtener información para este indicador.',.5,3.75,11.8,.65,18,GRAY);
+        return;
+      }
+      text(kpi.value,.5,1.98,3.85,.95,56,RED,true);
+      text(kpi.label,.53,3.08,3.7,.65,15,DARK,true);
+      const breakdown=ranking && kpi.chart ? kpi.chart.labels.map((label,i)=>({label,value:OXXO.formatNum(kpi.chart.values[i])})) : kpi.secondary||[];
+      text(ranking && kpi.chart ? kpi.chart.title : 'Detalle del indicador',.53,4.02,3.7,.5,14,DARK,true);
+      breakdown.forEach((item,i)=>{
+        const y=4.75+i*.43;
+        text(item.label,.53,y,2.55,.31,12);
+        text(item.value,3.1,y,.83,.31,13,DARK,true,{align:'right'});
       });
+      rect(4.4,1.97,.015,4.86,'E5DCD6');
+      if(items.length){
+        drawRows(frame,ranking.title,items.slice(page*15,(page+1)*15),!!ranking.pct,page*15,items.length,Math.max(1,...items.map(i=>Number(i.value)||0)));
+      }else if(kpi.chart){
+        drawRows(frame,kpi.chart.title,kpi.chart.labels.map((label,i)=>({name:label,value:kpi.chart.values[i]})));
+      }else text('Sin desglose disponible',4.8,2.8,7,.5,15,GRAY);
+      if(pages>1) text('Continuación '+(page+1)+' / '+pages,9,7.04,3.8,.2,9,GRAY,false,{align:'right'});
     }
   }
 
-  // Lista de ranking con barras (p.ej. "Bajas por Asesor", "Aprovechamiento
-  // por AT"), usando shapes nativos de pptxgenjs — mismo estilo visual que
-  // addRankingList()/addPctRankingList() de admin-pptx-rae.js, adaptado al
-  // layout mas chico (10x5.63in) de esta presentación.
-  function addRankingList(pptx, slide, x, y, w, h, title, items, opts = {}){
-    slide.addText(title, { x, y, w, h: 0.32, fontSize: 13, bold: true, color: DARK, fontFace: 'Arial' });
-    const contentY = y + 0.42;
-    const availH = (y + h) - contentY;
-    const rowH = Math.min(0.46, availH / items.length);
-    const maxVal = opts.pct ? 100 : Math.max(...items.map(it => it.value), 1);
-    const nameW = w * 0.5;
-    const barX = x + nameW + 0.05;
-    const barW = w - nameW - 0.75;
-    const pillW = 0.65;
-    items.forEach((item, i) => {
-      const ry = contentY + i * rowH;
-      const color = opts.pct ? (item.value >= 95 ? '1DB954' : (item.value >= 85 ? 'F6B73C' : RED)) : (i === 0 ? RED : 'F6B73C');
-      slide.addText(item.name, { x, y: ry, w: nameW - 0.05, h: rowH, fontSize: 9, color: DARK, fontFace: 'Arial', valign: 'middle', fit: 'shrink' });
-      slide.addShape(pptx.ShapeType.roundRect, { x: barX, y: ry + rowH * 0.32, w: barW, h: rowH * 0.36, fill: { color: 'EFE2DC' }, line: { type: 'none' }, rectRadius: 0.03 });
-      const fillW = Math.max(barW * (Math.min(item.value, maxVal) / maxVal), 0.05);
-      slide.addShape(pptx.ShapeType.roundRect, { x: barX, y: ry + rowH * 0.32, w: fillW, h: rowH * 0.36, fill: { color }, line: { type: 'none' }, rectRadius: 0.03 });
-      const valText = opts.pct ? `${item.value.toFixed(1)}%` : String(item.value);
-      slide.addText(valText, { x: x + w - pillW, y: ry, w: pillW, h: rowH, fontSize: 10, bold: true, color: RED, align: 'right', fontFace: 'Arial', valign: 'middle' });
-    });
-  }
-
-  // Diapositiva "🏆 Ranking de Plazas · Bajas acumuladas" — misma tabla que
-  // el panel de dashboard-2.html (medalla, barra degradada, pill con el
-  // total, footer con el acumulado), con datos reales de Oaxaca + las
-  // plazas capturadas a mano en Dashboard_2_Otras_Plazas.
   function addPlazaRankingSlide(pptx, plazaRanking){
-    const slide = pptx.addSlide();
-    slide.background = { color: 'FFF8EF' };
-    slide.addText('Bajas por Plaza · Comparativo Regional', { x: 0.4, y: 0.3, w: 9.2, h: 0.5, fontSize: 22, bold: true, color: DARK, fontFace: 'Arial' });
+    const frame=slideFrame(pptx,'Bajas por plaza','Bases disponibles por plaza'), {text,rect}=frame;
+    const rows=plazaRanking||[], total=rows.reduce((sum,p)=>sum+p.bajas,0);
+    text(OXXO.formatNum(total),.5,1.98,3.85,.95,56,RED,true);
+    text('BAJAS REPORTADAS',.53,3.08,3.7,.5,15,DARK,true);
+    text('Oaxaca y plazas con información disponible.',.53,4.02,3.7,.8,13,GRAY);
+    text('Las otras plazas son cargas manuales y pueden tener un corte distinto al de Oaxaca.',.53,5.35,3.7,1.05,12,GRAY);
+    rect(4.4,1.97,.015,4.86,'E5DCD6');
+    drawRows(frame,'Comparativo regional',rows.map(p=>({name:p.plaza,value:p.bajas})));
+  }
 
-    if(!plazaRanking || !plazaRanking.length){
-      slide.addText('Sin datos disponibles', { x: 0.4, y: 2.3, w: 9.2, h: 0.6, fontSize: 22, color: GRAY, align: 'center', fontFace: 'Arial' });
-      return;
-    }
-
-    const total = plazaRanking.reduce((s,p) => s + p.bajas, 0) || 1;
-    const maxVal = Math.max(...plazaRanking.map(p => p.bajas), 1);
-    const rowH = Math.min(0.72, 4.1 / plazaRanking.length);
-    let ry = 1.0;
-    plazaRanking.forEach((p, i) => {
-      const tone = i === 0 ? RED : i === 1 ? 'F07B22' : i === 2 ? 'F6B73C' : '9B6B60';
-      const pct = Math.round(p.bajas / total * 100);
-      slide.addShape(pptx.ShapeType.roundRect, { x: 0.4, y: ry, w: 9.2, h: rowH - 0.08, fill: { color: 'FFFFFF' }, line: { color: 'EFE2DC', width: 1 }, rectRadius: 0.1 });
-      slide.addShape(pptx.ShapeType.ellipse, { x: 0.55, y: ry + (rowH - 0.08) / 2 - 0.22, w: 0.44, h: 0.44, fill: { color: tone }, line: { type: 'none' } });
-      slide.addText(String(i + 1), { x: 0.55, y: ry + (rowH - 0.08) / 2 - 0.22, w: 0.44, h: 0.44, fontSize: 14, bold: true, color: 'FFFFFF', align: 'center', valign: 'middle', fontFace: 'Arial' });
-      slide.addText(p.plaza, { x: 1.15, y: ry + 0.06, w: 4.0, h: 0.3, fontSize: 13, bold: true, color: DARK, fontFace: 'Arial' });
-      slide.addText(`${pct}% del total`, { x: 5.2, y: ry + 0.06, w: 3.2, h: 0.3, fontSize: 10, color: GRAY, align: 'right', fontFace: 'Arial' });
-      const barX = 1.15, barW = 7.25;
-      slide.addShape(pptx.ShapeType.roundRect, { x: barX, y: ry + rowH - 0.34, w: barW, h: 0.14, fill: { color: 'EFE2DC' }, line: { type: 'none' }, rectRadius: 0.07 });
-      slide.addShape(pptx.ShapeType.roundRect, { x: barX, y: ry + rowH - 0.34, w: Math.max(barW * (p.bajas / maxVal), 0.08), h: 0.14, fill: { color: tone }, line: { type: 'none' }, rectRadius: 0.07 });
-      slide.addShape(pptx.ShapeType.roundRect, { x: 8.55, y: ry + (rowH - 0.08) / 2 - 0.22, w: 1.0, h: 0.44, fill: { color: 'FFF2F1' }, line: { type: 'none' }, rectRadius: 0.22 });
-      slide.addText(String(p.bajas), { x: 8.55, y: ry + (rowH - 0.08) / 2 - 0.22, w: 1.0, h: 0.44, fontSize: 15, bold: true, color: RED, align: 'center', valign: 'middle', fontFace: 'Arial' });
-      ry += rowH;
+  function addCover(pptx,today){
+    const {text,rect}=slideFrame(pptx,'Foro Bienestar',today.toLocaleDateString('es-MX',{year:'numeric',month:'long',day:'numeric'}));
+    text('Indicadores de recursos humanos',.5,2.5,11.9,.8,34,DARK,true);
+    text('Días martes · Plaza Oaxaca',.5,3.52,11.9,.5,22,RED,true);
+    ['Vacantes y bajas','Estructura y TREO','Tiempo extra','Vacaciones y\nausentismos'].forEach((label,i)=>{
+      const x=.5+i*3.1;rect(x,5.23,2.8,.035,i===0?RED:'E5DCD6');
+      text('0'+(i+1),x,5.54,2.8,.45,23,RED,true);
+      text(label,x,6.1,2.8,.6,15,DARK,true);
     });
-    slide.addText('Total acumulado', { x: 0.4, y: ry + 0.05, w: 5.0, h: 0.35, fontSize: 12, bold: true, color: GRAY, fontFace: 'Arial' });
-    slide.addText(String(total), { x: 5.4, y: ry + 0.02, w: 2.2, h: 0.4, fontSize: 18, bold: true, color: DARK, align: 'right', fontFace: 'Arial' });
-    slide.addText('100%', { x: 7.6, y: ry + 0.1, w: 2.0, h: 0.3, fontSize: 11, bold: true, color: RED, fontFace: 'Arial' });
   }
 
   async function generatePresentation(){
@@ -412,15 +384,9 @@
       }
 
       const pptx = new window.PptxGenJS();
-      pptx.defineLayout({ name: 'OXXO', width: 10, height: 5.63 });
-      pptx.layout = 'OXXO';
-
-      const title = pptx.addSlide();
-      title.background = { color: RED };
-      title.addText('Presentación Foro Bienestar Días Martes', { x: 0.6, y: 1.6, w: 8.8, h: 1.3, fontSize: 34, bold: true, color: 'FFFFFF', fontFace: 'Arial' });
-      title.addText('Indicadores clave · Plaza Oaxaca', { x: 0.6, y: 2.9, w: 8.8, h: 0.5, fontSize: 18, color: 'FFD7D5', fontFace: 'Arial' });
+      pptx.layout = 'LAYOUT_WIDE';
       const today = new Date();
-      title.addText(today.toLocaleDateString('es-MX', { year:'numeric', month:'long', day:'numeric' }), { x: 0.6, y: 4.8, w: 8.8, h: 0.4, fontSize: 12, color: 'FFD7D5', fontFace: 'Arial' });
+      addCover(pptx,today);
 
       results.forEach(({ name, kpi }) => {
         addKpiSlide(pptx, name, kpi);
@@ -431,7 +397,8 @@
 
       const fileName = `Presentacion-Foro-Bienestar-Dias-Martes-${today.toISOString().slice(0,10)}.pptx`;
       await pptx.writeFile({ fileName });
-      if(statusEl) statusEl.textContent = 'Presentación generada correctamente.';
+      const missing=results.filter(r=>!r.kpi).length;
+      if(statusEl) statusEl.textContent = missing ? 'Presentación generada con '+missing+' indicador(es) sin datos disponibles.' : 'Presentación generada correctamente.';
     } catch(e){
       console.error(e);
       if(statusEl) statusEl.textContent = 'Error al generar la presentación: ' + e.message;
