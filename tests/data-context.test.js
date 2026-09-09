@@ -73,8 +73,15 @@ const storeCatalog = OXXO.buildTiendaCatalog([
 ]);
 assert.equal(storeCatalog.rows.length, 2);
 assert.equal(OXXO.isTiendaValid({ storeCatalog }, 'OXXO Centro', '50I34'), true);
+// Dada de baja explicitamente (ACTIVA = NO): esa es la unica forma de ocultar
+// una tienda.
 assert.equal(OXXO.isTiendaValid({ storeCatalog }, 'OXXO Cerrada', '50X99'), false);
-assert.equal(OXXO.isTiendaValid({ storeCatalog }, 'OXXO No Catalogada', '50N00'), false);
+// Una tienda que el catalogo todavia no registra SI cuenta. TREO se actualiza
+// con retraso, asi que las tiendas recien abiertas tardan en aparecer ahi;
+// descartarlas borraba tiendas reales de todos los tableros (en Plaza Oaxaca
+// fueron nueve, con 31 de las 78 vacantes de septiembre). "No esta en TREO"
+// significa "TREO no la registra aun", no "no existe".
+assert.equal(OXXO.isTiendaValid({ storeCatalog }, 'OXXO No Catalogada', '50N00'), true);
 assert.equal(OXXO.isTiendaValid({}, 'OXXO Respaldo', '50R00'), true);
 
 // Control de Ausentismo es una fuente exclusiva de Oaxaca: una plaza recibida
