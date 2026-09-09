@@ -1775,15 +1775,9 @@ function catalogValueByAliases(row, aliases) {
   }
   return '';
 }
-function catalogPlazaKey(value) {
-  const raw = String(value || '').trim();
-  if (!raw) return '';
-  return normalizeScopeToken(normalizeDataScope({ level: 'plaza', region: getDataContext().region, plaza: raw }).plaza);
-}
 function buildTiendaCatalog(rows, { source = 'Catalogo_Tiendas', loaded = true } = {}) {
   const byCr = new Map();
   const byTienda = new Map();
-  const coveredPlazas = new Set();
   const cleanRows = [];
   (Array.isArray(rows) ? rows : []).forEach(row => {
     const cr = normalizeCatalogCr(catalogValueByAliases(row, ['CR', 'CR TIENDA', 'CR Reg', 'ID Tienda']));
@@ -1797,12 +1791,11 @@ function buildTiendaCatalog(rows, { source = 'Catalogo_Tiendas', loaded = true }
     const tiendaKey = normalizeCatalogTienda(tienda);
     if (!cr || !tiendaKey || !plaza || tiendaKey.includes('ENTRENAMIENTO') || tiendaKey.includes('OPERACIONES')) return;
     const item = { cr, tienda, region, plaza, zona, asesor, activa, source };
-    coveredPlazas.add(catalogPlazaKey(plaza));
     if (!byCr.has(cr) || (!byCr.get(cr).asesor && asesor)) byCr.set(cr, item);
     if (!byTienda.has(tiendaKey) || (!byTienda.get(tiendaKey).asesor && asesor)) byTienda.set(tiendaKey, item);
     cleanRows.push(item);
   });
-  return { loaded, source, rows: cleanRows, byCr, byTienda, coveredPlazas };
+  return { loaded, source, rows: cleanRows, byCr, byTienda };
 }
 async function loadTiendaCatalog() {
   if (tiendaCatalogPromise) return tiendaCatalogPromise;
@@ -1829,9 +1822,24 @@ async function loadTiendaCatalog() {
 }
 
 // Catalogo_Asesores sigue resolviendo responsables; Catalogo_Tiendas,
-// reconstruido desde TREO, es ahora la unica fuente que decide actividad.
+// reconstruido desde TREO, decide si una tienda esta dada de baja.
 // Si temporalmente ninguna de las dos fuentes responde, se falla abierto para
 // no desaparecer tiendas por una intermitencia de red.
+//
+// Una tienda que NO aparece en el catalogo se INCLUYE. Antes se descartaba
+// (si la plaza ya estaba cubierta por TREO, se exigia que el CR o el nombre
+// existiera ahi), y eso partia de que TREO va al dia. No va: se actualiza con
+// retraso, asi que las tiendas recien abiertas tardan en aparecer. El efecto
+// medido en Plaza Oaxaca fue que nueve tiendas reales y operando -- El Anonal,
+// Marina Nacional, Small Beach, Gas Nopala, Mictlan, Lazaro, Lordcast, Tobala
+// y Gas Itsal -- desaparecian de todos los tableros, y con ellas 31 de las 78
+// vacantes de septiembre: el 40%, sin ninguna senal en pantalla.
+//
+// "No esta en TREO" significa "TREO todavia no la registra", no "no existe".
+// Para ocultar una tienda hay que decirlo explicitamente con ACTIVA = NO, que
+// es justo para lo que existe esa columna. Con una base de RH, mostrar de mas
+// se corrige mirando; esconder de menos no se nota hasta que alguien reclama
+// una vacante que nadie estaba cubriendo.
 function isTiendaValid(catalog, tienda, cr='') {
   const stores = catalog?.storeCatalog;
   if (!stores?.loaded) return true;
@@ -1839,12 +1847,7 @@ function isTiendaValid(catalog, tienda, cr='') {
   const tiendaKey = normalizeCatalogTienda(tienda);
   const hit = (crKey && stores.byCr.get(crKey)) || (tiendaKey && stores.byTienda.get(tiendaKey));
   if (hit) return Boolean(hit.activa);
-  // TREO se carga por plaza. Mientras una plaza aún no haya publicado su
-  // archivo, no se usa el catálogo parcial para ocultar sus tiendas. En una
-  // plaza ya cubierta sí se exige que el CR/nombre exista en TREO vigente.
-  const scope = getActiveDataScope();
-  if (scope.level !== 'plaza') return true;
-  return !stores.coveredPlazas?.has(catalogPlazaKey(scope.plaza));
+  return true;
 }
 function filterValidTiendas(rows, catalog, tiendaKey, crKey) {
   if (!Array.isArray(rows) || !tiendaKey) return rows;
