@@ -131,6 +131,9 @@
 .kpi-card--critical .kpi-card__value{max-width:82%;margin-top:8px;font-size:1.35rem !important;line-height:1.1 !important}
 .kpi-card--critical .kpi-card__delta{margin-top:7px;font-size:14px !important;font-weight:950 !important}
 @media(max-width:600px){.kpi-card--critical .kpi-card__label{font-size:11px !important}.kpi-card--critical .kpi-card__value{font-size:1.15rem !important}}
+.certs-pendientes{margin:10px 14px 4px;padding:9px 12px;border-radius:12px;background:rgba(128,63,38,.06);border:1px solid rgba(128,63,38,.14);font-family:'Barlow',sans-serif;font-size:11px;font-weight:700;color:#6A5148;line-height:1.5}
+.certs-pendientes b{color:#5A4037;font-weight:900}
+.certs-pendientes[hidden]{display:none}
 </style>
 <link rel="stylesheet" href="../css/dashboard-skin.css?v=2ac329a8"/>
   <link rel="stylesheet" href="../css/floating-filter-layout.css?v=2ac329a8" />
@@ -203,6 +206,7 @@
         <span class="card-badge" id="badge-certs">— certificaciones</span>
       </div>
       <div class="chart-wrap chart-lg"><canvas id="chart-certs"></canvas></div>
+      <div class="certs-pendientes" id="certs-pendientes" hidden></div>
     </div>
     <div class="card">
       <div class="card-head">
@@ -295,12 +299,27 @@
 <script>
 const TAB = OXXO.SHEETS_CONFIG.TABS.d8;
 
-const CERT_COLS = [
-  { key:'Promedio de Código de Ética 2026', label:'Código de Ética' },
-  { key:'Promedio de Seguridad en la persona 2026', label:'Seguridad en la Persona' },
-  { key:'Promedio de PLD2026Certificacion', label:'PLD 2026' },
-  { key:'Promedio de ModuloCercaSiempre2026', label:'Módulo Cerca Siempre' },
-];
+// Las certificaciones no se codifican a mano: se leen de los encabezados de la hoja.
+// Asi, cuando TREO agrega una columna nueva, el tablero la muestra sola.
+// CERT_COLS = las que ya traen datos. CERT_PENDIENTES = la columna existe pero viene vacia.
+let CERT_COLS = [];
+let CERT_PENDIENTES = [];
+
+// Una columna es certificacion si se llama "Promedio de ..." (asi las nombra la hoja)
+// o si esta en esta lista de excepciones. Cualquier otra columna que agreguen
+// -una fecha, un correo- se ignora sola en vez de aparecer como certificacion falsa.
+const CERT_EXTRA_D8 = ['Pan Horneado'];
+
+// Nombres que la hoja trae pegados y que ya conocemos.
+const CERT_ETIQUETAS = {
+  'promediodecodigodeetica2026': 'Código de Ética',
+  'promediodeseguridadenlapersona2026': 'Seguridad en la Persona',
+  'promediodepld2026certificacion': 'PLD 2026',
+  'promediodemodulocercasiempre2026': 'Módulo Cerca Siempre',
+  'promediodecobrodlssedesmundialistas2026': 'Cobro dls Sedes Mundialistas',
+  'promediodecapacidadtableroamazoncounter': 'Tablero Amazon Counter',
+  'promedioderesultadocertificacionalimentosybebidas2026': 'Alimentos y Bebidas',
+};
 
 const ALIASES_D8 = {
   plaza:   ['Plaza'],
@@ -315,10 +334,44 @@ function cleanKeyD8(str){ return String(str||'').normalize('NFD').replace(/[\u03
 function findRealKeyD8(row, aliases){ return OXXO.metricsFindKey(row, aliases); }
 let C = {};
 let CERT_REAL_KEYS = {}; // label-key -> real column name found in row
+
+// "ModuloCercaSiempre2026" -> "Modulo Cerca Siempre 2026", para columnas que aun no conocemos.
+function separarPegado(txt){
+  return String(txt)
+    .replace(/([a-záéíóúñ])([A-ZÁÉÍÓÚÑ])/g, '$1 $2')
+    .replace(/([A-Za-zÁÉÍÓÚÑáéíóúñ])(\d)/g, '$1 $2')
+    .replace(/(\d)([A-ZÁÉÍÓÚÑ])/g, '$1 $2')
+    .replace(/\s+/g, ' ').trim();
+}
+function etiquetaCert(colName){
+  const conocida = CERT_ETIQUETAS[cleanKeyD8(colName)];
+  if(conocida) return conocida;
+  return separarPegado(String(colName).replace(/^\s*Promedio de\s+/i, ''));
+}
+function esColumnaCert(colName){
+  if(/^\s*Promedio de\s+/i.test(colName)) return true;
+  return CERT_EXTRA_D8.some(x => cleanKeyD8(x) === cleanKeyD8(colName));
+}
+function detectarCerts(sample){
+  return Object.keys(sample)
+    .filter(k => k && esColumnaCert(k))
+    .map(k => ({ key:k, label: etiquetaCert(k) }));
+}
+
+// Reparte las certificaciones detectadas entre las que traen datos y las que estan vacias.
+function clasificarCerts(candidatas, data){
+  CERT_COLS = [];
+  CERT_PENDIENTES = [];
+  candidatas.forEach(c => {
+    const tieneDatos = data.some(r => capValue(r, c.key) !== null);
+    (tieneDatos ? CERT_COLS : CERT_PENDIENTES).push(c);
+  });
+}
+
 function buildColsD8(sample){
   const cols = {};
   Object.entries(ALIASES_D8).forEach(([k,aliases]) => { cols[k] = findRealKeyD8(sample, aliases) || aliases[0]; });
-  CERT_COLS.forEach(c => { CERT_REAL_KEYS[c.key] = findRealKeyD8(sample, [c.key]) || c.key; });
+  detectarCerts(sample).forEach(c => { CERT_REAL_KEYS[c.key] = findRealKeyD8(sample, [c.key]) || c.key; });
   return cols;
 }
 
@@ -393,7 +446,7 @@ function renderAll() {
   const compTotal = certStats.reduce((s,c)=>s+c.comp,0);
   const pctGlobal = aplicTotal ? Math.round(compTotal/aplicTotal*100) : 0;
   const critica = certStats.filter(c=>c.pct!==null).sort((a,b)=>a.pct-b.pct)[0];
-  const sinDatos = certStats.filter(c=>c.aplic===0).length;
+  const sinDatos = CERT_PENDIENTES.length;
   const tiendas = new Set(data.map(r => r[C.unidad])).size;
 
   document.getElementById('kpi-section').innerHTML = `
@@ -418,13 +471,21 @@ function renderAll() {
     <div class="kpi-card">
       <div class="kpi-card__label">Tiendas Cubiertas<span class="info-tip" tabindex="0" data-tip="Tiendas distintas (Unidad org.) presentes en el tablero con los filtros activos."></span></div>
       <div class="kpi-card__value">${tiendas}</div>
-      <div class="kpi-card__delta neu">${sinDatos} certif. sin datos aún</div>
+      <div class="kpi-card__delta neu" title="${sinDatos ? OXXO.escHtml(CERT_PENDIENTES.map(c=>c.label).join(', ')) : ''}">${sinDatos} certif. sin datos aún</div>
       <div class="kpi-card__icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg></div>
     </div>`;
 
   // ── Barras: cumplimiento por certificación ──
   const certConDatos = certStats.filter(c=>c.aplic>0);
   document.getElementById('badge-certs').textContent = certConDatos.length + ' con datos';
+  const avisoPend = document.getElementById('certs-pendientes');
+  if(CERT_PENDIENTES.length){
+    avisoPend.innerHTML = '<b>Sin datos aún:</b> ' + CERT_PENDIENTES.map(c=>OXXO.escHtml(c.label)).join(' · ')
+      + '. La columna ya existe en la hoja, pero todavía no la llenan.';
+    avisoPend.hidden = false;
+  } else {
+    avisoPend.hidden = true;
+  }
   if(chartCerts) chartCerts.destroy();
   chartCerts = new Chart(document.getElementById('chart-certs').getContext('2d'), {
     type: 'bar',
@@ -626,6 +687,7 @@ async function initDashboard() {
   data.forEach(row => OXXO.applyAsesorCatalog(row, asesorCatalog, { asesorKey:C.asesor, tiendaKey:C.unidad, crKey:C.cr }));
   data = OXXO.filterValidTiendas(data, asesorCatalog, C.unidad, C.cr);
   BASE_DATA = data;
+  clasificarCerts(detectarCerts(data[0]), data);
 
   document.getElementById('corte-badge').textContent = `⟳ Foto diaria · Plaza Oaxaca`;
 
