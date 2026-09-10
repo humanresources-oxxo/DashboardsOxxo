@@ -11,6 +11,9 @@ name: Versionar assets
 on:
   push:
     branches: [main]
+  # Tambien a mano desde la pestana Actions. Sirve para dispararlo cuando
+  # haga falta y para comprobar que Actions esta habilitado en el repo.
+  workflow_dispatch:
 
 permissions:
   contents: write
