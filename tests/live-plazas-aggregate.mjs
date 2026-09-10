@@ -80,7 +80,7 @@ const pieces = [
   take(/const ALIASES = \{[\s\S]*?\n\};/, 'ALIASES'),
   'function findKey(sample,aliases){ return OXXO.metricsFindKey(sample, aliases); }',
   take(/function buildMap\(data\)\{[\s\S]*?\n\}/, 'buildMap()'),
-  take(/function gv\(row,map,k,fb=''\)\{.*\n/, 'gv()'),
+  take(/function gv\(row,map,k,fb=''\)\{[^\n]*\}/, 'gv()'),
   take(/function normalizeSearchText\(value\)\{[\s\S]*?\n\}/, 'normalizeSearchText()'),
   take(/function normalizeMesColumn\(value\)\{[\s\S]*?\n\}/, 'normalizeMesColumn()'),
   take(/function monthShortLabel\(key\)\{[\s\S]*?\n\}/, 'monthShortLabel()'),
@@ -91,7 +91,7 @@ const pieces = [
   take(/function isVacancySourceRow\(rawRow\)\{[\s\S]*?\n\}/, 'isVacancySourceRow()'),
   take(/function gvizColumnLetter\(index\)\{[\s\S]*?\n\}/, 'gvizColumnLetter()'),
   take(/function gvizColumnFor\(key\)\{[\s\S]*?\n\}/, 'gvizColumnFor()'),
-  take(/const PLAZAS_COUNT_HEADER = .*\n/, 'PLAZAS_COUNT_HEADER'),
+  take(/const PLAZAS_COUNT_HEADER = [^\r\n]*\r?\n/, 'PLAZAS_COUNT_HEADER'),
   take(/function plazasAggregateQuery\(\)\{[\s\S]*?\n\}/, 'plazasAggregateQuery()'),
   take(/function plazasAccumulator\(mesSeleccionado\)\{[\s\S]*?\n\}/, 'plazasAccumulator()'),
   take(/function plazasDesdeAgregado\(filas, mes\)\{[\s\S]*?\n\}/, 'plazasDesdeAgregado()'),
@@ -109,6 +109,9 @@ D1.setContext(Object.keys(completa[0] || {}), D1.buildMap(completa));
 
 const query = D1.plazasAggregateQuery();
 assert(query, 'no se pudo armar la consulta agregada: falta alguna columna esperada en la hoja');
+assert.match(query, /contains 'vacante'/, 'la consulta debe contar solo estatus declarados como vacante');
+assert.match(query, /contains 'no ocupado'/, 'la consulta debe incluir estatus No ocupado');
+assert.doesNotMatch(query, /empleado\} is null| is null\)/, 'una celda vacia de empleado no debe convertir una posicion en vacante');
 console.log('consulta:', query);
 
 const agregado = await OXXO.fetchSheetData(TAB, { scoped: false, query });

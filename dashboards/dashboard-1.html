@@ -1875,15 +1875,13 @@ function tipoPuesto(desc){ return OXXO.metricsTipoPuesto(desc); }
 // no solo las vacantes, porque TREO necesita el total (SAP) para calcular
 // Activos/Vacantes por tienda. Esta funcion reconstruye "es vacante" del
 // lado del dashboard para que el conteo de Vacantes Diarias no se infle
-// contando tambien las posiciones ocupadas: una fila es vacante si su
-// Status lo dice explicitamente, o si no hay nombre de empleado en la
-// columna "Empleados" (cuando esa columna existe en la hoja).
+// contando tambien posiciones sin nombre capturado. Una fila cuenta solo si
+// el Status declara explicitamente que sigue vacante o no ocupada. Esta es la
+// misma regla de la fuente operativa y del comparativo de plazas.
 function isVacancySourceRow(rawRow){
   const status = normalizeSearchText(gv(rawRow,colMap,'status',''));
-  const empleado = String(gv(rawRow,colMap,'empleado','')).trim();
   if(status.includes('vacante') || status.includes('no ocupado')) return true;
-  if(colMap.empleado) return empleado === '';
-  return true;
+  return false;
 }
 // Semáforo días
 // Vacante de tienda nueva = mas de 500 dias vacantes, o columna 'Dias Vacantes' vacia (la
@@ -2346,7 +2344,7 @@ function plazasAggregateQuery(){
   const conteo = `count(${col.puesto})`;
   const puestos = DEFAULT_PUESTOS.map(pu=>`${col.puesto} = ${lit(pu)}`).join(' or ');
   return `select ${col.plaza}, ${col.tienda}, ${col.mes}, ${conteo}`
-    + ` where (lower(${col.status}) contains 'vacante' or lower(${col.status}) contains 'no ocupado' or ${col.empleado} is null)`
+    + ` where (lower(${col.status}) contains 'vacante' or lower(${col.status}) contains 'no ocupado')`
     + ` and (${puestos})`
     + ` and ${col.plaza} is not null and ${col.tienda} is not null and ${col.tienda} != 'Sin tienda'`
     + ` and not lower(${col.tienda}) contains 'entrenamiento' and not lower(${col.tienda}) contains 'operaciones'`
