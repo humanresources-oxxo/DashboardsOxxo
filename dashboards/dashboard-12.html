@@ -696,6 +696,17 @@ async function initDashboard(){
   C = buildColsD12(data[0]);
   const asesorCatalog = await OXXO.loadAsesorCatalog();
   data.forEach(row => OXXO.applyAsesorCatalog(row, asesorCatalog, { asesorKey:C.asesor, tiendaKey:C.tienda, crKey:C.cr }));
+  // La hoja publica el mes como fecha completa ("2026-07-01"): el publicador
+  // escribe el texto "2026-07" y Google lo reinterpreta como fecha al guardarlo.
+  // Todo el tablero agrupa por mes (MESES, POR_TIENDA_MES, HIST_TIENDA,
+  // nombreMes), asi que se recorta a AAAA-MM aqui, antes de filtrar y agrupar.
+  // Sin esto el filtro de abajo descartaba TODAS las filas y el tablero salia
+  // completamente vacio.
+  data.forEach(r => {
+    const m = /^(\d{4})-(\d{2})/.exec(String(r[C.mes] ?? '').trim());
+    if(m) r[C.mes] = `${m[1]}-${m[2]}`;
+  });
+
   // Filas sin mes o sin tienda no son evaluaciones reales (renglones de total,
   // filas en blanco al final de la hoja); se descartan antes de agrupar.
   BASE = data.filter(r => /^\d{4}-\d{2}$/.test(val(r, C.mes)) && val(r, C.cr));
