@@ -300,8 +300,8 @@
 const TAB = OXXO.SHEETS_CONFIG.TABS.d8;
 
 // Las certificaciones no se codifican a mano: se leen de los encabezados de la hoja.
-// Asi, cuando TREO agrega una columna nueva, el tablero la muestra sola.
-// CERT_COLS = las que ya traen datos. CERT_PENDIENTES = la columna existe pero viene vacia.
+// CERT_COLS = las que ya traen datos. CERT_PENDIENTES se conserva internamente
+// para no tratar una columna vacía como 0%, pero no se muestra como alerta.
 let CERT_COLS = [];
 let CERT_PENDIENTES = [];
 let CELDAS_CORREGIDAS = 0; // decimales que la hoja publico mal y se recuperaron al leer
@@ -310,6 +310,15 @@ let CELDAS_CORREGIDAS = 0; // decimales que la hoja publico mal y se recuperaron
 // o si esta en esta lista de excepciones. Cualquier otra columna que agreguen
 // -una fecha, un correo- se ignora sola en vez de aparecer como certificacion falsa.
 const CERT_EXTRA_D8 = ['Pan Horneado'];
+
+// Existen en el archivo fuente, pero no forman parte del seguimiento operativo
+// de Capacidades. Se ignoran aun si vienen vacías, para que no aparezcan como
+// pendientes ni ensucien los indicadores del tablero.
+const CERT_IGNORADAS_D8 = new Set([
+  'promediodecobrodlssedesmundialistas2026',
+  'promedioderesultadocertificacionalimentosybebidas2026',
+  'panhorneado'
+]);
 
 // Nombres que la hoja trae pegados y que ya conocemos.
 const CERT_ETIQUETAS = {
@@ -355,7 +364,7 @@ function esColumnaCert(colName){
 }
 function detectarCerts(sample){
   return Object.keys(sample)
-    .filter(k => k && esColumnaCert(k))
+    .filter(k => k && esColumnaCert(k) && !CERT_IGNORADAS_D8.has(cleanKeyD8(k)))
     .map(k => ({ key:k, label: etiquetaCert(k) }));
 }
 
@@ -469,7 +478,6 @@ function renderAll() {
   const compTotal = certStats.reduce((s,c)=>s+c.comp,0);
   const pctGlobal = aplicTotal ? Math.round(compTotal/aplicTotal*100) : 0;
   const critica = certStats.filter(c=>c.pct!==null).sort((a,b)=>a.pct-b.pct)[0];
-  const sinDatos = CERT_PENDIENTES.length;
   const tiendas = new Set(data.map(r => r[C.unidad])).size;
 
   document.getElementById('kpi-section').innerHTML = `
@@ -494,29 +502,16 @@ function renderAll() {
     <div class="kpi-card">
       <div class="kpi-card__label">Tiendas Cubiertas<span class="info-tip" tabindex="0" data-tip="Tiendas distintas (Unidad org.) presentes en el tablero con los filtros activos."></span></div>
       <div class="kpi-card__value">${tiendas}</div>
-      <div class="kpi-card__delta neu" title="${sinDatos ? OXXO.escHtml(CERT_PENDIENTES.map(c=>c.label).join(', ')) : ''}">${sinDatos} certif. sin datos aún</div>
+      <div class="kpi-card__delta neu">Con filtros activos</div>
       <div class="kpi-card__icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg></div>
     </div>`;
 
   // ── Barras: cumplimiento por certificación ──
   const certConDatos = certStats.filter(c=>c.aplic>0);
   document.getElementById('badge-certs').textContent = certConDatos.length + ' con datos';
-  const avisoPend = document.getElementById('certs-pendientes');
-  const partes = [];
-  if(CERT_PENDIENTES.length){
-    partes.push('<b>Sin datos aún:</b> ' + CERT_PENDIENTES.map(c=>OXXO.escHtml(c.label)).join(' · ')
-      + '. La columna ya existe en la hoja, pero todavía no la llenan.');
-  }
-  if(CELDAS_CORREGIDAS){
-    partes.push('<b>Decimales corregidos:</b> ' + CELDAS_CORREGIDAS + ' celdas venían con el punto mal leído '
-      + '(un avance de 0.3333 se publica como 3.333). Se leen con su valor real; conviene arreglarlo en la hoja.');
-  }
-  if(partes.length){
-    avisoPend.innerHTML = partes.join('<br>');
-    avisoPend.hidden = false;
-  } else {
-    avisoPend.hidden = true;
-  }
+  // Las correcciones de formato y las columnas no operativas se resuelven al
+  // leer la base. Son un detalle técnico, no una alerta para quien consulta.
+  document.getElementById('certs-pendientes').hidden = true;
   if(chartCerts) chartCerts.destroy();
   chartCerts = new Chart(document.getElementById('chart-certs').getContext('2d'), {
     type: 'bar',
