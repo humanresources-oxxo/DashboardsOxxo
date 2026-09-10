@@ -185,4 +185,20 @@ assert.deepEqual(JSON.parse(JSON.stringify(parsed.rows[0])), {
   Region: 'TABASCO', Plaza: 'Plaza Oaxaca', Zona: '', ACTIVA: 'SI'
 });
 
+// Capacidades llega en dos formatos de Excel. El reporte actual nombra la
+// certificacion simplemente "PLD 2026"; debe conservarse en la columna
+// tecnica que usan Dashboard 8 y Mi Tienda.
+catalogDashboard = {
+  output: ['Plaza', 'Asesor_Correcto', 'Unidad org.', 'Cr de tienda', 'Puesto_Correcto', 'Nº personal', 'Empleados', 'Promedio de PLD2026Certificacion'],
+  required: ['Plaza', 'Asesor_Correcto', 'Puesto_Correcto', 'Empleados'],
+  derive: (row) => row,
+  filter: (row) => Boolean(row.Empleados)
+};
+const capacidades = normalizers.rowsFromMatrix([
+  ['Plaza', 'Asesor_Correcto', 'Unidad org.', 'Cr de tienda', 'Puesto_Correcto', 'Nº personal', 'Empleados', 'PLD 2026'],
+  ['Oaxaca', 'Laura Alejandra Moreno Mayoral', 'OXXO COSTA CHICA OAX', '50TDH', 'Líder', '3142521', 'Ivon Montalvan Ibarra', '100%']
+], catalogDashboard);
+assert.equal(capacidades.rows.length, 1);
+assert.equal(capacidades.rows[0]['Promedio de PLD2026Certificacion'], '100%');
+
 console.log('data-context, alcance regional, periodos, catalogo de tiendas y avisos: 42 pruebas correctas');
