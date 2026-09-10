@@ -92,6 +92,7 @@ console.log('Mi Tienda rendering: unchanged source reused; selection, reload and
   sandbox.fetchSheetData = async () => [
     {Mes:'2026-08',Tienda:'OXXO A',Puesto:'AYUDANTE DE TIENDA',Asesor:'Ana','Status ocupacion':'Vacante'},
     {Mes:'2026-09',Tienda:'OXXO A',Puesto:'AYUDANTE DE TIENDA',Asesor:'Ana','Status ocupacion':'Ocupada',Empleados:'Persona'},
+    {Mes:'2026-09',Tienda:'OXXO B',Puesto:'AYUDANTE DE TIENDA',Asesor:'Beto','Status ocupacion':'Ocupada',Empleados:''},
   ];
   sandbox.loadAsesorCatalog = async () => null;
   const history = await api.metricsD1Rows(true);
@@ -101,3 +102,9 @@ console.log('Mi Tienda rendering: unchanged source reused; selection, reload and
   assert.equal(current.rows.length,0);
   console.log('Vacancies: an occupied latest month does not fall back to historical vacancies.');
 })().catch(error => { console.error(error); process.exitCode = 1; });
+
+// El selector se inicia con el catálogo para ser inmediato y se reconstruye
+// al terminar todas las fuentes; así incorpora tiendas vigentes que falten en
+// el catálogo sin perder la selección actual.
+assert.match(tiendaCode, /function mountTiendaSelector\(\)/);
+assert.match(tiendaCode, /await Promise\.allSettled[\s\S]*?mountTiendaSelector\(\);/);

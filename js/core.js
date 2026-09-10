@@ -2403,15 +2403,14 @@ function metricsDiasVacantesValue(raw) {
 // no solo las vacantes, porque TREO necesita el total (SAP) para calcular
 // Activos/Vacantes por tienda. Este filtro reconstruye "es vacante" del lado
 // del dashboard para que el conteo de Vacantes Diarias no se infle contando
-// tambien las posiciones ocupadas: una fila es vacante si su Status lo dice
-// explicitamente, o si no hay nombre de empleado en la columna "Empleados"
-// (cuando esa columna existe en la hoja).
+// tambien posiciones sin nombre capturado. Una fila cuenta solo si su Status
+// declara explicitamente que sigue vacante o no ocupada. Esta regla es
+// compartida por Dashboard 1, Mi Tienda y Mi Dashboard.
 function metricsIsVacanteSourceD1(row, keys) {
-  const { statusKey, empleadoKey } = keys;
+  const { statusKey } = keys;
   const status = metricsNormText(metricsVal(row, statusKey));
   if (status.includes('VACANTE') || status.includes('NO OCUPADO')) return true;
-  if (empleadoKey) return String(metricsVal(row, empleadoKey) || '').trim() === '';
-  return true;
+  return false;
 }
 // Compatibilidad para consumidores que necesiten aplicar explicitamente el
 // criterio historico de 1+ dias. El Dashboard 1 ya no lo usa como default:

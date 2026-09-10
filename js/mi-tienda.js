@@ -104,6 +104,7 @@
   const SOURCE_KEYS = ['d1', 'd2', 'd3', 'd4', 'd5', 'd6', 'd7', 'd8', 'd9', 'd10', 'd11', 'inventarios'];
   const SOURCE_STATE = Object.fromEntries(SOURCE_KEYS.map((key) => [key, 'pending']));
   let activeTiendaDisplay = '';
+  let tiendaSelectControl = null;
   let progressiveRenderFrame = 0;
 
   // El nombre de tienda no viene igual en todas las bases, y en 7 casos ni
@@ -847,6 +848,24 @@
     });
   }
 
+  // El catálogo es el punto de partida del buscador. Al terminar las fuentes
+  // incorporamos tiendas que vengan en una carga vigente pero que aún no se
+  // hayan dado de alta en el catálogo, conservando la selección del usuario.
+  // Así una tienda nunca desaparece de Mi Tienda por un desfase de catálogo.
+  function mountTiendaSelector() {
+    const previous = activeTiendaDisplay;
+    tiendaSelectControl = mountSingleSelect('mi-tienda-select', [...TIENDAS.values()], {
+      placeholder: 'Busca tu tienda',
+      searchId: 'mi-tienda-search',
+      searchPlaceholder: 'Buscar tienda por nombre...',
+      onChange: renderFor,
+    });
+    if (previous && [...TIENDAS.values()].some((value) => tKey(value) === tKey(previous))) {
+      tiendaSelectControl?.setValue(previous);
+      renderFor(previous);
+    }
+  }
+
   // ── Administrativo · Resultados de Inventario ─────────
   // La tarjeta principal usa solo el ultimo corte disponible de la tienda.
   // El historial permanece accesible por periodo en los botones inferiores.
@@ -1337,12 +1356,7 @@
       CATALOG = await OXXO.loadAsesorCatalog();
       seedTiendasFromCatalog();
       if (!TIENDAS.size) throw new Error('El catálogo no contiene tiendas disponibles.');
-      mountSingleSelect('mi-tienda-select', [...TIENDAS.values()], {
-        placeholder: 'Busca tu tienda',
-        searchId: 'mi-tienda-search',
-        searchPlaceholder: 'Buscar tienda por nombre...',
-        onChange: renderFor,
-      });
+      mountTiendaSelector();
       setPageState('ready', 'Busca tu tienda arriba', 'Ya puedes elegirla. Cada apartado aparecerá en cuanto termine de cargar su fuente.');
 
       const sources = [
@@ -1363,6 +1377,9 @@
           scheduleProgressiveRender();
         }
       }));
+      // Las cargas pueden traer tiendas vigentes que aún no estén listadas en
+      // el catálogo. Se reconstruye una vez, ya con todas las fuentes listas.
+      mountTiendaSelector();
     } catch (error) {
       console.error('Mi Tienda: error de carga', error);
       corte.className = 'hero-badge is-error';
