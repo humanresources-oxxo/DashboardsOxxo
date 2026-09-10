@@ -23,18 +23,39 @@ window.OXXO_ADMIN_PUBLISHERS = function createAdminPublishers(deps){
   } = deps;
 
   function isFetchBlocked(error){return /failed to fetch|load failed|networkerror|cors/i.test(String(error?.message||error||''));}
+  function isTransientPublishError(error){return /HTTP (404|408|429|5\d\d)\b/i.test(String(error?.message||error||''));}
+  function retryUrl(url,attempt){
+    if(!attempt)return url;
+    return `${url}${url.includes('?')?'&':'?'}_publishRetry=${Date.now()}-${attempt}`;
+  }
   async function postAdminPayload(payload){
     const url=publishUrl();
     if(!url)throw new Error('Falta configurar Apps Script.');
+    const body=JSON.stringify(payload);
     try{
-      const response=await fetch(url,{method:'POST',mode:'cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)});
-      if(!response.ok)throw new Error('HTTP '+response.status);
-      const result=await response.json().catch(()=>({ok:true}));
-      if(result.ok===false)throw new Error(result.error||'Apps Script rechazo la publicacion');
-      return result;
+      // Apps Script puede responder 404 brevemente mientras redirige una
+      // petición grande a la versión activa. Reintentamos solo respuestas
+      // inequívocamente transitorias; los rechazos de validación y permisos
+      // se muestran de inmediato y nunca se reenvían.
+      let lastError;
+      for(let attempt=0;attempt<3;attempt++){
+        try{
+          const response=await fetch(retryUrl(url,attempt),{method:'POST',mode:'cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body});
+          if(!response.ok)throw new Error('HTTP '+response.status);
+          const result=await response.json().catch(()=>({ok:true}));
+          if(result.ok===false)throw new Error(result.error||'Apps Script rechazo la publicacion');
+          return result;
+        }catch(error){
+          lastError=error;
+          if(isFetchBlocked(error)||!isTransientPublishError(error)||attempt===2)break;
+          await new Promise(resolve=>setTimeout(resolve,700*(attempt+1)));
+        }
+      }
+      if(isTransientPublishError(lastError))throw new Error('El servicio de publicación respondió temporalmente sin disponibilidad. Se reintentó 3 veces sin modificar la base; recarga el panel y vuelve a publicar.');
+      throw lastError;
     }catch(error){
       if(!isFetchBlocked(error))throw error;
-      await fetch(url,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)});
+      await fetch(url,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body});
       return {ok:true,compatibilityMode:true};
     }
   }
