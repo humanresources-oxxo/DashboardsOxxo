@@ -304,6 +304,7 @@ const TAB = OXXO.SHEETS_CONFIG.TABS.d8;
 // CERT_COLS = las que ya traen datos. CERT_PENDIENTES = la columna existe pero viene vacia.
 let CERT_COLS = [];
 let CERT_PENDIENTES = [];
+let CELDAS_CORREGIDAS = 0; // decimales que la hoja publico mal y se recuperaron al leer
 
 // Una columna es certificacion si se llama "Promedio de ..." (asi las nombra la hoja)
 // o si esta en esta lista de excepciones. Cualquier otra columna que agreguen
@@ -358,12 +359,22 @@ function detectarCerts(sample){
     .map(k => ({ key:k, label: etiquetaCert(k) }));
 }
 
-// Reparte las certificaciones detectadas entre las que traen datos y las que estan vacias.
+// Reparte las certificaciones detectadas entre las que traen datos y las que estan vacias,
+// y de paso cuenta cuantas celdas traen el decimal mal publicado por la hoja.
 function clasificarCerts(candidatas, data){
   CERT_COLS = [];
   CERT_PENDIENTES = [];
+  CELDAS_CORREGIDAS = 0;
   candidatas.forEach(c => {
-    const tieneDatos = data.some(r => capValue(r, c.key) !== null);
+    const col = CERT_REAL_KEYS[c.key];
+    let tieneDatos = false;
+    data.forEach(r => {
+      const raw = r[col];
+      if(raw === undefined || raw === null || String(raw).trim() === '') return;
+      tieneDatos = true;
+      const n = OXXO.metricsNum ? OXXO.metricsNum(raw) : parseFloat(String(raw).replace(',','.'));
+      if(Number.isFinite(n) && n > 1) CELDAS_CORREGIDAS++;
+    });
     (tieneDatos ? CERT_COLS : CERT_PENDIENTES).push(c);
   });
 }
@@ -375,11 +386,23 @@ function buildColsD8(sample){
   return cols;
 }
 
+// La hoja publica algunos decimales mal: "0.3333" sale como "3.333" porque
+// el punto se lee como separador de miles. Estas columnas son promedios de 0 a 1,
+// asi que CUALQUIER valor mayor a 1 es ese error de formato, no un dato real.
+// Sin esto un avance de 33% se cuenta como certificacion completada e infla el %.
+// Los digitos se conservan intactos, por eso se puede recuperar el valor original.
+function decimalRecuperado(raw){
+  const digitos = String(raw).replace(/\D/g, '');
+  const v = parseFloat('0.' + digitos);
+  return Number.isFinite(v) ? v : 0;
+}
+
 function capValue(row, certKey){
   const raw = row[CERT_REAL_KEYS[certKey]];
   if(raw === undefined || raw === null || String(raw).trim() === '') return null; // no aplica
   const n = OXXO.metricsNum ? OXXO.metricsNum(raw) : parseFloat(String(raw).replace(',','.'));
-  return Number.isFinite(n) ? n : null;
+  if(!Number.isFinite(n)) return null;
+  return n > 1 ? decimalRecuperado(raw) : n;
 }
 function capColorPct(pct){
   if(pct === null) return 'na';
@@ -479,9 +502,17 @@ function renderAll() {
   const certConDatos = certStats.filter(c=>c.aplic>0);
   document.getElementById('badge-certs').textContent = certConDatos.length + ' con datos';
   const avisoPend = document.getElementById('certs-pendientes');
+  const partes = [];
   if(CERT_PENDIENTES.length){
-    avisoPend.innerHTML = '<b>Sin datos aún:</b> ' + CERT_PENDIENTES.map(c=>OXXO.escHtml(c.label)).join(' · ')
-      + '. La columna ya existe en la hoja, pero todavía no la llenan.';
+    partes.push('<b>Sin datos aún:</b> ' + CERT_PENDIENTES.map(c=>OXXO.escHtml(c.label)).join(' · ')
+      + '. La columna ya existe en la hoja, pero todavía no la llenan.');
+  }
+  if(CELDAS_CORREGIDAS){
+    partes.push('<b>Decimales corregidos:</b> ' + CELDAS_CORREGIDAS + ' celdas venían con el punto mal leído '
+      + '(un avance de 0.3333 se publica como 3.333). Se leen con su valor real; conviene arreglarlo en la hoja.');
+  }
+  if(partes.length){
+    avisoPend.innerHTML = partes.join('<br>');
     avisoPend.hidden = false;
   } else {
     avisoPend.hidden = true;
