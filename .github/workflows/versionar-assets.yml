@@ -1,0 +1,50 @@
+# Pone el commit publicado como "?v=" en cada <script> y <link> local, para
+# que el navegador no siga sirviendo la copia vieja de un archivo que ya
+# cambio. Antes se hacia a mano y se notaba: convivian 20 sufijos distintos
+# y css/dashboard-skin.css iba sin ninguno en 15 paginas.
+#
+# El sitio se publica desde la rama (Pages clasico), asi que el arreglo se
+# escribe en un commit de vuelta. Ese commit lleva [skip ci] y ademas el job
+# se salta a si mismo cuando el autor es el bot, para no reentrar en bucle.
+name: Versionar assets
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: versionar-assets
+  cancel-in-progress: false
+
+jobs:
+  versionar:
+    # Segunda red contra el bucle, ademas del [skip ci] del mensaje.
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # Que el versionado nunca publique un sitio roto.
+      - name: Pruebas
+        run: node --test tests/*.test.js
+
+      - name: Escribir la version en los assets
+        run: node scripts/version-assets.mjs
+
+      - name: Publicar solo si algo cambio
+        run: |
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "Los assets ya traian la version de este commit."
+            exit 0
+          fi
+          git config user.name  'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -am "Versiona los assets (${GITHUB_SHA:0:8}) [skip ci]"
+          git push
