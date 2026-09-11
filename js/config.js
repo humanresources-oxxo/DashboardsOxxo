@@ -173,7 +173,7 @@ window.OXXO_CONFIG = {
   ADMIN_UPLOAD_URL: "https://script.google.com/macros/s/AKfycbwe_RcnVRkZy9x1YcRuum4qdLucIWLTVsnTZcMvQDyobo6f3ot-YG0Lv00hYS-1XEg/exec",
   // Confirmado directamente contra la URL /exec el 27-08-2026. Sirve como
   // respaldo cuando Brave u otro navegador bloquea solo la consulta de salud.
-  VERIFIED_ADMIN_RUNTIME_VERSION: 44,
+  VERIFIED_ADMIN_RUNTIME_VERSION: 45,
 
   // Nombres exactos de pestanas en Google Sheets.
   TABS: {

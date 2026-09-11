@@ -70,7 +70,10 @@ window.OXXO_ADMIN_PUBLISHERS = function createAdminPublishers(deps){
   // exito antes de llegar aqui) ni se le muestra error extra al usuario.
   function notifyConfigDate(dashKey){
     const url=publishUrl();if(!url)return;
-    const configId=(String(dashKey||'').match(/^[ds]\d/)||[])[0];
+    // La clave de configuracion es la clave completa del dashboard. Antes se
+    // extraian solo dos caracteres (d11 se convertia en d1) y se descartaban
+    // m12, a13 y c14; por eso sus tarjetas de inicio nunca recibian fecha.
+    const configId=String(dashKey||'').trim().toLowerCase();
     if(!configId)return;
     fetch(url,{method:'POST',mode:'cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'updateConfigDate',adminPassword:getAdminPassword(),dashboardId:configId})}).catch(()=>{});
   }

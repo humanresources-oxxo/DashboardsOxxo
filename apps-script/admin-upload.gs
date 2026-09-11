@@ -12,7 +12,7 @@
  * Despues de eso, admin.html publica directo sin pedir URL.
  */
 const SPREADSHEET_ID = '1EbUuyy-PRXiDwPmn9L14P93cGN6VXTyLfAHx-CE8M_A';
-const APP_VERSION = '44';
+const APP_VERSION = '45';
 const ADMIN_PASSWORD_PROPERTY = 'ADMIN_PASSWORD';
 const AUDIT_SHEET = '_Admin_Bitacora';
 const BACKUP_PREFIX = '_BK_';
@@ -82,6 +82,29 @@ const ALLOWED_SHEETS = [
   'Catalogo_Asesores',
   'Reasignaciones'
 ];
+
+// Registro unico para la portada. Las claves coinciden con home-navigation.js
+// y no con el nombre tecnico de las pestañas. Mantenerlo aqui permite que una
+// publicacion nueva agregue su fila de Configuracion automaticamente y que la
+// fecha siempre corresponda a una publicacion real, no a una visita al panel.
+const CONFIG_DASHBOARD_REGISTRY = {
+  d1: { name: 'Vacantes Diarias', frequency: 'Diario', sheet: 'Dashboard_1_Diario' },
+  d2: { name: 'Bajas Diarias', frequency: 'Diario', sheet: 'Dashboard_2_Diario' },
+  d3: { name: 'Aprovechamiento de Estructura', frequency: 'Diario', sheet: 'Dashboard_3_Diario' },
+  s4: { name: 'Tiempo Extra', frequency: 'Semanal', sheet: 'Dashboard_4_Semanal' },
+  s5: { name: 'Vacaciones', frequency: 'Semanal', sheet: 'Dashboard_5_Semanal' },
+  s6: { name: 'Ausentismos', frequency: 'Semanal', sheet: 'Dashboard_6_Semanal' },
+  s7: { name: 'TREO', frequency: 'Semanal', sheet: 'Dashboard_7_Semanal' },
+  d8: { name: 'Capacidades 2026', frequency: 'Diario', sheet: 'Dashboard_8_Diario' },
+  s9: { name: 'Faltantes y Sobrantes', frequency: 'Semanal', sheet: 'Dashboard_9_Semanal' },
+  d10: { name: 'Personal FLEX', frequency: 'Diario', sheet: 'Dashboard_10_FLEX' },
+  d11: { name: 'Cumplimiento de Marcajes', frequency: 'Semanal', sheet: 'Dashboard_11_Semanal' },
+  m12: { name: 'Enfoque del Líder', frequency: 'Mensual', sheet: 'Dashboard_12_Mensual' },
+  a13: { name: 'Control de Ausentismo', frequency: 'Mensual', sheet: 'Dashboard_13_Ausentismo' },
+  c14: { name: 'Avance Comercial', frequency: 'Quincenal', sheet: 'Dashboard_14_Comercial' },
+  inventories: { name: 'Resultados de Inventario', frequency: 'Mensual', sheet: 'Inventarios' },
+  promos: { name: 'Promociones', frequency: 'Quincenal', sheet: 'Promociones' }
+};
 
 // action=readSheet&sheet=NOMBRE: lee una hoja completa via SpreadsheetApp (sin
 // pasar por gviz). Necesario porque gviz corrompe la exportacion CSV de
@@ -1105,6 +1128,10 @@ function readAudit(limit) {
 
 function getAdminOverview(limit) {
   const ss = SPREADSHEET_ID ? SpreadsheetApp.openById(SPREADSHEET_ID) : SpreadsheetApp.getActiveSpreadsheet();
+  // Repara de forma idempotente las filas de configuracion que se crearon
+  // antes de que existiera el registro automatico de los dashboards nuevos.
+  // Usa exclusivamente la fecha de una publicacion Correcta en la bitacora.
+  syncMissingConfigDatesFromAudit_(ss);
   const audit = readAudit(limit);
   const auditSheet = ss.getSheetByName(AUDIT_SHEET);
   const latestBySheet = {};
@@ -1342,44 +1369,92 @@ function writeWithBufferRow(sheet, values, numCols) {
   SpreadsheetApp.flush();
 }
 
-// Actualiza SOLO la celda "ultima_actualizacion" de la fila de un dashboard
-// en la hoja Configuracion (columna A=dashboard_id, ver comentario de
-// loadSystemConfig en core.js), sin tocar ninguna otra celda/fila. No usa
-// writeWithBufferRow porque aqui no se reemplaza la hoja completa — es una
-// edicion quirurgica de una sola celda.
-function updateConfigDate(dashboardId) {
-  if (!dashboardId) throw new Error('dashboardId requerido');
-  const ss = SPREADSHEET_ID
-    ? SpreadsheetApp.openById(SPREADSHEET_ID)
-    : SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = ss.getSheetByName('Configuracion');
-  if (!sheet) throw new Error('Hoja Configuracion no encontrada');
-
+function configLayout_(sheet) {
   const values = sheet.getDataRange().getValues();
-  const normCell = v => String(v || '').trim().toLowerCase();
-
   let headerRow = -1, headers = [];
   for (let i = 0; i < values.length; i++) {
-    if (values[i].some(c => normCell(c) === 'dashboard_id')) { headerRow = i; headers = values[i]; break; }
+    if (values[i].some(c => normalizeCell(c) === 'dashboard_id')) { headerRow = i; headers = values[i]; break; }
   }
   if (headerRow === -1) throw new Error('No se encontro el encabezado dashboard_id en Configuracion');
-
-  const idxId = headers.findIndex(h => normCell(h) === 'dashboard_id');
-  const idxFecha = headers.findIndex(h => normCell(h) === 'ultima_actualizacion');
+  const idxId = headers.findIndex(h => normalizeCell(h) === 'dashboard_id');
+  const idxFecha = headers.findIndex(h => normalizeCell(h) === 'ultima_actualizacion');
   if (idxFecha === -1) throw new Error('No se encontro la columna ultima_actualizacion en Configuracion');
+  return { values: values, headerRow: headerRow, headers: headers, idxId: idxId, idxFecha: idxFecha };
+}
 
-  const wantedId = normCell(dashboardId);
-  for (let i = headerRow + 1; i < values.length; i++) {
-    if (normCell(values[i][idxId]) === wantedId) {
-      const today = Utilities.formatDate(new Date(), 'America/Mexico_City', 'dd/MM/yyyy');
-      sheet.getRange(i + 1, idxFecha + 1).setValue(today);
-      return { ok: true, updated: true, dashboardId: wantedId, date: today };
+function latestSuccessfulPublicationBySheet_(ss) {
+  const audit = ss.getSheetByName(AUDIT_SHEET);
+  const latest = {};
+  if (!audit || audit.getLastRow() < 2) return latest;
+  const values = audit.getDataRange().getValues();
+  const headers = values.shift().map(String);
+  const sheetIndex = headers.indexOf('Hoja');
+  const dateIndex = headers.indexOf('Fecha');
+  const statusIndex = headers.indexOf('Estado');
+  if (sheetIndex < 0 || dateIndex < 0 || statusIndex < 0) return latest;
+  for (let i = values.length - 1; i >= 0; i--) {
+    const sheetName = String(values[i][sheetIndex] || '').trim();
+    const date = values[i][dateIndex];
+    const status = normalizeCell(values[i][statusIndex]);
+    if (!sheetName || latest[sheetName] || status !== 'correcta') continue;
+    if (Object.prototype.toString.call(date) === '[object Date]' && !isNaN(date)) latest[sheetName] = date;
+  }
+  return latest;
+}
+
+function insertConfigRow_(sheet, layout, dashboardId, date) {
+  const meta = CONFIG_DASHBOARD_REGISTRY[dashboardId];
+  if (!meta) return null;
+  // Las instrucciones empiezan despues de las filas con dashboard_id. Insertar
+  // justo antes para conservarlas intactas y mantener el bloque de datos unido.
+  let row = layout.headerRow + 1;
+  while (row < layout.values.length && normalizeCell(layout.values[row][layout.idxId])) row++;
+  sheet.insertRowBefore(row + 1);
+  const values = new Array(layout.headers.length).fill('');
+  values[layout.idxId] = dashboardId;
+  const set = (header, value) => {
+    const index = layout.headers.findIndex(h => normalizeCell(h) === header);
+    if (index >= 0) values[index] = value;
+  };
+  set('nombre', meta.name);
+  set('frecuencia', meta.frequency);
+  set('ultima_actualizacion', date);
+  set('responsable', 'Sistema');
+  set('activo', 'SI');
+  sheet.getRange(row + 1, 1, 1, values.length).setValues([values]);
+  return row;
+}
+
+// Actualiza la fecha de una publicacion real. Si el dashboard fue agregado
+// despues de crear Configuracion, se registra automaticamente sin tocar las
+// instrucciones ni inventar fechas. La bitacora permite recuperar la ultima
+// fecha real ya registrada para las filas que faltaban antes de este ajuste.
+function updateConfigDate(dashboardId, publishedAt) {
+  const wantedId = normalizeCell(dashboardId);
+  if (!wantedId) throw new Error('dashboardId requerido');
+  const ss = SPREADSHEET_ID ? SpreadsheetApp.openById(SPREADSHEET_ID) : SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName('Configuracion');
+  if (!sheet) throw new Error('Hoja Configuracion no encontrada');
+  const layout = configLayout_(sheet);
+  const eventDate = publishedAt instanceof Date ? publishedAt : new Date();
+  const date = Utilities.formatDate(eventDate, 'America/Mexico_City', 'dd/MM/yyyy');
+  for (let i = layout.headerRow + 1; i < layout.values.length; i++) {
+    if (normalizeCell(layout.values[i][layout.idxId]) === wantedId) {
+      sheet.getRange(i + 1, layout.idxFecha + 1).setValue(date);
+      return { ok: true, updated: true, created: false, dashboardId: wantedId, date: date };
     }
   }
-  // No es un error fatal: hay dashboards (d2otras, d2plan, d3plazas, s7...) que
-  // publican datos pero no tienen fila propia en Configuracion. Se reporta sin
-  // reventar el publish principal, que ya tuvo exito antes de llegar aqui.
-  return { ok: true, updated: false, error: 'dashboard_id no encontrado en Configuracion: ' + wantedId };
+  const inserted = insertConfigRow_(sheet, layout, wantedId, date);
+  if (inserted !== null) return { ok: true, updated: true, created: true, dashboardId: wantedId, date: date };
+  return { ok: true, updated: false, created: false, error: 'dashboard_id no reconocido: ' + wantedId };
+}
+
+function syncMissingConfigDatesFromAudit_(ss) {
+  const latest = latestSuccessfulPublicationBySheet_(ss);
+  Object.keys(CONFIG_DASHBOARD_REGISTRY).forEach(function(dashboardId) {
+    const eventDate = latest[CONFIG_DASHBOARD_REGISTRY[dashboardId].sheet];
+    if (eventDate) updateConfigDate(dashboardId, eventDate);
+  });
 }
 
 function replaceAll(sheet, rows, headers) {
