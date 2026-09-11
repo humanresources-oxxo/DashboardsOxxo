@@ -245,6 +245,12 @@ body.commercial-dashboard{background:linear-gradient(180deg,#edf7fc 0,#f8fbfd 36
       </div>
     </div>
 
+    <footer class="dash-footer">
+      <div class="dash-footer__update"><div class="dash-footer__update-dot"></div>
+        Datos cargados: <span id="load-time">—</span></div>
+      <div>Solo lectura · Google Sheets · Comercial</div>
+    </footer>
+
   </div>
 </div>
 
@@ -562,6 +568,7 @@ async function initDashboard(){
   estado.style.display = 'none';
   contenido.style.display = '';
   renderAll();
+  OXXO.updateFooterTime('load-time');
 }
 
 document.addEventListener('DOMContentLoaded', initDashboard);
