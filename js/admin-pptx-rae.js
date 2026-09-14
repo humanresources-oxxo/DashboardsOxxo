@@ -85,20 +85,29 @@
   }
 
   async function dataD3(){
-    const raw = await OXXO.fetchSheetData(OXXO.SHEETS_CONFIG.TABS.d3);
+    // La RAE es una presentación exclusiva de Plaza Oaxaca. El panel puede
+    // conservar un alcance regional de una navegación previa; no debe hacer
+    // que esta diapositiva mezcle asesores de otras plazas ni nombres crudos
+    // de la fuente ("CENTRALIZACION").
+    const raw = await OXXO.fetchSheetData(OXXO.SHEETS_CONFIG.TABS.d3, { scoped: false });
     if(!raw || !raw.length) return null;
-    const estatusKey = findKey(raw[0], ['Clas Aprov','Estatus Con impacto Ausentismo','Estatus']);
-    const asesorKey = findKey(raw[0], ['Asesor']);
-    const tiendaKey = findKey(raw[0], ['Tienda']);
-    const crKey = findKey(raw[0], ['CR TIENDA','CR Tienda','CR','ID Tienda']);
-    const ecPorAtKey = findKey(raw[0], ['Ec','EC','Ec por AT','EC POR AT','EC por AT','Ec Por AT']);
-    const atKey = findKey(raw[0], ['Ats','ATS','AT','At']);
-    const fechaKey = findKey(raw[0], ['Mes Semana','Semana','Fecha','FECHA']);
+    const oaxacaScope = OXXO.normalizeDataScope({ level:'plaza', region:'TABASCO', plaza:'Plaza Oaxaca' });
+    const scoped = raw.filter(r => OXXO.rowMatchesDataScope(r, oaxacaScope));
+    if(!scoped.length) return null;
+    const estatusKey = findKey(scoped[0], ['Clas Aprov','Estatus Con impacto Ausentismo','Estatus']);
+    const asesorKey = findKey(scoped[0], ['Asesor']);
+    const tiendaKey = findKey(scoped[0], ['Tienda']);
+    const crKey = findKey(scoped[0], ['CR TIENDA','CR Tienda','CR','ID Tienda']);
+    // Estas columnas son opcionales. Se exige nombre exacto para no confundir
+    // "EC" con "EC SIN AUSENTISMO" o "AT" con parte de "Estatus".
+    const ecPorAtKey = OXXO.metricsFindKeyExact(scoped[0], ['Ec por AT','EC POR AT','Ec Por AT','EC']);
+    const atKey = OXXO.metricsFindKeyExact(scoped[0], ['Ats','ATS','AT','At']);
+    const fechaKey = findKey(scoped[0], ['Mes Semana','Semana','Fecha','FECHA']);
     // Igual que Dashboard 3: aunque cada carga deberia reemplazar toda la
     // pestana (foto diaria), si llegaran a quedar varias fechas mezcladas se
     // usa solo la mas reciente, para no promediar dias distintos.
-    const fecha = latestByKey(raw, fechaKey);
-    const rows = fecha ? raw.filter(r => String(r[fechaKey]||'').trim() === fecha) : raw;
+    const fecha = latestByKey(scoped, fechaKey);
+    const rows = fecha ? scoped.filter(r => String(r[fechaKey]||'').trim() === fecha) : scoped;
     const total = rows.length;
     // Misma clasificacion que isCompleta/isIncompleta/isCritica de
     // dashboard-3.html (por texto de Estatus, no por umbral numerico).
@@ -147,10 +156,13 @@
     // filtros". El resto (total de tiendas y EC% de respaldo) sí usa solo
     // las filas de la fecha mas reciente.
     const ecByAt = new Map();
+    const asesorCatalog = await OXXO.loadAsesorCatalog();
     if(ecPorAtKey && atKey){
-      raw.forEach(r => {
+      scoped.forEach(r => {
         const ecVal = normPct(val(r, ecPorAtKey));
-        const atName = String(val(r, atKey)||'').trim().toUpperCase();
+        const atName = String(OXXO.resolveAsesorD1(asesorCatalog, {
+          cr: val(r, crKey), tienda: val(r, tiendaKey), asesor: val(r, atKey)
+        }) || '').trim().toUpperCase();
         if(!(ecVal > 0) || !atName) return;
         if(!ecByAt.has(atName)) ecByAt.set(atName, { sum: 0, n: 0 });
         const acc = ecByAt.get(atName);
@@ -163,7 +175,6 @@
     // Asignado" en el respaldo EC%, mezcladas con nombres de personas
     // reales. No afecta al cruce por 'ecByAt' de arriba, que agrupa por la
     // columna 'AT' (un concepto distinto a 'Asesor').
-    const asesorCatalog = await OXXO.loadAsesorCatalog();
     const byAsesor = new Map();
     rows.forEach(r => {
       const name = String(OXXO.resolveAsesorD1(asesorCatalog, { cr: val(r, crKey), tienda: val(r, tiendaKey), asesor: val(r, asesorKey) }) || '').trim();
