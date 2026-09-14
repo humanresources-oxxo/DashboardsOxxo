@@ -1177,8 +1177,14 @@ async function readSystemConfig() {
     const vals = parseLine(lines[i]);
     const id = (vals[idxId] || '').trim().toLowerCase();
     if (!id || norm(id) === 'instrucciones de uso') continue;
-    // Solo aceptar IDs válidos (d1-d9, s1-s9)
-    if (!/^[ds]\d$/.test(id)) continue;
+    // Solo aceptar IDs de dashboards que existan de verdad. Antes esto era
+    // /^[ds]\d$/ -- una letra y UN digito -- y se comia todo lo que no cupiera
+    // en ese molde: d10, d11, m12, a13, c14, promos e inventories. Por eso sus
+    // tarjetas en la portada decian "Sin fecha registrada" y su boton de
+    // descarga nunca aparecia, aunque la pestana Configuracion si tuviera la
+    // fila. La lista de pestanas es la fuente de verdad, asi no vuelve a
+    // quedarse corta cuando se agregue un dashboard nuevo.
+    if (!Object.prototype.hasOwnProperty.call(SHEETS_CONFIG.TABS || {}, id)) continue;
 
     const row = {};
     headers.forEach((h, idx) => { row[h] = vals[idx] || ''; });
