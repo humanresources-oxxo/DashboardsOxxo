@@ -9,8 +9,8 @@
 body .dashboards-grid{gap:12px!important}body .dashboards-section__header{margin-bottom:14px!important}
 @media(max-width:700px){#home-search-results:not([hidden]){grid-template-columns:1fr}.home-search-row{flex-wrap:wrap}.home-search-row label{width:100%}.home-favorites-row{align-items:flex-start}.home-navigation{padding:0 12px}.home-card-wrap .db-card{min-height:160px!important}}
 
-/* Alinear búsqueda y resumen con el ancho general de la portada. */
-.home-navigation,.home-executive{
+/* Alinear la búsqueda con el ancho general de la portada. */
+.home-navigation{
   box-sizing:border-box;
   width:min(calc(100% - (var(--page-gutter, 20px) * 2)),var(--page-max, 1920px));
   max-width:none;
