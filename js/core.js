@@ -468,9 +468,6 @@ function clearSheetDataCache(tabName) {
 function setRetryHandler(handler) {
   dashboardRetryHandler = typeof handler === 'function' ? handler : null;
 }
-function getSheetDataStatus(tabName) {
-  return sheetDataStatus.get(String(tabName || '')) || { status: 'unknown' };
-}
 function connectionAgeLabel(ageMs) {
   const minutes = Math.max(1, Math.round(Number(ageMs || 0) / 60000));
   return minutes === 1 ? '1 minuto' : `${minutes} minutos`;
@@ -1200,20 +1197,6 @@ async function readSystemConfig() {
 }
 
 // ─────────────────────────────────────────────────────────────
-// FUNCIÓN: Mostrar estado de carga dentro de un contenedor
-// ─────────────────────────────────────────────────────────────
-function showLoading(containerId, message = "Cargando datos...") {
-  const el = document.getElementById(containerId);
-  if (!el) return;
-  el.innerHTML = `
-    <div class="state-box">
-      <div class="spinner"></div>
-      <div class="state-box__title">${message}</div>
-      <div class="state-box__text">Conectando con Google Sheets…</div>
-    </div>`;
-}
-
-// ─────────────────────────────────────────────────────────────
 // FUNCIÓN: Mostrar estado de error
 // ─────────────────────────────────────────────────────────────
 function showError(containerId, mensaje) {
@@ -1252,39 +1235,6 @@ function formatNum(n, decimals = 0) {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals
   });
-}
-
-// ─────────────────────────────────────────────────────────────
-// FUNCIÓN: Formatear porcentaje
-// ─────────────────────────────────────────────────────────────
-function formatPct(n, decimals = 1) {
-  const num = parseFloat(n);
-  if (isNaN(num)) return n;
-  return num.toLocaleString('es-MX', {
-    minimumFractionDigits: decimals,
-    maximumFractionDigits: decimals
-  }) + '%';
-}
-
-// ─────────────────────────────────────────────────────────────
-// FUNCIÓN: Determinar clase de semáforo
-// umbralVerde: valor >= umbralVerde → verde
-// umbralRojo:  valor <= umbralRojo  → rojo
-// intermedio:  amarillo
-// invertido: true cuando valor BAJO es bueno (ej. vacantes)
-// ─────────────────────────────────────────────────────────────
-function getSemaforo(valor, umbralVerde, umbralRojo, invertido = false) {
-  const v = parseFloat(valor);
-  if (isNaN(v)) return 'gris';
-  if (!invertido) {
-    if (v >= umbralVerde) return 'verde';
-    if (v <= umbralRojo)  return 'rojo';
-    return 'amarillo';
-  } else {
-    if (v <= umbralVerde) return 'verde';
-    if (v >= umbralRojo)  return 'rojo';
-    return 'amarillo';
-  }
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -1329,61 +1279,6 @@ function escHtml(value) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// FUNCIÓN: Renderizar ranking con barras
-// ─────────────────────────────────────────────────────────────
-function renderRanking(containerId, data, keyNombre, keyValor, sufijo = '', colorBar = 'var(--color-yellow)') {
-  const el = document.getElementById(containerId);
-  if (!el) return;
-  if (!data || data.length === 0) { showEmpty(containerId); return; }
-
-  const max = maxVal(data, keyValor) || 1;
-
-  const items = data.slice(0, 10).map((row, i) => {
-    const val = parseFloat(row[keyValor]) || 0;
-    const pct = (val / max * 100).toFixed(1);
-    return `
-      <div class="ranking-item">
-        <div class="ranking-item__pos">${i + 1}</div>
-        <div class="ranking-item__bar-wrap">
-          <div class="ranking-item__name">${escHtml(truncate(row[keyNombre], 30))}</div>
-          <div class="ranking-item__bar-bg">
-            <div class="ranking-item__bar-fill" style="width:${pct}%;background:${colorBar}"></div>
-          </div>
-        </div>
-        <div class="ranking-item__value">${formatNum(val)}${sufijo}</div>
-      </div>`;
-  }).join('');
-
-  el.innerHTML = `<div class="ranking-list">${items}</div>`;
-
-  // Animación de entrada con delay
-  requestAnimationFrame(() => {
-    el.querySelectorAll('.ranking-item__bar-fill').forEach((bar, idx) => {
-      const target = bar.style.width;
-      bar.style.width = '0';
-      setTimeout(() => { bar.style.width = target; }, idx * 80);
-    });
-  });
-}
-
-// ─────────────────────────────────────────────────────────────
-// FUNCIÓN: Renderizar tarjeta KPI
-// ─────────────────────────────────────────────────────────────
-function renderKPI(id, valor, delta = null, deltaPos = null) {
-  const el = document.getElementById(id);
-  if (!el) return;
-
-  const valueEl = el.querySelector('.kpi-card__value');
-  const deltaEl = el.querySelector('.kpi-card__delta');
-
-  if (valueEl) valueEl.textContent = valor;
-  if (deltaEl && delta !== null) {
-    deltaEl.textContent = delta;
-    deltaEl.className = 'kpi-card__delta ' + (deltaPos === true ? 'pos' : deltaPos === false ? 'neg' : 'neu');
-  }
-}
-
-// ─────────────────────────────────────────────────────────────
 // FUNCIÓN: Renderizar gráfica de barras con Chart.js
 // ─────────────────────────────────────────────────────────────
 function ensureChartReady(canvas) {
@@ -1406,198 +1301,6 @@ function ensureChartReady(canvas) {
   console.warn('Chart.js no está disponible. Revisa la conexión al CDN o usa una copia local.');
   return false;
 }
-function renderBarChart(canvasId, labels, values, label, color = '#FFD200') {
-  const canvas = document.getElementById(canvasId);
-  if (!canvas) return;
-  if (!ensureChartReady(canvas)) return;
-  const theme = getChartThemeColors();
-
-  if (canvas._chartInstance) canvas._chartInstance.destroy();
-
-  const ctx = canvas.getContext('2d');
-  const makeGradient = (chart) => {
-    const area = chart.chartArea;
-    if (!area) return color;
-    const g = ctx.createLinearGradient(area.left, 0, area.right, 0);
-    g.addColorStop(0, '#F6B73C');
-    g.addColorStop(.52, '#F07B22');
-    g.addColorStop(1, color === '#FFD200' ? '#D91F2D' : color);
-    return g;
-  };
-  canvas._chartInstance = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels,
-      datasets: [{
-        label,
-        data: values,
-        backgroundColor: (context) => makeGradient(context.chart),
-        borderColor: 'rgba(255,255,255,.68)',
-        borderWidth: 1,
-        borderRadius: 999,
-        borderSkipped: false,
-        barPercentage: .76,
-        categoryPercentage: .72,
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          backgroundColor: '#251313',
-          titleColor: '#FFF8EE',
-          bodyColor: '#FFF8EE',
-          titleFont: { family: 'Barlow Condensed', weight: '800', size: 14 },
-          bodyFont: { family: 'Barlow', size: 13, weight: '600' },
-          padding: 12,
-          cornerRadius: 14,
-          displayColors: false,
-        }
-      },
-      scales: {
-        x: {
-          grid: { display: false },
-          ticks: {
-            font: { family: 'Barlow', size: 11 },
-            color: theme.muted,
-            maxRotation: 35,
-          }
-        },
-        y: {
-          border: { display: false },
-          grid: { color: 'rgba(128,63,38,.075)', drawTicks: false },
-          ticks: {
-            font: { family: 'Barlow', size: 11, weight: '800' },
-            color: '#6A5148',
-          },
-          beginAtZero: true,
-        }
-      }
-    }
-  });
-}
-
-// ─────────────────────────────────────────────────────────────
-// FUNCIÓN: Renderizar gráfica de línea con Chart.js
-// ─────────────────────────────────────────────────────────────
-function renderLineChart(canvasId, labels, datasets) {
-  const canvas = document.getElementById(canvasId);
-  if (!canvas) return;
-  if (!ensureChartReady(canvas)) return;
-  const theme = getChartThemeColors();
-  if (canvas._chartInstance) canvas._chartInstance.destroy();
-
-  const COLORS = ['#D91F2D', '#F07B22', '#F6B73C', '#B5121C', '#7B5709'];
-
-  const ctx = canvas.getContext('2d');
-  canvas._chartInstance = new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels,
-      datasets: datasets.map((ds, i) => ({
-        label: ds.label,
-        data: ds.values,
-        borderColor: COLORS[i % COLORS.length],
-        backgroundColor: 'transparent',
-        borderWidth: 3,
-        pointBackgroundColor: COLORS[i % COLORS.length],
-        pointBorderColor: '#FFF8EE',
-        pointBorderWidth: 2,
-        pointRadius: 4.5,
-        pointHoverRadius: 6,
-        fill: false,
-        tension: 0.35,
-      }))
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: {
-          display: datasets.length > 1,
-          position: 'top',
-          labels: { font: { family: 'Barlow', size: 12 }, color: theme.text }
-        },
-        tooltip: {
-          backgroundColor: '#251313',
-          titleColor: '#FFF8EE',
-          bodyColor: '#FFF8EE',
-          titleFont: { family: 'Barlow Condensed', weight: '800', size: 14 },
-          bodyFont: { family: 'Barlow', size: 13, weight: '600' },
-          padding: 12,
-          cornerRadius: 14,
-          displayColors: false,
-        }
-      },
-      scales: {
-        x: {
-          grid: { display: false },
-          ticks: { font: { family: 'Barlow', size: 11 }, color: theme.muted }
-        },
-        y: {
-          border: { display: false },
-          grid: { color: 'rgba(128,63,38,.08)', drawTicks: false },
-          ticks: { font: { family: 'Barlow', size: 11 }, color: theme.muted },
-          beginAtZero: false,
-        }
-      }
-    }
-  });
-}
-
-// ─────────────────────────────────────────────────────────────
-// FUNCIÓN: Renderizar gráfica de dona con Chart.js
-// ─────────────────────────────────────────────────────────────
-function renderDonutChart(canvasId, labels, values) {
-  const canvas = document.getElementById(canvasId);
-  if (!canvas) return;
-  if (!ensureChartReady(canvas)) return;
-  const theme = getChartThemeColors();
-  if (canvas._chartInstance) canvas._chartInstance.destroy();
-
-  const ctx = canvas.getContext('2d');
-  canvas._chartInstance = new Chart(ctx, {
-    type: 'doughnut',
-    data: {
-      labels,
-      datasets: [{
-        data: values,
-        backgroundColor: ['#D91F2D', '#F07B22', '#F6B73C', '#B5121C', '#7B5709', '#8B6A5F'],
-        borderColor: '#FFF8EE',
-        borderWidth: 4,
-        borderRadius: 10,
-        spacing: 3,
-        hoverOffset: 6,
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      cutout: '68%',
-      plugins: {
-        legend: {
-          position: 'bottom',
-          labels: { usePointStyle: true, pointStyle: 'circle', font: { family: 'Barlow', size: 12, weight: '800' }, color: '#5A4037', padding: 14 }
-        },
-        tooltip: {
-          backgroundColor: '#251313',
-          titleColor: '#FFF8EE',
-          bodyColor: '#FFF8EE',
-          titleFont: { family: 'Barlow Condensed', weight: '800', size: 14 },
-          bodyFont: { family: 'Barlow', size: 13, weight: '600' },
-          padding: 12,
-          cornerRadius: 14,
-          displayColors: false,
-        }
-      }
-    }
-  });
-}
-
-
-
 function getChartThemeColors() {
   return {
     text: '#2D2D44',
@@ -2413,17 +2116,6 @@ function metricsIsVacanteSourceD1(row, keys) {
   if (status.includes('VACANTE') || status.includes('NO OCUPADO')) return true;
   return false;
 }
-// Compatibilidad para consumidores que necesiten aplicar explicitamente el
-// criterio historico de 1+ dias. El Dashboard 1 ya no lo usa como default:
-// una vacante abierta hoy (0 dias) sigue siendo una vacante vigente y debe
-// aparecer en el corte, especialmente el primer dia de cada mes.
-function metricsPasaAntiguedadDefaultD1(row, diasKey) {
-  const dias = metricsDiasVacantesValue(metricsVal(row, diasKey));
-  const diasRaw = String(metricsVal(row, diasKey) || '').trim();
-  const esTiendaNueva = dias > 500 || diasRaw === '';
-  if (esTiendaNueva) return false;
-  return dias >= 1;
-}
 // Aplica los filtros DEFAULT completos de dashboard-1.html (catalogo de
 // tiendas + timoteoantonioperez ya deben aplicarse antes, por separado,
 // porque tambien los usa Dashboard 7). La antiguedad inicia en "todas": no
@@ -3163,7 +2855,6 @@ window.OXXO = {
   fetchWithTimeout,
   fetchSheetData,
   clearSheetDataCache,
-  getSheetDataStatus,
   setRetryHandler,
   restoreDashboardPeriod,
   persistDashboardPeriod,
@@ -3193,17 +2884,9 @@ window.OXXO = {
   normalizeCatalogTienda,
   fixMojibake,
   loadSystemConfig,
-  showLoading,
   showError,
   showEmpty,
   formatNum,
-  formatPct,
-  getSemaforo,
-  renderRanking,
-  renderKPI,
-  renderBarChart,
-  renderLineChart,
-  renderDonutChart,
   getChartThemeColors,
   applyChartThemeDefaults,
   ensureChartReady,
@@ -3230,7 +2913,6 @@ window.OXXO = {
   metricsFilterLatestMonth,
   metricsIsDefaultExcludedTiendaD1,
   metricsDiasVacantesValue,
-  metricsPasaAntiguedadDefaultD1,
   metricsApplyD1Defaults,
   metricsFilterBajasD2,
   metricsIsTiendaEntrenamientoOperacionesD2,
