@@ -569,12 +569,14 @@ function renderAll() {
 // Detalle por Empleado: respeta los filtros globales y, ademas, el asesor
 // seleccionado con un clic en la tabla "Cumplimiento por Asesor".
 function renderDetalle(data) {
+  const cert = document.getElementById('filtro-cert')?.value;
+  const colsToShow = cert ? CERT_COLS.filter(c => c.key === cert) : CERT_COLS;
   const filas = DETALLE_ASESOR
     ? data.filter(r => (r[C.asesor] || 'Sin Asesor Asignado') === DETALLE_ASESOR)
     : data;
   DETALLE_FILAS = filas;
   const rows = filas.map((r, i) => {
-    const certCells = CERT_COLS.map(c => {
+    const certCells = colsToShow.map(c => {
       const v = capValue(r, c.key);
       const cls = v===null?'na':(v>=1?'verde':(v>0?'amarillo':'rojo'));
       const txt = v===null?'N/A':(v>=1?'100%':Math.round(v*100)+'%');
@@ -591,7 +593,7 @@ function renderDetalle(data) {
   document.getElementById('tabla-detalle').innerHTML = `
     <thead><tr>
       <th>Asesor</th><th>Empleado</th><th>Puesto</th><th>Tienda</th>
-      ${CERT_COLS.map(c=>`<th class="center" style="font-size:9px">${c.label}</th>`).join('')}
+      ${colsToShow.map(c=>`<th class="center" style="font-size:9px">${c.label}</th>`).join('')}
     </tr></thead>
     <tbody>${rows}</tbody>`;
   const badge = document.getElementById('row-count');
