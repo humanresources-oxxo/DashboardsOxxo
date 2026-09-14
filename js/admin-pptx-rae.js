@@ -24,6 +24,37 @@
   // de Sheets (>150). Un aprovechamiento real de 100-150% (tienda con mas
   // activos de los necesarios) no se debe tocar.
   function normPct(v){ const n = num(v); return n > 150 ? n / 100 : n; }
+  // Dashboard 8 publica certificaciones como 1=completo, 0=pendiente,
+  // fracción=avance parcial y vacío=no aplica. Estas reglas replican su
+  // lectura para que la RAE nunca presente un porcentaje distinto al tablero.
+  const CAP_IGNORADAS = new Set([
+    'promediodecobrodlssedesmundialistas2026',
+    'promedioderesultadocertificacionalimentosybebidas2026',
+    'panhorneado'
+  ]);
+  const CAP_ETIQUETAS = {
+    'promediodecodigodeetica2026': 'Código de Ética',
+    'promediodeseguridadenlapersona2026': 'Seguridad en la Persona',
+    'promediodepld2026certificacion': 'PLD 2026',
+    'promediodemodulocercasiempre2026': 'Módulo Cerca Siempre',
+    'promediodecapacidadtableroamazoncounter': 'Tablero Amazon Counter'
+  };
+  const capKey = value => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');
+  const capLabel = key => CAP_ETIQUETAS[capKey(key)] || String(key).replace(/^\s*Promedio de\s+/i,'').trim();
+  const isCapColumn = key => /^\s*Promedio de\s+/i.test(String(key || '')) && !CAP_IGNORADAS.has(capKey(key));
+  function capValue(row, key){
+    const raw = row?.[key];
+    if(raw === undefined || raw === null || String(raw).trim() === '') return null;
+    const value = num(raw);
+    // El origen ocasionalmente publica 0.3333 como 3.333. Es un avance de
+    // certificación, así que valores >1 se recuperan igual que Dashboard 8.
+    if(value > 1){
+      const digits = String(raw).replace(/\D/g,'');
+      const fixed = Number('0.' + digits);
+      return Number.isFinite(fixed) ? fixed : 0;
+    }
+    return Number.isFinite(value) ? value : null;
+  }
   // Acorta un nombre largo a "Nombre(s) Apellido1 A." (inicial del ultimo
   // apellido) en vez de cortarlo a solo el primer nombre: la plaza suele tener
   // varios asesores que comparten nombre de pila, asi que recortar de mas
@@ -204,6 +235,58 @@
       pct, completas, incompletas, criticas,
       plazas: plazas.slice(0, 5),
       ranking,
+    };
+  }
+
+  async function dataD8(){
+    const raw = await OXXO.fetchSheetData(OXXO.SHEETS_CONFIG.TABS.d8, { scoped: false });
+    if(!raw || !raw.length) return null;
+    const oaxacaScope = OXXO.normalizeDataScope({ level:'plaza', region:'TABASCO', plaza:'Plaza Oaxaca' });
+    const rows = raw.filter(r => OXXO.rowMatchesDataScope(r, oaxacaScope));
+    if(!rows.length) return null;
+    const sample = rows[0];
+    const asesorKey = findKey(sample, ['Asesor_Correcto','Asesor']);
+    const empleadoKey = findKey(sample, ['Nº personal','N personal','No Personal','Empleados','Empleado']);
+    const tiendaKey = findKey(sample, ['Unidad org.','Unidad org','Tienda']);
+    const certifications = Object.keys(sample).filter(isCapColumn);
+    if(!certifications.length) return null;
+
+    const stats = certifications.map(key => {
+      let aplic = 0, comp = 0;
+      rows.forEach(row => {
+        const value = capValue(row, key);
+        if(value === null) return;
+        aplic++;
+        if(value >= 1) comp++;
+      });
+      return { label: capLabel(key), aplic, comp, pct: aplic ? comp / aplic * 100 : null };
+    }).filter(item => item.aplic > 0);
+    if(!stats.length) return null;
+    const aplic = stats.reduce((sum, item) => sum + item.aplic, 0);
+    const comp = stats.reduce((sum, item) => sum + item.comp, 0);
+    const byAsesor = new Map();
+    rows.forEach(row => {
+      const name = String(val(row, asesorKey) || 'Sin Asesor Asignado').trim();
+      if(!byAsesor.has(name)) byAsesor.set(name, { aplic:0, comp:0 });
+      const acc = byAsesor.get(name);
+      certifications.forEach(key => {
+        const value = capValue(row, key);
+        if(value === null) return;
+        acc.aplic++;
+        if(value >= 1) acc.comp++;
+      });
+    });
+    const asesores = [...byAsesor.entries()]
+      .map(([name, value]) => ({ name, pct: value.aplic ? value.comp / value.aplic * 100 : 0, aplic: value.aplic }))
+      .filter(item => item.aplic > 0 && !normText(item.name).replace(/[^A-Z]/g,'').includes('SINASESOR'))
+      .sort((a,b) => a.pct - b.pct || a.name.localeCompare(b.name));
+    const empleados = new Set(rows.map(row => String(val(row, empleadoKey) || '').trim()).filter(Boolean)).size;
+    const tiendas = new Set(rows.map(row => String(val(row, tiendaKey) || '').trim()).filter(Boolean)).size;
+    return {
+      sub: 'Corte vigente', empleados, tiendas, pct: aplic ? comp / aplic * 100 : 0,
+      completadas: comp, aplicables: aplic,
+      criticas: stats.sort((a,b) => a.pct - b.pct).slice(0, 3),
+      asesores: asesores.slice(0, 10)
     };
   }
 
@@ -590,6 +673,36 @@
     });
   }
 
+  function buildD8(pptx, d, dateLabel){
+    const {text,rect}=editorialSlide(pptx,'Capacidades 2026',dateLabel);
+    text(d.pct.toFixed(1)+'%',.5,1.98,3.85,.9,56,d.pct>=80?GREEN:(d.pct>=50?GOLD:RED),true);
+    text('CUMPLIMIENTO GLOBAL',.53,2.98,3.7,.28,11,DARK,true);
+    text(OXXO.formatNum(d.completadas)+' de '+OXXO.formatNum(d.aplicables)+' certificaciones aplicables',.53,3.34,3.7,.28,11,MUTED);
+    text('Cobertura del corte',.53,3.92,3.7,.3,15,DARK,true);
+    text(OXXO.formatNum(d.empleados),.53,4.32,1.15,.55,28,DARK,true);
+    text('empleados',1.72,4.47,1.5,.24,11,MUTED);
+    text(OXXO.formatNum(d.tiendas),.53,5.02,1.15,.55,28,DARK,true);
+    text('tiendas',1.72,5.17,1.5,.24,11,MUTED);
+    text('Certificaciones prioritarias',.53,5.86,3.55,.28,14,DARK,true);
+    (d.criticas||[]).forEach((item,i)=>{
+      const y=6.2+i*.22;
+      text((i+1)+'. '+shortenName(item.label,29),.53,y,2.65,.2,10);
+      text(item.pct.toFixed(1)+'%',3.05,y,.8,.2,10,item.pct>=80?GREEN:(item.pct>=50?GOLD:RED),true,{align:'right'});
+    });
+    rect(4.4,1.97,.015,4.86,'E5DCD6');
+    text('Asesores con mayor necesidad',4.8,2.02,6.2,.35,18,DARK,true);
+    text('Cumplimiento de certificaciones',10.1,2.08,2.7,.25,10,MUTED,false,{align:'right'});
+    const items=d.asesores||[], rowH=Math.min(.42,4.15/Math.max(1,items.length));
+    if(!items.length) text('Sin registros disponibles',4.8,2.8,7,.5,15,MUTED);
+    items.forEach((item,i)=>{
+      const y=2.62+i*rowH, color=item.pct>=80?GREEN:(item.pct>=50?GOLD:RED);
+      text(shortenName(item.name,30),4.8,y,4.1,rowH*.84,items.length>8?10:11,TEXT);
+      rect(9.2,y+rowH*.31,2.45,.07,'EDE6DF');
+      if(item.pct>0) rect(9.2,y+rowH*.31,2.45*Math.min(item.pct,100)/100,.07,color);
+      text(item.pct.toFixed(1)+'%',11.8,y,.95,rowH*.84,11,DARK,true,{align:'right'});
+    });
+  }
+
   function buildD7(pptx, d, dateLabel){
     const {text,rect}=editorialSlide(pptx,'TREO · Estructura',dateLabel);
     text(d.cobertura.toFixed(0)+'%',.5,1.98,3.85,.9,56,RED,true);
@@ -626,12 +739,12 @@
     const {text,rect}=editorialSlide(pptx,'Presentación RAE',dateLabel);
     text('Indicadores de recursos humanos',.5,2.5,11.9,.8,34,DARK,true);
     text('Plaza Oaxaca',.5,3.52,11.9,.5,22,RED,true);
-    const sections=['Vacantes','Bajas','Aprovechamiento','TREO'];
+    const sections=['Vacantes','Bajas','Aprovechamiento','Capacidades','TREO'];
     sections.forEach((label,i)=>{
-      const x=.5+i*3.1;
-      rect(x,5.23,2.8,.035,i===0?RED:'E5DCD6');
-      text('0'+(i+1),x,5.54,2.8,.45,23,RED,true);
-      text(label,x,6.15,2.8,.4,15,DARK,true);
+      const x=.5+i*2.48;
+      rect(x,5.23,2.2,.035,i===0?RED:'E5DCD6');
+      text('0'+(i+1),x,5.54,2.2,.45,23,RED,true);
+      text(label,x,6.15,2.2,.4,14,DARK,true);
     });
   }
 
@@ -664,13 +777,14 @@
     } catch(e){ /* si falla, se queda solo "Más reciente" */ }
   }
 
-  // Solo las 4 diapositivas que trae RAE_BASE.pptx: Vacantes, Bajas,
-  // Aprovechamiento y TREO. Tiempo Extra/Vacaciones/Ausentismos no van aqui.
+  // RAE reúne Vacantes, Bajas, Aprovechamiento, Capacidades y TREO. Tiempo
+  // Extra/Vacaciones/Ausentismos se mantienen fuera de esta presentación.
   function buildDashboardList(mesD1, mesD2){
     return [
       { title: 'VACANTES', fetch: () => dataD1(mesD1), build: buildD1 },
       { title: 'BAJAS', fetch: () => dataD2(mesD2), build: buildD2 },
       { title: 'APROVECHAMIENTO DE ESTRUCTURA', fetch: dataD3, build: buildD3 },
+      { title: 'CAPACIDADES 2026', fetch: dataD8, build: buildD8 },
       { title: 'TREO · ESTRUCTURA', fetch: dataD7, build: buildD7 },
     ];
   }
