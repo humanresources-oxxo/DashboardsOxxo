@@ -1671,7 +1671,10 @@ async function loadAsesorCatalogRows() {
   //    filas fusionadas para esta hoja en particular; solo se llega aqui si
   //    fallaron los dos anteriores).
   try {
-    const url = buildSheetURL(SHEETS_CONFIG.CATALOG_SHEET || 'Catalogo_Asesores') + '&range=A2%3AC';
+    // headers=0 evita que gviz absorba las primeras filas de esta hoja en el
+    // encabezado cuando existe la fila buffer de publicación. Sin él, once
+    // tiendas podían perderse solo al caer en este respaldo.
+    const url = buildSheetURL(SHEETS_CONFIG.CATALOG_SHEET || 'Catalogo_Asesores') + '&range=A2%3AC&headers=0';
     const response = await fetch(url, { cache: 'no-store' });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const rows = parseAsesorCatalogCSV(await response.text());
