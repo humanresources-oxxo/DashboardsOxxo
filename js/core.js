@@ -1907,12 +1907,7 @@ async function loadAsesorCatalogRows() {
   const catalogName = SHEETS_CONFIG.CATALOG_SHEET || 'Catalogo_Asesores';
   const catalogCacheKey = `catalog:${catalogName}`;
   const cached = await readPersistentRows(catalogCacheKey);
-  // El catalogo cambia mucho menos que las bases diarias. Cinco minutos evita
-  // descargarlo otra vez al recorrer varios dashboards, sin ocultar una
-  // actualizacion administrativa durante una sesion larga.
-  if (cached && Date.now() - cached.savedAt < 5 * 60 * 1000) {
-    return buildAsesorCatalog(cloneSheetRows(cached.rows));
-  }
+  const cachedIsFresh = Boolean(cached && Date.now() - cached.savedAt < 5 * 60 * 1000);
   // La fuente viva y el respaldo versionado arrancan al mismo tiempo. Antes
   // se esperaba hasta 6 segundos a Apps Script y solo despues se intentaba el
   // archivo local; una intermitencia del endpoint bloqueaba todos los tableros
@@ -1943,11 +1938,17 @@ async function loadAsesorCatalogRows() {
     }
     return null;
   })();
+  // El catálogo se puede actualizar desde el panel mientras alguien tiene un
+  // dashboard abierto. Por eso aun con caché vigente se intenta primero la
+  // lectura viva: antes el return inmediato de 5 minutos dejaba ver al AT
+  // anterior tras una publicación correcta. Si Apps Script tarda, la caché
+  // sigue siendo respaldo para no bloquear el tablero indefinidamente.
   const fastDirect = await Promise.race([
     directPromise,
-    new Promise((resolve) => setTimeout(() => resolve(null), 1200))
+    new Promise((resolve) => setTimeout(() => resolve(null), 2200))
   ]);
   if (fastDirect?.length) return buildAsesorCatalog(fastDirect);
+  if (cachedIsFresh) return buildAsesorCatalog(cloneSheetRows(cached.rows));
   const localRows = await localPromise;
   if (localRows?.length) {
     // directPromise sigue trabajando y, si responde, deja la version viva en
