@@ -1269,7 +1269,10 @@ function renderCompromiso(data, cols){
 // Tabla de detalle de bajas: columnas reducidas (lo esencial para escanear rápido).
 // El resto de los campos se muestran en la ventana emergente al hacer clic en una fila,
 // sin repetir lo que ya se ve en la tabla.
-function escHtml(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+// Misma implementacion que OXXO.escHtml (js/core.js). Antes esta copia no
+// escapaba la comilla simple, asi que divergia del resto del sitio: las otras
+// cinco copias (dashboards 3, 4, 9, 9-analisis y admin-pptx-rae) si la escapan.
+function escHtml(s){ return String(s ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch])); }
 const DET_MAIN_COLS = [
   ['mes','Mes'], ['asesor','Asesor'], ['tienda','Tienda'], ['empleado','Colaborador'], ['puesto','Puesto'], ['motivo','Motivo'], ['genero','Género']
 ];
