@@ -196,6 +196,16 @@ assert.deepEqual(JSON.parse(JSON.stringify(parsed.rows[0])), {
   Region: 'TABASCO', Plaza: 'Plaza Oaxaca', Zona: '', ACTIVA: 'SI'
 });
 
+// El CNT vigente usa "NOMBRE TIENDA". Debe conservar el nombre al normalizar
+// el catálogo, no sólo el CR y el asesor.
+const parsedCnt = normalizers.rowsFromMatrix([
+  ['NOMBRE TIENDA', 'CR TIENDA', 'ASESOR', 'ESTATUS TIENDA'],
+  ['Nuno Del Mercado VSA', '5000K', 'Mirna Martinez Lorenzo', 'OPERATIVA']
+], catalogDashboard);
+assert.equal(parsedCnt.rows.length, 1);
+assert.equal(parsedCnt.rows[0].TIENDA, 'Nuno Del Mercado VSA');
+assert.equal(parsedCnt.rows[0].ACTIVA, 'OPERATIVA');
+
 // Capacidades llega en dos formatos de Excel. El reporte actual nombra la
 // certificacion simplemente "PLD 2026"; debe conservarse en la columna
 // tecnica que usan Dashboard 8 y Mi Tienda.
