@@ -86,9 +86,10 @@ sandbox.loadAsesorCatalog=async()=>null;sandbox.OXXO.loadAsesorCatalog=sandbox.l
  assert.equal(bajasRae.heatmap.values[0].values[0],1);
  assert.equal(bajasRae.heatmap.values[1].values[1],1);
  const drawn = [];
- const fakeSlide = { background: {}, addText(...args) { drawn.push(['text', ...args]); }, addShape(...args) { drawn.push(['shape', ...args]); } };
- sandbox.rae.buildD2Analysis({ addSlide() { return fakeSlide; } }, bajasRae, bajasRae.sub);
+ const fakeSlide = { background: {}, addText(...args) { drawn.push(['text', ...args]); }, addShape(...args) { drawn.push(['shape', ...args]); }, addChart(...args) { drawn.push(['chart', ...args]); } };
+ sandbox.rae.buildD2Analysis({ ChartType: { pie: 'pie' }, addSlide() { return fakeSlide; } }, bajasRae, bajasRae.sub);
  assert.ok(drawn.some(([kind]) => kind === 'shape'));
+ assert.ok(drawn.some(([kind, type]) => kind === 'chart' && type === 'pie'));
  assert.ok(drawn.some(([kind, value]) => kind === 'text' && String(value).includes('Top 10 tiendas')));
  assert.equal((await sandbox.OXXO.metricsD2Rows()).rows.length,2);
  assert.equal((await sandbox.advisor.datosAsesorD2('Timoteo Antonio Perez')).total,1);

@@ -829,14 +829,26 @@
     text('Motivos de baja',5.8,1.98,3.05,.32,17,DARK,true);
     text('Top 8 del corte',5.8,2.32,3.05,.2,10,MUTED);
     const motivos = d.motivos || [];
-    const maxMotivo = Math.max(1,...motivos.map(item => item.total));
-    motivos.slice(0,8).forEach((item,index) => {
-      const y=2.7+index*.34;
-      text(shortenName(item.label,25),5.8,y,2.0,.18,9.5,TEXT,true);
-      rect(7.83,y+.08,.72,.06,'EDE6DF');
-      rect(7.83,y+.08,.72*item.total/maxMotivo,.06,ORANGE);
-      text(item.total,8.64,y,.34,.18,10,DARK,true,{align:'right'});
-    });
+    const motivosVisibles = motivos.filter(item => item.total > 0).slice(0,8);
+    if(motivosVisibles.length){
+      // Gráfica nativa y editable: concentra los motivos sin sustituir la
+      // evidencia por una imagen. La leyenda conserva nombre y porcentaje.
+      slide.addChart(pptx.ChartType.pie, [{
+        name: 'Motivos de baja',
+        labels: motivosVisibles.map(item => shortenName(item.label,24)),
+        values: motivosVisibles.map(item => item.total)
+      }], {
+        x:5.72, y:2.58, w:3.05, h:2.82,
+        chartColors:['C0181F','EE7203','F5B700','48A868','2A76A8','7452A3','008C95','9C6B3E'],
+        showLegend:true, legendPos:'b',
+        showValue:true, showPercent:true, showCategoryName:false,
+        dataLabelPosition:'bestFit',
+        dataBorder:{ pt:1.5, color:WHITE },
+        fontFace:'Arial', fontSize:8.5,
+      });
+    } else {
+      text('Sin motivos de baja registrados para el corte.',5.8,3.05,2.8,.45,12,MUTED);
+    }
 
     text('Top 10 tiendas con más bajas',9.28,1.98,3.45,.32,17,DARK,true);
     text('Bajas acumuladas en el corte',9.28,2.32,3.45,.2,10,MUTED);
