@@ -982,6 +982,23 @@ body {
   background: rgba(255,255,255,.78); color: #241413;
 }
 .smart-filter__list { max-height: 234px; overflow: auto; padding: 6px 8px 10px; scrollbar-width: thin; }
+/* Fila de opcion con boton "Solo": aisla ese valor de un clic. Sin el, para
+   quedarse con uno solo hay que apagar los demas a mano -- y la regla de
+   "si esta todo seleccionado, un clic aisla" no ayuda cuando ya hay una
+   seleccion parcial. Vive aqui, no en un dashboard, porque la usan el filtro
+   compartido (mountAsesorFilter) y los filtros propios de los tableros 1-3. */
+.sf-row{ display:flex; align-items:center; gap:4px; }
+.sf-row .smart-filter__option{ flex:1 1 auto; min-width:0; }
+.sf-row .sf-text{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.sf-only{
+  flex:0 0 auto; border:1px solid rgba(181,18,28,.24); background:rgba(255,255,255,.86);
+  color:#b5121c; border-radius:9px; padding:5px 8px; cursor:pointer;
+  font-family:var(--font-body); font-size:9.5px; font-weight:800; line-height:1;
+  letter-spacing:.06em; text-transform:uppercase; opacity:.62; transition:opacity .15s ease, background .15s ease;
+}
+.sf-row:hover .sf-only{ opacity:1; }
+.sf-only:hover{ background:#d91f2d; border-color:#d91f2d; color:#fff; opacity:1; }
+.sf-only:focus-visible{ outline:2px solid #d91f2d; outline-offset:1px; opacity:1; }
 .smart-filter__option {
   display: flex; align-items: center; gap: 10px; width: 100%;
   padding: 9px 10px; border: 0; border-radius: 12px; background: transparent;

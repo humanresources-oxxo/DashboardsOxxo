@@ -2588,10 +2588,16 @@ function mountAsesorFilter(rootId, values, options = {}) {
       .concat(filtered.map((v) => ({ value: v, label: v, isAll: false })))
       .map((opt) => {
         const active = opt.isAll ? allSelected : selected.includes(opt.value);
-        return `<button type="button" class="smart-filter__option ${active ? 'is-active' : ''}" data-value="${escapeAttr(opt.value)}" data-all="${opt.isAll ? '1' : ''}">
+        const opcion = `<button type="button" class="smart-filter__option ${active ? 'is-active' : ''}" data-value="${escapeAttr(opt.value)}" data-all="${opt.isAll ? '1' : ''}" title="${escapeAttr(opt.label)}">
           <span class="smart-filter__check"></span>
-          <span>${escapeAttr(opt.label)}</span>
+          <span class="sf-text">${escapeAttr(opt.label)}</span>
         </button>`;
+        // "Solo" aisla ese valor de un clic. La regla de abajo (si esta todo
+        // seleccionado, un clic aisla) no alcanza: partiendo de una seleccion
+        // parcial, el clic solo quita, asi que quedarse con uno obligaba a
+        // apagar los demas a mano.
+        if (opt.isAll) return `<div class="sf-row">${opcion}</div>`;
+        return `<div class="sf-row">${opcion}<button type="button" class="sf-only" data-solo="${escapeAttr(opt.value)}" title="Ver solo ${escapeAttr(opt.label)}">Solo</button></div>`;
       }).join('');
     list.innerHTML = rows || '<div class="smart-filter__empty">Sin resultados</div>';
   }
@@ -2602,6 +2608,13 @@ function mountAsesorFilter(rootId, values, options = {}) {
   }
 
   list.addEventListener('click', (event) => {
+    const soloBtn = event.target.closest('[data-solo]');
+    if (soloBtn) {
+      selected = [soloBtn.dataset.solo];
+      renderOptions(search.value);
+      emitChange();
+      return;
+    }
     const optBtn = event.target.closest('.smart-filter__option');
     if (!optBtn) return;
     if (optBtn.dataset.all) {

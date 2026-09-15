@@ -1607,7 +1607,11 @@ function renderAsesorOptions(query=''){
   const allActive = !selectedAsesorValues || selectedAsesorValues.length === asesorOptionsData.length;
   const rows = [{ value:'', label:'Todos los asesores', isAll:true }, ...filtered.map(v => ({ value:v, label:v }))].map(opt => {
     const active = opt.isAll ? allActive : (!selectedAsesorValues || selectedAsesorValues.includes(opt.value));
-    return '<button type="button" class="smart-filter__option '+(active?'is-active':'')+'" data-asesor="'+escHtml(opt.value)+'"><span class="smart-filter__check"></span><span>'+escHtml(opt.label)+'</span></button>';
+    // "Solo" aisla ese AT de un clic; la regla de abajo solo aisla desde el
+    // estado "Todos", no desde una seleccion parcial.
+    const opcion = '<button type="button" class="smart-filter__option '+(active?'is-active':'')+'" data-asesor="'+escHtml(opt.value)+'" title="'+escHtml(opt.label)+'"><span class="smart-filter__check"></span><span class="sf-text">'+escHtml(opt.label)+'</span></button>';
+    if(opt.isAll) return '<div class="sf-row">'+opcion+'</div>';
+    return '<div class="sf-row">'+opcion+'<button type="button" class="sf-only" data-solo-asesor="'+escHtml(opt.value)+'" title="Ver solo '+escHtml(opt.label)+'">Solo</button></div>';
   }).join('');
   wrap.innerHTML = rows || '<div class="smart-filter__empty">Sin resultados</div>';
 }
@@ -1626,6 +1630,8 @@ function bindAsesorChecklist(){
   search?.addEventListener('input', e => renderAsesorOptions(e.target.value));
   list?.addEventListener('click', e => {
     e.stopPropagation();
+    const solo = e.target.closest('[data-solo-asesor]');
+    if(solo){ setSelectedAsesores([solo.dataset.soloAsesor]); return; }
     const btn = e.target.closest('[data-asesor]'); if(!btn) return;
     const value = btn.dataset.asesor;
     if(!value){ setSelectedAsesores(null); return; }
