@@ -1500,6 +1500,35 @@ const PREOPENING_STORE_KEYS = new Set([
 function isPreopeningStore(tienda) {
   return PREOPENING_STORE_KEYS.has(normalizeCatalogTienda(tienda));
 }
+const STORE_STATUS_STORAGE_KEY = 'oxxo_store_status_filter';
+const STORE_STATUS_QUERY_PARAM = 'tiendas';
+function normalizeStoreStatus(value) {
+  const status = normalizeScopeToken(value);
+  if (['sin apertura', 'preapertura', 'pre apertura'].includes(status)) return 'preapertura';
+  if (['todas', 'todos'].includes(status)) return 'todas';
+  return 'operativas';
+}
+function getActiveStoreStatus() {
+  try {
+    const query = new URLSearchParams(location.search || '');
+    if (query.has(STORE_STATUS_QUERY_PARAM)) return normalizeStoreStatus(query.get(STORE_STATUS_QUERY_PARAM));
+    return normalizeStoreStatus(sessionStorage.getItem(STORE_STATUS_STORAGE_KEY));
+  } catch (_) { return 'operativas'; }
+}
+function setActiveStoreStatus(status, { updateUrl = true } = {}) {
+  const normalized = normalizeStoreStatus(status);
+  try { sessionStorage.setItem(STORE_STATUS_STORAGE_KEY, normalized); } catch (_) {}
+  if (updateUrl) {
+    try {
+      const url = new URL(location.href);
+      if (normalized === 'operativas') url.searchParams.delete(STORE_STATUS_QUERY_PARAM);
+      else url.searchParams.set(STORE_STATUS_QUERY_PARAM, normalized);
+      history.replaceState(history.state, '', url);
+    } catch (_) {}
+  }
+  document.dispatchEvent(new CustomEvent('oxxo:store-status-change', { detail: { status: normalized } }));
+  return normalized;
+}
 function buildTiendaCatalog(rows, { source = 'Catalogo_Tiendas', loaded = true } = {}) {
   const byCr = new Map();
   const byTienda = new Map();
@@ -1566,17 +1595,18 @@ async function loadTiendaCatalog() {
 // se corrige mirando; esconder de menos no se nota hasta que alguien reclama
 // una vacante que nadie estaba cubriendo.
 function isTiendaValid(catalog, tienda, cr='') {
-  // Las preaperturas se excluyen aunque aún no estén en Catalogo_Tiendas.
-  // Así no entran temporalmente a vacantes, capacidades, estructura, Mi
-  // Tienda ni presentaciones mientras se confirma su apertura real.
-  if (isPreopeningStore(tienda)) return false;
   const stores = catalog?.storeCatalog;
-  if (!stores?.loaded) return true;
+  const preopening = isPreopeningStore(tienda);
+  const status = getActiveStoreStatus();
+  // El catálogo sigue determinando las bajas reales. Las preaperturas se
+  // muestran solo cuando el usuario las solicita con el filtro global.
+  if (status === 'preapertura') return preopening;
+  if (!stores?.loaded) return status === 'todas' || !preopening;
   const crKey = normalizeCatalogCr(cr);
   const tiendaKey = normalizeCatalogTienda(tienda);
   const hit = (crKey && stores.byCr.get(crKey)) || (tiendaKey && stores.byTienda.get(tiendaKey));
-  if (hit) return Boolean(hit.activa);
-  return true;
+  const operational = hit ? Boolean(hit.activa) : true;
+  return status === 'todas' ? (operational || preopening) : (operational && !preopening);
 }
 function filterValidTiendas(rows, catalog, tiendaKey, crKey) {
   if (!Array.isArray(rows) || !tiendaKey) return rows;
@@ -2737,7 +2767,9 @@ function initScopeSelector() {
   const hideWidget = Boolean(document.documentElement?.dataset?.oxxoHideScopeWidget);
   if (!hideWidget && !document.querySelector('[data-oxxo-scope-selector]')) {
     const active = getActiveDataScope();
+    const activeStoreStatus = getActiveStoreStatus();
     const isActivePlaza = (plaza) => active.level !== 'region' && normalizeScopeToken(active.plaza) === normalizeScopeToken(plaza.name);
+    const isActiveStoreStatus = (status) => activeStoreStatus === status;
     // Preferimos montarlo dentro del encabezado (junto al badge "Diario ·
     // Plaza") de cada dashboard, como el resto de sus controles. Solo si la
     // pagina no tiene ese encabezado (ej. paginas con layout propio) cae al
@@ -2757,6 +2789,12 @@ function initScopeSelector() {
       </div>
       <div class="oxxo-scope-switch" role="tablist" aria-label="Seleccionar plaza">
         ${catalog.map((region) => region.plazas.map((plaza) => `<button type="button" class="oxxo-scope-switch__opt${isActivePlaza(plaza) ? ' is-active' : ''}" role="tab" aria-selected="${isActivePlaza(plaza)}" data-scope="plaza|${escHtml(region.name)}|${escHtml(plaza.name)}"><span class="oxxo-scope-switch__dot" aria-hidden="true"></span><span>${escHtml(plaza.shortName || plaza.name)}</span></button>`).join('')).join('')}
+      </div>
+      <div class="oxxo-store-status" role="group" aria-label="Estado de tiendas">
+        <span class="oxxo-store-status__label">Tiendas</span>
+        <button type="button" class="oxxo-store-status__opt${isActiveStoreStatus('operativas') ? ' is-active' : ''}" data-store-status="operativas">Operativas</button>
+        <button type="button" class="oxxo-store-status__opt${isActiveStoreStatus('preapertura') ? ' is-active' : ''}" data-store-status="preapertura">Sin apertura</button>
+        <button type="button" class="oxxo-store-status__opt${isActiveStoreStatus('todas') ? ' is-active' : ''}" data-store-status="todas">Todas</button>
       </div>`;
     if (!document.getElementById('oxxo-scope-selector-style')) {
       const style = document.createElement('style');
@@ -2782,6 +2820,11 @@ function initScopeSelector() {
         .oxxo-scope-switch__opt.is-active .oxxo-scope-switch__dot{background:#fff;box-shadow:0 0 0 3px rgba(255,255,255,.22)}
         .oxxo-scope-switch__opt:active{transform:scale(.96)}
         .oxxo-scope-switch__opt:focus-visible{outline:3px solid color-mix(in srgb,var(--scope-accent) 32%,transparent);outline-offset:2px}
+        .oxxo-store-status{display:flex;align-items:center;gap:3px;padding:4px;border-left:1px solid #e4dcd9;white-space:nowrap}
+        .oxxo-store-status__label{padding:0 5px 0 3px;color:#907f7b;font-size:8.5px;font-weight:900;letter-spacing:.07em;text-transform:uppercase}
+        .oxxo-store-status__opt{appearance:none;border:0;border-radius:9px;padding:7px 8px;background:transparent!important;color:#725f5b!important;font:800 9.5px/1.1 inherit;cursor:pointer;white-space:nowrap}
+        .oxxo-store-status__opt:hover{background:#fff!important;color:#302422!important}
+        .oxxo-store-status__opt.is-active{background:#fce9b1!important;color:#734800!important;box-shadow:inset 0 0 0 1px #f5ca5e}
         @media(max-width:640px){
           .oxxo-scope-selector{align-items:stretch;gap:7px}
           .oxxo-scope-selector--floating{right:10px;bottom:10px;left:10px;flex-direction:column}
@@ -2790,6 +2833,7 @@ function initScopeSelector() {
           .oxxo-scope-selector__pin{width:27px;height:27px;border-radius:9px}
           .oxxo-scope-switch{width:100%;justify-content:flex-start}
           .oxxo-scope-switch__opt{padding:8px 12px}
+          .oxxo-store-status{width:100%;border-left:0;border-top:1px solid #e4dcd9;padding-top:7px;overflow-x:auto}
         }
         @media print{.oxxo-scope-selector{display:none!important}}
       `;
@@ -2808,6 +2852,13 @@ function initScopeSelector() {
       } else {
         location.reload();
       }
+    });
+    host.querySelector('.oxxo-store-status').addEventListener('click', (event) => {
+      const btn = event.target.closest('[data-store-status]');
+      if (!btn || btn.classList.contains('is-active')) return;
+      setActiveStoreStatus(btn.dataset.storeStatus, { updateUrl: true });
+      clearSheetDataCache();
+      location.reload();
     });
   }
   applyScopeLabels();
@@ -2876,6 +2927,8 @@ window.OXXO = {
   normalizeDataScope,
   getActiveDataScope,
   setActiveDataScope,
+  getActiveStoreStatus,
+  setActiveStoreStatus,
   matchesScopeValue,
   matchesAnyKnownPlaza,
   rowMatchesDataScope,

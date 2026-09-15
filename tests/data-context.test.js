@@ -5,6 +5,7 @@ const vm = require('node:vm');
 
 const root = path.resolve(__dirname, '..');
 const listeners = new Map();
+const sessionValues = new Map();
 const documentStub = {
   readyState: 'loading',
   documentElement: { dataset: {} },
@@ -24,11 +25,12 @@ const sandbox = {
   document: documentStub,
   location: { pathname: '/admin.html', origin: 'https://example.test', href: 'https://example.test/admin.html' },
   history: { state: null, replaceState() {} },
-  sessionStorage: { getItem() { return null; }, setItem() {} },
+  sessionStorage: { getItem(key) { return sessionValues.get(key) || null; }, setItem(key, value) { sessionValues.set(key, String(value)); } },
   localStorage: { getItem() { return null; }, setItem() {} },
   navigator: {},
   CustomEvent: function CustomEvent() {},
   URL,
+  URLSearchParams,
   Request,
   Response,
   Blob,
@@ -85,6 +87,13 @@ assert.equal(OXXO.isTiendaValid({ storeCatalog }, 'OXXO No Catalogada', '50N00')
 assert.equal(OXXO.isTiendaValid({}, 'OXXO Respaldo', '50R00'), true);
 assert.equal(OXXO.isTiendaValid({ storeCatalog }, 'OXXO Papaya VSA'), false);
 assert.equal(OXXO.isTiendaValid({ storeCatalog }, 'OXXO Unión y Progreso VSA'), false);
+assert.equal(OXXO.setActiveStoreStatus('Sin apertura'), 'preapertura');
+assert.equal(OXXO.isTiendaValid({ storeCatalog }, 'OXXO Papaya VSA'), true);
+assert.equal(OXXO.isTiendaValid({ storeCatalog }, 'OXXO Centro', '50I34'), false);
+assert.equal(OXXO.setActiveStoreStatus('Todas'), 'todas');
+assert.equal(OXXO.isTiendaValid({ storeCatalog }, 'OXXO Papaya VSA'), true);
+assert.equal(OXXO.isTiendaValid({ storeCatalog }, 'OXXO Centro', '50I34'), true);
+OXXO.setActiveStoreStatus('Operativas');
 
 // Control de Ausentismo es una fuente exclusiva de Oaxaca: una plaza recibida
 // por URL o conservada en la sesion no debe cambiar su alcance.
