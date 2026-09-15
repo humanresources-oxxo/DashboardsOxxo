@@ -47,6 +47,13 @@
     state.next=toolbar.querySelector('.rh-next');
     state.pageSelect.value=String(state.pageSize);
     const wrap=table.closest('.tbl-wrap,.table-wrapper')||table;
+    // El MutationObserver que llama a enhance() es asincrono: cuando corre, la
+    // tabla que lo disparo ya puede haber salido del DOM (los dashboards
+    // reconstruyen sus tablas al filtrar). Sin esta guarda, parentNode venia
+    // nulo y el throw abortaba el forEach del observer -- asi que las tablas
+    // siguientes se quedaban TAMBIEN sin barra. Medido en Dashboard 2: al
+    // filtrar por asesor, las barras pasaban de 2 a 0 y no volvian.
+    if(!wrap.parentNode)return;
     wrap.parentNode.insertBefore(toolbar,wrap);
     let timer;
     state.input.addEventListener('input',()=>{clearTimeout(timer);timer=setTimeout(()=>{state.query=norm(state.input.value);state.page=1;refresh(table);},100);});
