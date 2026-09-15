@@ -1278,6 +1278,35 @@ function truncate(str, maxLen = 25) {
 // Sheets o el panel admin -- sin esto, esa celda puede romper el markup
 // de la pagina o insertar HTML no intencional.
 // ─────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────
+// COLOR POR PUESTO (categorico) — una sola tabla para todo el sitio
+//
+// El semaforo verde/amarillo/rojo esta RESERVADO para estado (bien / atencion
+// / mal). Estas donas no miden estado: dicen QUIEN es cada rebanada. Antes
+// usaban el mismo verde del semaforo como categoria, asi que el verde
+// significaba "vamos bien" en una grafica y "Encargado" en la de al lado.
+//
+// Ademas el color se asignaba por POSICION en un arreglo ya ordenado por
+// tamano: la categoria mas grande salia roja por estar primero, no por ser
+// mala, y los colores se repintaban al cambiar el orden. Aqui el color va
+// atado al nombre del puesto, asi que es estable y coincide entre tableros.
+//
+// Paleta validada (scripts/validate_palette.js, superficie #FFF8EE):
+// separacion CVD 24.7 y vision normal 33.6 en el peor par contiguo.
+const COLOR_PUESTO = {
+  encargado: '#2a78d6',   // azul
+  lider:     '#eb6834',   // naranja
+  ayudante:  '#4a3aa7',   // violeta
+  otro:      '#e87ba4',   // magenta
+};
+function colorPuesto(nombre) {
+  const k = String(nombre || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  if (k.includes('encargado')) return COLOR_PUESTO.encargado;
+  if (k.includes('lider')) return COLOR_PUESTO.lider;
+  if (k.includes('ayudant')) return COLOR_PUESTO.ayudante;
+  return COLOR_PUESTO.otro;
+}
+
 function escHtml(value) {
   return String(value ?? '').replace(/[&<>"']/g, (ch) => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
@@ -2987,6 +3016,7 @@ window.OXXO = {
   updateFooterTime,
   initThemeToggle,
   truncate,
+  colorPuesto,
   escHtml,
   maxVal,
   // Métricas compartidas (ver seccion arriba de resolveAsesor/applyAsesorCatalog)
