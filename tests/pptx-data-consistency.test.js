@@ -71,10 +71,15 @@ sandbox.loadAsesorCatalog=async()=>null;sandbox.OXXO.loadAsesorCatalog=sandbox.l
  assert.equal((await sandbox.general.kpiD4()).sub,'2026-09 · Sem 10');
  fixture=[{Mes:12,Ano:2025,Semana:'52',Tienda:'OXXO A',Dias:52},{Mes:1,Ano:2026,Semana:'1',Tienda:'OXXO A',Dias:1}];
  assert.equal((await sandbox.general.kpiD6()).value,'1');
- fixture=[{Mes:'2026-09',Tienda:'ENTRENAMIENTO OAXACA',Asesor:'Sin Asesor Asignado',Puesto:'AYUDANTE TIENDA',Medida:'BAJA'},
- {Mes:'2026-09',Tienda:'OXXO A',Asesor:'Timoteo Antonio Perez',Puesto:'AYUDANTE TIENDA',Medida:'BAJA'}];
+ fixture=[{Mes:'2026-09',Tienda:'ENTRENAMIENTO OAXACA',Asesor:'Sin Asesor Asignado',Puesto:'AYUDANTE TIENDA',Medida:'BAJA',Motivo:'Renuncia',Edad:24,Temporalidad:'0 - 45 días'},
+ {Mes:'2026-09',Tienda:'OXXO A',Asesor:'Timoteo Antonio Perez',Puesto:'AYUDANTE TIENDA',Medida:'BAJA',Motivo:'Baja con causal',Edad:34,Temporalidad:'46 - 90 días'}];
  assert.equal((await sandbox.general.kpiD2()).value,'2');
- assert.equal((await sandbox.rae.dataD2()).total,2);
+ const bajasRae = await sandbox.rae.dataD2();
+ assert.equal(bajasRae.total,2);
+ assert.equal(bajasRae.motivos[0].label,'BAJA CON CAUSAL');
+ assert.equal(bajasRae.tiendas.length,2);
+ assert.equal(bajasRae.heatmap.values[0].values[0],1);
+ assert.equal(bajasRae.heatmap.values[1].values[1],1);
  assert.equal((await sandbox.OXXO.metricsD2Rows()).rows.length,2);
  assert.equal((await sandbox.advisor.datosAsesorD2('Timoteo Antonio Perez')).total,1);
  assert.equal(await sandbox.rae.dataD2('2026-08'),null);

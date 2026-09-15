@@ -145,10 +145,50 @@
     const { rows, mes, puestoKey, asesorKey } = source;
     const byPuesto = { Lider: 0, Encargado: 0, Ayudante: 0, Otro: 0 };
     rows.forEach(r => { byPuesto[tipoPuesto(val(r, puestoKey))]++; });
+    // La lámina de análisis conserva las mismas filas ya filtradas por
+    // metricsD2Rows() que usa la lámina de resumen y el Dashboard 2.
+    const sample = rows[0] || {};
+    const tiendaKey = findKey(sample, ['Tienda','Unidad org.','Unidad org','Unidad Organizativa','Unidad','Sucursal','Nombre Tienda']);
+    const motivoKey = findKey(sample, ['Motivo de baja','Motivo_baja','Motivo','Causa','Causa baja','Baja con causal','Tipo de baja']);
+    const edadKey = findKey(sample, ['Edad']);
+    const temporalidadKey = findKey(sample, ['Temporalidad','Temporalidad baja','Rango antigüedad','Rango antiguedad','Antigüedad rango','Antiguedad rango']);
+    const normalizeMotivo = raw => {
+      const clean = normText(raw);
+      if(!clean) return 'Sin motivo';
+      if(clean.includes('RENUNCIA')) return 'RENUNCIA';
+      if(clean.includes('CAUSAL')) return 'BAJA CON CAUSAL';
+      if(clean.includes('ABANDONO')) return 'ABANDONO';
+      return String(raw || '').trim();
+    };
+    const rankBy = (key, normalize = value => String(value || '').trim() || 'Sin dato', limit = 10) => {
+      const counts = new Map();
+      rows.forEach(row => {
+        const label = normalize(val(row, key));
+        counts.set(label, (counts.get(label) || 0) + 1);
+      });
+      return [...counts.entries()].map(([label,total]) => ({ label, total }))
+        .sort((a,b) => b.total - a.total || a.label.localeCompare(b.label, 'es')).slice(0, limit);
+    };
+    const edades = [
+      { label:'18-25', min:18, max:25 }, { label:'26-35', min:26, max:35 },
+      { label:'36-45', min:36, max:45 }, { label:'46-55', min:46, max:55 },
+      { label:'56+', min:56, max:Infinity }
+    ];
+    const antiguedades = ['0 - 45 días','46 - 90 días','3 - 6 meses','6 - 12 meses','> 1 año'];
+    const mapaCalor = edades.map(edad => ({ label: edad.label, values: antiguedades.map(() => 0) }));
+    rows.forEach(row => {
+      const age = num(val(row, edadKey));
+      const ageIndex = edades.findIndex(group => age >= group.min && age <= group.max);
+      const tenureIndex = antiguedades.indexOf(String(val(row, temporalidadKey) || '').trim());
+      if(ageIndex >= 0 && tenureIndex >= 0) mapaCalor[ageIndex].values[tenureIndex]++;
+    });
     return {
       total: rows.length, sub: mes ? `Mes ${mes}` : 'Plaza Oaxaca',
       byPuesto,
       ranking: rankCount(rows, asesorKey, 15),
+      motivos: rankBy(motivoKey, normalizeMotivo, 8),
+      tiendas: rankBy(tiendaKey, undefined, 10),
+      heatmap: { edades: edades.map(group => group.label), antiguedades, values: mapaCalor },
     };
   }
 
@@ -768,6 +808,56 @@
   }
   function buildD2(pptx, d, dateLabel){ buildPeopleSummary(pptx,d,dateLabel,'Bajas'); }
 
+  function buildD2Analysis(pptx, d, dateLabel){
+    const {text,rect}=editorialSlide(pptx,'Análisis de bajas',dateLabel);
+    const heat = d.heatmap || { edades: [], antiguedades: [], values: [] };
+    const maxHeat = Math.max(0, ...(heat.values || []).flatMap(row => row.values || []));
+    text('Mapa de calor de bajas',.5,1.98,5.5,.32,17,DARK,true);
+    text('Edad y antigüedad antes de la baja',.5,2.32,5.5,.2,10,MUTED);
+    const gridX = 1.35, gridY = 2.75, cellW = .75, cellH = .48;
+    (heat.antiguedades || []).forEach((label,index) => text(label,gridX+index*cellW,2.54,cellW,.17,7.7,MUTED,true,{align:'center'}));
+    (heat.values || []).forEach((row,rowIndex) => {
+      const y = gridY + rowIndex*cellH;
+      text(row.label,.5,y+.15,.72,.16,9,DARK,true,{align:'right'});
+      row.values.forEach((value,colIndex) => {
+        const intensity = maxHeat ? value / maxHeat : 0;
+        const fill = value ? (intensity >= .7 ? 'C0181F' : intensity >= .4 ? 'E46B4E' : 'F8C8B8') : 'F7F3EC';
+        slide.addShape('roundRect',{x:gridX+colIndex*cellW,y,w:.63,h:.33,rectRadius:.04,fill:{color:fill},line:{color:'FFFFFF',transparency:0}});
+        text(value || '—',gridX+colIndex*cellW,y+.08,.63,.14,10,value?'FFFFFF':'A69E95',true,{align:'center'});
+      });
+    });
+    text('Mayor intensidad',.5,5.38,1.3,.2,9,MUTED);
+    ['F7F3EC','F8C8B8','E46B4E','C0181F'].forEach((color,index) => slide.addShape('roundRect',{x:1.55+index*.32,y:5.36,w:.22,h:.14,rectRadius:.02,fill:{color},line:{type:'none'}}));
+
+    rect(5.4,1.97,.015,4.86,'E5DCD6');
+    text('Motivos de baja',5.8,1.98,3.05,.32,17,DARK,true);
+    text('Top 8 del corte',5.8,2.32,3.05,.2,10,MUTED);
+    const motivos = d.motivos || [];
+    const maxMotivo = Math.max(1,...motivos.map(item => item.total));
+    motivos.slice(0,8).forEach((item,index) => {
+      const y=2.7+index*.34;
+      text(shortenName(item.label,25),5.8,y,2.0,.18,9.5,TEXT,true);
+      rect(7.83,y+.08,.72,.06,'EDE6DF');
+      rect(7.83,y+.08,.72*item.total/maxMotivo,.06,ORANGE);
+      text(item.total,8.64,y,.34,.18,10,DARK,true,{align:'right'});
+    });
+
+    text('Top 10 tiendas con más bajas',9.28,1.98,3.45,.32,17,DARK,true);
+    text('Bajas acumuladas en el corte',9.28,2.32,3.45,.2,10,MUTED);
+    const tiendas = d.tiendas || [];
+    const maxTienda = Math.max(1,...tiendas.map(item => item.total));
+    tiendas.slice(0,10).forEach((item,index) => {
+      const y=2.7+index*.34;
+      text(String(index+1).padStart(2,'0'),9.28,y,.28,.18,8.5,RED,true);
+      text(shortenName(item.label,25),9.62,y,2.15,.18,9.4,TEXT,true);
+      rect(11.83,y+.08,.55,.06,'EDE6DF');
+      rect(11.83,y+.08,.55*item.total/maxTienda,.06,RED);
+      text(item.total,12.45,y,.3,.18,10,DARK,true,{align:'right'});
+    });
+    text('OXXO · Uso interno',.5,7.04,4,.2,9,MUTED);
+    text('Mapa, motivos y tiendas usan las mismas bajas del corte seleccionado',6.4,7.04,6.4,.2,9,MUTED,false,{align:'right'});
+  }
+
   function editorialSlide(pptx, title, dateLabel){
     const slide=pptx.addSlide();
     slide.background={color:'FFFCF8'};
@@ -917,12 +1007,13 @@
     const {text,rect}=editorialSlide(pptx,'Presentación RAE',dateLabel);
     text('Indicadores de recursos humanos',.5,2.5,11.9,.8,34,DARK,true);
     text('Plaza Oaxaca',.5,3.52,11.9,.5,22,RED,true);
-    const sections=['Vacantes','Bajas','Aprovechamiento','Capacidades','Cerca Siempre','TREO'];
+    const sections=['Vacantes','Bajas','Análisis de bajas','Aprovechamiento','Capacidades','Cerca Siempre','TREO'];
     sections.forEach((label,i)=>{
-      const x=.5+i*2.05;
-      rect(x,5.23,1.8,.035,i===0?RED:'E5DCD6');
-      text('0'+(i+1),x,5.54,1.8,.45,23,RED,true);
-      text(label,x,6.15,1.8,.4,12,DARK,true);
+      const sectionW = 1.54;
+      const x=.5+i*1.78;
+      rect(x,5.23,sectionW,.035,i===0?RED:'E5DCD6');
+      text('0'+(i+1),x,5.54,sectionW,.45,23,RED,true);
+      text(label,x,6.15,sectionW,.4,11,DARK,true);
     });
   }
 
@@ -960,9 +1051,12 @@
   function buildDashboardList(mesD1, mesD2){
     let capacidadesPromise;
     const loadCapacidades = () => capacidadesPromise || (capacidadesPromise = dataD8());
+    let bajasPromise;
+    const loadBajas = () => bajasPromise || (bajasPromise = dataD2(mesD2));
     return [
       { title: 'VACANTES', fetch: () => dataD1(mesD1), build: buildD1 },
-      { title: 'BAJAS', fetch: () => dataD2(mesD2), build: buildD2 },
+      { title: 'BAJAS', fetch: loadBajas, build: buildD2 },
+      { title: 'ANÁLISIS DE BAJAS', fetch: loadBajas, build: buildD2Analysis },
       { title: 'APROVECHAMIENTO DE ESTRUCTURA', fetch: dataD3, build: buildD3 },
       { title: 'CAPACIDADES 2026', fetch: loadCapacidades, build: buildD8 },
       { title: 'MÓDULO CERCA SIEMPRE', fetch: async () => (await loadCapacidades())?.cercaSiempre || null, build: buildD8CercaSiempre },
