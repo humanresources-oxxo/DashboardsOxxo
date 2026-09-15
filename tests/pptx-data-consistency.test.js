@@ -43,7 +43,7 @@ vm.runInContext(fs.readFileSync(path.join(root, 'js/config.js'), 'utf8'), sandbo
 vm.runInContext(fs.readFileSync(path.join(root, 'js/core.js'), 'utf8'), sandbox);
 
 vm.runInContext(fs.readFileSync(path.join(root,'js/metrics-periods.js'),'utf8'),sandbox);
-for(const [file,api,names] of [['admin-pptx.js','general','kpiD1,kpiD2,kpiD4,kpiD6'],['admin-pptx-rae.js','rae','dataD1,dataD2,dataD8'],['admin-pptx-asesor.js','advisor','datosAsesorD1,datosAsesorD2']]){
+for(const [file,api,names] of [['admin-pptx.js','general','kpiD1,kpiD2,kpiD4,kpiD6'],['admin-pptx-rae.js','rae','dataD1,dataD2,dataD8,buildD2Analysis'],['admin-pptx-asesor.js','advisor','datosAsesorD1,datosAsesorD2']]){
  const code=fs.readFileSync(path.join(root,'js',file),'utf8').replace(/\}\)\(\);\s*$/, 'window.'+api+'={'+names+'};})();');vm.runInContext(code,sandbox);
 }
 let fixture=[];
@@ -80,6 +80,11 @@ sandbox.loadAsesorCatalog=async()=>null;sandbox.OXXO.loadAsesorCatalog=sandbox.l
  assert.equal(bajasRae.tiendas.length,2);
  assert.equal(bajasRae.heatmap.values[0].values[0],1);
  assert.equal(bajasRae.heatmap.values[1].values[1],1);
+ const drawn = [];
+ const fakeSlide = { background: {}, addText(...args) { drawn.push(['text', ...args]); }, addShape(...args) { drawn.push(['shape', ...args]); } };
+ sandbox.rae.buildD2Analysis({ addSlide() { return fakeSlide; } }, bajasRae, bajasRae.sub);
+ assert.ok(drawn.some(([kind]) => kind === 'shape'));
+ assert.ok(drawn.some(([kind, value]) => kind === 'text' && String(value).includes('Top 10 tiendas')));
  assert.equal((await sandbox.OXXO.metricsD2Rows()).rows.length,2);
  assert.equal((await sandbox.advisor.datosAsesorD2('Timoteo Antonio Perez')).total,1);
  assert.equal(await sandbox.rae.dataD2('2026-08'),null);

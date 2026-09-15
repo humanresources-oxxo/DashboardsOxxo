@@ -809,7 +809,7 @@
   function buildD2(pptx, d, dateLabel){ buildPeopleSummary(pptx,d,dateLabel,'Bajas'); }
 
   function buildD2Analysis(pptx, d, dateLabel){
-    const {text,rect}=editorialSlide(pptx,'Análisis de bajas',dateLabel);
+    const {slide,text,rect}=editorialSlide(pptx,'Análisis de bajas',dateLabel);
     const heat = d.heatmap || { edades: [], antiguedades: [], values: [] };
     const maxHeat = Math.max(0, ...(heat.values || []).flatMap(row => row.values || []));
     text('Mapa de calor de bajas',.5,1.98,5.5,.32,17,DARK,true);
