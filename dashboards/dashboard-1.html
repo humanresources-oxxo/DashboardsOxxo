@@ -2041,13 +2041,13 @@ function renderPuestoOptions(){
   const wrap=document.getElementById('puesto-options');
   if(!wrap) return;
   const puestos=availableDefaultPuestos();
+  // Mismo componente que los filtros de asesor y tienda (sfRow), para que
+  // puesto tambien traiga el boton "Solo". Antes armaba su propio markup y se
+  // quedaba sin el: aislar un puesto obligaba a apagar los otros seis a mano.
   const items=['',...puestos].map(value=>{
     const isAll=value==='';
     const active=isAll?isDefaultPuestoSelection():selectedPuestoValues.includes(value);
-    return `<button type="button" class="smart-filter__option ${active?'is-active':''}" data-puesto="${esc(value)}">
-      <span class="smart-filter__check"></span>
-      <span>${isAll?'Puestos operativos':esc(value)}</span>
-    </button>`;
+    return sfRow({ attr:'puesto', value, label:isAll?'Puestos operativos':value, active, isAll });
   }).join('');
   wrap.innerHTML=items||'<div class="smart-filter__empty">Sin puestos</div>';
 }
@@ -2150,7 +2150,7 @@ function normalizeSearchText(value){
 // el filtro arranca con las ~250 tiendas operativas seleccionadas, asi
 // que quedarse con una sola exigia des-seleccionar las otras 249 a mano.
 function sfRow({ attr, value, label, active, isAll }){
-  const opt=`<button type="button" class="smart-filter__option ${active?'is-active':''}" data-${attr}="${esc(value)}">
+  const opt=`<button type="button" class="smart-filter__option ${active?'is-active':''}" data-${attr}="${esc(value)}" title="${esc(label)}">
       <span class="smart-filter__check"></span>
       <span class="sf-text">${esc(label)}</span>
     </button>`;
@@ -2734,6 +2734,14 @@ function poblarFiltros(){
   });
 
   document.getElementById('puesto-options').addEventListener('click', e => {
+    const solo=e.target.closest('[data-solo-puesto]');
+    if(solo){
+      e.stopPropagation();
+      activePuesto='';
+      setSelectedPuestos([solo.dataset.soloPuesto]);
+      refreshDashboard();
+      return;
+    }
     const btn=e.target.closest('[data-puesto]');
     if(!btn) return;
     e.stopPropagation();
