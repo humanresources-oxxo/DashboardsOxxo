@@ -46,8 +46,8 @@ vm.runInContext(fs.readFileSync(path.join(root,'js/metrics-periods.js'),'utf8'),
 for(const [file,api,names] of [['admin-pptx.js','general','kpiD1,kpiD2,kpiD4,kpiD6'],['admin-pptx-rae.js','rae','dataD1,dataD2,dataD8,buildD1,buildD2Analysis'],['admin-pptx-asesor.js','advisor','datosAsesorD1,datosAsesorD2']]){
  const code=fs.readFileSync(path.join(root,'js',file),'utf8').replace(/\}\)\(\);\s*$/, 'window.'+api+'={'+names+'};})();');vm.runInContext(code,sandbox);
 }
-let fixture=[];
-sandbox.fetchSheetData=async()=>fixture.map(r=>({...r}));sandbox.OXXO.fetchSheetData=sandbox.fetchSheetData;
+let fixture=[], fixtureByTab=null;
+sandbox.fetchSheetData=async tab => (fixtureByTab?.[tab] || fixture).map(r=>({...r}));sandbox.OXXO.fetchSheetData=sandbox.fetchSheetData;
 sandbox.loadAsesorCatalog=async()=>null;sandbox.OXXO.loadAsesorCatalog=sandbox.loadAsesorCatalog;
 
 (async()=>{
@@ -108,6 +108,12 @@ sandbox.loadAsesorCatalog=async()=>null;sandbox.OXXO.loadAsesorCatalog=sandbox.l
  assert.equal(capacidades.cercaSiempre.completadas,1);
  assert.equal(capacidades.cercaSiempre.pendientes,1);
  assert.equal(capacidades.cercaSiempre.asesores[0].name,'Beto');
+ fixtureByTab={
+  [sandbox.OXXO.SHEETS_CONFIG.TABS.d1]: [{Mes:'2026-09',Tienda:'OXXO A','CR TIENDA':'50AAA',Empleados:'Persona',Puesto:'AYUDANTE TIENDA'}],
+  [sandbox.OXXO.SHEETS_CONFIG.TABS.s7]: [{Tienda:'OXXO A',CR:'50AAA',Asesor:'Timoteo Antonio Perez','Estructura Propuesta TREO P2 Jun - Ago':1,'Estructura SAP':1,'Empleados Activos':1,Vacantes:0,'Dif SAP vs Est Optima Final':0}]
+ };
+ assert.equal((await sandbox.OXXO.metricsD7Rows()).rows.length,1);
+ fixtureByTab=null;
  fixture=[];assert.equal(await sandbox.general.kpiD1(),null);assert.equal(await sandbox.general.kpiD2(),null);
  console.log('PPTX: occupied positions, zero current vacancies, exact month, week/year, unassigned departures and chart totals OK');
 })().catch(e=>{console.error(e);process.exitCode=1});

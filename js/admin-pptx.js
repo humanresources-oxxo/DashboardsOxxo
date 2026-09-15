@@ -252,8 +252,7 @@
     const asesorCatalog = await OXXO.loadAsesorCatalog();
     const rows = raw
       .filter(r => String(val(r, tiendaKey)||'').trim() || String(val(r, asesorKey)||'').trim())
-      .filter(r => OXXO.isTiendaValid(asesorCatalog, val(r, tiendaKey), val(r, crKey)))
-      .filter(r => normText(val(r, asesorKey)).replace(/[^A-Z]/g,'') !== 'TIMOTEOANTONIOPEREZ');
+      .filter(r => OXXO.isTiendaValid(asesorCatalog, val(r, tiendaKey), val(r, crKey)));
     const total = rows.length;
     let alineadas = 0, subir = 0, bajar = 0;
     rows.forEach(r => {

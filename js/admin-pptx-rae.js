@@ -429,13 +429,12 @@
     // respaldo por nombre de tienda, que es menos preciso.
     const tiendaKey = findDataKey(raw, ['Tienda','Nombre Tienda','Unidad','Unidad Org','Unidad Organizativa']);
     const crKey = findDataKey(raw, ['CR','ID Tienda','ID_Tienda']);
-    // dashboard-7.html filtra por el catalogo de 255 tiendas autorizadas y
-    // excluye 'timoteoantonioperez', igual que Dashboard 1.
+    // Mismo catálogo y estado de tienda que dashboard-7.html. Los asesores
+    // no se excluyen: cada tienda operativa debe entrar al total de TREO.
     const asesorCatalog = await OXXO.loadAsesorCatalog();
     const rows = raw
       .filter(r => String(val(r, tiendaKey)||'').trim() || String(val(r, asesorKey)||'').trim())
       .filter(r => OXXO.isTiendaValid(asesorCatalog, val(r, tiendaKey), val(r, crKey)))
-      .filter(r => normText(val(r, asesorKey)).replace(/[^A-Z]/g,'') !== 'TIMOTEOANTONIOPEREZ')
       .map(r => {
         if(!estructuraD1.ready) return r;
         const cr = String(val(r, crKey)||'').trim().toUpperCase().replace(/[^A-Z0-9]/g,'');

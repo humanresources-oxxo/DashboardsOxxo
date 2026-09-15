@@ -2476,7 +2476,7 @@ async function metricsD2Rows(targetMes = '') {
   return { rows, mes, asesorKey, puestoKey, tiendaKey };
 }
 
-// Filas de Dashboard 7 (TREO) ya filtradas por catalogo y timoteo.
+// Filas de Dashboard 7 (TREO) ya filtradas por catálogo y estado de tienda.
 async function metricsD7Rows() {
   const rawSheet = await fetchSheetData(SHEETS_CONFIG.TABS.s7);
   const raw = metricsCoerceTreoRows(rawSheet);
@@ -2494,7 +2494,6 @@ async function metricsD7Rows() {
   const rows = raw
     .filter(r => String(metricsVal(r, tiendaKey) || '').trim() || String(metricsVal(r, asesorKey) || '').trim())
     .filter(r => isTiendaValid(asesorCatalog, metricsVal(r, tiendaKey), metricsVal(r, crKey)))
-    .filter(r => metricsNormText(metricsVal(r, asesorKey)).replace(/[^A-Z]/g, '') !== 'TIMOTEOANTONIOPEREZ')
     .map(r => {
       if (!estructuraD1.ready) return r;
       const cr = String(metricsVal(r, crKey) || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
