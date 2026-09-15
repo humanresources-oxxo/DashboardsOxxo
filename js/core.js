@@ -1484,6 +1484,22 @@ function catalogValueByAliases(row, aliases) {
   }
   return '';
 }
+// Tiendas anunciadas, pero todavía sin apertura. Se excluyen por nombre y no
+// por ausencia en TREO: una tienda recién creada puede aparecer antes o
+// después en cada base operativa. Mantener esta lista corta y explícita evita
+// que se oculten tiendas reales por una demora del catálogo.
+const PREOPENING_STORE_KEYS = new Set([
+  'Parador Boca del Monte VSA',
+  'Papaya VSA',
+  'Small Beach OAX VSA',
+  'Piedra Parada VSA',
+  'Gas Nopala VSA',
+  '5 de Septiembre VSA',
+  'Union y Progreso VSA'
+].map(normalizeCatalogTienda));
+function isPreopeningStore(tienda) {
+  return PREOPENING_STORE_KEYS.has(normalizeCatalogTienda(tienda));
+}
 function buildTiendaCatalog(rows, { source = 'Catalogo_Tiendas', loaded = true } = {}) {
   const byCr = new Map();
   const byTienda = new Map();
@@ -1550,6 +1566,10 @@ async function loadTiendaCatalog() {
 // se corrige mirando; esconder de menos no se nota hasta que alguien reclama
 // una vacante que nadie estaba cubriendo.
 function isTiendaValid(catalog, tienda, cr='') {
+  // Las preaperturas se excluyen aunque aún no estén en Catalogo_Tiendas.
+  // Así no entran temporalmente a vacantes, capacidades, estructura, Mi
+  // Tienda ni presentaciones mientras se confirma su apertura real.
+  if (isPreopeningStore(tienda)) return false;
   const stores = catalog?.storeCatalog;
   if (!stores?.loaded) return true;
   const crKey = normalizeCatalogCr(cr);

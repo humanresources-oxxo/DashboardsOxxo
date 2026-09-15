@@ -83,6 +83,8 @@ assert.equal(OXXO.isTiendaValid({ storeCatalog }, 'OXXO Cerrada', '50X99'), fals
 // significa "TREO no la registra aun", no "no existe".
 assert.equal(OXXO.isTiendaValid({ storeCatalog }, 'OXXO No Catalogada', '50N00'), true);
 assert.equal(OXXO.isTiendaValid({}, 'OXXO Respaldo', '50R00'), true);
+assert.equal(OXXO.isTiendaValid({ storeCatalog }, 'OXXO Papaya VSA'), false);
+assert.equal(OXXO.isTiendaValid({ storeCatalog }, 'OXXO Unión y Progreso VSA'), false);
 
 // Control de Ausentismo es una fuente exclusiva de Oaxaca: una plaza recibida
 // por URL o conservada en la sesion no debe cambiar su alcance.
