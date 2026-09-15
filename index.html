@@ -2404,184 +2404,55 @@
       }
     }
 
-    /* Torre de Control: composición compacta tipo biblioteca. Conserva la
-       navegación y las fuentes actuales, pero reduce la portada a un punto
-       de entrada claro y deja que los dashboards sean el contenido principal. */
-    :root {
-      --tower-max: 1160px;
-      --tower-bg: #F5F5F7;
-      --tower-ink: #1D1D1F;
-      --tower-muted: #6E6E73;
-    }
-
-    html { background: var(--tower-bg); }
-    body {
-      background: var(--tower-bg) !important;
-      color: var(--tower-ink);
-    }
-    body::before { display: none; }
-
-    .topbar,
-    .hero,
-    .system-bar,
-    .global-footer {
-      width: min(calc(100% - 36px), var(--tower-max)) !important;
-    }
-
-    .topbar {
-      min-height: 54px;
-      margin-top: 14px;
-      padding: 9px 16px;
-      border-radius: 14px;
-      background: rgba(255,255,255,.66) !important;
-      border-color: rgba(255,255,255,.84);
-      box-shadow: 0 8px 22px rgba(33,27,25,.06), inset 0 1px 0 rgba(255,255,255,.9);
-      backdrop-filter: blur(20px) saturate(150%);
-    }
-
-    .topbar__logo {
-      width: 82px;
-      height: 36px;
-      border-radius: 7px;
-    }
-
-    .topbar__title { font-size: 18px; }
-    .topbar__subtitle { font-size: 10px; }
-
-    .hero {
-      min-height: 292px;
-      margin-top: 14px;
-      padding: 34px 38px;
-      border-radius: 18px;
-      background-position: 0 0, right center !important;
-      box-shadow: 0 14px 32px rgba(95,17,21,.15), inset 0 1px 0 rgba(255,255,255,.26);
-    }
-
-    .hero__inner { display: block; }
-    .hero__badge,
-    .hero__stats { display: none; }
-    .hero__title {
-      margin: 0 0 10px;
-      font-size: clamp(2.5rem, 5vw, 3.6rem);
-      line-height: 1.02;
-      letter-spacing: -.045em;
-    }
-    .hero__title br { display: none; }
-    .hero__sub { max-width: 440px; font-size: 14px; line-height: 1.5; }
-
-    .system-bar { margin-top: 12px; }
-    .system-bar__inner {
-      min-height: 44px;
-      padding: 11px 14px;
-      border-radius: 12px;
-      background: rgba(255,255,255,.66);
-      border-color: rgba(255,255,255,.86);
-      box-shadow: 0 7px 18px rgba(33,27,25,.04), inset 0 1px 0 rgba(255,255,255,.9);
-      backdrop-filter: blur(18px) saturate(145%);
-    }
-
-    .home-navigation,
-    .folder-tabs,
-    .dashboards-section {
-      width: min(calc(100% - 36px), var(--tower-max));
-    }
-
-    .home-navigation { margin-top: 22px; }
+    /* Acciones liquid glass: la pestaña activa y el acceso de cada tarjeta
+       comparten una sombra amplia del color del área, sin cambiar la lógica
+       ni la semántica de los enlaces. */
     .folder-tabs {
-      width: min(calc(100% - 36px), 620px);
-      margin-top: 18px;
-      padding: 4px;
-      border-radius: 12px;
-      background: rgba(255,255,255,.55);
-      border-color: rgba(255,255,255,.86);
-      box-shadow: 0 8px 20px rgba(33,27,25,.06), inset 0 1px 0 rgba(255,255,255,.9);
+      background: rgba(255,255,255,.52);
+      border-color: rgba(255,255,255,.82);
       backdrop-filter: blur(18px) saturate(155%);
     }
 
-    .folder-tab {
-      min-height: 44px;
-      padding: 9px 12px;
-      border-radius: 9px;
-      font-size: 11px;
-    }
-
     .folder-tab.is-active {
-      border-color: rgba(255,255,255,.5);
+      border-color: rgba(255,255,255,.48);
       box-shadow:
-        inset 0 1px 0 rgba(255,255,255,.4),
+        inset 0 1px 0 rgba(255,255,255,.42),
         0 2px 6px color-mix(in srgb, var(--tab-color) 22%, transparent),
-        0 10px 22px color-mix(in srgb, var(--tab-color) 25%, transparent);
+        0 11px 25px color-mix(in srgb, var(--tab-color) 27%, transparent);
     }
-
-    .dashboards-section {
-      padding: 30px 0 24px;
-      background: transparent !important;
-    }
-
-    .dashboards-grid { gap: 12px; margin-top: 16px; }
-    .db-card {
-      min-height: 174px;
-      padding: 17px 18px;
-      border-radius: 14px;
-      gap: 10px;
-      background: rgba(255,255,255,.76) !important;
-      border-color: rgba(255,255,255,.9);
-      box-shadow: 0 8px 19px rgba(33,27,25,.045), inset 0 1px 0 rgba(255,255,255,.92);
-      backdrop-filter: blur(16px) saturate(135%);
-    }
-
-    .db-card::before { inset: 16px auto 16px 0; width: 3px; }
-    .db-card__top { gap: 10px; }
-    .db-card__icon { width: 42px; height: 42px; border-radius: 12px; font-size: 19px; }
-    .db-card__freq { padding: 5px 9px; font-size: 9px; }
-    .db-card__title { font-size: 1.2rem; }
-    .db-card__desc { font-size: 12px; line-height: 1.42; }
-    .db-card__footer { padding-top: 10px; }
-    .db-card__update { font-size: 10px; }
 
     .db-card__arrow {
       width: auto;
-      min-width: 78px;
-      height: 34px;
-      padding: 0 9px 0 11px;
-      gap: 4px;
+      min-width: 82px;
+      height: 38px;
+      padding: 0 11px 0 13px;
+      gap: 5px;
       border: 1px solid rgba(255,255,255,.52);
-      border-radius: 9px;
+      border-radius: 10px;
       background: linear-gradient(135deg,
         color-mix(in srgb, var(--card-accent, var(--color-red)) 90%, #fff),
         color-mix(in srgb, var(--card-accent, var(--color-red)) 74%, #111)) !important;
       box-shadow:
         inset 0 1px 0 rgba(255,255,255,.42),
         0 2px 6px color-mix(in srgb, var(--card-accent, var(--color-red)) 22%, transparent),
-        0 9px 19px color-mix(in srgb, var(--card-accent, var(--color-red)) 28%, transparent);
+        0 10px 22px color-mix(in srgb, var(--card-accent, var(--color-red)) 28%, transparent);
     }
+
     .db-card__arrow::before {
       content: 'Abrir';
       color: #fff;
-      font-size: 10px;
+      font-size: 11px;
       font-weight: 800;
+      letter-spacing: .01em;
     }
+
     .db-card:hover .db-card__arrow,
     .db-card:focus-visible .db-card__arrow {
       transform: translateX(3px) translateY(-1px);
       box-shadow:
         inset 0 1px 0 rgba(255,255,255,.48),
         0 3px 8px color-mix(in srgb, var(--card-accent, var(--color-red)) 25%, transparent),
-        0 13px 26px color-mix(in srgb, var(--card-accent, var(--color-red)) 33%, transparent);
-    }
-
-    @media (max-width: 700px) {
-      .topbar,
-      .hero,
-      .system-bar,
-      .global-footer,
-      .home-navigation,
-      .folder-tabs,
-      .dashboards-section { width: calc(100% - 24px) !important; }
-      .hero { min-height: 250px; padding: 28px 22px; }
-      .folder-tab { min-height: 42px; padding: 8px 6px; font-size: 9px; }
-      .folder-tab__icon { display: none; }
-      .dashboards-grid { grid-template-columns: 1fr; }
+        0 14px 28px color-mix(in srgb, var(--card-accent, var(--color-red)) 33%, transparent);
     }
 
     /* Cabecera compacta para teléfono: separa visualmente la marca, el acceso
