@@ -329,7 +329,15 @@
     const tiendaKey = findKey(sample, ['Unidad org.','Unidad org','Tienda']);
     const crKey = findKey(sample, ['Cr de tienda','CR TIENDA','CR Tienda','CR','ID Tienda']);
     const asesorCatalog = await OXXO.loadAsesorCatalog();
-    const rows = scoped.filter(r => OXXO.isTiendaValid(asesorCatalog, val(r, tiendaKey), val(r, crKey)));
+    // Dashboard 8 resuelve al asesor vigente desde Catalogo_Asesores antes de
+    // agrupar. Sin este paso la presentación conservaba el nombre crudo de la
+    // base y dejaba fuera, por ejemplo, a Edgar cuando sus tiendas llegaban
+    // como Centralización o Sin Asesor Asignado.
+    const catalogados = scoped.map(row => ({ ...row }));
+    catalogados.forEach(row => OXXO.applyAsesorCatalog(row, asesorCatalog, {
+      asesorKey, tiendaKey, crKey
+    }));
+    const rows = catalogados.filter(r => OXXO.isTiendaValid(asesorCatalog, val(r, tiendaKey), val(r, crKey)));
     if(!rows.length) return null;
     const certifications = Object.keys(sample).filter(isCapColumn);
     if(!certifications.length) return null;

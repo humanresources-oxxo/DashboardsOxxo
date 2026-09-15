@@ -109,6 +109,15 @@ sandbox.loadAsesorCatalog=async()=>null;sandbox.OXXO.loadAsesorCatalog=sandbox.l
  assert.equal(capacidades.cercaSiempre.completadas,1);
  assert.equal(capacidades.cercaSiempre.pendientes,1);
  assert.equal(capacidades.cercaSiempre.asesores[0].name,'Beto');
+ const applyCatalogOriginal = sandbox.OXXO.applyAsesorCatalog;
+ sandbox.OXXO.applyAsesorCatalog = (row) => {
+  if(row.Asesor_Correcto === 'Centralizacion') row.Asesor_Correcto = 'Edgar Jonathan Bautista Ventura';
+  return row;
+ };
+ fixture=[{Plaza:'Oaxaca',Asesor_Correcto:'Centralizacion',Empleados:'3','Unidad org.':'OXXO C','Cr de tienda':'50AAC','Promedio de Modulo Cerca Siempre 2026':0}];
+ const capacidadesCatalogadas = await sandbox.rae.dataD8();
+ assert.equal(capacidadesCatalogadas.cercaSiempre.asesores[0].name,'Edgar Jonathan Bautista Ventura');
+ sandbox.OXXO.applyAsesorCatalog = applyCatalogOriginal;
  fixtureByTab={
   [sandbox.OXXO.SHEETS_CONFIG.TABS.d1]: [{Mes:'2026-09',Tienda:'OXXO A','CR TIENDA':'50AAA',Empleados:'Persona',Puesto:'AYUDANTE TIENDA'}],
   [sandbox.OXXO.SHEETS_CONFIG.TABS.s7]: [{Tienda:'OXXO A',CR:'50AAA',Asesor:'Timoteo Antonio Perez','Estructura Propuesta TREO P2 Jun - Ago':1,'Estructura SAP':1,'Empleados Activos':1,Vacantes:0,'Dif SAP vs Est Optima Final':0}]
