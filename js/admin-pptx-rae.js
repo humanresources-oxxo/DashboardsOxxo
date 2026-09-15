@@ -134,11 +134,14 @@
     const ecPorAtKey = OXXO.metricsFindKeyExact(scoped[0], ['Ec por AT','EC POR AT','Ec Por AT','EC']);
     const atKey = OXXO.metricsFindKeyExact(scoped[0], ['Ats','ATS','AT','At']);
     const fechaKey = findKey(scoped[0], ['Mes Semana','Semana','Fecha','FECHA']);
+    const asesorCatalog = await OXXO.loadAsesorCatalog();
+    const visible = scoped.filter(r => OXXO.isTiendaValid(asesorCatalog, val(r, tiendaKey), val(r, crKey)));
+    if(!visible.length) return null;
     // Igual que Dashboard 3: aunque cada carga deberia reemplazar toda la
     // pestana (foto diaria), si llegaran a quedar varias fechas mezcladas se
     // usa solo la mas reciente, para no promediar dias distintos.
-    const fecha = latestByKey(scoped, fechaKey);
-    const rows = fecha ? scoped.filter(r => String(r[fechaKey]||'').trim() === fecha) : scoped;
+    const fecha = latestByKey(visible, fechaKey);
+    const rows = fecha ? visible.filter(r => String(r[fechaKey]||'').trim() === fecha) : visible;
     const total = rows.length;
     // Misma clasificacion que isCompleta/isIncompleta/isCritica de
     // dashboard-3.html (por texto de Estatus, no por umbral numerico).
@@ -187,9 +190,8 @@
     // filtros". El resto (total de tiendas y EC% de respaldo) sí usa solo
     // las filas de la fecha mas reciente.
     const ecByAt = new Map();
-    const asesorCatalog = await OXXO.loadAsesorCatalog();
     if(ecPorAtKey && atKey){
-      scoped.forEach(r => {
+      visible.forEach(r => {
         const ecVal = normPct(val(r, ecPorAtKey));
         const atName = String(OXXO.resolveAsesorD1(asesorCatalog, {
           cr: val(r, crKey), tienda: val(r, tiendaKey), asesor: val(r, atKey)
@@ -242,12 +244,16 @@
     const raw = await OXXO.fetchSheetData(OXXO.SHEETS_CONFIG.TABS.d8, { scoped: false });
     if(!raw || !raw.length) return null;
     const oaxacaScope = OXXO.normalizeDataScope({ level:'plaza', region:'TABASCO', plaza:'Plaza Oaxaca' });
-    const rows = raw.filter(r => OXXO.rowMatchesDataScope(r, oaxacaScope));
-    if(!rows.length) return null;
-    const sample = rows[0];
+    const scoped = raw.filter(r => OXXO.rowMatchesDataScope(r, oaxacaScope));
+    if(!scoped.length) return null;
+    const sample = scoped[0];
     const asesorKey = findKey(sample, ['Asesor_Correcto','Asesor']);
     const empleadoKey = findKey(sample, ['Nº personal','N personal','No Personal','Empleados','Empleado']);
     const tiendaKey = findKey(sample, ['Unidad org.','Unidad org','Tienda']);
+    const crKey = findKey(sample, ['Cr de tienda','CR TIENDA','CR Tienda','CR','ID Tienda']);
+    const asesorCatalog = await OXXO.loadAsesorCatalog();
+    const rows = scoped.filter(r => OXXO.isTiendaValid(asesorCatalog, val(r, tiendaKey), val(r, crKey)));
+    if(!rows.length) return null;
     const certifications = Object.keys(sample).filter(isCapColumn);
     if(!certifications.length) return null;
 

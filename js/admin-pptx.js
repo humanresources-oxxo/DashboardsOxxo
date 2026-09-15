@@ -97,11 +97,14 @@
     const tiendaKey = findKey(raw[0], ['Tienda']);
     const crKey = findKey(raw[0], ['CR TIENDA','CR Tienda','CR','ID Tienda']);
     const fechaKey = findKey(raw[0], ['Mes Semana','Semana','Fecha','FECHA']);
+    const asesorCatalog = await OXXO.loadAsesorCatalog();
+    const visible = raw.filter(r => OXXO.isTiendaValid(asesorCatalog, val(r, tiendaKey), val(r, crKey)));
+    if(!visible.length) return null;
     // Igual que dashboard-3.html: limitar al corte de la fecha mas
     // reciente, para no mezclar dias distintos si llegaran a quedar
     // varias fechas en la misma hoja.
-    const fecha = latestByKey(raw, fechaKey);
-    const rows = fecha ? raw.filter(r => String(r[fechaKey]||'').trim() === fecha) : raw;
+    const fecha = latestByKey(visible, fechaKey);
+    const rows = fecha ? visible.filter(r => String(r[fechaKey]||'').trim() === fecha) : visible;
     const total = rows.length;
     let completas = 0, incompletas = 0, criticas = 0;
     rows.forEach(r => {
@@ -118,7 +121,6 @@
     // (via resolveAsesorD1) ANTES de agrupar por asesor: sin esto, las
     // tiendas sin AT vigente aparecian como su propia fila "Sin Asesor
     // Asignado" en el ranking, mezcladas con nombres de personas reales.
-    const asesorCatalog = await OXXO.loadAsesorCatalog();
     const byAsesor = new Map();
     rows.forEach(r => {
       const name = String(OXXO.resolveAsesorD1(asesorCatalog, { cr: val(r, crKey), tienda: val(r, tiendaKey), asesor: val(r, asesorKey) }) || '').trim();
