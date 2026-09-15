@@ -133,7 +133,19 @@ window.OXXO_ADMIN_PUBLISHERS = function createAdminPublishers(deps){
       await new Promise(resolve=>setTimeout(resolve,delay));
       try{
         OXXO.clearSheetDataCache(dash.tab);
-        const rows=await OXXO.fetchSheetData(dash.tab,{fresh:true,allowStale:false,scoped:false});
+        // Catalogo_Asesores tiene una fila tecnica (_buffer_) para proteger
+        // escrituras masivas. gviz, que usa fetchSheetData, puede interpretar
+        // esa fila como encabezado y reportar que faltan TODAS las columnas
+        // aunque Apps Script ya haya comprobado la publicación. Para este
+        // catálogo verificamos mediante su lector directo, que es la misma
+        // fuente que emplean los dashboards al resolver el asesor por CR.
+        const isAsesorCatalog=dash.tab===(OXXO.SHEETS_CONFIG.CATALOG_SHEET||'Catalogo_Asesores');
+        const rows=isAsesorCatalog
+          ?((await OXXO.loadAsesorCatalog())?.rows||[]).map(row=>({
+              ASESOR:row.asesor, TIENDA:row.tienda, 'CR TIENDA':row.cr,
+              Region:row.region, Plaza:row.plaza, Zona:row.zona, ACTIVA:row.activa
+            }))
+          :await OXXO.fetchSheetData(dash.tab,{fresh:true,allowStale:false,scoped:false});
         if(!Array.isArray(rows)||!rows.length){last={ok:false,rows:0,missing:required,error:'La lectura pública respondió sin filas.'};continue;}
         const headers=Object.keys(rows[0]||{}).map(normHeader);
         const missing=required.filter(header=>!headers.includes(header));
