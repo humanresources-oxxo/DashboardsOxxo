@@ -95,10 +95,47 @@
     const rows = source.rows.filter(r => rowMonthKeyD1(r, source.mesKey, source.fechaKey) === mes);
     const byPuesto = { Lider: 0, Encargado: 0, Ayudante: 0, Otro: 0 };
     rows.forEach(r => { byPuesto[tipoPuesto(val(r, puestoKey))]++; });
+    // Misma lectura de antigüedad que la tabla "Vacantes por asesor" del
+    // Dashboard 1. Las tiendas nuevas y los meses finalizados sí cuentan como
+    // vacantes, pero no deben alterar promedio, máximo ni semáforo.
+    const diasKey = rows.length ? findKey(rows[0], ['Dias Vacantes', 'Dias_Vacantes']) : null;
+    const asesores = new Map();
+    rows.forEach(r => {
+      const name = String(val(r, asesorKey) || '').trim() || 'Sin asesor';
+      if (!asesores.has(name)) asesores.set(name, { name, vacantes: 0, diasCount: 0, sumDias: 0, maxDias: 0, d3: 0, d6: 0, dMas6: 0 });
+      const item = asesores.get(name);
+      item.vacantes++;
+      const rawDias = diasKey ? val(r, diasKey) : '';
+      const rawText = String(rawDias ?? '').trim();
+      const dias = OXXO.metricsDiasVacantesValue(rawDias);
+      const sinAntiguedad = !rawText || /finaliz/i.test(rawText) || dias > 500;
+      if (sinAntiguedad) return;
+      item.diasCount++;
+      item.sumDias += dias;
+      item.maxDias = Math.max(item.maxDias, dias);
+      if (dias <= 3) item.d3++;
+      else if (dias <= 6) item.d6++;
+      else item.dMas6++;
+    });
+    const tablaAsesores = [...asesores.values()]
+      .map(item => ({ ...item, promedio: item.diasCount ? item.sumDias / item.diasCount : null }))
+      .sort((a, b) => b.vacantes - a.vacantes || a.name.localeCompare(b.name, 'es'));
+    const totalTabla = tablaAsesores.reduce((total, item) => ({
+      vacantes: total.vacantes + item.vacantes,
+      diasCount: total.diasCount + item.diasCount,
+      sumDias: total.sumDias + item.sumDias,
+      maxDias: Math.max(total.maxDias, item.maxDias),
+      d3: total.d3 + item.d3,
+      d6: total.d6 + item.d6,
+      dMas6: total.dMas6 + item.dMas6,
+    }), { vacantes: 0, diasCount: 0, sumDias: 0, maxDias: 0, d3: 0, d6: 0, dMas6: 0 });
+    totalTabla.promedio = totalTabla.diasCount ? totalTabla.sumDias / totalTabla.diasCount : null;
     return {
       total: rows.length, sub: mes ? `Mes ${mes}` : 'Plaza Oaxaca',
       byPuesto,
       ranking: rankCount(rows, asesorKey, 15),
+      tablaAsesores,
+      totalTabla,
     };
   }
 
@@ -628,7 +665,79 @@
     text('El total incluye todos los asesores del corte',7.3,7.04,5.5,.2,9,MUTED,false,{align:'right'});
   }
 
-  function buildD1(pptx, d, dateLabel){ buildPeopleSummary(pptx,d,dateLabel,'Vacantes'); }
+  function buildD1(pptx, d, dateLabel){
+    const slide = pptx.addSlide();
+    slide.background = { color: 'FFFCF8' };
+    const text = (value,x,y,w,h,size,color=TEXT,bold=false,extra={}) => slide.addText(String(value),
+      { x,y,w,h,fontFace:'Arial',fontSize:size,color,bold,margin:0,breakLine:false,fit:'shrink',...extra });
+    const rect = (x,y,w,h,color) => slide.addShape('rect',{x,y,w,h,line:{color,transparency:100},fill:{color}});
+    const rounded = (x,y,w,h,color,line=BORDER) => slide.addShape('roundRect',{x,y,w,h,rectRadius:.07,fill:{color},line:{color:line,transparency:line===BORDER?0:100}});
+    rect(0,0,PAGE_W,.09,RED);
+    text('OXXO  /  RECURSOS HUMANOS',.5,.3,7,.25,10,RED,true);
+    text('Plaza Oaxaca',10,.3,2.8,.25,10,MUTED,false,{align:'right'});
+    text('Vacantes',.5,.83,7,.58,30,DARK,true);
+    text(dateLabel || 'Corte no informado',8.5,.97,4.3,.3,12,MUTED,false,{align:'right'});
+    rect(.5,1.62,12.3,.015,'E5DCD6');
+
+    const total = d.totalTabla || { vacantes: d.total, promedio: null, maxDias: 0, dMas6: 0 };
+    const kpis = [
+      ['Vacantes', total.vacantes],
+      ['Días promedio', total.promedio === null ? '—' : total.promedio.toFixed(1)],
+      ['Días máximo', total.diasCount ? total.maxDias : '—'],
+      ['Más de 6 días', total.dMas6],
+    ];
+    kpis.forEach(([label,value], index) => {
+      const x = .5 + index * 3.12;
+      rounded(x,1.84,2.92,.67,'FFFFFF');
+      text(value,x+.16,1.95,1.1,.28,20,index===3 && Number(value)>0?RED:DARK,true);
+      text(label,x+1.25,2.02,1.48,.18,10,MUTED,true,{align:'right'});
+    });
+
+    text('Vacantes por asesor',.5,2.78,5,.3,16,DARK,true);
+    text('Corte seleccionado · antigüedad excluye tiendas nuevas y meses finalizados',5.55,2.82,7.25,.2,9,MUTED,false,{align:'right'});
+    const columns = [
+      ['ASESOR', .5, 5.45, 'left'],
+      ['VACANTES', 5.95, 1.1, 'center'],
+      ['DÍAS PROM.', 7.05, 1.3, 'center'],
+      ['DÍAS MÁX.', 8.35, 1.2, 'center'],
+      ['≤3 D', 9.55, 1, 'center'],
+      ['≤6 D', 10.55, 1, 'center'],
+      ['>6 D', 11.55, 1, 'center'],
+    ];
+    const tableW = 12.3;
+    rounded(.5,3.14,tableW,3.48,'FFFFFF','E5DCD6');
+    rect(.5,3.14,tableW,.38,'5A1115');
+    columns.forEach(([label,x,w,align]) => text(label,x+.12,3.255,w-.24,.12,8.5,'FFFFFF',true,{align}));
+    const items = d.tablaAsesores || [];
+    const visible = items.slice(0, 12);
+    const rowH = visible.length > 10 ? .235 : .27;
+    const formatDays = value => value === null || value === undefined ? '—' : Number(value).toFixed(1);
+    visible.forEach((item, index) => {
+      const y = 3.52 + index * rowH;
+      if (index % 2) rect(.5,y,tableW,rowH,'FFF8F4');
+      const risk = item.vacantes >= 4 ? RED : item.vacantes >= 2 ? 'C79A00' : GREEN;
+      slide.addShape('ellipse',{x:.68,y:y+.077,w:.075,h:.075,fill:{color:risk},line:{type:'none'}});
+      text(shortenName(item.name,42),.86,y+.035,4.93,rowH-.06,9.5,TEXT,true);
+      text(item.vacantes,6.07,y+.035,.86,rowH-.06,10.5,DARK,true,{align:'center'});
+      text(formatDays(item.promedio),7.17,y+.035,1.06,rowH-.06,9.5,DARK,false,{align:'center'});
+      text(item.diasCount ? item.maxDias : '—',8.47,y+.035,1.06,rowH-.06,9.5,DARK,false,{align:'center'});
+      text(item.d3 || '—',9.67,y+.035,.76,rowH-.06,9.5,item.d3?GREEN:MUTED,true,{align:'center'});
+      text(item.d6 || '—',10.67,y+.035,.76,rowH-.06,9.5,item.d6?ORANGE:MUTED,true,{align:'center'});
+      text(item.dMas6 || '—',11.67,y+.035,.76,rowH-.06,9.5,item.dMas6?RED:MUTED,true,{align:'center'});
+    });
+    const totalY = 3.52 + visible.length * rowH;
+    rect(.5,totalY,tableW,.3,'FCE8EA');
+    text('Total general',.68,totalY+.06,3.8,.14,9.5,DARK,true);
+    text(total.vacantes,6.07,totalY+.06,.86,.14,10,DARK,true,{align:'center'});
+    text(formatDays(total.promedio),7.17,totalY+.06,1.06,.14,9.5,DARK,true,{align:'center'});
+    text(total.diasCount ? total.maxDias : '—',8.47,totalY+.06,1.06,.14,9.5,DARK,true,{align:'center'});
+    text(total.d3 || '—',9.67,totalY+.06,.76,.14,9.5,GREEN,true,{align:'center'});
+    text(total.d6 || '—',10.67,totalY+.06,.76,.14,9.5,ORANGE,true,{align:'center'});
+    text(total.dMas6 || '—',11.67,totalY+.06,.76,.14,9.5,RED,true,{align:'center'});
+    if (items.length > visible.length) text(`Se muestran los 12 asesores con más vacantes de ${items.length}.`,.5,6.72,6,.18,9,MUTED);
+    text('OXXO · Uso interno',.5,7.04,4,.2,9,MUTED);
+    text('La tabla usa el mismo alcance de tiendas que el dashboard',7.3,7.04,5.5,.2,9,MUTED,false,{align:'right'});
+  }
   function buildD2(pptx, d, dateLabel){ buildPeopleSummary(pptx,d,dateLabel,'Bajas'); }
 
   function editorialSlide(pptx, title, dateLabel){

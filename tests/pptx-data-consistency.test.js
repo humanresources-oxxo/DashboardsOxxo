@@ -58,7 +58,14 @@ sandbox.loadAsesorCatalog=async()=>null;sandbox.OXXO.loadAsesorCatalog=sandbox.l
  assert.equal(await sandbox.rae.dataD1('2026-08'),null);
  fixture.push({Mes:'2026-08',Tienda:'OXXO A',Asesor:'Ana',Puesto:'AYUDANTE TIENDA','Status ocupacion':'Vacante',Empleados:'', 'Dias Vacantes':5});
  assert.equal((await sandbox.general.kpiD1()).value,'0');
- assert.equal((await sandbox.rae.dataD1('2026-08')).total,1);
+ fixture.push({Mes:'2026-08',Tienda:'OXXO B',Asesor:'Ana',Puesto:'AYUDANTE TIENDA','Status ocupacion':'Vacante',Empleados:'', 'Dias Vacantes':''});
+ fixture.push({Mes:'2026-08',Tienda:'OXXO C',Asesor:'Ana',Puesto:'AYUDANTE TIENDA','Status ocupacion':'Vacante',Empleados:'', 'Dias Vacantes':'Mes finalizado'});
+ const vacantesRae = await sandbox.rae.dataD1('2026-08');
+ assert.equal(vacantesRae.total,3);
+ assert.equal(vacantesRae.tablaAsesores[0].vacantes,3);
+ assert.equal(vacantesRae.tablaAsesores[0].promedio,5);
+ assert.equal(vacantesRae.tablaAsesores[0].d6,1);
+ assert.equal(vacantesRae.totalTabla.vacantes,3);
  fixture=[{Mes:8,Ano:2026,Semana:'9',Tienda:'OXXO A',Cantidad:90},{Mes:9,Ano:2026,Semana:'10',Tienda:'OXXO A',Cantidad:10}];
  assert.equal((await sandbox.general.kpiD4()).value,'10');
  assert.equal((await sandbox.general.kpiD4()).sub,'2026-09 · Sem 10');
