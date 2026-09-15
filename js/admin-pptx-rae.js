@@ -302,7 +302,7 @@
         aplic++;
         if(value >= 1) comp++;
       });
-      return { label: capLabel(key), aplic, comp, pct: aplic ? comp / aplic * 100 : null };
+      return { key, label: capLabel(key), aplic, comp, pct: aplic ? comp / aplic * 100 : null };
     }).filter(item => item.aplic > 0);
     if(!stats.length) return null;
     const aplic = stats.reduce((sum, item) => sum + item.aplic, 0);
@@ -325,11 +325,39 @@
       .sort((a,b) => a.pct - b.pct || a.name.localeCompare(b.name));
     const empleados = new Set(rows.map(row => String(val(row, empleadoKey) || '').trim()).filter(Boolean)).size;
     const tiendas = new Set(rows.map(row => String(val(row, tiendaKey) || '').trim()).filter(Boolean)).size;
+    const cercaKey = certifications.find(key => capKey(key).includes('cercasiempre'));
+    let cercaSiempre = null;
+    if(cercaKey){
+      const resumen = stats.find(item => item.key === cercaKey);
+      const porAsesor = new Map();
+      rows.forEach(row => {
+        const value = capValue(row, cercaKey);
+        if(value === null) return;
+        const name = String(val(row, asesorKey) || 'Sin Asesor Asignado').trim();
+        if(!porAsesor.has(name)) porAsesor.set(name, { name, aplic: 0, comp: 0 });
+        const item = porAsesor.get(name);
+        item.aplic++;
+        if(value >= 1) item.comp++;
+      });
+      const asesoresCerca = [...porAsesor.values()]
+        .map(item => ({ ...item, pendientes: item.aplic - item.comp, pct: item.aplic ? item.comp / item.aplic * 100 : 0 }))
+        .filter(item => item.aplic && !normText(item.name).replace(/[^A-Z]/g,'').includes('SINASESOR'))
+        .sort((a,b) => a.pct - b.pct || b.pendientes - a.pendientes || a.name.localeCompare(b.name));
+      cercaSiempre = {
+        label: resumen.label,
+        aplicables: resumen.aplic,
+        completadas: resumen.comp,
+        pendientes: resumen.aplic - resumen.comp,
+        pct: resumen.pct || 0,
+        asesores: asesoresCerca.slice(0, 10),
+      };
+    }
     return {
       sub: 'Corte vigente', empleados, tiendas, pct: aplic ? comp / aplic * 100 : 0,
       completadas: comp, aplicables: aplic,
       criticas: stats.sort((a,b) => a.pct - b.pct).slice(0, 3),
-      asesores: asesores.slice(0, 10)
+      asesores: asesores.slice(0, 10),
+      cercaSiempre,
     };
   }
 
@@ -818,6 +846,41 @@
     });
   }
 
+  function buildD8CercaSiempre(pptx, d, dateLabel){
+    const {text,rect}=editorialSlide(pptx,'Módulo Cerca Siempre',dateLabel);
+    const color = d.pct >= 80 ? GREEN : (d.pct >= 50 ? GOLD : RED);
+    text(d.pct.toFixed(1)+'%',.5,1.98,3.85,.9,56,color,true);
+    text('CUMPLIMIENTO DEL MÓDULO',.53,2.98,3.7,.28,11,DARK,true);
+    text('Capacidades 2026 · corte vigente',.53,3.34,3.7,.28,11,MUTED);
+    const metrics = [
+      ['Personal aplicable', d.aplicables, DARK],
+      ['Completaron', d.completadas, GREEN],
+      ['Pendientes', d.pendientes, d.pendientes ? RED : GREEN],
+    ];
+    metrics.forEach(([label,value,metricColor], index) => {
+      const y = 4.03 + index * .72;
+      text(label,.53,y,2.45,.25,13,DARK,true);
+      text(value,3.15,y-.08,.72,.43,23,metricColor,true,{align:'right'});
+      rect(.53,y+.4,3.3,.06,'EDE6DF');
+      if(d.aplicables) rect(.53,y+.4,3.3 * Math.min(Number(value) / d.aplicables, 1),.06,metricColor);
+    });
+    rect(4.4,1.97,.015,4.86,'E5DCD6');
+    text('Asesores con seguimiento pendiente',4.8,2.02,6.2,.35,18,DARK,true);
+    text('Cumplimiento y personas pendientes',9.9,2.08,2.85,.25,10,MUTED,false,{align:'right'});
+    const items = d.asesores || [];
+    const rowH = Math.min(.43,4.12/Math.max(1,items.length));
+    if(!items.length) text('Sin registros aplicables para el módulo',4.8,2.8,7,.5,15,MUTED);
+    items.forEach((item,i)=>{
+      const y=2.65+i*rowH;
+      const itemColor=item.pct>=80?GREEN:(item.pct>=50?GOLD:RED);
+      text(shortenName(item.name,30),4.8,y,3.7,rowH*.84,items.length>8?10:11,TEXT);
+      rect(8.68,y+rowH*.31,2.18,.07,'EDE6DF');
+      if(item.pct>0) rect(8.68,y+rowH*.31,2.18*Math.min(item.pct,100)/100,.07,itemColor);
+      text(item.pct.toFixed(1)+'%',10.98,y,.8,rowH*.84,11,itemColor,true,{align:'right'});
+      text(item.pendientes+' pend.',11.86,y,.9,rowH*.84,10,MUTED,false,{align:'right'});
+    });
+  }
+
   function buildD7(pptx, d, dateLabel){
     const {text,rect}=editorialSlide(pptx,'TREO · Estructura',dateLabel);
     text(d.cobertura.toFixed(0)+'%',.5,1.98,3.85,.9,56,RED,true);
@@ -854,12 +917,12 @@
     const {text,rect}=editorialSlide(pptx,'Presentación RAE',dateLabel);
     text('Indicadores de recursos humanos',.5,2.5,11.9,.8,34,DARK,true);
     text('Plaza Oaxaca',.5,3.52,11.9,.5,22,RED,true);
-    const sections=['Vacantes','Bajas','Aprovechamiento','Capacidades','TREO'];
+    const sections=['Vacantes','Bajas','Aprovechamiento','Capacidades','Cerca Siempre','TREO'];
     sections.forEach((label,i)=>{
-      const x=.5+i*2.48;
-      rect(x,5.23,2.2,.035,i===0?RED:'E5DCD6');
-      text('0'+(i+1),x,5.54,2.2,.45,23,RED,true);
-      text(label,x,6.15,2.2,.4,14,DARK,true);
+      const x=.5+i*2.05;
+      rect(x,5.23,1.8,.035,i===0?RED:'E5DCD6');
+      text('0'+(i+1),x,5.54,1.8,.45,23,RED,true);
+      text(label,x,6.15,1.8,.4,12,DARK,true);
     });
   }
 
@@ -895,11 +958,14 @@
   // RAE reúne Vacantes, Bajas, Aprovechamiento, Capacidades y TREO. Tiempo
   // Extra/Vacaciones/Ausentismos se mantienen fuera de esta presentación.
   function buildDashboardList(mesD1, mesD2){
+    let capacidadesPromise;
+    const loadCapacidades = () => capacidadesPromise || (capacidadesPromise = dataD8());
     return [
       { title: 'VACANTES', fetch: () => dataD1(mesD1), build: buildD1 },
       { title: 'BAJAS', fetch: () => dataD2(mesD2), build: buildD2 },
       { title: 'APROVECHAMIENTO DE ESTRUCTURA', fetch: dataD3, build: buildD3 },
-      { title: 'CAPACIDADES 2026', fetch: dataD8, build: buildD8 },
+      { title: 'CAPACIDADES 2026', fetch: loadCapacidades, build: buildD8 },
+      { title: 'MÓDULO CERCA SIEMPRE', fetch: async () => (await loadCapacidades())?.cercaSiempre || null, build: buildD8CercaSiempre },
       { title: 'TREO · ESTRUCTURA', fetch: dataD7, build: buildD7 },
     ];
   }

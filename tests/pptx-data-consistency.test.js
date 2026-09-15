@@ -43,7 +43,7 @@ vm.runInContext(fs.readFileSync(path.join(root, 'js/config.js'), 'utf8'), sandbo
 vm.runInContext(fs.readFileSync(path.join(root, 'js/core.js'), 'utf8'), sandbox);
 
 vm.runInContext(fs.readFileSync(path.join(root,'js/metrics-periods.js'),'utf8'),sandbox);
-for(const [file,api,names] of [['admin-pptx.js','general','kpiD1,kpiD2,kpiD4,kpiD6'],['admin-pptx-rae.js','rae','dataD1,dataD2'],['admin-pptx-asesor.js','advisor','datosAsesorD1,datosAsesorD2']]){
+for(const [file,api,names] of [['admin-pptx.js','general','kpiD1,kpiD2,kpiD4,kpiD6'],['admin-pptx-rae.js','rae','dataD1,dataD2,dataD8'],['admin-pptx-asesor.js','advisor','datosAsesorD1,datosAsesorD2']]){
  const code=fs.readFileSync(path.join(root,'js',file),'utf8').replace(/\}\)\(\);\s*$/, 'window.'+api+'={'+names+'};})();');vm.runInContext(code,sandbox);
 }
 let fixture=[];
@@ -83,6 +83,16 @@ sandbox.loadAsesorCatalog=async()=>null;sandbox.OXXO.loadAsesorCatalog=sandbox.l
  const other=await sandbox.general.kpiD2();
  assert.equal(other.value,'1');
  assert.equal(other.chart.values.reduce((sum,n)=>sum+n,0),1);
+ fixture=[
+  {Plaza:'Oaxaca',Asesor_Correcto:'Ana',Empleados:'1','Unidad org.':'OXXO A','Cr de tienda':'50AAA','Promedio de Modulo Cerca Siempre 2026':1,'Promedio de Codigo de Etica 2026':1},
+  {Plaza:'Oaxaca',Asesor_Correcto:'Beto',Empleados:'2','Unidad org.':'OXXO B','Cr de tienda':'50AAB','Promedio de Modulo Cerca Siempre 2026':0,'Promedio de Codigo de Etica 2026':1}
+ ];
+ const capacidades = await sandbox.rae.dataD8();
+ assert.equal(capacidades.cercaSiempre.label,'Módulo Cerca Siempre');
+ assert.equal(capacidades.cercaSiempre.aplicables,2);
+ assert.equal(capacidades.cercaSiempre.completadas,1);
+ assert.equal(capacidades.cercaSiempre.pendientes,1);
+ assert.equal(capacidades.cercaSiempre.asesores[0].name,'Beto');
  fixture=[];assert.equal(await sandbox.general.kpiD1(),null);assert.equal(await sandbox.general.kpiD2(),null);
  console.log('PPTX: occupied positions, zero current vacancies, exact month, week/year, unassigned departures and chart totals OK');
 })().catch(e=>{console.error(e);process.exitCode=1});
