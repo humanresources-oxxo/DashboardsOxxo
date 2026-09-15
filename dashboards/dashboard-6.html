@@ -470,7 +470,10 @@ function renderAll() {
   const byFuncion = {};
   data.forEach(r => { const f=tipoPuestoFuncion(r[C.funcion]); if(!byFuncion[f])byFuncion[f]=0; byFuncion[f]+=(parseFloat(r[C.dias])||0); });
   const funciones = Object.entries(byFuncion).sort((a,b)=>b[1]-a[1]);
-  const fColors = ['#D92B2B','#FF6B00','#FFD200','#1DB954','#0066CC','#8B4CF7','#9E9E9E'];
+  // Mismo criterio que Dashboard 8: color por funcion, no por posicion. La
+  // lista viene ordenada por dias, asi que antes la funcion mas grande se
+  // pintaba de ROJO solo por ir primera -- parecia una alerta sin serlo.
+  const fColors = funciones.map(([k]) => OXXO.colorPuesto(k));
   if(chartFuncion) chartFuncion.destroy();
   chartFuncion = new Chart(document.getElementById('chart-funcion').getContext('2d'), {
     type:'doughnut',

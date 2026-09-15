@@ -513,11 +513,15 @@ function renderAll() {
   // leer la base. Son un detalle técnico, no una alerta para quien consulta.
   document.getElementById('certs-pendientes').hidden = true;
   if(chartCerts) chartCerts.destroy();
+  // Ordenadas de menor a mayor cumplimiento: la barra mas corta queda arriba,
+  // asi la grafica dice sola cual certificacion va peor sin leer un solo
+  // numero. Sin orden, la comparacion la tenia que hacer el ojo del usuario.
+  const certOrden = [...certStats].sort((a,b) => (a.pct===null?101:a.pct) - (b.pct===null?101:b.pct));
   chartCerts = new Chart(document.getElementById('chart-certs').getContext('2d'), {
     type: 'bar',
     data: {
-      labels: certStats.map(c => OXXO.truncate(c.label,26)),
-      datasets: [{ data: certStats.map(c => c.pct===null?0:c.pct), backgroundColor: certStats.map(c => c.pct===null?'#ccc':(c.pct>=80?'#1DB954':c.pct>=50?'#FFC107':'#D92B2B')), borderColor:'rgba(255,255,255,.68)', borderWidth:1, borderRadius: 999, borderSkipped:false, barPercentage:.76, categoryPercentage:.72 }]
+      labels: certOrden.map(c => OXXO.truncate(c.label,26)),
+      datasets: [{ data: certOrden.map(c => c.pct===null?0:c.pct), backgroundColor: certOrden.map(c => c.pct===null?'#ccc':(c.pct>=80?'#1DB954':c.pct>=50?'#FFC107':'#D92B2B')), borderColor:'rgba(255,255,255,.68)', borderWidth:1, borderRadius: 999, borderSkipped:false, barPercentage:.76, categoryPercentage:.72 }]
     },
     options: { responsive:true, maintainAspectRatio:false, indexAxis:'y',
       plugins:{ legend:{display:false}, tooltip:{backgroundColor:'#251313',titleColor:'#FFF8EE',bodyColor:'#FFF8EE',padding:12,cornerRadius:14,displayColors:false,callbacks:{label:c=>' '+c.raw+'%'}} },
@@ -532,7 +536,10 @@ function renderAll() {
     CERT_COLS.forEach(c => { const v = capValue(r, c.key); if(v!==null){ byPuesto[p].aplic++; if(v>=1) byPuesto[p].comp++; } });
   });
   const puestos = Object.entries(byPuesto).map(([k,v])=>({puesto:k,pct: v.aplic? Math.round(v.comp/v.aplic*100):0})).sort((a,b)=>b.pct-a.pct);
-  const pColors = ['#1DB954','#FF6B00','#0066CC','#8B4CF7','#9E9E9E'];
+  // El color va atado al puesto, no a su posicion en el ranking (ver
+  // OXXO.colorPuesto en core.js). Antes el primer color era el verde del
+  // semaforo, que en la grafica de al lado significa "cumplimiento alto".
+  const pColors = puestos.map(p => OXXO.colorPuesto(p.puesto));
   if(chartPuesto) chartPuesto.destroy();
   chartPuesto = new Chart(document.getElementById('chart-puesto').getContext('2d'), {
     type:'doughnut',
