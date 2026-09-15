@@ -851,10 +851,15 @@ function renderAsesorOptions(data, cols, query=''){
     .concat(filtered.map(v => ({value:v, label:v, isAll:false})))
     .map(opt => {
       const active = opt.isAll ? allSelected : (SELECTED_ASESORES ? SELECTED_ASESORES.includes(opt.value) : true);
-      return `<button type="button" class="smart-filter__option ${active?'is-active':''}" data-asesor="${esc2(opt.value)}">
+      // "Solo" aisla ese asesor de un clic. La regla de abajo (estado implicito
+      // "Todos" -> el clic aisla) no alcanza desde una seleccion parcial: ahi el
+      // clic solo quita, y quedarse con uno obligaba a apagar los demas a mano.
+      const opcion = `<button type="button" class="smart-filter__option ${active?'is-active':''}" data-asesor="${esc2(opt.value)}" title="${esc2(opt.label)}">
         <span class="smart-filter__check"></span>
-        <span>${esc2(opt.label)}</span>
+        <span class="sf-text">${esc2(opt.label)}</span>
       </button>`;
+      if(opt.isAll) return `<div class="sf-row">${opcion}</div>`;
+      return `<div class="sf-row">${opcion}<button type="button" class="sf-only" data-solo-asesor="${esc2(opt.value)}" title="Ver solo ${esc2(opt.label)}">Solo</button></div>`;
     }).join('');
   wrap.innerHTML = rows || '<div class="smart-filter__empty">Sin resultados</div>';
 }
@@ -970,6 +975,16 @@ function setFilterBar(data, cols){
     renderAsesorOptions(BASE_BAJAS_DATA, BAJAS_COLS, e.target.value);
   });
   document.getElementById('asesor-options').addEventListener('click', e => {
+    const solo = e.target.closest('[data-solo-asesor]');
+    if(solo){
+      e.stopPropagation();
+      SELECTED_ASESORES = [solo.dataset.soloAsesor];
+      updateAsesorLabel(BASE_BAJAS_DATA, BAJAS_COLS);
+      renderAsesorOptions(BASE_BAJAS_DATA, BAJAS_COLS, document.getElementById('asesor-search').value);
+      document.querySelectorAll('.bajas-kpis .kpi-card[data-kpi]').forEach(c => c.classList.remove('active'));
+      renderBajasDashboard(applyUserFilters(BASE_BAJAS_DATA, BAJAS_COLS), BAJAS_COLS);
+      return;
+    }
     const btn = e.target.closest('[data-asesor]');
     if(!btn) return;
     e.stopPropagation();

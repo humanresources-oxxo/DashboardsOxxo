@@ -308,18 +308,6 @@
   /* Cada opcion trae dos acciones: el renglon agrega/quita (multi) y
      "Solo" deja unicamente esa. Se muestra siempre (no en :hover) para
      que tambien se pueda usar en celular, donde no hay hover. */
-  .sf-row{ display:flex; align-items:center; gap:4px; }
-  .sf-row .smart-filter__option{ flex:1 1 auto; min-width:0; }
-  .sf-row .sf-text{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .sf-only{
-    flex:0 0 auto; border:1px solid rgba(181,18,28,.24); background:rgba(255,255,255,.86);
-    color:#b5121c; border-radius:9px; padding:5px 8px; cursor:pointer;
-    font-family:var(--font-body); font-size:9.5px; font-weight:800; line-height:1;
-    letter-spacing:.06em; text-transform:uppercase; opacity:.62; transition:opacity .15s ease, background .15s ease;
-  }
-  .sf-row:hover .sf-only{ opacity:1; }
-  .sf-only:hover{ background:#d91f2d; border-color:#d91f2d; color:#fff; opacity:1; }
-  .sf-only:focus-visible{ outline:2px solid #d91f2d; outline-offset:1px; opacity:1; }
   .hero .hero-badge{
     background:rgba(255,255,255,0.16) !important;
     border-color:rgba(255,255,255,0.34) !important;
