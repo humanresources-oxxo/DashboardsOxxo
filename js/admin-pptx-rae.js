@@ -739,7 +739,6 @@
     const text = (value,x,y,w,h,size,color=TEXT,bold=false,extra={}) => slide.addText(String(value),
       { x,y,w,h,fontFace:'Arial',fontSize:size,color,bold,margin:0,breakLine:false,fit:'shrink',...extra });
     const rect = (x,y,w,h,color) => slide.addShape('rect',{x,y,w,h,line:{color,transparency:100},fill:{color}});
-    const rounded = (x,y,w,h,color,line=BORDER) => slide.addShape('roundRect',{x,y,w,h,rectRadius:.07,fill:{color},line:{color:line,transparency:line===BORDER?0:100}});
     rect(0,0,PAGE_W,.09,RED);
     text('OXXO  /  RECURSOS HUMANOS',.5,.3,7,.25,10,RED,true);
     text('Plaza Oaxaca',10,.3,2.8,.25,10,MUTED,false,{align:'right'});
@@ -748,61 +747,59 @@
     rect(.5,1.62,12.3,.015,'E5DCD6');
 
     const total = d.totalTabla || { vacantes: d.total, promedio: null, maxDias: 0, dMas6: 0 };
-    const kpis = [
-      ['Vacantes', total.vacantes],
-      ['Días promedio', total.promedio === null ? '—' : total.promedio.toFixed(1)],
-      ['Días máximo', total.diasCount ? total.maxDias : '—'],
-      ['Más de 6 días', total.dMas6],
-    ];
-    kpis.forEach(([label,value], index) => {
-      const x = .5 + index * 3.12;
-      rounded(x,1.84,2.92,.67,'FFFFFF');
-      text(value,x+.16,1.95,1.1,.28,20,index===3 && Number(value)>0?RED:DARK,true);
-      text(label,x+1.25,2.02,1.48,.18,10,MUTED,true,{align:'right'});
+    text(total.vacantes,.5,1.98,3.65,.9,56,RED,true);
+    text('POSICIONES VACANTES',.53,3.03,3.7,.28,12,DARK,true);
+    text('Total del corte seleccionado',.53,3.42,3.7,.24,11,MUTED);
+    text('Distribución por puesto',.53,4.12,3.7,.3,16,DARK,true);
+    const groups=[['Ayudante',GOLD],['Encargado',ORANGE],['Lider',RED],['Otro',MUTED]];
+    groups.filter(([key]) => Number(d.byPuesto[key]) > 0).forEach(([key,color],index)=>{
+      const y=4.78+index*.46, value=Number(d.byPuesto[key])||0;
+      rect(.53,y+.07,.1,.17,color);
+      text(key === 'Lider' ? 'Líder' : key,.75,y,1.75,.28,13,TEXT);
+      text(value,2.85,y,.42,.28,15,DARK,true,{align:'right'});
     });
+    rect(4.15,1.95,.015,4.78,'E5DCD6');
 
-    text('Vacantes por asesor',.5,2.78,5,.3,16,DARK,true);
-    text('Corte seleccionado · antigüedad excluye tiendas nuevas y meses finalizados',5.55,2.82,7.25,.2,9,MUTED,false,{align:'right'});
     const columns = [
-      ['ASESOR', .5, 5.45, 'left'],
-      ['VACANTES', 5.95, 1.1, 'center'],
-      ['DÍAS PROM.', 7.05, 1.3, 'center'],
-      ['DÍAS MÁX.', 8.35, 1.2, 'center'],
-      ['≤3 D', 9.55, 1, 'center'],
-      ['≤6 D', 10.55, 1, 'center'],
-      ['>6 D', 11.55, 1, 'center'],
+      ['ASESOR', 5.25, 2.63, 'left'],
+      ['VACANTES', 7.88, 1.12, 'center'],
+      ['DÍAS PROM.', 9, 1.12, 'center'],
+      ['DÍAS MÁX.', 10.12, 1.05, 'center'],
+      ['≤3 D', 11.17, .58, 'center'],
+      ['≤6 D', 11.75, .58, 'center'],
+      ['>6 D', 12.33, .45, 'center'],
     ];
-    const tableW = 12.3;
-    rounded(.5,3.14,tableW,3.48,'FFFFFF','E5DCD6');
-    rect(.5,3.14,tableW,.38,'5A1115');
-    columns.forEach(([label,x,w,align]) => text(label,x+.12,3.255,w-.24,.12,8.5,'FFFFFF',true,{align}));
+    const tableX = 5.25, tableY = 1.68, tableW = 7.53;
+    slide.addShape('roundRect',{x:tableX,y:tableY,w:tableW,h:5.18,rectRadius:.07,fill:{color:'FFFFFF'},line:{color:'E5DCD6'}});
+    rect(tableX,tableY,tableW,.38,'5A1115');
+    columns.forEach(([label,x,w,align]) => text(label,x+.05,1.795,w-.1,.12,7.6,'FFFFFF',true,{align}));
     const items = d.tablaAsesores || [];
     const visible = items.slice(0, 12);
-    const rowH = visible.length > 10 ? .235 : .27;
+    const rowH = .36;
     const formatDays = value => value === null || value === undefined ? '—' : Number(value).toFixed(1);
     visible.forEach((item, index) => {
-      const y = 3.52 + index * rowH;
-      if (index % 2) rect(.5,y,tableW,rowH,'FFF8F4');
+      const y = 2.06 + index * rowH;
+      if (index % 2) rect(tableX,y,tableW,rowH,'FFF8F4');
       const risk = item.vacantes >= 4 ? RED : item.vacantes >= 2 ? 'C79A00' : GREEN;
-      slide.addShape('ellipse',{x:.68,y:y+.077,w:.075,h:.075,fill:{color:risk},line:{type:'none'}});
-      text(shortenName(item.name,42),.86,y+.035,4.93,rowH-.06,9.5,TEXT,true);
-      text(item.vacantes,6.07,y+.035,.86,rowH-.06,10.5,DARK,true,{align:'center'});
-      text(formatDays(item.promedio),7.17,y+.035,1.06,rowH-.06,9.5,DARK,false,{align:'center'});
-      text(item.diasCount ? item.maxDias : '—',8.47,y+.035,1.06,rowH-.06,9.5,DARK,false,{align:'center'});
-      text(item.d3 || '—',9.67,y+.035,.76,rowH-.06,9.5,item.d3?GREEN:MUTED,true,{align:'center'});
-      text(item.d6 || '—',10.67,y+.035,.76,rowH-.06,9.5,item.d6?ORANGE:MUTED,true,{align:'center'});
-      text(item.dMas6 || '—',11.67,y+.035,.76,rowH-.06,9.5,item.dMas6?RED:MUTED,true,{align:'center'});
+      slide.addShape('ellipse',{x:tableX+.14,y:y+.145,w:.065,h:.065,fill:{color:risk},line:{type:'none'}});
+      text(shortenName(item.name,30),tableX+.27,y+.09,2.2,rowH-.12,8.6,TEXT,true);
+      text(item.vacantes,7.98,y+.09,.92,rowH-.12,10,DARK,true,{align:'center'});
+      text(formatDays(item.promedio),9.1,y+.09,.92,rowH-.12,8.8,DARK,false,{align:'center'});
+      text(item.diasCount ? item.maxDias : '—',10.22,y+.09,.85,rowH-.12,8.8,DARK,false,{align:'center'});
+      text(item.d3 || '—',11.24,y+.09,.44,rowH-.12,8.8,item.d3?GREEN:MUTED,true,{align:'center'});
+      text(item.d6 || '—',11.82,y+.09,.44,rowH-.12,8.8,item.d6?ORANGE:MUTED,true,{align:'center'});
+      text(item.dMas6 || '—',12.4,y+.09,.28,rowH-.12,8.8,item.dMas6?RED:MUTED,true,{align:'center'});
     });
-    const totalY = 3.52 + visible.length * rowH;
-    rect(.5,totalY,tableW,.3,'FCE8EA');
-    text('Total general',.68,totalY+.06,3.8,.14,9.5,DARK,true);
-    text(total.vacantes,6.07,totalY+.06,.86,.14,10,DARK,true,{align:'center'});
-    text(formatDays(total.promedio),7.17,totalY+.06,1.06,.14,9.5,DARK,true,{align:'center'});
-    text(total.diasCount ? total.maxDias : '—',8.47,totalY+.06,1.06,.14,9.5,DARK,true,{align:'center'});
-    text(total.d3 || '—',9.67,totalY+.06,.76,.14,9.5,GREEN,true,{align:'center'});
-    text(total.d6 || '—',10.67,totalY+.06,.76,.14,9.5,ORANGE,true,{align:'center'});
-    text(total.dMas6 || '—',11.67,totalY+.06,.76,.14,9.5,RED,true,{align:'center'});
-    if (items.length > visible.length) text(`Se muestran los 12 asesores con más vacantes de ${items.length}.`,.5,6.72,6,.18,9,MUTED);
+    const totalY = 2.06 + visible.length * rowH;
+    rect(tableX,totalY,tableW,.27,'FCE8EA');
+    text('Total general',tableX+.07,totalY+.055,2.4,.14,8.5,DARK,true);
+    text(total.vacantes,7.98,totalY+.055,.92,.14,9,DARK,true,{align:'center'});
+    text(formatDays(total.promedio),9.1,totalY+.055,.92,.14,8.5,DARK,true,{align:'center'});
+    text(total.diasCount ? total.maxDias : '—',10.22,totalY+.055,.85,.14,8.5,DARK,true,{align:'center'});
+    text(total.d3 || '—',11.24,totalY+.055,.44,.14,8.5,GREEN,true,{align:'center'});
+    text(total.d6 || '—',11.82,totalY+.055,.44,.14,8.5,ORANGE,true,{align:'center'});
+    text(total.dMas6 || '—',12.4,totalY+.055,.28,.14,8.5,RED,true,{align:'center'});
+    if (items.length > visible.length) text(`Top 12 de ${items.length} asesores`,5.25,6.92,2.6,.16,8.5,MUTED);
     text('OXXO · Uso interno',.5,7.04,4,.2,9,MUTED);
     text('La tabla usa el mismo alcance de tiendas que el dashboard',7.3,7.04,5.5,.2,9,MUTED,false,{align:'right'});
   }

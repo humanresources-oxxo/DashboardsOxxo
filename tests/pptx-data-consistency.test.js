@@ -43,7 +43,7 @@ vm.runInContext(fs.readFileSync(path.join(root, 'js/config.js'), 'utf8'), sandbo
 vm.runInContext(fs.readFileSync(path.join(root, 'js/core.js'), 'utf8'), sandbox);
 
 vm.runInContext(fs.readFileSync(path.join(root,'js/metrics-periods.js'),'utf8'),sandbox);
-for(const [file,api,names] of [['admin-pptx.js','general','kpiD1,kpiD2,kpiD4,kpiD6'],['admin-pptx-rae.js','rae','dataD1,dataD2,dataD8,buildD2Analysis'],['admin-pptx-asesor.js','advisor','datosAsesorD1,datosAsesorD2']]){
+for(const [file,api,names] of [['admin-pptx.js','general','kpiD1,kpiD2,kpiD4,kpiD6'],['admin-pptx-rae.js','rae','dataD1,dataD2,dataD8,buildD1,buildD2Analysis'],['admin-pptx-asesor.js','advisor','datosAsesorD1,datosAsesorD2']]){
  const code=fs.readFileSync(path.join(root,'js',file),'utf8').replace(/\}\)\(\);\s*$/, 'window.'+api+'={'+names+'};})();');vm.runInContext(code,sandbox);
 }
 let fixture=[];
@@ -66,6 +66,11 @@ sandbox.loadAsesorCatalog=async()=>null;sandbox.OXXO.loadAsesorCatalog=sandbox.l
  assert.equal(vacantesRae.tablaAsesores[0].promedio,5);
  assert.equal(vacantesRae.tablaAsesores[0].d6,1);
  assert.equal(vacantesRae.totalTabla.vacantes,3);
+ const vacantesDrawn = [];
+ const fakeVacantesSlide = { background: {}, addText(...args) { vacantesDrawn.push(['text', ...args]); }, addShape(...args) { vacantesDrawn.push(['shape', ...args]); } };
+ sandbox.rae.buildD1({ addSlide() { return fakeVacantesSlide; } }, vacantesRae, vacantesRae.sub);
+ assert.ok(vacantesDrawn.some(([kind, value]) => kind === 'text' && String(value).includes('Distribución por puesto')));
+ assert.ok(vacantesDrawn.some(([kind, value]) => kind === 'text' && String(value).includes('Total general')));
  fixture=[{Mes:8,Ano:2026,Semana:'9',Tienda:'OXXO A',Cantidad:90},{Mes:9,Ano:2026,Semana:'10',Tienda:'OXXO A',Cantidad:10}];
  assert.equal((await sandbox.general.kpiD4()).value,'10');
  assert.equal((await sandbox.general.kpiD4()).sub,'2026-09 · Sem 10');
