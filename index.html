@@ -2404,9 +2404,8 @@
       }
     }
 
-    /* Acciones liquid glass: la pestaña activa y el acceso de cada tarjeta
-       comparten una sombra amplia del color del área, sin cambiar la lógica
-       ni la semántica de los enlaces. */
+    /* Liquid glass sólo en los controles de cambio de área. Las tarjetas ya
+       son enlaces completos, así que no necesitan un segundo botón de abrir. */
     .folder-tabs {
       background: rgba(255,255,255,.52);
       border-color: rgba(255,255,255,.82);
@@ -2421,39 +2420,9 @@
         0 11px 25px color-mix(in srgb, var(--tab-color) 27%, transparent);
     }
 
-    .db-card__arrow {
-      width: auto;
-      min-width: 82px;
-      height: 38px;
-      padding: 0 11px 0 13px;
-      gap: 5px;
-      border: 1px solid rgba(255,255,255,.52);
-      border-radius: 10px;
-      background: linear-gradient(135deg,
-        color-mix(in srgb, var(--card-accent, var(--color-red)) 90%, #fff),
-        color-mix(in srgb, var(--card-accent, var(--color-red)) 74%, #111)) !important;
-      box-shadow:
-        inset 0 1px 0 rgba(255,255,255,.42),
-        0 2px 6px color-mix(in srgb, var(--card-accent, var(--color-red)) 22%, transparent),
-        0 10px 22px color-mix(in srgb, var(--card-accent, var(--color-red)) 28%, transparent);
-    }
+    .db-card__arrow { display: none !important; }
 
-    .db-card__arrow::before {
-      content: 'Abrir';
-      color: #fff;
-      font-size: 11px;
-      font-weight: 800;
-      letter-spacing: .01em;
-    }
-
-    .db-card:hover .db-card__arrow,
-    .db-card:focus-visible .db-card__arrow {
-      transform: translateX(3px) translateY(-1px);
-      box-shadow:
-        inset 0 1px 0 rgba(255,255,255,.48),
-        0 3px 8px color-mix(in srgb, var(--card-accent, var(--color-red)) 25%, transparent),
-        0 14px 28px color-mix(in srgb, var(--card-accent, var(--color-red)) 33%, transparent);
-    }
+    .db-card__footer { justify-content: flex-start; }
 
     /* Cabecera compacta para teléfono: separa visualmente la marca, el acceso
        al panel y la hora sin ocultar ninguna de las tres piezas. */
