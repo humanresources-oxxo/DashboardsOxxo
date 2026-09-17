@@ -518,6 +518,7 @@
   .hero-context{display:flex;flex-wrap:wrap;gap:8px 22px;margin-top:12px;
     font-size:12px;font-weight:700;color:rgba(255,255,255,.82)}
   .hero-context b{font-family:var(--font-display);font-size:17px;font-weight:900;color:#fff;margin-right:5px}
+  .hero-context span{display:inline-flex;align-items:baseline;gap:3px;padding:6px 10px;border-radius:999px;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.14)}
   .row-main{display:grid;grid-template-columns:minmax(0,2.1fr) minmax(0,1fr);gap:14px;
     align-items:stretch;margin-bottom:16px}
   .row-main>.card{display:flex;flex-direction:column}
@@ -892,6 +893,24 @@
       flex-direction:column;
       justify-content:center;
     }
+  }
+  @media (max-width:950px){
+    .page{padding-left:14px;padding-right:14px}
+    .hero{gap:15px;padding:24px 22px 22px}
+    .vac-filters{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 12px}
+    .oxxo-scope-selector--inline{width:100%;margin-left:0;flex-wrap:wrap;justify-content:flex-start}
+    .oxxo-scope-switch{max-width:100%;flex:1 1 100%;order:3}
+    .oxxo-store-status{flex:1 1 auto;border-left:0;padding-left:0;overflow-x:auto}
+  }
+  @media (max-width:600px){
+    .hero{padding:20px 16px 18px;border-radius:22px}
+    .hero h1{font-size:clamp(2.1rem,11vw,3.2rem) !important}
+    .hero-context{gap:6px;margin-top:8px}
+    .hero-context span{font-size:10px;padding:5px 8px}
+    .hero-context b{font-size:15px}
+    .vac-filters{grid-template-columns:1fr}
+    .vac-fbox .smart-filter__button,.vac-fbox .filtro-select,.vac-fbox .filtro-btn{min-height:44px}
+    .oxxo-store-status{width:100%;justify-content:flex-start}
   }
   .risk-row{
     grid-template-columns:1fr;
@@ -1695,7 +1714,7 @@
         </div>
       </div>
       <div class="vac-fbox">
-        <label>Filtros</label>
+        <label>Filtros y acciones</label>
         <button class="filtro-btn" onclick="limpiarFiltros()">✕ Limpiar</button>
         <button class="filtro-btn" type="button" onclick="OXXO.handleDownloadButton(this, () => OXXO.downloadSheetTab(TAB, 'dashboard-1-vacantes.csv'))">Descargar base</button>
       </div>
@@ -2346,8 +2365,8 @@ function renderPlazasPanel(){
   const activa = OXXO.getActiveDataScope?.()?.plaza || '';
   const max = Math.max(...PLAZAS_CACHE.map(p=>p.vacantes), 1);
   const total = PLAZAS_CACHE.reduce((a,p)=>a+p.vacantes, 0);
-  el.innerHTML = `<div class="pz-lead">Vacantes abiertas en cada plaza con el mes y los puestos seleccionados. <b>${total}</b> en toda la región.
-      <span class="pz-warn">Son cifras absolutas: una plaza con más tiendas tiende a tener más vacantes. Para compararlas por densidad falta publicar el catálogo de tiendas de las otras cuatro plazas; hoy solo existe el de Oaxaca.</span></div>`
+    el.innerHTML = `<div class="pz-lead">Comparativo regional con el mes y los puestos seleccionados. <b>${total}</b> vacantes en toda la región.
+      <span class="pz-warn">Este comparativo incluye todas las tiendas; el resumen y la tabla respetan la vista activa de tiendas operativas. Son cifras absolutas: una plaza con más tiendas tiende a tener más vacantes.</span></div>`
     + PLAZAS_CACHE.map(p=>{
       const esActiva = normalizeSearchText(p.plaza) === normalizeSearchText(activa)
         || OXXO.matchesScopeValue?.(p.plaza,'plaza');
@@ -3044,9 +3063,12 @@ function renderOverview(allData){
     // distintos en la hoja da un denominador que no es el parque real.
     const tiendasConVacante=new Set(allData.map(r=>r.tienda).filter(Boolean)).size;
     const puestosSel=selectedPuestos().length;
+    const statusActivo=OXXO.getActiveStoreStatus?.() || 'operativas';
+    const statusLabel=statusActivo==='preapertura' ? 'Sin apertura' : statusActivo==='todas' ? 'Todas' : 'Operativas';
     ctxEl.innerHTML=`<span><b>${asesoresUnicos}</b> asesores afectados</span>`
       +`<span><b>${tiendasConVacante}</b> tiendas con vacante</span>`
-      +`<span><b>${puestosSel}</b> puestos en el filtro</span>`;
+      +`<span><b>${puestosSel}</b> puestos en el filtro</span>`
+      +`<span><b>${statusLabel}</b> vista activa</span>`;
   }
 
   // Leyenda de riesgo por asesor: lo que antes ocupaba un panel entero de
