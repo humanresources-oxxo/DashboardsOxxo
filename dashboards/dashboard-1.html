@@ -1166,6 +1166,41 @@
     body.dashboard-1-page nav.topbar::after{
       background:linear-gradient(180deg,rgba(255,255,255,.54),rgba(255,255,255,.08) 42%,transparent 64%),radial-gradient(120% 80% at 8% -20%,rgba(255,255,255,.60),transparent 55%),radial-gradient(90% 70% at 100% 120%,rgba(242,165,43,.12),transparent 60%) !important;
     }
+    body.dashboard-1-page .hero{
+      min-height:230px;
+      padding:26px 30px 24px;
+      border-radius:28px;
+      background:radial-gradient(circle at 88% 10%,rgba(246,183,60,.22),transparent 23%),linear-gradient(135deg,#e91f2d 0%,#c91625 55%,#96131d 100%) !important;
+      box-shadow:0 18px 38px rgba(168,32,30,.18),inset 0 1px 0 rgba(255,255,255,.28);
+    }
+    body.dashboard-1-page .hero-context{margin-top:14px}
+    body.dashboard-1-page .filter-panel{
+      position:relative;z-index:4;width:calc(100% - 28px);max-width:1488px;margin:-10px auto 20px;padding:15px 18px;border-radius:22px;
+      background:linear-gradient(145deg,rgba(255,255,255,.72),rgba(255,247,239,.46));border:1px solid rgba(255,255,255,.72);
+      -webkit-backdrop-filter:blur(24px) saturate(175%);backdrop-filter:blur(24px) saturate(175%);
+      box-shadow:0 16px 34px rgba(112,45,28,.11),inset 0 1px 0 rgba(255,255,255,.82);
+    }
+    body.dashboard-1-page .filter-panel .vac-filters{display:grid;grid-template-columns:repeat(5,minmax(0,1fr)) minmax(190px,1.15fr);gap:10px 12px}
+    body.dashboard-1-page .filter-panel .vac-fbox{gap:5px}
+    body.dashboard-1-page .filter-panel .vac-fbox>label{color:#8e6e64;font-size:10px;font-weight:850;letter-spacing:.13em}
+    body.dashboard-1-page .filter-panel .smart-filter__button,
+    body.dashboard-1-page .filter-panel .filtro-select,
+    body.dashboard-1-page .filter-panel .filtro-btn{
+      min-height:42px;width:100%;border-radius:13px;background:rgba(255,255,255,.68) !important;border:1px solid rgba(128,63,38,.14) !important;color:#3b2926 !important;
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.86),0 4px 12px rgba(112,45,28,.05);font-weight:700;
+    }
+    body.dashboard-1-page .filter-panel .filtro-btn{cursor:pointer;color:#8b3b35 !important}
+    body.dashboard-1-page .filter-panel .filtro-btn:hover{background:#fff !important;border-color:rgba(217,31,45,.24) !important;color:#b5121c !important;transform:translateY(-1px)}
+    body.dashboard-1-page #kpi-section .kpi-card{
+      border-radius:20px;background:linear-gradient(145deg,rgba(255,255,255,.80),rgba(255,247,239,.52));border:1px solid rgba(255,255,255,.76);
+      box-shadow:0 12px 26px rgba(112,45,28,.08),inset 0 1px 0 rgba(255,255,255,.82);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)
+    }
+    body.dashboard-1-page .row-main>.card,body.dashboard-1-page .row-main__side>.card{
+      border-radius:22px;background:linear-gradient(145deg,rgba(255,255,255,.78),rgba(255,248,241,.52));border:1px solid rgba(255,255,255,.76);
+      box-shadow:0 12px 28px rgba(112,45,28,.08),inset 0 1px 0 rgba(255,255,255,.82);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)
+    }
+    @media (max-width:980px){body.dashboard-1-page .filter-panel .vac-filters{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media (max-width:600px){body.dashboard-1-page .hero{min-height:210px;padding:22px 18px 20px}body.dashboard-1-page .filter-panel{width:calc(100% - 20px);padding:12px;margin-top:-8px}body.dashboard-1-page .filter-panel .vac-filters{grid-template-columns:1fr}}
   </style>
   <script defer src="../js/rh-dashboard-enhancements.js?v=2dcb2703"></script>
   <script defer src="../js/rh-table-tools.js?v=2dcb2703"></script>
@@ -1202,6 +1237,9 @@
       <span id="hero-download" style="display:none"></span>
     </div>
     <div class="hero-context" id="hero-context" aria-live="polite"></div>
+  </div>
+
+  <section class="filter-panel" aria-label="Filtros del dashboard">
     <div class="vac-filters">
       <div class="vac-fbox">
         <label>Asesor</label>
@@ -1267,7 +1305,7 @@
         <button class="filtro-btn" type="button" onclick="OXXO.handleDownloadButton(this, () => OXXO.downloadSheetTab(TAB, 'dashboard-1-vacantes.csv'))">Descargar base</button>
       </div>
     </div>
-  </div>
+  </section>
 
   <!-- KPIs -->
   <div class="kpis kpi-grid" id="kpi-section">
