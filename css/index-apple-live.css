@@ -31,8 +31,9 @@ body.apple-live .hero__badge { background:rgba(255,255,255,.16); color:#fff; bor
 body.apple-live .hero__badge span { display:none; }
 body.apple-live .hero__badge::before { content:'MONITOREO EN TIEMPO REAL'; font-weight:800; }
 body.apple-live .hero__title { font-size:clamp(3rem,5vw,4.8rem); line-height:.95; margin:0 0 18px; color:#fff; }
-body.apple-live .hero__title br, body.apple-live .hero__title span { display:none; }
-body.apple-live .hero__title::after { content:'Torre de Control'; }
+body.apple-live .hero__title br { display:none; }
+body.apple-live .hero__title span { display:inline; color:#fff; }
+body.apple-live .hero__title span::before { content:' '; }
 body.apple-live .hero__sub { font-size:16px; line-height:1.5; color:rgba(255,255,255,.94); max-width:520px; }
 body.apple-live .hero__stats { gap:10px; margin-top:22px; }
 body.apple-live .hero__stat { min-width:180px; padding:10px 14px; border:1px solid rgba(255,255,255,.38); border-radius:14px; background:rgba(255,255,255,.12); backdrop-filter:blur(7px); }
