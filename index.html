@@ -73,7 +73,7 @@ a:hover{color:var(--red-dk)}
   background:linear-gradient(var(--red) 0 72%,var(--amber) 72% 100%);
   box-shadow:0 1px 3px rgba(117,23,23,.14),0 6px 16px rgba(117,23,23,.12),inset 0 0 0 .5px rgba(255,255,255,.28);
 }
-.brand__mark img{height:23px;width:auto;display:block}
+.brand__mark img{width:100%;height:auto;display:block;transform:scale(1.08)}
 .brand__name{font-family:var(--sf-d);font-weight:700;font-size:22px;line-height:1;letter-spacing:-.02em}
 .brand__sub{font-size:12px;color:#7a665d;font-weight:500;margin-top:3px}
 .topbar__actions{position:relative;z-index:1;display:flex;align-items:center;gap:12px}
@@ -286,7 +286,7 @@ a:hover{color:var(--red-dk)}
 @media (max-width:760px){
   :root{--shell:calc(100% - 20px)}
   .topbar{top:10px;margin-top:10px;padding:9px 12px;border-radius:18px;gap:10px}
-  .brand__mark{width:76px;height:36px}.brand__mark img{height:19px}.brand__name{font-size:18px}.brand__sub{display:none}
+  .brand__mark{width:76px;height:36px}.brand__mark img{width:100%;height:auto}.brand__name{font-size:18px}.brand__sub{display:none}
   .topbar__actions{gap:6px}.pill--live{display:none}.btn{padding:9px 12px;font-size:12px}
   .hero{min-height:420px;border-radius:22px;background-position:64% center}.hero__inner{padding:30px 24px;align-items:flex-start}.hero__title{font-size:clamp(2.8rem,14vw,4rem)}
   .stats{grid-template-columns:repeat(3,1fr);gap:7px}.stat{padding:10px 8px}.stat__n{font-size:1.7rem}.stat__l{font-size:9px}
