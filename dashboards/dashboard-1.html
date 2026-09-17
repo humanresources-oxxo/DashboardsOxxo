@@ -1638,6 +1638,19 @@
   <link rel="stylesheet" href="../css/rh-dashboard-refresh.css?v=634a2949" />
   <link rel="stylesheet" href="../css/rh-table-tools.css?v=634a2949" />
   <link rel="stylesheet" href="../css/rh-filter-summary.css?v=634a2949" />
+  <style id="d1-liquid-glass-final">
+    /* Última capa intencional: estos estilos van después de todos los skins
+       para evitar que una hoja compartida opaque el encabezado. */
+    body.dashboard-1-page nav.topbar{
+      background:linear-gradient(145deg,rgba(255,255,255,.38),rgba(255,246,236,.16)) !important;
+      -webkit-backdrop-filter:blur(34px) saturate(190%) !important;
+      backdrop-filter:blur(34px) saturate(190%) !important;
+      box-shadow:0 18px 44px rgba(112,45,28,.12),inset 0 1px 0 rgba(255,255,255,.88),inset 0 -1px 0 rgba(255,255,255,.20),0 0 0 1px rgba(255,255,255,.16) !important;
+    }
+    body.dashboard-1-page nav.topbar::after{
+      background:linear-gradient(180deg,rgba(255,255,255,.54),rgba(255,255,255,.08) 42%,transparent 64%),radial-gradient(120% 80% at 8% -20%,rgba(255,255,255,.60),transparent 55%),radial-gradient(90% 70% at 100% 120%,rgba(242,165,43,.12),transparent 60%) !important;
+    }
+  </style>
   <script defer src="../js/rh-dashboard-enhancements.js?v=634a2949"></script>
   <script defer src="../js/rh-table-tools.js?v=634a2949"></script>
   <script defer src="../js/rh-filter-summary.js?v=634a2949"></script>
