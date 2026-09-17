@@ -277,6 +277,19 @@ a:hover{color:var(--red-dk)}
 #other-area[data-area="administrativo"] .card__title:hover{color:#7255a1}
 #other-area[data-area="administrativo"] .card::after{color:#7255a1}
 
+/* Recursos Humanos: acento rojo OXXO explícito */
+body[data-area="rh"] .group .kicker,
+body[data-area="rh"] .group__title{color:var(--red)}
+body[data-area="rh"] .group .kicker .dot{background:var(--red);box-shadow:0 0 0 5px rgba(247,25,38,.13)}
+body[data-area="rh"] .group .card{border-color:rgba(247,25,38,.18);background:linear-gradient(145deg,rgba(255,255,255,.94),rgba(255,246,244,.86))}
+body[data-area="rh"] .group .card:hover,
+body[data-area="rh"] .group .card:focus-visible{border-color:rgba(247,25,38,.40);box-shadow:0 12px 28px rgba(247,25,38,.14)}
+body[data-area="rh"] .group .card__bar{background:linear-gradient(180deg,rgba(255,251,250,.94),rgba(250,239,237,.86))}
+body[data-area="rh"] .group .chip{color:var(--red-dk);background:rgba(247,25,38,.09);box-shadow:inset 0 0 0 .5px rgba(247,25,38,.18)}
+body[data-area="rh"] .group .card__icon{color:var(--red);background:linear-gradient(180deg,#fff,#fff0ee)}
+body[data-area="rh"] .group .card__title:hover{color:var(--red)}
+body[data-area="rh"] .group .card::after{color:var(--red)}
+
 /* ── Accesos personales ─────────────────────────────── */
 .access{max-width:1560px;margin:0 auto;padding:38px 18px 8px}
 .access__grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:18px}
@@ -731,6 +744,7 @@ a:hover{color:var(--red-dk)}
         <footer class="card__foot"><p class="card__stamp">Actualización: <strong>Cargando fecha…</strong></p><a class="btn btn--sm" href="${ruta}">Abrir</a></footer></article>`;
     function activarArea(area) {
       const esRh = area === 'rh';
+      document.body.dataset.area = area;
       rhContent.forEach((elemento) => { elemento.hidden = !esRh; });
       otherArea.hidden = esRh;
       if (esRh) otherArea.removeAttribute('data-area');
