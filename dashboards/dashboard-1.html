@@ -1167,8 +1167,9 @@
       background:linear-gradient(180deg,rgba(255,255,255,.54),rgba(255,255,255,.08) 42%,transparent 64%),radial-gradient(120% 80% at 8% -20%,rgba(255,255,255,.60),transparent 55%),radial-gradient(90% 70% at 100% 120%,rgba(242,165,43,.12),transparent 60%) !important;
     }
     body.dashboard-1-page .hero{
-      min-height:230px;
-      padding:26px 30px 24px;
+      min-height:230px !important;
+      padding:26px 30px 24px !important;
+      margin-bottom:0 !important;
       border-radius:28px;
       background:radial-gradient(circle at 88% 10%,rgba(246,183,60,.22),transparent 23%),linear-gradient(135deg,#e91f2d 0%,#c91625 55%,#96131d 100%) !important;
       box-shadow:0 18px 38px rgba(168,32,30,.18),inset 0 1px 0 rgba(255,255,255,.28);
@@ -1183,6 +1184,12 @@
     /* El strip de KPI no debe invadir el panel de filtros por reglas globales heredadas. */
     body.dashboard-1-page #kpi-section.kpis.kpi-grid{position:relative;z-index:1;margin-top:28px !important;}
     body.dashboard-1-page .filter-panel .vac-filters{display:grid;grid-template-columns:repeat(5,minmax(0,1fr)) minmax(190px,1.15fr);gap:10px 12px}
+    /* floating-filter-layout.css posiciona .vac-filters de forma absoluta; en D1 ya vive dentro de su panel propio. */
+    body.dashboard-1-page .filter-panel .vac-filters{
+      position:relative !important; inset:auto !important; left:auto !important; right:auto !important; bottom:auto !important;
+      width:auto !important; margin:0 !important; padding:0 !important; border:0 !important; border-radius:0 !important;
+      background:transparent !important; box-shadow:none !important; overflow:visible !important;
+    }
     body.dashboard-1-page .filter-panel .vac-fbox{gap:5px}
     body.dashboard-1-page .filter-panel .vac-fbox>label{color:#8e6e64;font-size:10px;font-weight:850;letter-spacing:.13em}
     body.dashboard-1-page .filter-panel .smart-filter__button,
