@@ -1,0 +1,74 @@
+/* Portada Apple / Liquid Glass. Conserva el HTML y la lógica del índice en vivo. */
+:root { --apple-shell:min(calc(100% - 36px),1560px); --apple-ink:#261916; --apple-muted:#756660; --apple-line:rgba(92,55,42,.15); --apple-glass:rgba(255,255,255,.68); }
+html { background:#fff6ee; }
+body.apple-live {
+  background:radial-gradient(900px 620px at 8% -12%,#fff 0,transparent 68%),radial-gradient(850px 540px at 100% 4%,rgba(247,25,38,.12),transparent 66%),#fff6ee !important;
+  color:var(--apple-ink);
+}
+body.apple-live::before { content:""; position:fixed; inset:0; pointer-events:none; background:linear-gradient(115deg,transparent 18%,rgba(255,255,255,.42) 36%,transparent 54%); z-index:0; }
+body.apple-live > * { position:relative; z-index:1; }
+
+body.apple-live .topbar {
+  width:var(--apple-shell); min-height:66px; height:auto; margin:18px auto 8px; padding:9px 18px;
+  border:1px solid rgba(255,255,255,.82); border-radius:22px; background:linear-gradient(112deg,rgba(255,255,255,.82),rgba(255,247,240,.67)) !important;
+  box-shadow:0 14px 36px rgba(90,45,28,.12),inset 0 1px 0 rgba(255,255,255,.9); backdrop-filter:blur(18px); color:var(--apple-ink);
+}
+body.apple-live .topbar::after { display:none; }
+body.apple-live .topbar__logo { width:104px; height:43px; border-radius:9px; overflow:hidden; border:2px solid #fff; box-shadow:0 5px 12px rgba(92,38,21,.18); background:#f71926; }
+body.apple-live .topbar__logo img { width:100%; height:100%; object-fit:contain; }
+body.apple-live .topbar__title { color:var(--apple-ink); font-size:23px; }
+body.apple-live .topbar__subtitle, body.apple-live .topbar__meta { color:#79665f; }
+body.apple-live .topbar__back { border:0; border-radius:14px; background:linear-gradient(135deg,#ff3441,#db0718); color:#fff !important; padding:10px 16px; box-shadow:0 8px 16px rgba(215,16,31,.22); }
+
+body.apple-live .hero { width:var(--apple-shell); min-height:352px; height:352px; margin:0 auto; border-radius:28px; padding:0; overflow:hidden; display:flex; align-items:stretch;
+  background-image:linear-gradient(90deg,rgba(113,12,16,.94) 0%,rgba(191,24,29,.83) 31%,rgba(247,25,38,.27) 58%,rgba(247,25,38,.03) 100%),url('../assets/orgulloxxos-hero.jpg');
+  background-size:cover; background-position:center; border:1px solid rgba(255,255,255,.68); box-shadow:0 18px 38px rgba(106,40,28,.18);
+}
+body.apple-live .hero::before, body.apple-live .hero::after { display:none; }
+body.apple-live .hero__inner { width:100%; max-width:none; display:flex; align-items:center; padding:34px 52px; margin:0; }
+body.apple-live .hero__content { max-width:575px; }
+body.apple-live .hero__badge { background:rgba(255,255,255,.16); color:#fff; border-color:rgba(255,255,255,.42); margin:0 0 16px; padding:7px 14px; }
+body.apple-live .hero__badge span { display:none; }
+body.apple-live .hero__badge::before { content:'MONITOREO EN TIEMPO REAL'; font-weight:800; }
+body.apple-live .hero__title { font-size:clamp(3rem,5vw,4.8rem); line-height:.95; margin:0 0 18px; color:#fff; }
+body.apple-live .hero__title br, body.apple-live .hero__title span { display:none; }
+body.apple-live .hero__title::after { content:'Torre de Control'; }
+body.apple-live .hero__sub { font-size:16px; line-height:1.5; color:rgba(255,255,255,.94); max-width:520px; }
+body.apple-live .hero__stats { gap:10px; margin-top:22px; }
+body.apple-live .hero__stat { min-width:180px; padding:10px 14px; border:1px solid rgba(255,255,255,.38); border-radius:14px; background:rgba(255,255,255,.12); backdrop-filter:blur(7px); }
+body.apple-live .hero__stat-value { font-size:2rem; color:#fff; text-shadow:none; }
+body.apple-live .hero__stat-label { color:#fff; font-size:10px; letter-spacing:.45px; }
+
+/* Se retiró la franja de conexión por petición del usuario. */
+body.apple-live .system-bar { display:none; }
+body.apple-live .home-navigation { max-width:var(--apple-shell); margin:22px auto 0; padding:0 8px; }
+body.apple-live .home-favorites-row { color:#705f59; }
+body.apple-live .folder-tabs { width:min(calc(100% - 36px),860px); margin:18px auto 32px; padding:6px; border:1px solid rgba(255,255,255,.82); border-radius:18px; background:rgba(255,255,255,.66); box-shadow:0 12px 28px rgba(93,47,30,.1),inset 0 1px 0 #fff; backdrop-filter:blur(18px); }
+body.apple-live .folder-tab { border-radius:12px; color:#685b57; min-height:52px; }
+body.apple-live .folder-tab.is-active { color:#fff; background:linear-gradient(135deg,#ff3441,#db0718); box-shadow:0 7px 16px rgba(209,17,31,.3); }
+body.apple-live .folder-tab.is-active .folder-tab__icon { background:rgba(255,255,255,.18); color:#fff; }
+
+body.apple-live .dashboards-section { max-width:var(--apple-shell); padding:8px 8px 45px; }
+body.apple-live .section-label { color:#cf1823; font-size:11px; margin-bottom:8px; }
+body.apple-live .section-label::before { width:6px; height:6px; background:#f71926; box-shadow:none; }
+body.apple-live .section-title { color:var(--apple-ink); font-size:clamp(2rem,3.4vw,3rem); }
+body.apple-live .dashboards-grid { grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:18px; margin-top:20px; }
+body.apple-live .db-card { min-height:230px; padding:20px; gap:13px; border:1px solid rgba(108,71,56,.14); border-radius:20px; background:linear-gradient(145deg,rgba(255,255,255,.92),rgba(255,249,245,.75)); box-shadow:0 10px 25px rgba(99,50,31,.1),inset 0 1px 0 #fff; }
+body.apple-live .db-card::before { height:3px; background:var(--card-accent,#f71926); }
+body.apple-live .db-card::after { width:110px; height:110px; right:-48px; top:-48px; opacity:.38; }
+body.apple-live .db-card:hover,body.apple-live .db-card:focus-visible { transform:translateY(-5px); box-shadow:0 18px 36px rgba(99,50,31,.16),inset 0 1px 0 #fff; }
+body.apple-live .db-card__top { align-items:center; }
+body.apple-live .db-card__icon { width:42px; height:42px; border-radius:12px; font-size:20px; }
+body.apple-live .db-card__icon svg { width:20px; height:20px; }
+body.apple-live .db-card__freq { font-size:10px; padding:5px 9px; color:#6d625d !important; background:rgba(105,92,84,.08) !important; }
+body.apple-live .db-card__title { font-size:1.3rem; max-width:100%; }
+body.apple-live .db-card__desc { font-size:12px; line-height:1.48; }
+body.apple-live .db-card__footer { padding-top:11px; }
+body.apple-live .db-card__update { font-size:11px; color:#8c7770; }
+body.apple-live .db-card__arrow { width:28px; height:28px; background:transparent !important; box-shadow:none; }
+body.apple-live .db-card__arrow svg { stroke:#76625b; width:17px; height:17px; }
+body.apple-live .db-card:hover .db-card__arrow { transform:translateX(3px); box-shadow:none; }
+body.apple-live .section-divider { background:var(--apple-line); }
+body.apple-live .global-footer { width:var(--apple-shell); margin:0 auto 18px; padding:20px; border-radius:18px; background:rgba(76,35,29,.93); border:1px solid rgba(255,255,255,.2); box-shadow:0 12px 24px rgba(76,35,29,.18); }
+
+@media (max-width:760px) { body.apple-live .topbar { width:calc(100% - 20px); margin-top:10px; padding:8px 11px; } body.apple-live .topbar__logo { width:76px; height:36px; } body.apple-live .topbar__title { font-size:18px; } body.apple-live .topbar__subtitle,#topbar-time { display:none; } body.apple-live .hero { width:calc(100% - 20px); min-height:400px; height:auto; background-position:64% center; } body.apple-live .hero__inner { padding:30px 24px; align-items:flex-start; } body.apple-live .hero__title { font-size:3rem; } body.apple-live .hero__stat { min-width:calc(50% - 5px); } body.apple-live .folder-tabs { width:calc(100% - 20px); margin-top:14px; } body.apple-live .folder-tab__label { font-size:9px; } body.apple-live .dashboards-section { padding-left:14px; padding-right:14px; } }
