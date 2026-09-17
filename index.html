@@ -327,10 +327,12 @@ a:hover{color:var(--red-dk)}
   </section>
 
   <nav class="area-switch glass" aria-label="Cambiar área de dashboards">
-    <button class="area-switch__button is-active" type="button" aria-pressed="true"><span class="area-switch__icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"></circle><path d="M3.5 19c.6-3.1 2.5-5 5.5-5s4.9 1.9 5.5 5M16 11a2.5 2.5 0 1 0 0-5M16 14c2.4 0 3.9 1.4 4.5 3.7"></path></svg></span>Recursos Humanos</button>
-    <button class="area-switch__button" type="button" aria-pressed="false"><span class="area-switch__icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V8l8-4 8 4v12M3 20h18M9 20v-6h6v6M8 10h.01M12 10h.01M16 10h.01"></path></svg></span>Comercial</button>
-    <button class="area-switch__button" type="button" aria-pressed="false"><span class="area-switch__icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"></rect><path d="M9 8h6M9 12h6M9 16h4"></path></svg></span>Administrativo</button>
+    <button class="area-switch__button is-active" type="button" data-area="rh" aria-pressed="true"><span class="area-switch__icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"></circle><path d="M3.5 19c.6-3.1 2.5-5 5.5-5s4.9 1.9 5.5 5M16 11a2.5 2.5 0 1 0 0-5M16 14c2.4 0 3.9 1.4 4.5 3.7"></path></svg></span>Recursos Humanos</button>
+    <button class="area-switch__button" type="button" data-area="comercial" aria-pressed="false"><span class="area-switch__icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V8l8-4 8 4v12M3 20h18M9 20v-6h6v6M8 10h.01M12 10h.01M16 10h.01"></path></svg></span>Comercial</button>
+    <button class="area-switch__button" type="button" data-area="administrativo" aria-pressed="false"><span class="area-switch__icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"></rect><path d="M9 8h6M9 12h6M9 16h4"></path></svg></span>Administrativo</button>
   </nav>
+
+  <main id="other-area" hidden></main>
 
     <section class="group">
       <div class="group__head">
@@ -673,15 +675,46 @@ a:hover{color:var(--red-dk)}
       if (stamp.textContent.trim() === '—') stamp.textContent = 'Sin fecha registrada';
     });
 
-    document.querySelectorAll('.area-switch__button').forEach((button) => {
-      button.addEventListener('click', () => {
-        document.querySelectorAll('.area-switch__button').forEach((item) => {
-          const active = item === button;
-          item.classList.toggle('is-active', active);
-          item.setAttribute('aria-pressed', String(active));
-        });
+    const areas = {
+      comercial: {
+        kicker: 'Comunicación comercial', titulo: 'Dashboards Comerciales',
+        tarjetas: [
+          ['PromosD100', 'Galería visual de campañas vigentes, próximas promociones y materiales para tienda.', 'dashboards/promociones.html', 'En vivo'],
+          ['Avance Comercial', 'SPIN, Premia, Cruzada Andatti, Venta Sugerida, Banner y MEP vs meta, por tienda y asesor.', 'dashboards/dashboard-14.html', 'Quincenal']
+        ]
+      },
+      administrativo: {
+        kicker: 'Control administrativo', titulo: 'Indicadores administrativos',
+        tarjetas: [
+          ['Resultados de Inventario', 'Merma, venta sin TAE, inventarios y focos principales por tienda y asesor comercial.', 'dashboards/inventarios.html', 'Mensual'],
+          ['Faltantes y Sobrantes', 'Faltantes y sobrantes de caja por asesor, tienda y semana.', 'dashboards/dashboard-9.html', 'Semanal']
+        ]
+      }
+    };
+    const rhContent = [...document.querySelectorAll('.group, .access')];
+    const otherArea = document.getElementById('other-area');
+    const cardMarkup = ([titulo, descripcion, ruta, frecuencia]) => `
+      <article class="card tone-flat"><header class="card__bar"><span class="chip">${frecuencia}</span></header>
+        <div class="card__body"><div class="card__head"><span class="card__icon" aria-hidden="true">↗</span><a class="card__title" href="${ruta}">${titulo}</a></div>
+        <p class="card__desc">${descripcion}</p></div>
+        <footer class="card__foot"><p class="card__stamp">Acceso al tablero</p><a class="btn btn--sm" href="${ruta}">Abrir</a></footer></article>`;
+    function activarArea(area) {
+      const esRh = area === 'rh';
+      rhContent.forEach((elemento) => { elemento.hidden = !esRh; });
+      otherArea.hidden = esRh;
+      if (!esRh) {
+        const actual = areas[area];
+        otherArea.innerHTML = `<section class="group"><div class="group__head"><div><p class="kicker"><span class="dot"></span>${actual.kicker}</p><h2 class="group__title">${actual.titulo}</h2></div><p class="group__count">${actual.tarjetas.length} dashboards</p></div><div class="rule"></div><div class="grid">${actual.tarjetas.map(cardMarkup).join('')}</div></section>`;
+      }
+      document.querySelectorAll('.area-switch__button').forEach((item) => {
+        const active = item.dataset.area === area;
+        item.classList.toggle('is-active', active);
+        item.setAttribute('aria-pressed', String(active));
       });
-    });
+      try { localStorage.setItem('oxxo-dashboard-area', area); } catch (error) {}
+    }
+    document.querySelectorAll('.area-switch__button').forEach((button) => button.addEventListener('click', () => activarArea(button.dataset.area)));
+    try { activarArea(localStorage.getItem('oxxo-dashboard-area') || 'rh'); } catch (error) { activarArea('rh'); }
 
     // La tarjeta completa es el acceso; se conserva el enlace nativo para
     // lectores de pantalla y navegación con teclado.
