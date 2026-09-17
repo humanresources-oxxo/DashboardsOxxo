@@ -40,6 +40,21 @@ body.apple-live .hero__stat { min-width:180px; padding:10px 14px; border:1px sol
 body.apple-live .hero__stat-value { font-size:2rem; color:#fff; text-shadow:none; }
 body.apple-live .hero__stat-label { color:#fff; font-size:10px; letter-spacing:.45px; }
 
+/* Las variantes heredadas por área usan selectores más específicos. Esta
+   capa se mantiene por encima para que la portada conserve la composición
+   del prototipo sin importar el área seleccionada. */
+body.apple-live[data-area] .topbar { display:flex !important; width:var(--apple-shell) !important; min-height:66px !important; height:auto !important; margin:18px auto 8px !important; padding:9px 18px !important; position:relative !important; z-index:3 !important; border:1px solid rgba(255,255,255,.82) !important; border-radius:22px !important; background:linear-gradient(112deg,rgba(255,255,255,.88),rgba(255,247,240,.74)) !important; box-shadow:0 14px 36px rgba(90,45,28,.12),inset 0 1px 0 rgba(255,255,255,.9) !important; }
+body.apple-live[data-area] .topbar__title { color:var(--apple-ink) !important; }
+body.apple-live[data-area] .topbar__subtitle,body.apple-live[data-area] .topbar__meta { color:#79665f !important; }
+body.apple-live[data-area] .hero { width:var(--apple-shell) !important; min-height:352px !important; height:352px !important; margin:0 auto !important; padding:0 !important; border-radius:28px !important; background-image:linear-gradient(90deg,rgba(113,12,16,.94) 0%,rgba(191,24,29,.83) 31%,rgba(247,25,38,.27) 58%,rgba(247,25,38,.03) 100%),url('../assets/orgulloxxos-hero.jpg') !important; background-size:cover !important; background-position:center !important; }
+body.apple-live[data-area] .hero__inner { display:flex !important; width:100% !important; max-width:none !important; padding:34px 52px !important; }
+body.apple-live[data-area] .hero__badge { font-size:0 !important; }
+body.apple-live[data-area] .hero__badge::before { font-size:12px !important; }
+body.apple-live[data-area] .hero__title,body.apple-live[data-area] .hero__title span { color:#fff !important; }
+body.apple-live[data-area] .hero__stat { min-width:180px !important; padding:10px 14px !important; background:rgba(255,255,255,.12) !important; border-color:rgba(255,255,255,.38) !important; box-shadow:none !important; }
+body.apple-live[data-area] .hero__stat-value { color:#fff !important; }
+body.apple-live[data-area] .folder-tabs { width:min(calc(100% - 36px),860px) !important; margin:18px auto 32px !important; }
+
 /* Se retiró la franja de conexión por petición del usuario. */
 body.apple-live .system-bar { display:none; }
 body.apple-live .home-navigation { max-width:var(--apple-shell); margin:22px auto 0; padding:0 8px; }
