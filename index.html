@@ -250,6 +250,33 @@ a:hover{color:var(--red-dk)}
 .tone-flat .delta{color:var(--ink-3);background:rgba(120,120,128,.12)}
 .tone-flat .spark__line{stroke:var(--ink-4)} .tone-flat .spark__area{fill:var(--ink-4)}
 
+/* ── Acentos por área ─────────────────────────────────
+   Recursos Humanos conserva el rojo OXXO; las áreas secundarias
+   usan un color propio para que se distingan sin cambiar la estructura. */
+#other-area[data-area="comercial"] .kicker,
+#other-area[data-area="comercial"] .group__title{color:#247aa4}
+#other-area[data-area="comercial"] .kicker .dot{background:#247aa4;box-shadow:0 0 0 5px rgba(36,122,164,.13)}
+#other-area[data-area="comercial"] .card{border-color:rgba(36,122,164,.20);background:linear-gradient(145deg,rgba(255,255,255,.94),rgba(240,248,253,.84))}
+#other-area[data-area="comercial"] .card:hover,
+#other-area[data-area="comercial"] .card:focus-visible{border-color:rgba(36,122,164,.44);box-shadow:0 12px 28px rgba(36,122,164,.16)}
+#other-area[data-area="comercial"] .card__bar{background:linear-gradient(180deg,rgba(247,252,255,.94),rgba(234,245,251,.86))}
+#other-area[data-area="comercial"] .chip{color:#247aa4;background:rgba(36,122,164,.10);box-shadow:inset 0 0 0 .5px rgba(36,122,164,.20)}
+#other-area[data-area="comercial"] .card__icon{color:#247aa4;background:linear-gradient(180deg,#fff,#eaf5fb)}
+#other-area[data-area="comercial"] .card__title:hover{color:#247aa4}
+#other-area[data-area="comercial"] .card::after{color:#247aa4}
+
+#other-area[data-area="administrativo"] .kicker,
+#other-area[data-area="administrativo"] .group__title{color:#7255a1}
+#other-area[data-area="administrativo"] .kicker .dot{background:#7255a1;box-shadow:0 0 0 5px rgba(114,85,161,.13)}
+#other-area[data-area="administrativo"] .card{border-color:rgba(114,85,161,.20);background:linear-gradient(145deg,rgba(255,255,255,.94),rgba(247,243,253,.84))}
+#other-area[data-area="administrativo"] .card:hover,
+#other-area[data-area="administrativo"] .card:focus-visible{border-color:rgba(114,85,161,.44);box-shadow:0 12px 28px rgba(114,85,161,.16)}
+#other-area[data-area="administrativo"] .card__bar{background:linear-gradient(180deg,rgba(252,250,255,.94),rgba(243,238,251,.86))}
+#other-area[data-area="administrativo"] .chip{color:#7255a1;background:rgba(114,85,161,.10);box-shadow:inset 0 0 0 .5px rgba(114,85,161,.20)}
+#other-area[data-area="administrativo"] .card__icon{color:#7255a1;background:linear-gradient(180deg,#fff,#f1ecfa)}
+#other-area[data-area="administrativo"] .card__title:hover{color:#7255a1}
+#other-area[data-area="administrativo"] .card::after{color:#7255a1}
+
 /* ── Accesos personales ─────────────────────────────── */
 .access{max-width:1560px;margin:0 auto;padding:38px 18px 8px}
 .access__grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:18px}
@@ -706,8 +733,10 @@ a:hover{color:var(--red-dk)}
       const esRh = area === 'rh';
       rhContent.forEach((elemento) => { elemento.hidden = !esRh; });
       otherArea.hidden = esRh;
+      if (esRh) otherArea.removeAttribute('data-area');
       if (!esRh) {
         const actual = areas[area];
+        otherArea.dataset.area = area;
         otherArea.innerHTML = `<section class="group"><div class="group__head"><div><p class="kicker"><span class="dot"></span>${actual.kicker}</p><h2 class="group__title">${actual.titulo}</h2></div><p class="group__count">${actual.tarjetas.length} dashboards</p></div><div class="rule"></div><div class="grid">${actual.tarjetas.map(cardMarkup).join('')}</div></section>`;
         aplicarFechas();
       }
