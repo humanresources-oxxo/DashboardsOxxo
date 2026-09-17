@@ -1,3098 +1,725 @@
 <!DOCTYPE html>
-<html lang="es" data-oxxo-hide-scope-widget="1">
+<html lang="es">
 <head>
-  <script>(function(){try{if(localStorage.getItem('oxxo_site_unlocked')!=='1')document.documentElement.classList.add('oxxo-locked');}catch(e){}})();</script>
-  <style>html.oxxo-locked{background:#2D0B0C}html.oxxo-locked body>*{visibility:hidden!important}#oxxo-lock-overlay{visibility:visible!important}</style>
-  <script defer src="js/site-lock.js?v=515942f1"></script>
-  <meta charset="UTF-8" />
-  <meta name="robots" content="noindex, nofollow"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Dashboards Ats · Plaza Oaxaca</title>
-  <meta name="description" content="Dashboards Ats Plaza Oaxaca-ByPamsb" />
-  <!-- Deshabilitar caché en producción -->
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-  <link rel="icon" type="image/png" href="assets/favicon.png" />
-  <link rel="apple-touch-icon" href="assets/favicon.png" />
-  <link rel="stylesheet" href="css/global.css?v=515942f1" />
-  <style>
-    /* ── ESTILOS ESPECÍFICOS DEL INDEX ── */
-    .topbar {
-      height: 72px;
-      border-bottom: 4px solid var(--color-yellow);
-    }
-
-    .topbar__logo {
-      width: 36px;
-      height: 36px;
-      background: var(--color-yellow);
-      border-radius: 6px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-family: var(--font-display);
-      font-weight: 800;
-      font-size: 14px;
-      color: #1A1A2E;
-      letter-spacing: 0.5px;
-      flex-shrink: 0;
-    }
-
-    .topbar__title {
-      font-size: 22px;
-      line-height: 1;
-    }
-
-    .topbar__subtitle,
-    .topbar__meta {
-      color: rgba(255,255,255,0.72);
-    }
-
-    .hero {
-      background-color: var(--color-dark);
-      background-image:
-        linear-gradient(90deg, rgba(247,25,38,0.98) 0%, rgba(247,25,38,0.90) 36%, rgba(247,25,38,0.36) 62%, rgba(247,25,38,0.02) 100%),
-        url('assets/orgulloxxos-hero.jpg');
-      background-repeat: no-repeat;
-      background-size: auto, auto 100%;
-      background-position: 0 0, right center;
-      padding: 64px 24px 72px;
-      position: relative;
-      overflow: hidden;
-      min-height: 620px;
-      display: flex;
-      align-items: center;
-    }
-
-    .hero::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background-image: linear-gradient(135deg, rgba(255,255,255,0.11) 1px, transparent 1px);
-      background-size: 44px 44px;
-      opacity: 0.20;
-      pointer-events: none;
-    }
-
-    .hero__inner {
-      max-width: 1400px;
-      width: 100%;
-      margin: 0 auto;
-      position: relative;
-      z-index: 1;
-      display: grid;
-      grid-template-columns: minmax(380px, 0.48fr) minmax(520px, 0.52fr);
-      align-items: center;
-      gap: clamp(28px, 4vw, 58px);
-    }
-
-    .hero__content {
-      max-width: 610px;
-    }
-
-    .hero__badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      background: rgba(242,165,43,0.14);
-      border: 1px solid rgba(242,165,43,0.45);
-      color: var(--color-yellow);
-      font-size: 12px;
-      font-weight: 600;
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      padding: 7px 16px;
-      border-radius: 20px;
-      margin-bottom: 22px;
-    }
-
-    .hero__title {
-      font-family: var(--font-display);
-      font-size: clamp(3.2rem, 6.5vw, 5.8rem);
-      font-weight: 800;
-      color: #fff;
-      line-height: 0.95;
-      letter-spacing: 0;
-      margin-bottom: 22px;
-    }
-
-    .hero__title span {
-      color: var(--color-yellow);
-    }
-
-    .hero__sub {
-      color: rgba(255,255,255,0.92);
-      font-size: 18px;
-      font-weight: 500;
-      max-width: 620px;
-      line-height: 1.65;
-    }
-
-    .hero__stats {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 42px;
-      margin-top: 42px;
-    }
-
-    .hero__stat {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-
-    .hero__stat-value {
-      font-family: var(--font-display);
-      font-size: 3.1rem;
-      font-weight: 800;
-      color: var(--color-yellow);
-      line-height: 0.9;
-    }
-
-    .hero__stat-label {
-      font-size: 13px;
-      color: rgba(255,255,255,0.9);
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      font-weight: 700;
-    }
-
-    .hero__visual {
-      display: none;
-    }
-
-    .hero__image {
-      display: none;
-    }
-
-    /* Barra de acceso rápido con estado del sistema */
-    .system-bar {
-      background: var(--color-surface);
-      border-bottom: 1px solid var(--color-border);
-    }
-
-    .system-bar__inner {
-      max-width: 1400px;
-      margin: 0 auto;
-      padding: 14px 24px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 10px;
-    }
-
-    .system-bar__left {
-      display: flex;
-      align-items: center;
-      gap: 20px;
-      flex-wrap: wrap;
-    }
-
-    .sys-status {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 12px;
-      font-weight: 500;
-      color: var(--semaforo-verde);
-    }
-
-    .sys-status__dot {
-      width: 8px;
-      height: 8px;
-      background: var(--semaforo-verde);
-      border-radius: 50%;
-      animation: pulse 2s ease-in-out infinite;
-    }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(242,165,43,0.4); }
-      50% { opacity: 0.8; box-shadow: 0 0 0 5px rgba(242,165,43,0); }
-    }
-
-    .system-bar__right {
-      font-size: 11px;
-      color: var(--color-gray);
-    }
-
-    /* Grid de dashboards */
-    .dashboards-section {
-      max-width: 1400px;
-      margin: 0 auto;
-      padding: 42px 24px 48px;
-    }
-
-    .dashboards-section__header {
-      display: flex;
-      align-items: flex-end;
-      justify-content: space-between;
-      margin-bottom: 10px;
-    }
-
-    .section-label {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      font-family: var(--font-display);
-      font-size: 12px;
-      font-weight: 800;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      color: #8D3C30;
-      margin-bottom: 8px;
-    }
-
-    .section-label::before {
-      content: '';
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: var(--color-yellow);
-      box-shadow: 0 0 0 5px rgba(242,165,43,0.14);
-    }
-
-    .section-title {
-      font-family: var(--font-display);
-      font-size: clamp(1.9rem, 2.3vw, 2.45rem);
-      font-weight: 800;
-      color: var(--color-dark);
-      line-height: 0.95;
-      letter-spacing: 0;
-    }
-
-    .dashboards-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-      gap: 24px;
-      margin-top: 28px;
-    }
-
-    /* Tarjeta de dashboard */
-    .db-card {
-      min-height: 250px;
-      background:
-        radial-gradient(circle at 15% 10%, rgba(242,165,43,0.16), transparent 28%),
-        linear-gradient(145deg, #FFFFFF 0%, #FFF8F4 100%);
-      border-radius: 18px;
-      border: 1px solid rgba(247,25,38,0.13);
-      padding: 28px;
-      text-decoration: none;
-      color: inherit;
-      display: flex;
-      flex-direction: column;
-      gap: 18px;
-      transition: transform 0.32s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.32s ease, border-color 0.32s ease;
-      position: relative;
-      overflow: hidden;
-      cursor: pointer;
-      box-shadow: 0 14px 36px rgba(117, 23, 23, 0.07);
-      animation: cardRise 0.58s ease both;
-    }
-
-    .db-card:nth-child(2) { animation-delay: 0.08s; }
-    .db-card:nth-child(3) { animation-delay: 0.16s; }
-
-    .db-card::before {
-      content: '';
-      position: absolute;
-      inset: 0 0 auto;
-      height: 5px;
-      background: linear-gradient(90deg, var(--card-accent, var(--color-yellow)), rgba(247,25,38,0.88));
-      transform-origin: left;
-      transition: height 0.28s ease, opacity 0.28s ease;
-    }
-
-    .db-card::after {
-      content: '';
-      position: absolute;
-      width: 160px;
-      height: 160px;
-      right: -72px;
-      top: -72px;
-      border-radius: 50%;
-      background: var(--card-icon-bg, rgba(242,165,43,0.14));
-      opacity: 0.78;
-      transform: scale(0.78);
-      transition: transform 0.35s ease, opacity 0.35s ease;
-    }
-
-    .db-card:hover,
-    .db-card:focus-visible {
-      box-shadow: 0 24px 58px rgba(117, 23, 23, 0.16);
-      transform: translateY(-8px);
-      border-color: rgba(247,25,38,0.22);
-      outline: none;
-    }
-
-    .db-card:hover::before,
-    .db-card:focus-visible::before {
-      height: 7px;
-    }
-
-    .db-card:hover::after,
-    .db-card:focus-visible::after {
-      opacity: 1;
-      transform: scale(1.04);
-    }
-
-    .db-card__top,
-    .db-card__title,
-    .db-card__desc,
-    .db-card__footer {
-      position: relative;
-      z-index: 1;
-    }
-
-    .db-card__top {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 14px;
-    }
-
-    .db-card__icon {
-      width: 54px;
-      height: 54px;
-      border-radius: 16px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 24px;
-      flex-shrink: 0;
-      background: var(--card-icon-bg, rgba(242,165,43,0.14));
-      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.64), 0 10px 26px rgba(117,23,23,0.08);
-      transition: transform 0.3s ease, box-shadow 0.3s ease;
-    }
-
-    .db-card:hover .db-card__icon,
-    .db-card:focus-visible .db-card__icon {
-      transform: translateY(-2px) rotate(-3deg) scale(1.06);
-      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.72), 0 14px 30px rgba(117,23,23,0.12);
-    }
-
-    .db-card__freq {
-      font-size: 11px;
-      font-weight: 800;
-      padding: 7px 12px;
-      border-radius: 999px;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      background: rgba(247,25,38,0.08) !important;
-      color: var(--color-red) !important;
-      box-shadow: inset 0 0 0 1px rgba(247,25,38,0.08);
-    }
-
-    .db-card__title {
-      font-family: var(--font-display);
-      font-size: clamp(1.45rem, 1.8vw, 1.75rem);
-      font-weight: 800;
-      color: var(--color-dark);
-      line-height: 1.06;
-      letter-spacing: 0;
-      max-width: 280px;
-    }
-
-    .db-card__desc {
-      font-size: 13px;
-      color: var(--color-gray);
-      line-height: 1.6;
-      flex: 1;
-    }
-
-    .db-card__scope-tag {
-      align-self: flex-start;
-      font-size: 10px;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: #577080;
-      background: rgba(87,112,128,0.09);
-      padding: 5px 11px;
-      border-radius: 999px;
-      box-shadow: inset 0 0 0 1px rgba(87,112,128,0.14);
-    }
-
-    .db-card__footer {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding-top: 16px;
-      margin-top: auto;
-      border-top: 1px solid rgba(122,74,66,0.16);
-    }
-
-    .db-card__update {
-      font-size: 12px;
-      color: #8D6A62;
-      line-height: 1.45;
-    }
-
-    .db-card__update strong {
-      color: var(--color-dark-mid);
-      font-weight: 800;
-    }
-
-    .db-card__arrow {
-      width: 42px;
-      height: 42px;
-      background: var(--card-accent, var(--color-yellow)) !important;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: transform 0.3s ease, box-shadow 0.3s ease;
-      box-shadow: 0 12px 24px rgba(247,25,38,0.18);
-    }
-
-    .db-card:hover .db-card__arrow,
-    .db-card:focus-visible .db-card__arrow {
-      transform: translateX(4px) scale(1.08);
-      box-shadow: 0 16px 30px rgba(247,25,38,0.26);
-    }
-
-    .db-card__arrow svg {
-      width: 16px;
-      height: 16px;
-      stroke: #fff;
-      fill: none;
-      stroke-width: 3;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-      transition: transform 0.3s ease;
-    }
-
-    .db-card:hover .db-card__arrow svg,
-    .db-card:focus-visible .db-card__arrow svg {
-      transform: translateX(2px);
-    }
-
-    @keyframes cardRise {
-      from {
-        opacity: 0;
-        transform: translateY(18px) scale(0.985);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-      }
-    }
-
-
-    .hero::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(115deg, transparent 0%, rgba(255,255,255,0.16) 38%, transparent 52%);
-      transform: translateX(-72%);
-      animation: heroSweep 8s ease-in-out infinite;
-      pointer-events: none;
-      mix-blend-mode: screen;
-      z-index: 0;
-    }
-
-    .hero__badge,
-    .hero__title,
-    .hero__sub,
-    .hero__stat {
-      animation: heroLift 0.72s cubic-bezier(0.2, 0.8, 0.2, 1) both;
-    }
-
-    .hero__badge { animation-delay: 0.05s; }
-    .hero__title { animation-delay: 0.14s; }
-    .hero__sub { animation-delay: 0.25s; }
-    .hero__stat:nth-child(1) { animation-delay: 0.36s; }
-    .hero__stat:nth-child(2) { animation-delay: 0.44s; }
-    .hero__stat:nth-child(3) { animation-delay: 0.52s; }
-
-    .hero__stat-value {
-      text-shadow: 0 0 22px rgba(242,165,43,0.28);
-    }
-
-    .section-reveal {
-      opacity: 0;
-      transform: translateY(22px);
-      transition: opacity 0.72s ease, transform 0.72s cubic-bezier(0.2, 0.8, 0.2, 1);
-    }
-
-    .section-reveal.is-visible {
-      opacity: 1;
-      transform: translateY(0);
-    }
-
-    .section-reveal .db-card {
-      animation: none;
-      opacity: 0;
-      transform: translateY(18px) scale(0.985);
-      transition: opacity 0.58s ease, transform 0.58s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.32s ease, border-color 0.32s ease;
-    }
-
-    .section-reveal.is-visible .db-card {
-      opacity: 1;
-      transform: translateY(0) scale(1);
-    }
-
-    .section-reveal.is-visible .db-card:nth-child(2) { transition-delay: 0.08s; }
-    .section-reveal.is-visible .db-card:nth-child(3) { transition-delay: 0.16s; }
-
-    .db-card:hover .db-card__freq,
-    .db-card:focus-visible .db-card__freq {
-      transform: translateY(-1px);
-    }
-
-    .db-card__freq {
-      transition: transform 0.28s ease, box-shadow 0.28s ease;
-    }
-
-    @keyframes heroLift {
-      from {
-        opacity: 0;
-        transform: translateY(18px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    @keyframes heroSweep {
-      0%, 28% { transform: translateX(-72%); opacity: 0; }
-      42% { opacity: 0.72; }
-      58%, 100% { transform: translateX(72%); opacity: 0; }
-    }
-    @media (prefers-reduced-motion: reduce) {
-      .db-card,
-      .db-card__icon,
-      .db-card__arrow,
-      .db-card__arrow svg,
-      .db-card::before,
-      .db-card::after,
-      .hero::after,
-      .hero__badge,
-      .hero__title,
-      .hero__sub,
-      .hero__stat,
-      .section-reveal,
-      .section-reveal .db-card {
-        animation: none;
-        transition: none;
-      }
-
-      .section-reveal,
-      .section-reveal .db-card {
-        opacity: 1;
-        transform: none;
-      }
-    }
-    /* Estado de carga de configuracion */
-    .config-loading {
-      text-align: center;
-      padding: 24px;
-      color: var(--color-gray);
-      font-size: 13px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      justify-content: center;
-    }
-
-    /* Separador de secciones */
-    .section-divider {
-      height: 1px;
-      background: var(--color-border);
-      margin: 8px 0 32px;
-    }
-
-    /* Footer global */
-    .global-footer {
-      background: var(--color-dark);
-      color: rgba(255,255,255,0.82);
-      text-align: center;
-      padding: 28px 24px;
-      font-size: 12px;
-      margin-top: 40px;
-    }
-
-    .global-footer strong {
-      color: var(--color-yellow);
-    }
-
-    @media (max-width: 900px) {
-      .hero {
-        padding: 40px 16px 52px;
-        min-height: 620px;
-        background-size: auto, auto 92%;
-        background-position: 0 0, right center;
-      }
-
-      .hero__inner {
-        grid-template-columns: 1fr;
-        gap: 30px;
-      }
-
-      .hero__content {
-        max-width: 560px;
-      }
-
-      .hero__title {
-        font-size: clamp(3rem, 14vw, 4.6rem);
-      }
-
-      .hero__sub {
-        font-size: 16px;
-      }
-
-      .hero__visual,
-      .hero__image {
-        display: none;
-      }
-    }
-
-    @media (max-width: 600px) {
-      .hero {
-        padding: 32px 16px 42px;
-        min-height: 650px;
-        background-size: auto, auto 82%;
-        background-position: 0 0, 68% bottom;
-      }
-
-      .hero__stats { gap: 24px; }
-      .hero__visual,
-      .hero__image { display: none; }
-      .hero__stat-value { font-size: 2.5rem; }
-      .dashboards-grid { grid-template-columns: 1fr; }
-      .dashboards-section { padding: 24px 16px; }
-    }
-
-    .topbar__meta {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    /* GLASS MORPH MINIMAL - index */
-    :root {
-      --glass-bg: #fff5ea;
-      --glass-bg-2: #f6e7da;
-      --glass-surface: rgba(255,255,255,0.58);
-      --glass-surface-strong: rgba(255,255,255,0.76);
-      --glass-line: rgba(130,54,38,0.16);
-      --glass-shadow: 0 18px 44px rgba(112,45,28,0.11);
-      --glass-shadow-soft: 0 10px 26px rgba(112,45,28,0.08);
-      --glass-ink: #211510;
-      --glass-muted: #7a665d;
-    }
-
-    html {
-      background: var(--glass-bg);
-    }
-
-    body {
-      min-height: 100vh;
-      background:
-        radial-gradient(900px 560px at 16% -10%, rgba(255,255,255,0.82), transparent 62%),
-        radial-gradient(760px 480px at 100% 0%, rgba(242,165,43,0.12), transparent 60%),
-        linear-gradient(135deg, var(--glass-bg) 0%, var(--glass-bg-2) 100%) !important;
-      color: var(--glass-ink);
-    }
-
-    body::before {
-      content: '';
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      background: linear-gradient(120deg, transparent 0 26%, rgba(255,255,255,0.22) 31%, transparent 37%);
-      opacity: 0.46;
-      mix-blend-mode: soft-light;
-      z-index: 0;
-    }
-
-    .topbar,
-    .hero,
-    .system-bar__inner,
-    .db-card,
-    .global-footer {
-      border: 1px solid rgba(255,255,255,0.68);
-      box-shadow: var(--glass-shadow), inset 0 1px 0 rgba(255,255,255,0.84);
-    }
-
-    .topbar {
-      width: min(calc(100% - 36px), 1400px);
-      height: auto;
-      min-height: 86px;
-      margin: 18px auto 0;
-      padding: 14px 22px;
-      border-bottom: 1px solid rgba(255,255,255,0.68);
-      border-radius: 20px;
-      background: linear-gradient(145deg, var(--glass-surface-strong), var(--glass-surface)) !important;
-      color: var(--glass-ink);
-      position: relative;
-      z-index: 2;
-    }
-
-    .topbar__logo {
-      width: 122px;
-      height: 52px;
-      border-radius: 10px;
-      background: linear-gradient(#f71926 0 72%, #f2a52b 72% 100%) !important;
-      border: 3px solid #fff;
-      color: #fff;
-      font-size: 30px;
-      letter-spacing: -0.11em;
-      box-shadow: 0 8px 20px rgba(117,23,23,0.16), inset 0 0 0 1px rgba(255,255,255,0.24);
-    }
-
-    .topbar__title {
-      color: var(--glass-ink);
-      font-size: 26px;
-      letter-spacing: -0.02em;
-    }
-
-    .topbar__subtitle,
-    .topbar__meta,
-    .system-bar__right,
-    .db-card__desc,
-    .db-card__update {
-      color: var(--glass-muted) !important;
-    }
-
-    .hero {
-      width: min(calc(100% - 36px), 1400px);
-      min-height: 430px;
-      margin: 18px auto 0;
-      padding: 54px clamp(24px, 5vw, 62px);
-      border-radius: 24px;
-      background-image:
-        linear-gradient(90deg, rgba(158,0,7,0.88) 0%, rgba(214,0,11,0.64) 42%, rgba(214,0,11,0.12) 68%, rgba(82,0,0,0.22) 100%),
-        url('assets/orgulloxxos-hero.jpg') !important;
-      background-size: auto, cover !important;
-      background-position: 0 0, center 78% !important;
-      overflow: hidden;
-    }
-
-    .hero::before {
-      background: linear-gradient(120deg, rgba(255,255,255,0.18), transparent 24% 78%, rgba(255,255,255,0.10));
-      background-size: auto;
-      opacity: 1;
-    }
-
-    .hero::after {
-      display: none;
-    }
-
-    .hero__inner {
-      max-width: none;
-      grid-template-columns: minmax(320px, 0.68fr) minmax(260px, 0.32fr);
-    }
-
-    .hero__badge {
-      background: rgba(255,255,255,0.14);
-      border-color: rgba(255,255,255,0.34);
-      color: #fff;
-    }
-
-    .hero__title {
-      max-width: 780px;
-      margin-bottom: 18px;
-      color: #fff;
-      font-size: clamp(3rem, 5.7vw, 5.1rem);
-      letter-spacing: -0.035em;
-    }
-
-    .hero__title span {
-      color: #fff4d7;
-    }
-
-    .hero__sub {
-      max-width: 560px;
-      color: rgba(255,255,255,0.88);
-      font-size: 17px;
-      line-height: 1.55;
-    }
-
-    .hero__stats {
-      gap: 16px;
-      margin-top: 32px;
-    }
-
-    .hero__stat {
-      min-width: 150px;
-      padding: 14px 18px;
-      border-radius: 16px;
-      background: rgba(255,255,255,0.16);
-      border: 1px solid rgba(255,255,255,0.30);
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.34);
-    }
-
-    .hero__stat-value {
-      color: #fff;
-      text-shadow: none;
-      font-size: 2.45rem;
-    }
-
-    .hero__stat-label {
-      color: rgba(255,255,255,0.78);
-      letter-spacing: 0.08em;
-    }
-
-    .system-bar {
-      width: min(calc(100% - 36px), 1400px);
-      margin: 16px auto 0;
-      border: 0;
-      background: transparent !important;
-    }
-
-    .system-bar__inner {
-      padding: 16px 22px;
-      border-radius: 18px;
-      background: linear-gradient(145deg, var(--glass-surface-strong), var(--glass-surface));
-    }
-
-    .sys-status {
-      color: #2f8e54;
-      font-size: 13px;
-    }
-
-    .sys-status__dot {
-      background: #2f8e54;
-      animation: none;
-      box-shadow: 0 0 0 5px rgba(47,142,84,0.12);
-    }
-
-    .dashboards-section {
-      max-width: 1400px;
-      padding: 38px 18px 30px;
-      background: transparent !important;
-    }
-
-    .dashboards-section__header {
-      margin-bottom: 12px;
-      padding: 0 2px;
-    }
-
-    .section-label {
-      color: var(--color-red);
-      letter-spacing: 0.16em;
-    }
-
-    .section-label::before {
-      width: 6px;
-      height: 6px;
-      background: var(--color-red);
-      box-shadow: none;
-    }
-
-    .section-title {
-      color: var(--glass-ink);
-      font-size: clamp(1.7rem, 2.1vw, 2.25rem);
-      letter-spacing: -0.025em;
-    }
-
-    .dashboards-grid {
-      gap: 18px;
-      margin-top: 22px;
-    }
-
-    .db-card {
-      min-height: 190px;
-      padding: 22px;
-      border-radius: 18px;
-      background: linear-gradient(145deg, rgba(255,255,255,0.70), rgba(255,245,238,0.42)) !important;
-      border-color: rgba(255,255,255,0.70);
-      box-shadow: var(--glass-shadow-soft), inset 0 1px 0 rgba(255,255,255,0.88);
-      gap: 14px;
-      transform: translateZ(0);
-    }
-
-    .db-card::before {
-      inset: 18px auto 18px 0;
-      width: 4px;
-      height: auto;
-      border-radius: 999px;
-      background: var(--color-red);
-      opacity: 0.88;
-    }
-
-    .db-card::after {
-      width: auto;
-      height: auto;
-      inset: 0;
-      border-radius: inherit;
-      background: linear-gradient(120deg, rgba(255,255,255,0.34), transparent 34% 78%, rgba(255,255,255,0.16));
-      opacity: 0.46;
-      transform: none;
-    }
-
-    .db-card:hover,
-    .db-card:focus-visible {
-      transform: translateY(-3px);
-      box-shadow: 0 16px 34px rgba(112,45,28,0.13), inset 0 1px 0 rgba(255,255,255,0.92);
-      border-color: rgba(247,25,38,0.20);
-    }
-
-    .db-card:hover::before,
-    .db-card:focus-visible::before {
-      height: auto;
-    }
-
-    .db-card:hover::after,
-    .db-card:focus-visible::after {
-      transform: none;
-      opacity: 0.56;
-    }
-
-    .db-card__icon {
-      width: 50px;
-      height: 50px;
-      border-radius: 15px;
-      background: rgba(255,255,255,0.54) !important;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.80), 0 8px 18px rgba(117,23,23,0.08);
-    }
-
-    .db-card:hover .db-card__icon,
-    .db-card:focus-visible .db-card__icon {
-      transform: translateY(-1px);
-    }
-
-    .db-card__freq {
-      background: rgba(247,25,38,0.08) !important;
-      box-shadow: inset 0 0 0 1px rgba(247,25,38,0.10);
-      color: var(--color-red) !important;
-    }
-
-    .db-card__title {
-      color: var(--glass-ink);
-      font-size: clamp(1.3rem, 1.5vw, 1.55rem);
-      letter-spacing: -0.015em;
-    }
-
-    .db-card__footer {
-      border-top-color: var(--glass-line);
-      padding-top: 14px;
-    }
-
-    .db-card__update strong {
-      color: var(--color-red);
-    }
-
-    .db-card__arrow {
-      width: 38px;
-      height: 38px;
-      background: rgba(247,25,38,0.95) !important;
-      box-shadow: 0 9px 18px rgba(247,25,38,0.18);
-    }
-
-    .db-card:hover .db-card__arrow,
-    .db-card:focus-visible .db-card__arrow {
-      transform: translateX(3px);
-      box-shadow: 0 11px 22px rgba(247,25,38,0.22);
-    }
-
-    .section-divider {
-      background: rgba(130,54,38,0.12);
-    }
-
-    .global-footer {
-      width: min(calc(100% - 36px), 1400px);
-      margin: 12px auto 22px;
-      border-radius: 18px;
-      background: linear-gradient(145deg, rgba(255,255,255,0.64), rgba(255,245,238,0.40)) !important;
-      color: var(--glass-muted);
-    }
-
-    .global-footer strong {
-      color: var(--glass-ink);
-    }
-
-    @media (max-width: 900px) {
-      .topbar,
-      .hero,
-      .system-bar,
-      .global-footer {
-        width: min(calc(100% - 24px), 1400px);
-      }
-
-      .hero {
-        min-height: 520px;
-        padding: 42px 24px;
-        background-position: 0 0, center bottom !important;
-      }
-
-      .hero__inner {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    @media (max-width: 600px) {
-      .topbar {
-        margin-top: 12px;
-        padding: 12px;
-      }
-
-      .topbar__logo {
-        width: 96px;
-        height: 44px;
-        font-size: 24px;
-      }
-
-      .hero {
-        min-height: 560px;
-        padding: 34px 18px;
-      }
-
-      .hero__stats {
-        gap: 10px;
-      }
-
-      .hero__stat {
-        min-width: 132px;
-        padding: 12px 14px;
-      }
-
-      .system-bar__inner {
-        padding: 14px;
-      }
-
-      .dashboards-section {
-        padding: 28px 12px 24px;
-      }
-    }
-
-    /* Full-width refinement */
-    :root {
-      --page-gutter: clamp(12px, 1.65vw, 28px);
-      --page-max: 1920px;
-    }
-
-    .topbar,
-    .hero,
-    .system-bar,
-    .global-footer {
-      width: min(calc(100% - (var(--page-gutter) * 2)), var(--page-max)) !important;
-    }
-
-    .topbar {
-      margin-top: var(--page-gutter);
-    }
-
-    .hero {
-      min-height: clamp(500px, 57vh, 690px);
-      margin-top: 18px;
-      padding-inline: clamp(38px, 5.5vw, 118px);
-      background-size: auto, cover !important;
-      background-position: 0 0, right 68% !important;
-    }
-
-    .hero__inner,
-    .system-bar__inner,
-    .dashboards-section {
-      max-width: none !important;
-      width: 100%;
-    }
-
-    .hero__inner {
-      grid-template-columns: minmax(420px, 0.56fr) minmax(520px, 0.44fr);
-    }
-
-    .dashboards-section {
-      width: min(calc(100% - (var(--page-gutter) * 2)), var(--page-max));
-      margin-inline: auto;
-      padding-inline: clamp(18px, 2.2vw, 42px);
-    }
-
-    .dashboards-grid {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
-
-    .db-card {
-      min-height: 210px;
-    }
-
-    @media (min-width: 1500px) {
-      .hero__title {
-        max-width: 900px;
-        font-size: clamp(4.6rem, 5.2vw, 6.2rem);
-      }
-
-      .hero__sub {
-        max-width: 680px;
-        font-size: 19px;
-      }
-
-      .db-card {
-        min-height: 230px;
-      }
-    }
-
-    @media (max-width: 980px) {
-      .dashboards-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-
-      .hero__inner {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    @media (max-width: 640px) {
-      .dashboards-grid {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    /* Red topbar refinement */
-    .topbar {
-      background:
-        linear-gradient(145deg, rgba(255, 32, 44, 0.92), rgba(196, 0, 12, 0.88)) !important;
-      border-color: rgba(255,255,255,0.38) !important;
-      box-shadow: 0 18px 44px rgba(155, 0, 8, 0.20), inset 0 1px 0 rgba(255,255,255,0.34) !important;
-    }
-
-    .topbar::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      border-radius: inherit;
-      pointer-events: none;
-      background: linear-gradient(120deg, rgba(255,255,255,0.22), transparent 32% 74%, rgba(255,255,255,0.12));
-    }
-
-    .topbar__brand,
-    .topbar__meta {
-      position: relative;
-      z-index: 1;
-    }
-
-    .topbar__title {
-      color: #fff !important;
-    }
-
-    .topbar__subtitle,
-    .topbar__meta {
-      color: rgba(255,255,255,0.76) !important;
-    }
-
-    /* Original OXXO logo */
-    .topbar__logo {
-      width: 132px !important;
-      height: 68px !important;
-      padding: 0 !important;
-      border: 0 !important;
-      border-radius: 12px !important;
-      background: transparent !important;
-      box-shadow: none !important;
-      overflow: visible !important;
-    }
-
-    .topbar__logo img {
-      display: block;
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-      filter: drop-shadow(0 8px 16px rgba(80, 0, 4, 0.18));
-    }
-
-    @media (max-width: 600px) {
-      .topbar__logo {
-        width: 106px !important;
-        height: 56px !important;
-      }
-    }
-
-    /* Integrated hero section - not a card */
-    .hero {
-      width: 100% !important;
-      max-width: none !important;
-      margin: 18px 0 0 !important;
-      border-radius: 0 !important;
-      border-left: 0 !important;
-      border-right: 0 !important;
-      border-top: 1px solid rgba(255,255,255,0.28) !important;
-      border-bottom: 1px solid rgba(255,255,255,0.20) !important;
-      box-shadow: none !important;
-      min-height: clamp(520px, 60vh, 720px);
-      padding-inline: max(var(--page-gutter), clamp(38px, 5.5vw, 118px)) !important;
-    }
-
-    .hero__inner {
-      width: min(100%, var(--page-max)) !important;
-      margin-inline: auto !important;
-    }
-
-    @media (max-width: 900px) {
-      .hero {
-        width: 100% !important;
-        padding-inline: 24px !important;
-      }
-    }
-
-    @media (max-width: 600px) {
-      .hero {
-        padding-inline: 18px !important;
-      }
-    }
-
-    /* Header over hero */
-    .topbar {
-      position: absolute !important;
-      top: var(--page-gutter);
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 20;
-      margin-top: 0 !important;
-      background:
-        linear-gradient(145deg, rgba(247,25,38,0.72), rgba(130,0,8,0.58)) !important;
-    }
-
-    .hero {
-      margin-top: 0 !important;
-      padding-top: clamp(150px, 13vh, 190px) !important;
-    }
-
-    @media (max-width: 900px) {
-      .hero {
-        padding-top: 148px !important;
-      }
-    }
-
-    @media (max-width: 600px) {
-      .topbar {
-        top: 10px;
-      }
-
-      .hero {
-        padding-top: 140px !important;
-      }
-    }
-
-    /* More transparent header over hero */
-    .topbar {
-      min-height: 74px !important;
-      padding-block: 10px !important;
-      background:
-        linear-gradient(145deg, rgba(247,25,38,0.34), rgba(110,0,8,0.18)) !important;
-      border-color: rgba(255,255,255,0.30) !important;
-      box-shadow: 0 14px 34px rgba(80,0,6,0.10), inset 0 1px 0 rgba(255,255,255,0.24) !important;
-    }
-
-    .topbar::after {
-      background: linear-gradient(120deg, rgba(255,255,255,0.14), transparent 34% 78%, rgba(255,255,255,0.06)) !important;
-    }
-
-    .topbar__logo {
-      width: 118px !important;
-      height: 60px !important;
-    }
-
-    @media (max-width: 600px) {
-      .topbar__logo {
-        width: 96px !important;
-        height: 50px !important;
-      }
-    }
-
-    /* Esquinas mas cerradas */
-    .system-bar__inner,
-    .db-card,
-    .global-footer {
-      border-radius: 10px !important;
-    }
-
-    .topbar {
-      border-radius: 12px !important;
-    }
-
-    .hero__stat,
-    .db-card__icon {
-      border-radius: 10px !important;
-    }
-
-    /* Dashboard cards: industrial glass tiles */
-    .dashboards-section {
-      padding-top: clamp(18px, 2.4vw, 32px) !important;
-    }
-
-    .dashboards-section__header {
-      align-items: center !important;
-      padding-inline: 2px;
-      margin-bottom: 18px !important;
-    }
-
-    .section-label {
-      font-size: 11px !important;
-      letter-spacing: 0.22em !important;
-    }
-
-    .section-title {
-      font-size: clamp(2rem, 2.8vw, 3.35rem) !important;
-      line-height: 0.92 !important;
-      letter-spacing: -0.045em !important;
-    }
-
-    .dashboards-grid {
-      counter-reset: dashboard-card;
-      gap: clamp(16px, 1.55vw, 26px) !important;
-      align-items: stretch;
-    }
-
-    .db-card {
-      counter-increment: dashboard-card;
-      min-height: 248px !important;
-      padding: 24px 24px 22px !important;
-      display: grid !important;
-      grid-template-rows: auto auto minmax(42px, 1fr) auto;
-      gap: 16px !important;
-      border-radius: 12px !important;
-      isolation: isolate;
-      background:
-        linear-gradient(145deg, rgba(255,255,255,0.70), rgba(255,246,241,0.42)) !important;
-      border: 1px solid rgba(255,255,255,0.72) !important;
-      box-shadow: 0 10px 28px rgba(70,16,10,0.08), inset 0 1px 0 rgba(255,255,255,0.85) !important;
-      transition: transform 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease, background 0.22s ease !important;
-    }
-
-    .db-card::before {
-      width: 3px !important;
-      inset: 20px auto 20px 0 !important;
-      border-radius: 0 999px 999px 0 !important;
-      background: linear-gradient(180deg, #ff2734, #c9000b) !important;
-      box-shadow: 0 0 22px rgba(247,25,38,0.24) !important;
-    }
-
-    .db-card::after {
-      content: counter(dashboard-card, decimal-leading-zero) !important;
-      position: absolute !important;
-      right: 20px !important;
-      bottom: 15px !important;
-      width: auto !important;
-      height: auto !important;
-      top: auto !important;
-      left: auto !important;
-      border-radius: 0 !important;
-      background: transparent !important;
-      color: rgba(247,25,38,0.11);
-      font-family: var(--font-display);
-      font-size: clamp(3.7rem, 5vw, 6rem);
-      line-height: 0.8;
-      font-weight: 800;
-      letter-spacing: -0.08em;
-      opacity: 1 !important;
-      transform: none !important;
-      z-index: 0;
-      pointer-events: none;
-    }
-
-    .db-card:hover,
-    .db-card:focus-visible {
-      transform: translateY(-4px) !important;
-      border-color: rgba(247,25,38,0.28) !important;
-      box-shadow: 0 18px 38px rgba(70,16,10,0.14), inset 0 1px 0 rgba(255,255,255,0.92) !important;
-    }
-
-    .db-card__top {
-      align-items: center !important;
-    }
-
-    .db-card__icon {
-      width: 54px !important;
-      height: 54px !important;
-      border-radius: 12px !important;
-      background:
-        linear-gradient(145deg, rgba(255,255,255,0.88), rgba(255,236,229,0.64)) !important;
-      border: 1px solid rgba(255,255,255,0.82);
-      box-shadow: 0 8px 18px rgba(92,18,10,0.08), inset 0 1px 0 rgba(255,255,255,0.9) !important;
-      font-size: 22px !important;
-    }
-
-    .db-card__freq {
-      padding: 7px 11px !important;
-      border-radius: 999px !important;
-      background: rgba(247,25,38,0.075) !important;
-      color: #F71926 !important;
-      border: 1px solid rgba(247,25,38,0.14);
-      font-size: 10px !important;
-      letter-spacing: 0.12em !important;
-    }
-
-    .db-card__title {
-      max-width: 360px !important;
-      color: var(--glass-ink) !important;
-      font-size: clamp(1.55rem, 2.1vw, 2.25rem) !important;
-      line-height: 0.98 !important;
-      letter-spacing: -0.04em !important;
-    }
-
-    .db-card__desc {
-      max-width: 38ch;
-      color: var(--glass-muted) !important;
-      font-size: 14px !important;
-      line-height: 1.38 !important;
-    }
-
-    .db-card__footer {
-      align-self: end;
-      padding-top: 15px !important;
-      border-top: 1px solid rgba(130,54,38,0.14) !important;
-    }
-
-    .db-card__update {
-      font-size: 12px !important;
-      color: var(--glass-muted) !important;
-    }
-
-    .db-card__update strong {
-      display: inline-block;
-      margin-top: 2px;
-      color: #F71926 !important;
-      font-size: 13px;
-    }
-
-    .db-card__arrow {
-      width: 42px !important;
-      height: 42px !important;
-      border-radius: 50% !important;
-      background: #f71926 !important;
-      box-shadow: 0 10px 20px rgba(247,25,38,0.24) !important;
-    }
-
-    .db-card:hover .db-card__arrow,
-    .db-card:focus-visible .db-card__arrow {
-      transform: translateX(4px) !important;
-    }
-
-    @media (max-width: 980px) {
-      .db-card {
-        min-height: 230px !important;
-      }
-    }
-
-    @media (max-width: 640px) {
-      .db-card {
-        min-height: 220px !important;
-        padding: 20px !important;
-      }
-
-      .db-card::after {
-        right: 16px !important;
-        top: 18px !important;
-        bottom: auto !important;
-        font-size: 4.2rem !important;
-        color: rgba(247,25,38,0.075) !important;
-      }
-
-      .db-card__title {
-        font-size: 1.72rem !important;
-      }
-    }
-
-    /* Executive overview */
-    .executive-overview {
-      width: 100%;
-      margin: 0;
-      padding: 18px 28px 6px;
-    }
-
-    .executive-shell {
-      position: relative;
-      overflow: hidden;
-      width: 100%;
-      border-radius: 22px;
-      border: 1px solid rgba(247,25,38,0.14);
-      background:
-        radial-gradient(circle at 9% 0%, rgba(242,165,43,0.20), transparent 26%),
-        radial-gradient(circle at 92% 12%, rgba(247,25,38,0.12), transparent 30%),
-        linear-gradient(145deg, rgba(255,255,255,0.90), rgba(255,248,242,0.72));
-      box-shadow: 0 20px 48px rgba(112,45,28,0.11), inset 0 1px 0 rgba(255,255,255,0.86);
-      padding: clamp(14px, 1.6vw, 20px) clamp(18px, 2vw, 26px);
-    }
-
-    .executive-shell::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background-image: linear-gradient(135deg, rgba(255,255,255,0.34) 1px, transparent 1px);
-      background-size: 42px 42px;
-      opacity: 0.22;
-      pointer-events: none;
-    }
-
-    .executive-shell > * {
-      position: relative;
-      z-index: 1;
-    }
-
-    .executive-head {
-      display: flex;
-      align-items: flex-end;
-      justify-content: space-between;
-      gap: 18px;
-      margin-bottom: 12px;
-    }
-
-    .executive-kicker {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 4px;
-      font-size: 11px;
-      font-weight: 900;
-      letter-spacing: 1.8px;
-      text-transform: uppercase;
-      color: #a13a28;
-    }
-
-    .executive-kicker::before {
-      content: '';
-      width: 9px;
-      height: 9px;
-      border-radius: 50%;
-      background: #f71926;
-      box-shadow: 0 0 0 6px rgba(247,25,38,0.10);
-    }
-
-    .executive-title {
-      font-family: var(--font-display);
-      font-size: clamp(1.5rem, 2.1vw, 2.1rem);
-      line-height: .95;
-      letter-spacing: 0;
-      color: #211510;
-      margin: 0;
-    }
-
-    .executive-subtitle {
-      margin-top: 6px;
-      color: #78655d;
-      font-size: 13px;
-      line-height: 1.4;
-      max-width: 760px;
-    }
-
-    .executive-chip {
-      white-space: nowrap;
-      border-radius: 999px;
-      border: 1px solid rgba(247,25,38,0.16);
-      background: rgba(255,255,255,0.72);
-      color: #f71926;
-      padding: 10px 14px;
-      font-size: 12px;
-      font-weight: 900;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,.84);
-    }
-
-    .executive-layout {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 18px;
-      align-items: stretch;
-    }
-
-    .exec-left {
-      min-height: 100%;
-      display: grid;
-      grid-template-rows: 1fr;
-    }
-
-    .exec-metric-grid {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      grid-auto-rows: 1fr;
-      gap: 14px;
-    }
-
-    .exec-metric {
-      border-radius: 20px;
-      border: 1px solid rgba(130,54,38,0.12);
-      background: linear-gradient(145deg, rgba(255,255,255,0.82), rgba(255,250,245,0.62));
-      box-shadow: 0 16px 36px rgba(112,45,28,0.08), inset 0 1px 0 rgba(255,255,255,0.84);
-    }
-
-    .exec-metric {
-      min-height: 84px;
-      padding: 12px 16px;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      gap: 4px;
-      overflow: hidden;
-      position: relative;
-    }
-
-    .exec-metric{ transition: transform .16s ease, box-shadow .2s ease; }
-    .exec-metric:hover{ transform: translateY(-3px); box-shadow: 0 22px 44px rgba(112,45,28,0.14), inset 0 1px 0 rgba(255,255,255,0.84); }
-    .exec-metric::after {
-      content: attr(data-code);
-      position: absolute;
-      right: 14px;
-      bottom: -14px;
-      font-family: var(--font-display);
-      font-size: 3.6rem;
-      font-weight: 900;
-      line-height: 1;
-      color: rgba(247,25,38,0.06);
-    }
-
-    .exec-metric__label {
-      font-size: 10px;
-      font-weight: 900;
-      letter-spacing: 1.4px;
-      text-transform: uppercase;
-      color: #9c786d;
-    }
-
-    .exec-metric__value {
-      font-family: var(--font-display);
-      font-size: clamp(1.5rem, 2.2vw, 1.9rem);
-      line-height: .92;
-      color: #211510;
-      font-weight: 900;
-    }
-
-    .exec-metric__note {
-      font-size: 12px;
-      font-weight: 800;
-      color: #f71926;
-      line-height: 1.32;
-    }
-
-    .data-health {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 10px;
-    }
-
-    .health-pill {
-      border-radius: 16px;
-      background: rgba(255,255,255,0.58);
-      border: 1px solid rgba(130,54,38,0.10);
-      padding: 12px;
-    }
-
-    .health-pill span {
-      display: block;
-      color: #9c786d;
-      font-size: 10px;
-      font-weight: 900;
-      letter-spacing: 1.2px;
-      text-transform: uppercase;
-    }
-
-    .health-pill strong {
-      display: block;
-      margin-top: 4px;
-      color: #211510;
-      font-size: 14px;
-      font-weight: 900;
-    }
-
-    .exec-action-strip {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 10px;
-      min-height: 118px;
-    }
-
-    .exec-action {
-      border-radius: 18px;
-      border: 1px solid rgba(130,54,38,0.10);
-      background:
-        linear-gradient(145deg, rgba(255,255,255,0.70), rgba(255,247,240,0.52));
-      padding: 14px;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.78);
-    }
-
-    .exec-action span {
-      color: #9c786d;
-      font-size: 10px;
-      font-weight: 900;
-      letter-spacing: 1.2px;
-      text-transform: uppercase;
-    }
-
-    .exec-action strong {
-      margin-top: 8px;
-      display: block;
-      color: #211510;
-      font-size: 15px;
-      line-height: 1.16;
-    }
-
-    .exec-action em {
-      margin-top: 8px;
-      color: #f71926;
-      font-size: 12px;
-      font-style: normal;
-      font-weight: 800;
-      line-height: 1.25;
-    }
-
-    @media (max-width: 1100px) {
-      .executive-layout {
-        grid-template-columns: 1fr;
-      }
-
-      .exec-metric-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-
-      .exec-action-strip {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-      }
-    }
-
-    @media (max-width: 700px) {
-      .executive-overview {
-        padding: 18px 14px 4px;
-      }
-
-      .executive-head {
-        align-items: flex-start;
-        flex-direction: column;
-      }
-
-      .executive-chip {
-        white-space: normal;
-      }
-
-      .exec-metric-grid,
-      .data-health,
-      .exec-action-strip {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    /* ══ Acabado premium ══ */
-
-    /* Iconos monolinea en lugar de emojis: consistentes en todos los sistemas
-       y alineados a la paleta de marca. */
-    .db-card__icon svg {
-      width: 24px;
-      height: 24px;
-      stroke: #F71926;
-      fill: none;
-      stroke-width: 1.9;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-    }
-
-    /* El numero de fondo vivia sobre la flecha roja del footer y se leia como
-       suciedad. Se mueve al costado derecho, a la altura de la descripcion. */
-    .db-card::after {
-      top: 50% !important;
-      bottom: auto !important;
-      right: 18px !important;
-      transform: translateY(-52%) !important;
-      font-size: clamp(3.2rem, 4vw, 4.6rem) !important;
-      color: rgba(247,25,38,0.062) !important;
-    }
-
-    /* Reserva dos lineas de titulo para que las descripciones de todas las
-       tarjetas de una fila arranquen a la misma altura. */
-    .db-card__title {
-      min-height: 1.96em;
-    }
-
-    /* Numeracion continua 01..07 en lugar de reiniciar en cada seccion. */
-    .dashboards-grid { counter-reset: none !important; }
-    .dashboards-section { counter-reset: dashboard-card; }
-
-    /* "Sin fecha registrada" no es una alerta: el rojo se reserva para eso. */
-    .db-card__update strong.is-empty {
-      color: var(--glass-muted) !important;
-      font-weight: 700;
-    }
-
-    .exec-metric__note.is-neutral {
-      color: #6f8f77 !important;
-    }
-
-    /* Velo superior del hero: difumina el remate de la imagen por detras del
-       header en lugar de dejarlo cortado a media letra. */
-    .hero::after {
-      display: block !important;
-      content: '';
-      position: absolute;
-      inset: 0 0 auto;
-      height: clamp(190px, 19vh, 280px);
-      background: linear-gradient(180deg, rgba(126,0,7,0.94) 0%, rgba(126,0,7,0.74) 34%, rgba(126,0,7,0.30) 66%, rgba(126,0,7,0) 100%);
-      animation: none !important;
-      transform: none !important;
-      mix-blend-mode: normal !important;
-      pointer-events: none;
-      z-index: 0;
-    }
-
-    /* La seccion semanal tiene 4 tarjetas: en 3 columnas quedaba una huerfana. */
-    #grid-semanales {
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-    }
-
-    /* Jerarquia tipografica: menos pesos extremos en las etiquetas pequenas. */
-    .db-card__freq,
-    .exec-metric__label,
-    .exec-metric__note,
-    .health-pill span,
-    .exec-action span {
-      font-weight: 700 !important;
-    }
-
-    @media (max-width: 1149px) {
-      #grid-semanales {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-    }
-
-    @media (max-width: 640px) {
-      #grid-semanales {
-        grid-template-columns: 1fr;
-      }
-
-      /* En movil el numero decorativo chocaba con el chip de frecuencia. */
-      .db-card::after {
-        display: none !important;
-      }
-    }
-
-    /* ── Selector de áreas (RH / Comercial / Administrativo) ─ */
-    .folder-tabs {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      width: min(calc(100% - (var(--page-gutter) * 2)), 820px);
-      margin: 18px auto 0;
-      padding: 6px;
-      border: 1px solid rgba(94, 73, 67, 0.10);
-      border-radius: 18px;
-      background: rgba(255, 255, 255, 0.72);
-      box-shadow: 0 10px 28px rgba(76, 47, 38, 0.08), inset 0 1px 0 #fff;
-    }
-
-    .folder-tab {
-      appearance: none;
-      position: relative;
-      isolation: isolate;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      flex: 1 1 0;
-      min-height: 52px;
-      border: 1px solid transparent;
-      border-radius: 13px;
-      cursor: pointer;
-      font-family: var(--font-display);
-      font-weight: 800;
-      font-size: 13px;
-      letter-spacing: 0.045em;
-      text-transform: uppercase;
-      color: #625753;
-      background: transparent;
-      padding: 12px 22px;
-      transition: color .2s ease, background .2s ease, border-color .2s ease,
-                  box-shadow .2s ease, transform .2s ease;
-    }
-
-    .folder-tab:hover {
-      color: var(--tab-color, var(--color-dark));
-      background: rgba(18, 96, 143, 0.06);
-      background: color-mix(in srgb, var(--tab-color, var(--color-dark)) 7%, transparent);
-    }
-
-    .folder-tab.is-active {
-      color: #fff;
-      border-color: rgba(255, 255, 255, 0.24);
-      background: var(--tab-color);
-      background: linear-gradient(135deg,
-        color-mix(in srgb, var(--tab-color) 84%, #fff) 0%,
-        var(--tab-color) 55%,
-        color-mix(in srgb, var(--tab-color) 74%, #111) 100%);
-      box-shadow: 0 8px 18px rgba(76, 47, 38, 0.16),
-                  inset 0 1px 0 rgba(255, 255, 255, 0.24);
-      box-shadow: 0 8px 18px color-mix(in srgb, var(--tab-color) 24%, transparent),
-                  inset 0 1px 0 rgba(255, 255, 255, 0.24);
-    }
-
-    .folder-tab:active {
-      transform: scale(.985);
-    }
-
-    .folder-tab:focus-visible {
-      outline: 3px solid rgba(18, 96, 143, 0.20);
-      outline: 3px solid color-mix(in srgb, var(--tab-color) 28%, transparent);
-      outline-offset: 2px;
-    }
-
-    .folder-tab__icon {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 30px;
-      height: 30px;
-      flex: 0 0 30px;
-      border-radius: 9px;
-      color: var(--tab-color);
-      background: rgba(18, 96, 143, 0.09);
-      background: color-mix(in srgb, var(--tab-color) 11%, #fff);
-      transition: color .2s ease, background .2s ease;
-    }
-
-    .folder-tab__icon svg {
-      width: 17px;
-      height: 17px;
-      fill: none;
-      stroke: currentColor;
-      stroke-width: 1.9;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-    }
-
-    .folder-tab.is-active .folder-tab__icon {
-      color: #fff;
-      background: rgba(255, 255, 255, 0.17);
-    }
-
-    .folder-tab__label {
-      line-height: 1;
-    }
-
-    /* !important: el panel de Mi Dashboard/Mi Tienda trae su propio
-       style="display:flex" inline (mayor especificidad que cualquier regla
-       de hoja de estilo), asi que sin esto [hidden] no lo ocultaba. */
-    .folder-panel[hidden] {
-      display: none !important;
-    }
-
-    .folder-empty {
-      max-width: var(--page-max);
-      margin: 0 auto;
-      padding: 64px clamp(18px, 2.2vw, 42px);
-      text-align: center;
-      color: var(--color-gray);
-    }
-
-    .folder-empty__icon {
-      width: 56px;
-      height: 56px;
-      margin: 0 auto 18px;
-      border-radius: 16px;
-      background: rgba(18, 96, 143, 0.12);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .folder-empty__icon svg {
-      width: 28px;
-      height: 28px;
-      stroke: var(--color-blue);
-      fill: none;
-      stroke-width: 1.9;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-    }
-
-    .folder-empty__title {
-      font-family: var(--font-display);
-      font-size: 1.4rem;
-      font-weight: 800;
-      color: var(--color-dark);
-      margin-bottom: 8px;
-    }
-
-    .folder-empty__text {
-      font-size: 14px;
-      max-width: 420px;
-      margin: 0 auto;
-    }
-
-    @media (max-width: 640px) {
-      .folder-tabs {
-        width: calc(100% - 28px);
-        margin-top: 12px;
-        gap: 5px;
-        border-radius: 16px;
-      }
-
-      .folder-tab {
-        min-height: 48px;
-        gap: 5px;
-        padding: 8px 6px;
-        font-size: 9px;
-        letter-spacing: .02em;
-      }
-
-      .folder-tab__icon {
-        width: 24px;
-        height: 24px;
-        flex-basis: 24px;
-      }
-    }
-
-    /* ── Tema Comercial ───────────────────────────────────────
-       La pestaña activa no solo cambia el contenido: convierte toda la
-       portada en un entorno azul y conserva intacta la identidad de RH. */
-    body {
-      transition: background-color .32s ease, color .32s ease;
-    }
-
-    body[data-area="comercial"] {
-      --color-red: #12608F;
-      --color-yellow: #8ED8FF;
-      --color-orange: #2C91C5;
-      --color-green: #2583B5;
-      --semaforo-verde: #1676A8;
-      background:
-        radial-gradient(circle at 84% 20%, rgba(38, 143, 195, .10), transparent 28%),
-        linear-gradient(180deg, #EDF7FC 0%, #F7FBFD 42%, #EEF6FA 100%) !important;
-    }
-
-    body[data-area="comercial"] .topbar {
-      background: linear-gradient(145deg, rgba(22, 113, 164, .48), rgba(7, 61, 99, .30)) !important;
-      border-color: rgba(194, 235, 255, .38) !important;
-      box-shadow: 0 14px 36px rgba(4, 52, 84, .18), inset 0 1px 0 rgba(255,255,255,.28) !important;
-    }
-
-    body[data-area="comercial"] .topbar__logo img {
-      filter: drop-shadow(0 8px 18px rgba(2, 42, 70, .24));
-    }
-
-    body[data-area="comercial"] .hero {
-      background-color: #063D63 !important;
-      background-image:
-        linear-gradient(90deg, rgba(8, 75, 116, .99) 0%, rgba(14, 104, 153, .94) 38%, rgba(19, 122, 174, .56) 66%, rgba(9, 65, 102, .20) 100%),
-        url('assets/orgulloxxos-hero.jpg') !important;
-      border-color: rgba(169, 224, 251, .30) !important;
-    }
-
-    body[data-area="comercial"] .hero::after {
-      background: linear-gradient(180deg, rgba(3, 51, 83, .96) 0%, rgba(4, 61, 97, .76) 36%, rgba(7, 77, 119, .34) 68%, rgba(7, 77, 119, 0) 100%) !important;
-    }
-
-    body[data-area="comercial"] .hero__badge {
-      color: #D9F4FF !important;
-      background: rgba(142, 216, 255, .15) !important;
-      border-color: rgba(183, 232, 255, .48) !important;
-    }
-
-    body[data-area="comercial"] .hero__title span,
-    body[data-area="comercial"] .hero__stat-value {
-      color: #9DDEFF !important;
-    }
-
-    body[data-area="comercial"] .hero__stat {
-      border-color: rgba(171, 226, 255, .24) !important;
-      background: rgba(5, 64, 100, .28) !important;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,.12), 0 12px 28px rgba(0, 39, 66, .12) !important;
-    }
-
-    body[data-area="comercial"] .system-bar {
-      border-color: rgba(18, 96, 143, .14) !important;
-      background: rgba(245, 251, 254, .88) !important;
-    }
-
-    body[data-area="comercial"] .sys-status,
-    body[data-area="comercial"] .system-bar__right {
-      color: #12608F !important;
-    }
-
-    body[data-area="comercial"] .sys-status__dot {
-      background: #2B9ED3 !important;
-      box-shadow: 0 0 0 5px rgba(43, 158, 211, .12);
-    }
-
-    body[data-area="comercial"] .executive-shell {
-      border-color: rgba(18, 96, 143, .18) !important;
-      background:
-        radial-gradient(circle at 9% 0%, rgba(78, 179, 226, .20), transparent 27%),
-        radial-gradient(circle at 92% 12%, rgba(18, 96, 143, .13), transparent 30%),
-        linear-gradient(145deg, rgba(255,255,255,.92), rgba(237,248,253,.78)) !important;
-      box-shadow: 0 20px 48px rgba(11, 74, 111, .12), inset 0 1px 0 rgba(255,255,255,.88) !important;
-    }
-
-    body[data-area="comercial"] .executive-kicker,
-    body[data-area="comercial"] .executive-chip,
-    body[data-area="comercial"] .exec-metric__note,
-    body[data-area="comercial"] .exec-metric__note.is-neutral {
-      color: #12608F !important;
-    }
-
-    body[data-area="comercial"] .executive-kicker::before {
-      background: #218DBF !important;
-      box-shadow: 0 0 0 6px rgba(33, 141, 191, .11) !important;
-    }
-
-    body[data-area="comercial"] .executive-chip,
-    body[data-area="comercial"] .exec-metric {
-      border-color: rgba(18, 96, 143, .15) !important;
-    }
-
-    body[data-area="comercial"] .exec-metric {
-      background: linear-gradient(145deg, rgba(255,255,255,.88), rgba(237,248,253,.72)) !important;
-      box-shadow: 0 16px 36px rgba(9, 69, 104, .08), inset 0 1px 0 rgba(255,255,255,.88) !important;
-    }
-
-    body[data-area="comercial"] .exec-metric:hover {
-      box-shadow: 0 22px 44px rgba(9, 69, 104, .15), inset 0 1px 0 rgba(255,255,255,.90) !important;
-    }
-
-    body[data-area="comercial"] .exec-metric::after {
-      color: rgba(18, 96, 143, .07) !important;
-    }
-
-    body[data-area="comercial"] .exec-metric__label {
-      color: #638294 !important;
-    }
-
-    body[data-area="comercial"] .folder-tabs {
-      border-color: rgba(18, 96, 143, .16);
-      background: rgba(247, 252, 255, .82);
-      box-shadow: 0 12px 30px rgba(10, 73, 111, .11), inset 0 1px 0 #fff;
-    }
-
-    body[data-area="comercial"] .folder-tab:not(.is-active) {
-      --tab-color: #527A93 !important;
-      color: #527183;
-    }
-
-    body[data-area="comercial"] .section-divider {
-      border-color: rgba(18, 96, 143, .16) !important;
-    }
-
-    body[data-area="comercial"] #panel-comercial .db-card {
-      border-color: rgba(18, 96, 143, .18) !important;
-      background: linear-gradient(145deg, rgba(255,255,255,.82), rgba(231,246,253,.60)) !important;
-      box-shadow: 0 18px 42px rgba(9, 71, 108, .11) !important;
-    }
-
-    body[data-area="comercial"] #panel-comercial .db-card:hover,
-    body[data-area="comercial"] #panel-comercial .db-card:focus-visible {
-      border-color: rgba(18, 96, 143, .34) !important;
-      box-shadow: 0 22px 46px rgba(9, 71, 108, .17), inset 0 1px 0 rgba(255,255,255,.92) !important;
-    }
-
-    body[data-area="comercial"] #panel-comercial .db-card::before {
-      background: linear-gradient(180deg, #39A9D8, #12608F) !important;
-      box-shadow: 0 0 22px rgba(18, 96, 143, .25) !important;
-    }
-
-    body[data-area="comercial"] #panel-comercial .db-card::after {
-      color: rgba(18, 96, 143, .08) !important;
-    }
-
-    body[data-area="comercial"] #panel-comercial .db-card__icon {
-      background: linear-gradient(145deg, rgba(255,255,255,.92), rgba(222,243,252,.76)) !important;
-      border-color: rgba(18, 96, 143, .12) !important;
-      box-shadow: 0 8px 18px rgba(9, 69, 104, .10), inset 0 1px 0 rgba(255,255,255,.92) !important;
-    }
-
-    body[data-area="comercial"] #panel-comercial .db-card__icon svg {
-      stroke: #12608F !important;
-    }
-
-    body[data-area="comercial"] #panel-comercial .db-card__freq {
-      color: #12608F !important;
-      background: rgba(18, 96, 143, .09) !important;
-      border-color: rgba(18, 96, 143, .18) !important;
-      box-shadow: inset 0 0 0 1px rgba(18, 96, 143, .06) !important;
-    }
-
-    body[data-area="comercial"] #panel-comercial .db-card__footer {
-      border-color: rgba(18, 96, 143, .14) !important;
-    }
-
-    body[data-area="comercial"] #panel-comercial .db-card__arrow {
-      background: linear-gradient(135deg, #248FC2, #0B517E) !important;
-      box-shadow: 0 10px 22px rgba(18, 96, 143, .26) !important;
-    }
-
-    body[data-area="comercial"] .global-footer {
-      color: #577487 !important;
-      border-color: rgba(18, 96, 143, .14) !important;
-      background: rgba(245, 251, 254, .78) !important;
-      box-shadow: 0 12px 30px rgba(9, 70, 105, .07) !important;
-    }
-
-    body[data-area="comercial"] .global-footer strong {
-      color: #12608F !important;
-    }
-
-    /* ── Tema Administrativo ────────────────────────────────── */
-    body[data-area="administrativo"] {
-      --color-red: #5B4B8A;
-      --color-yellow: #D8C8FF;
-      --color-orange: #8669BF;
-      --color-green: #6E5BA6;
-      --semaforo-verde: #6753A0;
-      background:
-        radial-gradient(circle at 84% 20%, rgba(115, 91, 171, .11), transparent 29%),
-        linear-gradient(180deg, #F3F0FA 0%, #FBFAFD 43%, #F1EEF8 100%) !important;
-    }
-
-    body[data-area="administrativo"] .topbar {
-      background: linear-gradient(145deg, rgba(91, 75, 138, .52), rgba(48, 39, 82, .34)) !important;
-      border-color: rgba(226, 217, 250, .42) !important;
-      box-shadow: 0 14px 36px rgba(53, 42, 87, .18), inset 0 1px 0 rgba(255,255,255,.28) !important;
-    }
-
-    body[data-area="administrativo"] .hero {
-      background-color: #33284F !important;
-      background-image:
-        linear-gradient(90deg, rgba(54, 42, 84, .99) 0%, rgba(82, 64, 127, .94) 39%, rgba(112, 87, 168, .58) 67%, rgba(49, 38, 77, .23) 100%),
-        url('assets/orgulloxxos-hero.jpg') !important;
-      border-color: rgba(219, 204, 255, .30) !important;
-    }
-
-    body[data-area="administrativo"] .hero::after {
-      background: linear-gradient(180deg, rgba(46, 36, 72, .96) 0%, rgba(64, 49, 99, .76) 36%, rgba(90, 69, 137, .34) 68%, rgba(90, 69, 137, 0) 100%) !important;
-    }
-
-    body[data-area="administrativo"] .hero__badge {
-      color: #F1EAFF !important;
-      background: rgba(216, 200, 255, .14) !important;
-      border-color: rgba(229, 219, 255, .46) !important;
-    }
-
-    body[data-area="administrativo"] .hero__title span,
-    body[data-area="administrativo"] .hero__stat-value {
-      color: #D9C9FF !important;
-    }
-
-    body[data-area="administrativo"] .hero__stat {
-      border-color: rgba(224, 211, 255, .24) !important;
-      background: rgba(55, 42, 86, .28) !important;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,.12), 0 12px 28px rgba(35, 27, 57, .13) !important;
-    }
-
-    body[data-area="administrativo"] .system-bar {
-      border-color: rgba(91, 75, 138, .15) !important;
-      background: rgba(250, 248, 253, .90) !important;
-    }
-
-    body[data-area="administrativo"] .sys-status,
-    body[data-area="administrativo"] .system-bar__right,
-    body[data-area="administrativo"] .executive-kicker,
-    body[data-area="administrativo"] .executive-chip,
-    body[data-area="administrativo"] .exec-metric__note,
-    body[data-area="administrativo"] .exec-metric__note.is-neutral {
-      color: #5B4B8A !important;
-    }
-
-    body[data-area="administrativo"] .sys-status__dot,
-    body[data-area="administrativo"] .executive-kicker::before {
-      background: #8064BD !important;
-      box-shadow: 0 0 0 5px rgba(128, 100, 189, .12) !important;
-    }
-
-    body[data-area="administrativo"] .executive-shell {
-      border-color: rgba(91, 75, 138, .17) !important;
-      background:
-        radial-gradient(circle at 9% 0%, rgba(155, 129, 213, .18), transparent 27%),
-        radial-gradient(circle at 92% 12%, rgba(91, 75, 138, .12), transparent 30%),
-        linear-gradient(145deg, rgba(255,255,255,.93), rgba(244,240,251,.80)) !important;
-      box-shadow: 0 20px 48px rgba(65, 50, 101, .12), inset 0 1px 0 rgba(255,255,255,.88) !important;
-    }
-
-    body[data-area="administrativo"] .executive-chip,
-    body[data-area="administrativo"] .exec-metric {
-      border-color: rgba(91, 75, 138, .15) !important;
-    }
-
-    body[data-area="administrativo"] .exec-metric {
-      background: linear-gradient(145deg, rgba(255,255,255,.90), rgba(243,239,250,.74)) !important;
-      box-shadow: 0 16px 36px rgba(61, 47, 96, .08), inset 0 1px 0 rgba(255,255,255,.88) !important;
-    }
-
-    body[data-area="administrativo"] .exec-metric::after {
-      color: rgba(91, 75, 138, .07) !important;
-    }
-
-    body[data-area="administrativo"] .exec-metric__label {
-      color: #756B86 !important;
-    }
-
-    body[data-area="administrativo"] .folder-tabs {
-      border-color: rgba(91, 75, 138, .16);
-      background: rgba(252, 250, 255, .84);
-      box-shadow: 0 12px 30px rgba(60, 47, 93, .11), inset 0 1px 0 #fff;
-    }
-
-    body[data-area="administrativo"] .folder-tab:not(.is-active) {
-      --tab-color: #746B86 !important;
-      color: #716A7C;
-    }
-
-    body[data-area="administrativo"] #panel-administrativo .section-label {
-      color: #5B4B8A;
-    }
-
-    body[data-area="administrativo"] #panel-administrativo .db-card {
-      --card-accent: #5B4B8A !important;
-      --card-icon-bg: rgba(91, 75, 138, .11) !important;
-      --card-freq-bg: rgba(91, 75, 138, .10) !important;
-      --card-freq-color: #5B4B8A !important;
-      border-color: rgba(91, 75, 138, .18) !important;
-      background: linear-gradient(145deg, rgba(255,255,255,.95), rgba(244,240,251,.84)) !important;
-      box-shadow: 0 18px 42px rgba(62, 48, 96, .10), inset 0 1px 0 rgba(255,255,255,.92) !important;
-    }
-
-    body[data-area="administrativo"] #panel-administrativo .db-card:hover,
-    body[data-area="administrativo"] #panel-administrativo .db-card:focus-visible {
-      border-color: rgba(91, 75, 138, .36) !important;
-      box-shadow: 0 24px 52px rgba(62, 48, 96, .17), inset 0 1px 0 rgba(255,255,255,.94) !important;
-    }
-
-    body[data-area="administrativo"] #panel-administrativo .db-card::before {
-      background: linear-gradient(180deg, #9C83D5, #5B4B8A) !important;
-      box-shadow: 0 0 22px rgba(91, 75, 138, .25) !important;
-    }
-
-    body[data-area="administrativo"] #panel-administrativo .db-card::after {
-      color: rgba(91, 75, 138, .08) !important;
-    }
-
-    body[data-area="administrativo"] #panel-administrativo .db-card__icon {
-      color: #5B4B8A !important;
-      background: rgba(91, 75, 138, .11) !important;
-      border-color: rgba(91, 75, 138, .13) !important;
-    }
-
-    body[data-area="administrativo"] #panel-administrativo .db-card__icon svg {
-      stroke: #5B4B8A !important;
-    }
-
-    body[data-area="administrativo"] #panel-administrativo .db-card__freq {
-      color: #5B4B8A !important;
-      background: rgba(91, 75, 138, .09) !important;
-      border-color: rgba(91, 75, 138, .17) !important;
-    }
-
-    body[data-area="administrativo"] #panel-administrativo .db-card__footer {
-      border-color: rgba(91, 75, 138, .14) !important;
-    }
-
-    body[data-area="administrativo"] #panel-administrativo .db-card__arrow {
-      background: linear-gradient(135deg, #8064BD, #4B3C79) !important;
-      box-shadow: 0 10px 22px rgba(91, 75, 138, .28) !important;
-    }
-
-    body[data-area="administrativo"] .global-footer {
-      color: #6E667A !important;
-      border-color: rgba(91, 75, 138, .14) !important;
-      background: rgba(250, 248, 253, .80) !important;
-      box-shadow: 0 12px 30px rgba(59, 46, 92, .07) !important;
-    }
-
-    body[data-area="administrativo"] .global-footer strong {
-      color: #5B4B8A !important;
-    }
-
-    @media (prefers-reduced-motion: no-preference) {
-      .topbar,
-      .hero,
-      .hero::after,
-      .hero__badge,
-      .hero__stat,
-      .system-bar,
-      .executive-shell,
-      .exec-metric,
-      .folder-tabs,
-      .global-footer {
-        transition: background .35s ease, border-color .35s ease, color .35s ease, box-shadow .35s ease;
-      }
-    }
-
-    /* Liquid glass sólo en los controles de cambio de área. Las tarjetas ya
-       son enlaces completos, así que no necesitan un segundo botón de abrir. */
-    .folder-tabs {
-      background: rgba(255,255,255,.52);
-      border-color: rgba(255,255,255,.82);
-      backdrop-filter: blur(18px) saturate(155%);
-    }
-
-    .folder-tab.is-active {
-      border-color: rgba(255,255,255,.48);
-      box-shadow:
-        inset 0 1px 0 rgba(255,255,255,.42),
-        0 2px 6px color-mix(in srgb, var(--tab-color) 22%, transparent),
-        0 11px 25px color-mix(in srgb, var(--tab-color) 27%, transparent);
-    }
-
-    .db-card__arrow { display: none !important; }
-
-    .db-card__footer { justify-content: flex-start; }
-
-    /* Cabecera compacta para teléfono: separa visualmente la marca, el acceso
-       al panel y la hora sin ocultar ninguna de las tres piezas. */
-    @media (max-width: 600px) {
-      body > .topbar {
-        gap: 7px !important;
-        padding: 9px 10px !important;
-      }
-
-      body > .topbar .topbar__brand { gap: 8px !important; min-width: 0; }
-      body > .topbar .topbar__logo { width: 76px !important; height: 42px !important; }
-      body > .topbar .topbar__title { font-size: 20px !important; line-height: .95 !important; }
-      body > .topbar .topbar__subtitle { display: none !important; }
-      body > .topbar .topbar__meta { flex: 0 0 auto; gap: 5px !important; }
-      body > .topbar .topbar__back {
-        min-height: 34px;
-        padding: 7px 8px !important;
-        font-size: 10px !important;
-        white-space: nowrap;
-      }
-      body > .topbar #topbar-time {
-        width: 34px;
-        font-size: 9px !important;
-        line-height: 1.25;
-        text-align: center;
-      }
-    }
-  </style>
-<link rel="stylesheet" href="css/home-navigation.css?v=515942f1">
-<link rel="stylesheet" href="css/index-apple-live.css?v=515942f1">
+<script>(function(){try{if(localStorage.getItem('oxxo_site_unlocked')!=='1')document.documentElement.classList.add('oxxo-locked');}catch(e){}})();</script>
+<style>html.oxxo-locked{background:#2D0B0C}html.oxxo-locked body>*{visibility:hidden!important}#oxxo-lock-overlay{visibility:visible!important}</style>
+<script defer src="js/site-lock.js?v=515942f1"></script>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Torre de Control · Dashboards Ats · Plaza Oaxaca</title>
+<meta name="description" content="Dashboards ATS Plaza Oaxaca-ByPamsb" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800&display=swap" rel="stylesheet" />
+<style>
+/* ── Tokens ─────────────────────────────────────────── */
+:root{
+  --red:#f71926; --red-dk:#c2101b; --red-press:#e30f1c; --amber:#f2a52b;
+  --ink:#1d1b19; --ink-2:#4a4540; --ink-3:#6b6560; --ink-4:#8a837d;
+  --cream:#fff5ea; --cream-2:#f6e7da;
+  --green:#1e8a4c; --green-ui:#26744a; --blue-gray:#577080;
+  --hairline:rgba(0,0,0,.10); --rule:rgba(130,54,38,.16);
+  --glass:linear-gradient(145deg,rgba(255,255,255,.52),rgba(255,247,240,.30));
+  --glass-br:rgba(255,255,255,.55);
+  --shadow-glass:0 6px 18px rgba(112,45,28,.08),0 1px 2px rgba(112,45,28,.05),inset 0 1px 1px rgba(255,255,255,.92),inset 0 -1px 1px rgba(255,255,255,.45);
+  --shadow-card:0 0 0 .5px rgba(0,0,0,.04),0 1px 2px rgba(30,20,15,.06),0 8px 20px rgba(30,20,15,.08);
+  --shadow-card-h:0 0 0 .5px rgba(0,0,0,.05),0 2px 4px rgba(30,20,15,.07),0 14px 30px rgba(30,20,15,.12);
+  --ease:cubic-bezier(.32,.72,0,1);
+  --sf:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",system-ui,sans-serif;
+  --sf-d:-apple-system,BlinkMacSystemFont,"SF Pro Display","Helvetica Neue",system-ui,sans-serif;
+  --shell:min(calc(100% - 36px),1560px);
+}
+*,*::before,*::after{box-sizing:border-box}
+html{background:var(--cream)}
+body{
+  margin:0;padding-bottom:4px;color:#211510;font-family:var(--sf);
+  -webkit-font-smoothing:antialiased;
+  background:
+    radial-gradient(900px 560px at 16% -10%,rgba(255,255,255,.82),transparent 62%),
+    radial-gradient(760px 480px at 100% 0%,rgba(242,165,43,.12),transparent 60%),
+    linear-gradient(135deg,var(--cream) 0%,var(--cream-2) 100%);
+}
+h1,h2,p{margin:0}
+a{color:var(--red);text-decoration:none}
+a:hover{color:var(--red-dk)}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.78}}
+
+/* ── Paneles liquid glass ───────────────────────────── */
+.glass{
+  position:relative;overflow:hidden;isolation:isolate;
+  border:.5px solid var(--glass-br);background:var(--glass);
+  -webkit-backdrop-filter:blur(28px) saturate(185%);backdrop-filter:blur(28px) saturate(185%);
+  box-shadow:var(--shadow-glass);
+}
+.glass::before{
+  content:"";position:absolute;inset:0;pointer-events:none;border-radius:inherit;
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.55) 0%,rgba(255,255,255,.10) 42%,transparent 60%),
+    radial-gradient(120% 80% at 8% -20%,rgba(255,255,255,.60),transparent 55%),
+    radial-gradient(90% 70% at 100% 120%,rgba(242,165,43,.14),transparent 60%);
+}
+
+/* ── Header ─────────────────────────────────────────── */
+.topbar{
+  position:sticky;top:18px;z-index:30;
+  width:var(--shell);margin:12px auto 0;padding:9px 18px;min-height:64px;border-radius:22px;
+  display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;
+}
+.brand{position:relative;z-index:1;display:flex;align-items:center;gap:14px}
+.brand__mark{
+  width:104px;height:44px;border-radius:9px;border:2px solid #fff;overflow:hidden;
+  display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(var(--red) 0 72%,var(--amber) 72% 100%);
+  box-shadow:0 1px 3px rgba(117,23,23,.14),0 6px 16px rgba(117,23,23,.12),inset 0 0 0 .5px rgba(255,255,255,.28);
+}
+.brand__mark img{height:23px;width:auto;display:block}
+.brand__name{font-family:var(--sf-d);font-weight:700;font-size:22px;line-height:1;letter-spacing:-.02em}
+.brand__sub{font-size:12px;color:#7a665d;font-weight:500;margin-top:3px}
+.topbar__actions{position:relative;z-index:1;display:flex;align-items:center;gap:12px}
+
+/* ── Píldoras de estado ─────────────────────────────── */
+.pill{
+  display:inline-flex;align-items:center;gap:7px;padding:7px 14px 7px 11px;border-radius:999px;
+  font-size:13px;font-weight:590;letter-spacing:-.01em;
+}
+.pill--live{background:rgba(47,142,84,.10);box-shadow:inset 0 0 0 .5px rgba(47,142,84,.22);color:var(--green-ui)}
+.pill--live i{width:7px;height:7px;border-radius:50%;background:#30d158;box-shadow:0 0 0 3px rgba(48,209,88,.18)}
+.pill--live.is-beat i{animation:pulse 2s ease-in-out infinite}
+.pill--meta{padding:6px 13px;background:rgba(120,120,128,.10);box-shadow:inset 0 0 0 .5px rgba(0,0,0,.06);color:var(--ink-3);font-size:11.5px;font-weight:500}
+.pill--preview{padding:6px 12px;background:rgba(242,165,43,.12);box-shadow:inset 0 0 0 .5px rgba(184,116,14,.22);color:#8a5709;font-size:11.5px;font-weight:650}
+
+/* ── Botones Aqua ───────────────────────────────────── */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;
+  padding:10px 18px;border-radius:999px;border:0;cursor:pointer;
+  font:inherit;font-size:13px;font-weight:590;letter-spacing:-.01em;color:#fff;
+  background:linear-gradient(180deg,#ff3a46,var(--red-press));
+  box-shadow:0 1px 2px rgba(190,10,20,.28),0 4px 12px rgba(247,25,38,.18),inset 0 .5px 0 rgba(255,255,255,.38);
+  transition:transform .18s var(--ease),filter .18s ease;
+}
+.btn:hover{color:#fff;background:linear-gradient(180deg,#f22b37,#c80d18);transform:scale(1.02)}
+.btn:active{transform:scale(.97);filter:brightness(.94)}
+.btn--sm{padding:5px 12px;border-radius:9px;font-size:12px;box-shadow:0 1px 2px rgba(190,10,20,.30),inset 0 .5px 0 rgba(255,255,255,.35)}
+.btn--sm:hover{transform:none}
+.btn--sm:active{transform:scale(.96)}
+
+/* ── Hero ───────────────────────────────────────────── */
+.hero{
+  position:relative;overflow:hidden;display:flex;align-items:center;
+  width:var(--shell);min-height:320px;margin:12px auto 0;padding:34px clamp(24px,5vw,52px);
+  border:1px solid rgba(255,255,255,.68);border-radius:32px;
+  box-shadow:0 .5px 0 rgba(255,255,255,.9) inset,0 1px 2px rgba(112,45,28,.05),0 8px 20px rgba(112,45,28,.08);
+  background-color:#52000a;
+  background-image:
+    linear-gradient(90deg,rgba(128,8,15,.80) 0%,rgba(194,16,27,.52) 42%,rgba(214,0,11,.08) 68%,rgba(82,0,0,.18) 100%),
+    url("assets/orgulloxxos-hero.jpg");
+  background-repeat:no-repeat,no-repeat;background-size:auto,cover;background-position:0 0,center 78%;
+}
+.hero::after{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(120deg,rgba(255,255,255,.18),transparent 24% 78%,rgba(255,255,255,.10));
+}
+.hero__inner{position:relative;z-index:1;display:grid;grid-template-columns:minmax(0,1fr);width:100%}
+.hero__copy{max-width:780px}
+.hero__badge{
+  display:inline-flex;align-items:center;padding:6px 13px;margin-bottom:16px;border-radius:20px;
+  background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.34);
+  color:#fff;font-size:12px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;
+}
+.hero__title{
+  font-family:Archivo,var(--sf-d);font-weight:800;color:#fff;margin-bottom:18px;
+  font-size:clamp(2.7rem,4.8vw,4.35rem);line-height:.95;letter-spacing:-.035em;
+}
+.hero__title em{font-style:normal;color:#fff4d7}
+.hero__lede{max-width:560px;font-size:17px;font-weight:500;line-height:1.55;color:rgba(255,255,255,.88);text-wrap:pretty}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:20px;max-width:560px}
+.stat{
+  padding:12px 14px;border-radius:14px;
+  background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.28);
+}
+.stat__n{font-family:Archivo,var(--sf-d);font-weight:800;font-size:2.45rem;line-height:.9;color:#fff}
+.stat__l{margin-top:6px;font-size:11.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:rgba(255,255,255,.82);line-height:1.25}
+
+/* ── Barra de conexión ──────────────────────────────── */
+.statusbar{
+  width:var(--shell);margin:10px auto 0;padding:11px 16px;border-radius:18px;
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;
+}
+.statusbar>*{position:relative;z-index:1}
+
+/* ── Selector de área ───────────────────────────────── */
+.area-switch{
+  width:min(calc(100% - 36px),860px);margin:10px auto 0;padding:6px;border-radius:20px;
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;
+}
+.area-switch>*{position:relative;z-index:1}
+.area-switch__button{
+  min-height:54px;padding:9px 14px;border:0;border-radius:14px;background:transparent;
+  display:flex;align-items:center;justify-content:center;gap:11px;color:var(--ink-3);
+  font:700 12px/1 var(--sf);letter-spacing:.03em;text-transform:uppercase;cursor:pointer;
+  transition:background .18s ease,color .18s ease,box-shadow .18s ease,transform .18s var(--ease);
+}
+.area-switch__icon{width:28px;height:28px;border-radius:9px;display:grid;place-items:center;background:#edf1f4;color:#247aa4}
+.area-switch__icon svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.area-switch__button:nth-child(3) .area-switch__icon{background:#f0eef8;color:#7255a1}
+.area-switch__button.is-active{color:#fff;background:linear-gradient(145deg,#ff3a46,#d50614);box-shadow:0 8px 16px rgba(216,9,25,.22),inset 0 1px 0 rgba(255,255,255,.35)}
+.area-switch__button.is-active .area-switch__icon{background:rgba(255,255,255,.16);color:#fff}
+.area-switch__button:focus-visible{outline:2px solid var(--red);outline-offset:2px}
+.area-switch__button:not(.is-active):hover{background:rgba(255,255,255,.54);color:var(--ink);transform:translateY(-1px)}
+
+/* ── Secciones ──────────────────────────────────────── */
+.group{max-width:1560px;margin:0 auto;padding:26px 18px 8px}
+.group__head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:8px;padding:0 2px}
+.kicker{
+  display:inline-flex;align-items:center;gap:8px;margin-bottom:8px;
+  font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--red);
+}
+.kicker .dot{width:6px;height:6px;border-radius:50%;background:var(--red)}
+.group__title{font-family:var(--sf-d);font-weight:700;font-size:clamp(1.7rem,2.1vw,2.25rem);line-height:.95;letter-spacing:-.021em}
+.group__count{font-size:12px;color:#7a665d}
+.rule{height:.5px;background:var(--rule);margin:6px 0 16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,320px),1fr));gap:18px}
+
+/* ── Tarjeta macOS ──────────────────────────────────── */
+.card{
+  position:relative;overflow:hidden;display:flex;flex-direction:column;
+  border-radius:18px;border:.5px solid rgba(91,75,63,.12);background:rgba(255,255,255,.78);
+  -webkit-backdrop-filter:blur(14px) saturate(125%);backdrop-filter:blur(14px) saturate(125%);
+  box-shadow:var(--shadow-card);
+  cursor:pointer;transition:transform .18s var(--ease),box-shadow .18s ease,border-color .18s ease;
+}
+.card:hover,.card:focus-visible{transform:translateY(-2px);border-color:rgba(247,25,38,.30);box-shadow:var(--shadow-card-h);outline:none}
+.card__bar{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:9px 12px 9px 14px;border-bottom:.5px solid rgba(91,75,63,.07);
+  background:linear-gradient(180deg,rgba(250,248,246,.92),rgba(241,238,235,.86));
+}
+.chip{
+  font-size:10px;font-weight:700;padding:3px 8px;border-radius:8px;
+  text-transform:uppercase;letter-spacing:.06em;color:var(--ink-2);
+  background:rgba(0,0,0,.05);box-shadow:inset 0 0 0 .5px rgba(0,0,0,.07);
+}
+.card__body{display:flex;flex-direction:column;gap:9px;padding:15px 16px 13px;flex:1}
+.card__head{display:flex;align-items:center;gap:11px}
+.card__icon{
+  width:36px;height:36px;border-radius:9px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;color:#d6000b;
+  background:linear-gradient(180deg,#fff,#f2efec);
+  box-shadow:0 1px 2px rgba(30,20,15,.08),inset 0 0 0 .5px rgba(0,0,0,.06);
+}
+.card__icon svg{width:19px;height:19px;display:block;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.card__title{font-family:var(--sf-d);font-weight:700;font-size:1.2rem;line-height:1.15;letter-spacing:-.015em;color:var(--ink)}
+.card__title:hover{color:var(--red)}
+.card__desc{font-size:12.5px;line-height:1.5;color:var(--ink-3);flex:1;text-wrap:pretty}
+.card__foot{
+  display:flex;align-items:center;justify-content:flex-start;gap:12px;
+  padding:10px 14px;border-top:.5px solid rgba(91,75,63,.07);background:rgba(248,246,244,.80);
+}
+.card__stamp{font-size:11.5px;color:var(--ink-3);line-height:1.4}
+.card__stamp strong{color:var(--ink);font-weight:700}
+.card__foot .btn{display:none}
+.card::after{content:'›';position:absolute;right:15px;bottom:9px;color:var(--red);font:500 23px/1 var(--sf);opacity:0;transform:translateX(-4px);transition:opacity .18s ease,transform .18s var(--ease)}
+.card:hover::after,.card:focus-visible::after{opacity:1;transform:translateX(0)}
+
+/* ── Métrica + sparkline ────────────────────────────── */
+.metric{position:relative;display:flex;align-items:flex-end;justify-content:space-between;gap:10px;padding:2px 0 15px}
+.metric::after{content:'Tendencia · últimos 7 días';position:absolute;right:0;bottom:0;font-size:9.5px;font-weight:600;letter-spacing:.01em;color:var(--ink-4)}
+.metric__text{min-width:0}
+.metric__row{display:flex;align-items:baseline;gap:7px}
+.metric__value{font-family:var(--sf-d);font-size:1.75rem;font-weight:660;letter-spacing:-.03em;line-height:1;color:var(--ink)}
+.metric__unit{margin-top:4px;font-size:11.5px;font-weight:500;color:var(--ink-4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.delta{
+  display:inline-flex;align-items:center;padding:3px 8px;border-radius:7px;
+  font-size:11px;font-weight:620;letter-spacing:-.01em;box-shadow:inset 0 0 0 .5px rgba(0,0,0,.05);
+}
+.delta--period::after{content:' vs. corte anterior';font-size:9.5px;font-weight:560;color:currentColor;opacity:.74}
+.spark{width:86px;height:28px;flex-shrink:0;overflow:visible;fill:none}
+.spark__line{stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke}
+.spark__area{stroke:none;fill-opacity:.07}
+/* tono por dirección del indicador */
+.tone-good .delta{color:var(--green);background:rgba(30,138,76,.10)}
+.tone-good .spark__line{stroke:var(--green)} .tone-good .spark__area{fill:var(--green)}
+.tone-bad  .delta{color:var(--red-dk);background:rgba(194,16,27,.09)}
+.tone-bad  .spark__line{stroke:var(--red-dk)} .tone-bad .spark__area{fill:var(--red-dk)}
+.tone-flat .delta{color:var(--ink-3);background:rgba(120,120,128,.12)}
+.tone-flat .spark__line{stroke:var(--ink-4)} .tone-flat .spark__area{fill:var(--ink-4)}
+
+/* ── Accesos personales ─────────────────────────────── */
+.access{max-width:1560px;margin:0 auto;padding:38px 18px 8px}
+.access__grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:18px}
+.tile{
+  display:flex;flex-direction:column;gap:10px;padding:30px;border-radius:24px;
+  transition:transform .18s var(--ease);
+}
+.tile:hover{transform:translateY(-3px) scale(1.004)}
+.tile__kicker{font-size:11px;font-weight:800;letter-spacing:.16em;text-transform:uppercase}
+.tile__title{font-family:var(--sf-d);font-weight:700;font-size:2rem;line-height:1;letter-spacing:-.021em}
+.tile__desc{font-size:14px;line-height:1.55;max-width:40ch}
+.tile--me{
+  color:#fff;border:.5px solid rgba(255,255,255,.30);
+  background:linear-gradient(145deg,rgba(247,25,38,.82),rgba(158,0,7,.86));
+  -webkit-backdrop-filter:blur(28px) saturate(180%);backdrop-filter:blur(28px) saturate(180%);
+  box-shadow:0 .5px 0 rgba(255,255,255,.28) inset,0 1px 2px rgba(150,20,28,.10),0 8px 22px rgba(150,20,28,.16);
+}
+.tile--me:hover{color:#fff}
+.tile--me .tile__kicker{color:#fff4d7}
+.tile--me .tile__desc{color:rgba(255,255,255,.9)}
+.tile--store{
+  color:#211510;border:.5px solid rgba(255,255,255,.60);
+  background:linear-gradient(145deg,rgba(255,255,255,.56),rgba(242,165,43,.22));
+  -webkit-backdrop-filter:blur(28px) saturate(185%);backdrop-filter:blur(28px) saturate(185%);
+  box-shadow:var(--shadow-glass);
+}
+.tile--store:hover{color:#211510}
+.tile--store .tile__kicker{color:#8D3C30}
+.tile--store .tile__desc{color:#7a665d}
+
+/* ── Footer ─────────────────────────────────────────── */
+.foot{
+  width:var(--shell);margin:30px auto 22px;padding:28px 24px;border-radius:24px;
+  text-align:center;color:#7a665d;font-size:12px;line-height:1.7;
+}
+.foot>*{position:relative;z-index:1}
+.foot strong{color:var(--red-dk);font-weight:700}
+@media (max-width:760px){
+  :root{--shell:calc(100% - 20px)}
+  .topbar{top:10px;margin-top:10px;padding:9px 12px;border-radius:18px;gap:10px}
+  .brand__mark{width:76px;height:36px}.brand__mark img{height:19px}.brand__name{font-size:18px}.brand__sub{display:none}
+  .topbar__actions{gap:6px}.pill--live{display:none}.btn{padding:9px 12px;font-size:12px}
+  .hero{min-height:420px;border-radius:22px;background-position:64% center}.hero__inner{padding:30px 24px;align-items:flex-start}.hero__title{font-size:clamp(2.8rem,14vw,4rem)}
+  .stats{grid-template-columns:repeat(3,1fr);gap:7px}.stat{padding:10px 8px}.stat__n{font-size:1.7rem}.stat__l{font-size:9px}
+  .area-switch{margin:16px auto 28px}.area-switch__button{font-size:9px;padding:10px 5px;gap:5px}.area-switch__icon{width:26px;height:26px}
+  .group{margin:0 auto 30px}.group__head{align-items:flex-start}.group__count{display:none}.grid{grid-template-columns:1fr;gap:12px}.card{min-height:0}.access__grid{grid-template-columns:1fr}.foot{margin-top:22px}
+}
+</style>
 </head>
-<body class="apple-live" data-area="rh">
+<body>
 
-<!-- ══════════════════════════════════════════════
-     BARRA SUPERIOR
-══════════════════════════════════════════════════ -->
-<nav class="topbar">
-  <div class="topbar__brand">
-    <div class="topbar__logo"><img src="assets/oxxo-logo-original.png" alt="OXXO"></div>
-    <div>
-      <div class="topbar__title">Dashboards Ats</div>
-      <div class="topbar__subtitle">Plaza Oaxaca-ByPamsb</div>
-    </div>
-  </div>
-  <div class="topbar__meta">
-    <a href="admin.html" class="topbar__back">Panel Admin</a>
-    <span id="topbar-time"></span>
-  </div>
-</nav>
-
-<!-- ══════════════════════════════════════════════
-     HERO
-══════════════════════════════════════════════════ -->
-<section class="hero">
-  <div class="hero__inner">
-    <div class="hero__content">
-      <div class="hero__badge">
-        <span>●</span> Sistema Activo
+  <header class="topbar glass">
+    <div class="brand">
+      <span class="brand__mark"><img src="assets/oxxo-logo-original.png" alt="OXXO" /></span>
+      <div>
+        <p class="brand__name">Dashboards Ats</p>
+        <p class="brand__sub">Plaza Oaxaca-ByPamsb</p>
       </div>
-      <h1 class="hero__title">
-        Torre de<br><span>Control</span>
-      </h1>
-      <p class="hero__sub">
-        Monitoreo en tiempo real de indicadores clave.
-        Datos actualizados directamente desde Google Sheets.
-      </p>
-      <div class="hero__stats">
-        <div class="hero__stat">
-          <div class="hero__stat-value">11</div>
-          <div class="hero__stat-label">Recursos Humanos</div>
-        </div>
-        <div class="hero__stat">
-          <div class="hero__stat-value">2</div>
-          <div class="hero__stat-label">Comercial</div>
-        </div>
-        <div class="hero__stat">
-          <div class="hero__stat-value">2</div>
-          <div class="hero__stat-label">Administrativo</div>
+    </div>
+    <div class="topbar__actions">
+      <span class="pill pill--live is-beat"><i></i>Sistema Activo</span>
+      <a class="btn" href="admin.html">Panel Admin</a>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="hero__inner">
+      <div class="hero__copy">
+        <p class="hero__badge">Monitoreo en tiempo real</p>
+        <h1 class="hero__title">Torre de <em>Control</em></h1>
+        <p class="hero__lede">Monitoreo en tiempo real de indicadores clave. Datos actualizados directamente desde Google Sheets.</p>
+        <div class="stats">
+          <div class="stat"><p class="stat__n">11</p><p class="stat__l">Recursos Humanos</p></div>
+          <div class="stat"><p class="stat__n">2</p><p class="stat__l">Comercial</p></div>
+          <div class="stat"><p class="stat__n">2</p><p class="stat__l">Administrativo</p></div>
         </div>
       </div>
     </div>
-  </div>
-</section>
+  </section>
 
-<!-- ══════════════════════════════════════════════
-     BARRA DE ESTADO DEL SISTEMA
-══════════════════════════════════════════════════ -->
-<div class="system-bar">
-  <div class="system-bar__inner">
-    <div class="system-bar__left">
-      <div class="sys-status">
-        <div class="sys-status__dot"></div>
-        Datos conectados a Google Sheets
+  <nav class="area-switch glass" aria-label="Cambiar área de dashboards">
+    <button class="area-switch__button is-active" type="button" aria-pressed="true"><span class="area-switch__icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"></circle><path d="M3.5 19c.6-3.1 2.5-5 5.5-5s4.9 1.9 5.5 5M16 11a2.5 2.5 0 1 0 0-5M16 14c2.4 0 3.9 1.4 4.5 3.7"></path></svg></span>Recursos Humanos</button>
+    <button class="area-switch__button" type="button" aria-pressed="false"><span class="area-switch__icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V8l8-4 8 4v12M3 20h18M9 20v-6h6v6M8 10h.01M12 10h.01M16 10h.01"></path></svg></span>Comercial</button>
+    <button class="area-switch__button" type="button" aria-pressed="false"><span class="area-switch__icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"></rect><path d="M9 8h6M9 12h6M9 16h4"></path></svg></span>Administrativo</button>
+  </nav>
+
+    <section class="group">
+      <div class="group__head">
+        <div>
+          <p class="kicker"><span class="dot"></span>Actualización diaria</p>
+          <h2 class="group__title">Dashboards Diarios</h2>
+        </div>
+        <p class="group__count">4 dashboards</p>
       </div>
-      <div id="config-loading" class="config-loading" style="padding:0">
-        <div class="spinner" style="width:16px;height:16px;border-width:2px"></div>
-        Cargando configuración…
+      <div class="rule"></div>
+      <div class="grid">
+        <article class="card tone-good">
+          <header class="card__bar">
+            <span class="chip">Diario</span>
+          </header>
+          <div class="card__body">
+            <div class="card__head">
+              <span class="card__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 4h6v3H9zM7 5H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-1M8 12h8M8 16h5"></path></svg></span>
+              <a class="card__title" href="dashboards/dashboard-1.html">Vacantes Diarias</a>
+            </div>
+            <div class="metric">
+              <div class="metric__text">
+                <p class="metric__row"><span class="metric__value">14</span><span class="delta delta--period">-3</span></p>
+                <p class="metric__unit">vacantes activas</p>
+              </div>
+              <svg class="spark" viewBox="0 0 100 28" preserveAspectRatio="none" aria-hidden="true">
+                <polyline class="spark__area" points="0,28 0.0,4.0 16.7,9.5 33.3,6.8 50.0,15.0 66.7,17.8 83.3,20.5 100.0,26.0 100,28"></polyline>
+                <polyline class="spark__line" points="0.0,4.0 16.7,9.5 33.3,6.8 50.0,15.0 66.7,17.8 83.3,20.5 100.0,26.0"></polyline>
+              </svg>
+            </div>
+            <p class="card__desc">Seguimiento diario de cobertura, vacantes activas y ritmo de avance operativo.</p>
+          </div>
+          <footer class="card__foot">
+            <p class="card__stamp">Actualización: <strong>—</strong></p>
+            <a class="btn btn--sm" href="dashboards/dashboard-1.html">Abrir</a>
+          </footer>
+        </article>
+        <article class="card tone-bad">
+          <header class="card__bar">
+            <span class="chip">Diario</span>
+          </header>
+          <div class="card__body">
+            <div class="card__head">
+              <span class="card__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 8l6 6 4-4 8 8M21 18h-5M21 18v-5"></path></svg></span>
+              <a class="card__title" href="dashboards/dashboard-2.html">Bajas Diarias</a>
+            </div>
+            <div class="metric">
+              <div class="metric__text">
+                <p class="metric__row"><span class="metric__value">9</span><span class="delta">+2</span></p>
+                <p class="metric__unit">bajas del mes</p>
+              </div>
+              <svg class="spark" viewBox="0 0 100 28" preserveAspectRatio="none" aria-hidden="true">
+                <polyline class="spark__area" points="0,28 0.0,26.0 16.7,21.6 33.3,21.6 50.0,12.8 66.7,17.2 83.3,8.4 100.0,4.0 100,28"></polyline>
+                <polyline class="spark__line" points="0.0,26.0 16.7,21.6 33.3,21.6 50.0,12.8 66.7,17.2 83.3,8.4 100.0,4.0"></polyline>
+              </svg>
+            </div>
+            <p class="card__desc">Lectura diaria de movimientos, bajas recientes y comportamiento por periodo.</p>
+          </div>
+          <footer class="card__foot">
+            <p class="card__stamp">Actualización: <strong>—</strong></p>
+            <a class="btn btn--sm" href="dashboards/dashboard-2.html">Abrir</a>
+          </footer>
+        </article>
+        <article class="card tone-good">
+          <header class="card__bar">
+            <span class="chip">Diario</span>
+          </header>
+          <div class="card__body">
+            <div class="card__head">
+              <span class="card__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 20V9l8-5 8 5v11M9 20v-6h6v6M3 20h18"></path></svg></span>
+              <a class="card__title" href="dashboards/dashboard-3.html">Aprovechamiento de Estructura</a>
+            </div>
+            <div class="metric">
+              <div class="metric__text">
+                <p class="metric__row"><span class="metric__value">94%</span><span class="delta">+1.2 pt</span></p>
+                <p class="metric__unit">estructura ocupada</p>
+              </div>
+              <svg class="spark" viewBox="0 0 100 28" preserveAspectRatio="none" aria-hidden="true">
+                <polyline class="spark__area" points="0,28 0.0,26.0 16.7,21.6 33.3,21.6 50.0,17.2 66.7,12.8 83.3,8.4 100.0,4.0 100,28"></polyline>
+                <polyline class="spark__line" points="0.0,26.0 16.7,21.6 33.3,21.6 50.0,17.2 66.7,12.8 83.3,8.4 100.0,4.0"></polyline>
+              </svg>
+            </div>
+            <p class="card__desc">Visibilidad de estructura autorizada, ocupación y oportunidades de ajuste.</p>
+          </div>
+          <footer class="card__foot">
+            <p class="card__stamp">Actualización: <strong>—</strong></p>
+            <a class="btn btn--sm" href="dashboards/dashboard-3.html">Abrir</a>
+          </footer>
+        </article>
+        <article class="card tone-good">
+          <header class="card__bar">
+            <span class="chip">Diario</span>
+          </header>
+          <div class="card__body">
+            <div class="card__head">
+              <span class="card__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M2 8.5 12 4l10 4.5-10 4.5zM6 11.2V16c0 1.7 2.7 3 6 3s6-1.3 6-3v-4.8"></path></svg></span>
+              <a class="card__title" href="dashboards/dashboard-8.html">Capacidades 2026</a>
+            </div>
+            <div class="metric">
+              <div class="metric__text">
+                <p class="metric__row"><span class="metric__value">68%</span><span class="delta">+5 pt</span></p>
+                <p class="metric__unit">avance certificado</p>
+              </div>
+              <svg class="spark" viewBox="0 0 100 28" preserveAspectRatio="none" aria-hidden="true">
+                <polyline class="spark__area" points="0,28 0.0,26.0 16.7,21.1 33.3,17.0 50.0,13.8 66.7,10.5 83.3,7.3 100.0,4.0 100,28"></polyline>
+                <polyline class="spark__line" points="0.0,26.0 16.7,21.1 33.3,17.0 50.0,13.8 66.7,10.5 83.3,7.3 100.0,4.0"></polyline>
+              </svg>
+            </div>
+            <p class="card__desc">Avance de certificaciones y capacitaciones por asesor, puesto y tienda.</p>
+          </div>
+          <footer class="card__foot">
+            <p class="card__stamp">Actualización: <strong>—</strong></p>
+            <a class="btn btn--sm" href="dashboards/dashboard-8.html">Abrir</a>
+          </footer>
+        </article>
       </div>
+    </section>
+
+    <section class="group">
+      <div class="group__head">
+        <div>
+          <p class="kicker"><span class="dot"></span>Actualización semanal</p>
+          <h2 class="group__title">Dashboards Semanales</h2>
+        </div>
+        <p class="group__count">7 dashboards</p>
+      </div>
+      <div class="rule"></div>
+      <div class="grid">
+        <article class="card tone-good">
+          <header class="card__bar">
+            <span class="chip">Semanal</span>
+          </header>
+          <div class="card__body">
+            <div class="card__head">
+              <span class="card__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 7.5V12l3.5 2"></path></svg></span>
+              <a class="card__title" href="dashboards/dashboard-4.html">Tiempo Extra</a>
+            </div>
+            <div class="metric">
+              <div class="metric__text">
+                <p class="metric__row"><span class="metric__value">312 h</span><span class="delta">-48 h</span></p>
+                <p class="metric__unit">tiempo extra</p>
+              </div>
+              <svg class="spark" viewBox="0 0 100 28" preserveAspectRatio="none" aria-hidden="true">
+                <polyline class="spark__area" points="0,28 0.0,4.0 16.7,7.4 33.3,10.0 50.0,14.1 66.7,18.5 83.3,22.6 100.0,26.0 100,28"></polyline>
+                <polyline class="spark__line" points="0.0,4.0 16.7,7.4 33.3,10.0 50.0,14.1 66.7,18.5 83.3,22.6 100.0,26.0"></polyline>
+              </svg>
+            </div>
+            <p class="card__desc">Control semanal de horas extra, tendencias y focos de atención por operación.</p>
+          </div>
+          <footer class="card__foot">
+            <p class="card__stamp">Actualización: <strong>—</strong></p>
+            <a class="btn btn--sm" href="dashboards/dashboard-4.html">Abrir</a>
+          </footer>
+        </article>
+        <article class="card tone-flat">
+          <header class="card__bar">
+            <span class="chip">Semanal</span>
+          </header>
+          <div class="card__body">
+            <div class="card__head">
+              <span class="card__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 17a5 5 0 1 0 0-10 5 5 0 0 0 0 10zM12 2v2M12 20v2M4.2 4.2l1.5 1.5M18.3 18.3l1.5 1.5M2 12h2M20 12h2M4.2 19.8l1.5-1.5M18.3 5.7l1.5-1.5"></path></svg></span>
+              <a class="card__title" href="dashboards/dashboard-5.html">Control de Vacaciones</a>
+            </div>
+            <div class="metric">
+              <div class="metric__text">
+                <p class="metric__row"><span class="metric__value">127</span><span class="delta">+14</span></p>
+                <p class="metric__unit">días programados</p>
+              </div>
+              <svg class="spark" viewBox="0 0 100 28" preserveAspectRatio="none" aria-hidden="true">
+                <polyline class="spark__area" points="0,28 0.0,26.0 16.7,22.5 33.3,17.5 50.0,14.6 66.7,10.4 83.3,7.5 100.0,4.0 100,28"></polyline>
+                <polyline class="spark__line" points="0.0,26.0 16.7,22.5 33.3,17.5 50.0,14.6 66.7,10.4 83.3,7.5 100.0,4.0"></polyline>
+              </svg>
+            </div>
+            <p class="card__desc">Estado semanal de vacaciones, programación y balance de disponibilidad.</p>
+          </div>
+          <footer class="card__foot">
+            <p class="card__stamp">Actualización: <strong>—</strong></p>
+            <a class="btn btn--sm" href="dashboards/dashboard-5.html">Abrir</a>
+          </footer>
+        </article>
+        <article class="card tone-good">
+          <header class="card__bar">
+            <span class="chip">Semanal</span>
+          </header>
+          <div class="card__body">
+            <div class="card__head">
+              <span class="card__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 6h14a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1zM8 3v4M16 3v4M4 11h16M10 15l4 4M14 15l-4 4"></path></svg></span>
+              <a class="card__title" href="dashboards/dashboard-6.html">Ausentismos</a>
+            </div>
+            <div class="metric">
+              <div class="metric__text">
+                <p class="metric__row"><span class="metric__value">3.1%</span><span class="delta">-0.4 pt</span></p>
+                <p class="metric__unit">ausentismo</p>
+              </div>
+              <svg class="spark" viewBox="0 0 100 28" preserveAspectRatio="none" aria-hidden="true">
+                <polyline class="spark__area" points="0,28 0.0,4.0 16.7,8.0 33.3,10.0 50.0,16.0 66.7,20.0 83.3,22.0 100.0,26.0 100,28"></polyline>
+                <polyline class="spark__line" points="0.0,4.0 16.7,8.0 33.3,10.0 50.0,16.0 66.7,20.0 83.3,22.0 100.0,26.0"></polyline>
+              </svg>
+            </div>
+            <p class="card__desc">Revisión semanal de ausencias, recurrencias y señales para seguimiento.</p>
+          </div>
+          <footer class="card__foot">
+            <p class="card__stamp">Actualización: <strong>—</strong></p>
+            <a class="btn btn--sm" href="dashboards/dashboard-6.html">Abrir</a>
+          </footer>
+        </article>
+        <article class="card tone-flat">
+          <header class="card__bar">
+            <span class="chip">TREO</span>
+          </header>
+          <div class="card__body">
+            <div class="card__head">
+              <span class="card__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 9l2-5h14l2 5M4 9h16v10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1zM9 20v-6h6v6"></path></svg></span>
+              <a class="card__title" href="dashboards/dashboard-7.html">TREO Estructura</a>
+            </div>
+            <div class="metric">
+              <div class="metric__text">
+                <p class="metric__row"><span class="metric__value">256</span><span class="delta">182 alineadas</span></p>
+                <p class="metric__unit">tiendas evaluadas</p>
+              </div>
+              <svg class="spark" viewBox="0 0 100 28" preserveAspectRatio="none" aria-hidden="true">
+                <polyline class="spark__area" points="0,28 0.0,26.0 16.7,20.5 33.3,16.4 50.0,12.3 66.7,9.5 83.3,6.8 100.0,4.0 100,28"></polyline>
+                <polyline class="spark__line" points="0.0,26.0 16.7,20.5 33.3,16.4 50.0,12.3 66.7,9.5 83.3,6.8 100.0,4.0"></polyline>
+              </svg>
+            </div>
+            <p class="card__desc">TREO vs Plantilla SAP · 256 tiendas · Movimientos Subir / Bajar / Alineada.</p>
+          </div>
+          <footer class="card__foot">
+            <p class="card__stamp">Actualización: <strong>—</strong></p>
+            <a class="btn btn--sm" href="dashboards/dashboard-7.html">Abrir</a>
+          </footer>
+        </article>
+        <article class="card tone-good">
+          <header class="card__bar">
+            <span class="chip">Semanal</span>
+          </header>
+          <div class="card__body">
+            <div class="card__head">
+              <span class="card__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM8.5 12.5l2.5 2.5 4.5-5"></path></svg></span>
+              <a class="card__title" href="dashboards/dashboard-11.html">Cumplimiento de Marcajes</a>
+            </div>
+            <div class="metric">
+              <div class="metric__text">
+                <p class="metric__row"><span class="metric__value">97.4%</span><span class="delta">+0.6 pt</span></p>
+                <p class="metric__unit">cumplimiento</p>
+              </div>
+              <svg class="spark" viewBox="0 0 100 28" preserveAspectRatio="none" aria-hidden="true">
+                <polyline class="spark__area" points="0,28 0.0,26.0 16.7,21.2 33.3,17.4 50.0,13.6 66.7,9.7 83.3,6.9 100.0,4.0 100,28"></polyline>
+                <polyline class="spark__line" points="0.0,26.0 16.7,21.2 33.3,17.4 50.0,13.6 66.7,9.7 83.3,6.9 100.0,4.0"></polyline>
+              </svg>
+            </div>
+            <p class="card__desc">Entradas, salidas y cumplimiento total por tienda, asesor y plaza de la Región Tabasco.</p>
+          </div>
+          <footer class="card__foot">
+            <p class="card__stamp">Actualización: <strong>—</strong></p>
+            <a class="btn btn--sm" href="dashboards/dashboard-11.html">Abrir</a>
+          </footer>
+        </article>
+        <article class="card tone-flat">
+          <header class="card__bar">
+            <span class="chip">Mensual</span>
+          </header>
+          <div class="card__body">
+            <div class="card__head">
+              <span class="card__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM14.8 9.2l-1.7 4-4 1.7 1.7-4z"></path></svg></span>
+              <a class="card__title" href="dashboards/dashboard-12.html">Enfoque del Líder</a>
+            </div>
+            <div class="metric">
+              <div class="metric__text">
+                <p class="metric__row"><span class="metric__value">41</span><span class="delta">12 en etapa 3</span></p>
+                <p class="metric__unit">líderes evaluados</p>
+              </div>
+              <svg class="spark" viewBox="0 0 100 28" preserveAspectRatio="none" aria-hidden="true">
+                <polyline class="spark__area" points="0,28 0.0,26.0 16.7,20.5 33.3,17.8 50.0,12.3 66.7,9.5 83.3,6.8 100.0,4.0 100,28"></polyline>
+                <polyline class="spark__line" points="0.0,26.0 16.7,20.5 33.3,17.8 50.0,12.3 66.7,9.5 83.3,6.8 100.0,4.0"></polyline>
+              </svg>
+            </div>
+            <p class="card__desc">Etapa de desarrollo de cada líder de tienda, su trayectoria mes a mes y la rotación del puesto.</p>
+          </div>
+          <footer class="card__foot">
+            <p class="card__stamp">Actualización: <strong>—</strong></p>
+            <a class="btn btn--sm" href="dashboards/dashboard-12.html">Abrir</a>
+          </footer>
+        </article>
+        <article class="card tone-good">
+          <header class="card__bar">
+            <span class="chip">Mensual</span>
+          </header>
+          <div class="card__body">
+            <div class="card__head">
+              <span class="card__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 12h3.5L9 6.5l3.5 11L15 12h6"></path></svg></span>
+              <a class="card__title" href="dashboards/dashboard-13.html">Control de Ausentismo</a>
+            </div>
+            <div class="metric">
+              <div class="metric__text">
+                <p class="metric__row"><span class="metric__value">218</span><span class="delta">-26</span></p>
+                <p class="metric__unit">días perdidos</p>
+              </div>
+              <svg class="spark" viewBox="0 0 100 28" preserveAspectRatio="none" aria-hidden="true">
+                <polyline class="spark__area" points="0,28 0.0,4.0 16.7,7.3 33.3,10.1 50.0,13.8 66.7,18.0 83.3,21.8 100.0,26.0 100,28"></polyline>
+                <polyline class="spark__line" points="0.0,4.0 16.7,7.3 33.3,10.1 50.0,13.8 66.7,18.0 83.3,21.8 100.0,26.0"></polyline>
+              </svg>
+            </div>
+            <p class="card__desc">Incapacidades del IMSS, días perdidos y análisis de riesgos de trabajo. Exclusivo Plaza Oaxaca.</p>
+          </div>
+          <footer class="card__foot">
+            <p class="card__stamp">Actualización: <strong>—</strong></p>
+            <a class="btn btn--sm" href="dashboards/dashboard-13.html">Abrir</a>
+          </footer>
+        </article>
+      </div>
+    </section>
+
+  <section class="access">
+    <div class="access__grid">
+      <a class="tile tile--me" href="dashboards/mi-dashboard.html">
+        <p class="tile__kicker">Acceso personal</p>
+        <p class="tile__title">Mi Dashboard</p>
+        <p class="tile__desc">Elige tu nombre y consulta tus indicadores de Recursos Humanos en un solo lugar.</p>
+      </a>
+      <a class="tile tile--store" href="dashboards/mi-tienda.html">
+        <p class="tile__kicker">Acceso por tienda</p>
+        <p class="tile__title">Mi Tienda</p>
+        <p class="tile__desc">Busca tu tienda y consulta sus indicadores operativos en un solo lugar.</p>
+      </a>
     </div>
-    <div class="system-bar__right">
-      Última verificación: <span id="last-check">—</span>
-    </div>
-  </div>
-</div>
+  </section>
 
-<!-- ══════════════════════════════════════════════
-     SECCIÓN: DASHBOARDS DIARIOS
-══════════════════════════════════════════════════ -->
-<section class="home-navigation" aria-label="Buscar y guardar tableros">
+  <footer class="foot glass">
+    <p><strong>OXXO · Plaza Oaxaca</strong> · Sistema de Dashboards Ejecutivos</p>
+    <p>Los datos se cargan directamente desde Google Sheets. Solo lectura.</p>
+  </footer>
 
-  <div class="home-favorites-row"><strong>★ Favoritos</strong><div id="home-favorites"></div></div>
-
-</section>
-<div class="folder-tabs" role="tablist" aria-label="Área de dashboards">
-  <button type="button" id="tab-rh" class="folder-tab is-active" role="tab" aria-selected="true" aria-controls="panel-rh" tabindex="0" data-folder-tab="rh" style="--tab-color:#F71926">
-    <span class="folder-tab__icon" aria-hidden="true">
-      <svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"></circle><path d="M3.5 19a5.5 5.5 0 0 1 11 0"></path><path d="M16 7.5a3 3 0 0 1 0 5.8"></path><path d="M18 15.5a4.5 4.5 0 0 1 2.5 3.5"></path></svg>
-    </span>
-    <span class="folder-tab__label">Recursos Humanos</span>
-  </button>
-  <button type="button" id="tab-comercial" class="folder-tab" role="tab" aria-selected="false" aria-controls="panel-comercial" tabindex="-1" data-folder-tab="comercial" style="--tab-color:#12608F">
-    <span class="folder-tab__icon" aria-hidden="true">
-      <svg viewBox="0 0 24 24"><path d="M4 20V10"></path><path d="M10 20V4"></path><path d="M16 20v-7"></path><path d="M22 20H2"></path><path d="m4 7 6-5 6 7 5-5"></path></svg>
-    </span>
-    <span class="folder-tab__label">Comercial</span>
-  </button>
-  <button type="button" id="tab-administrativo" class="folder-tab" role="tab" aria-selected="false" aria-controls="panel-administrativo" tabindex="-1" data-folder-tab="administrativo" style="--tab-color:#5B4B8A">
-    <span class="folder-tab__icon" aria-hidden="true">
-      <svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"></rect><path d="M8 7h8M8 11h8M8 15h5"></path><path d="M16 18h.01"></path></svg>
-    </span>
-    <span class="folder-tab__label">Administrativo</span>
-  </button>
-</div>
-
-<section class="dashboards-section folder-panel" id="panel-rh" role="tabpanel" aria-labelledby="tab-rh" data-folder-group="rh">
-  <div class="dashboards-section__header">
-    <div>
-      <div class="section-label">Actualización diaria</div>
-      <div class="section-title">Dashboards Diarios</div>
-    </div>
-  </div>
-
-  <div class="dashboards-grid" id="grid-diarios">
-
-    <!-- ► TARJETA 1 — DIARIO
-         ► EDITAR: Cambia el href, title, desc e ícono -->
-    <a href="dashboards/dashboard-1.html" class="db-card"
-       style="--card-accent:#F2A52B;--card-icon-bg:rgba(242,165,43,0.14);--card-freq-bg:rgba(242,165,43,0.16);--card-freq-color:#F71926">
-      <div class="db-card__top">
-        <div class="db-card__icon">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="4"/><path d="M2 21v-1.5A4.5 4.5 0 0 1 6.5 15h5"/><path d="M17 14l5 5m0-5l-5 5"/></svg>
-        </div>
-        <span class="db-card__freq">Diario</span>
-      </div>
-      <!-- ► EDITAR: Nombre y descripción del dashboard -->
-      <div class="db-card__title">Vacantes Diarias</div>
-      <div class="db-card__desc">
-        Seguimiento diario de cobertura, vacantes activas y ritmo de avance operativo.
-      </div>
-      <div class="db-card__footer">
-        <div class="db-card__update">
-          Actualización: <strong id="upd-d1">—</strong>
-        </div>
-        <div class="db-card__arrow">
-          <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
-        </div>
-      </div>
-    </a>
-
-    <!-- ► TARJETA 2 — DIARIO -->
-    <a href="dashboards/dashboard-2.html" class="db-card"
-       style="--card-accent:#F71926;--card-icon-bg:rgba(247,25,38,0.10);--card-freq-bg:rgba(247,25,38,0.12);--card-freq-color:#F71926">
-      <div class="db-card__top">
-        <div class="db-card__icon">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
-        </div>
-        <span class="db-card__freq">Diario</span>
-      </div>
-      <div class="db-card__title">Bajas Diarias</div>
-      <div class="db-card__desc">
-        Lectura diaria de movimientos, bajas recientes y comportamiento por periodo.
-      </div>
-      <div class="db-card__footer">
-        <div class="db-card__update">
-          Actualización: <strong id="upd-d2">—</strong>
-        </div>
-        <div class="db-card__arrow" style="background:var(--color-orange)">
-          <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
-        </div>
-      </div>
-    </a>
-
-    <!-- ► TARJETA 3 — DIARIO -->
-    <a href="dashboards/dashboard-3.html" class="db-card"
-       style="--card-accent:#F2A52B;--card-icon-bg:rgba(242,165,43,0.14);--card-freq-bg:rgba(242,165,43,0.16);--card-freq-color:#F71926">
-      <div class="db-card__top">
-        <div class="db-card__icon">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 2 7l10 5 10-5-10-5Z"/><path d="m2 17 10 5 10-5"/><path d="m2 12 10 5 10-5"/></svg>
-        </div>
-        <span class="db-card__freq">Diario</span>
-      </div>
-      <div class="db-card__title">Aprovechamiento de Estructura</div>
-      <div class="db-card__desc">
-        Visibilidad de estructura autorizada, ocupación y oportunidades de ajuste.
-      </div>
-      <div class="db-card__footer">
-        <div class="db-card__update">
-          Actualización: <strong id="upd-d3">—</strong>
-        </div>
-        <div class="db-card__arrow" style="background:var(--color-green)">
-          <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
-        </div>
-      </div>
-    </a>
-
-  </div>
-
-  <!-- Divisor entre secciones -->
-  <div class="section-divider" style="margin-top:48px"></div>
-
-  <div class="dashboards-section__header">
-    <div>
-      <div class="section-label">Actualización semanal</div>
-      <div class="section-title">Dashboards Semanales</div>
-    </div>
-  </div>
-
-  <div class="dashboards-grid" id="grid-semanales">
-
-    <!-- ► TARJETA 4 — SEMANAL -->
-    <a href="dashboards/dashboard-4.html" class="db-card"
-       style="--card-accent:#F71926;--card-icon-bg:rgba(247,25,38,0.10);--card-freq-bg:rgba(247,25,38,0.12);--card-freq-color:#F71926">
-      <div class="db-card__top">
-        <div class="db-card__icon">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l4 2"/></svg>
-        </div>
-        <span class="db-card__freq">Semanal</span>
-      </div>
-      <div class="db-card__title">Tiempo Extra</div>
-      <div class="db-card__desc">
-        Control semanal de horas extra, tendencias y focos de atención por operación.
-      </div>
-      <div class="db-card__footer">
-        <div class="db-card__update">
-          Actualización: <strong id="upd-s4">—</strong>
-        </div>
-        <div class="db-card__arrow" style="background:#F71926">
-          <svg viewBox="0 0 24 24" style="stroke:#fff"><polyline points="9 18 15 12 9 6"/></svg>
-        </div>
-      </div>
-    </a>
-
-    <!-- ► TARJETA 5 — SEMANAL -->
-    <a href="dashboards/dashboard-5.html" class="db-card"
-       style="--card-accent:#F2A52B;--card-icon-bg:rgba(242,165,43,0.14);--card-freq-bg:rgba(242,165,43,0.16);--card-freq-color:#F71926">
-      <div class="db-card__top">
-        <div class="db-card__icon">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 11h18"/><path d="m9 16 2 2 4-4"/></svg>
-        </div>
-        <span class="db-card__freq">Semanal</span>
-      </div>
-      <div class="db-card__title">Control de Vacaciones</div>
-      <div class="db-card__desc">
-        Estado semanal de vacaciones, programación y balance de disponibilidad.
-      </div>
-      <div class="db-card__footer">
-        <div class="db-card__update">
-          Actualización: <strong id="upd-s5">—</strong>
-        </div>
-        <div class="db-card__arrow" style="background:#F2A52B">
-          <svg viewBox="0 0 24 24" style="stroke:#fff"><polyline points="9 18 15 12 9 6"/></svg>
-        </div>
-      </div>
-    </a>
-
-    <!-- ► TARJETA 6 — SEMANAL -->
-    <a href="dashboards/dashboard-6.html" class="db-card"
-       style="--card-accent:#F71926;--card-icon-bg:rgba(247,25,38,0.10);--card-freq-bg:rgba(247,25,38,0.12);--card-freq-color:#F71926">
-      <div class="db-card__top">
-        <div class="db-card__icon">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="4"/><path d="M2 21v-1.5A4.5 4.5 0 0 1 6.5 15h5"/><path d="M16 17h6"/></svg>
-        </div>
-        <span class="db-card__freq">Semanal</span>
-      </div>
-      <div class="db-card__title">Ausentismos</div>
-      <div class="db-card__desc">
-        Revisión semanal de ausencias, recurrencias y señales para seguimiento.
-      </div>
-      <div class="db-card__footer">
-        <div class="db-card__update">
-          Actualización: <strong id="upd-s6">—</strong>
-        </div>
-        <div class="db-card__arrow" style="background:var(--color-red)">
-          <svg viewBox="0 0 24 24" style="stroke:#fff"><polyline points="9 18 15 12 9 6"/></svg>
-        </div>
-      </div>
-    </a>
-
-    <a href="dashboards/dashboard-7.html" class="db-card"
-       style="--card-accent:#2D2D44;--card-icon-bg:rgba(45,45,68,0.10);--card-freq-bg:rgba(45,45,68,0.12);--card-freq-color:#2D2D44">
-      <div class="db-card__top">
-        <div class="db-card__icon">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18"/><path d="M5 7h14"/><path d="M5 7 2 14h6L5 7Z"/><path d="m19 7-3 7h6l-3-7Z"/><path d="M8 21h8"/></svg>
-        </div>
-        <span class="db-card__freq">TREO</span>
-      </div>
-      <div class="db-card__title">TREO</div>
-      <div class="db-card__desc">
-        Estructura TREO vs Plantilla SAP · 256 tiendas · Movimientos Subir / Bajar / Alineada.
-      </div>
-      <div class="db-card__footer" style="justify-content:flex-end">
-        <div class="db-card__arrow" style="background:#2D2D44">
-          <svg viewBox="0 0 24 24" style="stroke:#fff"><polyline points="9 18 15 12 9 6"/></svg>
-        </div>
-      </div>
-    </a>
-
-    <a href="dashboards/dashboard-8.html" class="db-card"
-       style="--card-accent:#1DB954;--card-icon-bg:rgba(29,185,84,0.10);--card-freq-bg:rgba(29,185,84,0.12);--card-freq-color:#1DB954">
-      <div class="db-card__top">
-        <div class="db-card__icon">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 11 3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-        </div>
-        <span class="db-card__freq">Diario</span>
-      </div>
-      <div class="db-card__title">Capacidades 2026</div>
-      <div class="db-card__desc">
-        Avance de certificaciones y capacitaciones por asesor, puesto y tienda.
-      </div>
-      <div class="db-card__footer" style="justify-content:flex-end">
-        <div class="db-card__arrow" style="background:#1DB954">
-          <svg viewBox="0 0 24 24" style="stroke:#fff"><polyline points="9 18 15 12 9 6"/></svg>
-        </div>
-      </div>
-    </a>
-
-    <a href="dashboards/dashboard-11.html" class="db-card"
-       style="--card-accent:#176D98;--card-icon-bg:rgba(23,109,152,0.10);--card-freq-bg:rgba(23,109,152,0.12);--card-freq-color:#176D98">
-      <div class="db-card__top">
-        <div class="db-card__icon">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/><path d="M7 4 5 2M17 4l2-2"/></svg>
-        </div>
-        <span class="db-card__freq">Semanal</span>
-      </div>
-      <div class="db-card__title">Cumplimiento de Marcajes</div>
-      <div class="db-card__desc">
-        Entradas, salidas y cumplimiento total por tienda, asesor y plaza de la Región Tabasco.
-      </div>
-      <div class="db-card__footer" style="justify-content:flex-end">
-        <div class="db-card__arrow" style="background:#176D98">
-          <svg viewBox="0 0 24 24" style="stroke:#fff"><polyline points="9 18 15 12 9 6"/></svg>
-        </div>
-      </div>
-    </a>
-
-    <a href="dashboards/dashboard-12.html" class="db-card"
-       style="--card-accent:#8B4CF7;--card-icon-bg:rgba(139,76,247,0.10);--card-freq-bg:rgba(139,76,247,0.12);--card-freq-color:#8B4CF7">
-      <div class="db-card__top">
-        <div class="db-card__icon">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 3 7v6c0 5 3.8 8.4 9 9 5.2-.6 9-4 9-9V7z"/><path d="m9 12 2 2 4-4"/></svg>
-        </div>
-        <span class="db-card__freq">Mensual</span>
-      </div>
-      <div class="db-card__title">Enfoque del Líder</div>
-      <div class="db-card__desc">
-        Etapa de desarrollo de cada líder de tienda, su trayectoria mes a mes y la rotación del puesto.
-      </div>
-      <div class="db-card__footer" style="justify-content:flex-end">
-        <div class="db-card__arrow" style="background:#8B4CF7">
-          <svg viewBox="0 0 24 24" style="stroke:#fff"><polyline points="9 18 15 12 9 6"/></svg>
-        </div>
-      </div>
-    </a>
-
-    <a href="dashboards/dashboard-13.html" class="db-card"
-       style="--card-accent:#0E9F6E;--card-icon-bg:rgba(14,159,110,0.10);--card-freq-bg:rgba(14,159,110,0.12);--card-freq-color:#0E9F6E">
-      <div class="db-card__top">
-        <div class="db-card__icon">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 2v2"/><path d="M5 2v2"/><path d="M5 3H4a2 2 0 0 0-2 2v4a6 6 0 0 0 12 0V5a2 2 0 0 0-2-2h-1"/><path d="M8 15a6 6 0 0 0 12 0v-3"/><circle cx="20" cy="10" r="2"/></svg>
-        </div>
-        <span class="db-card__freq">Mensual</span>
-      </div>
-      <div class="db-card__title">Control de Ausentismo</div>
-      <div class="db-card__desc">
-        Incapacidades del IMSS, días perdidos y análisis de riesgos de trabajo.
-      </div>
-      <span class="db-card__scope-tag">Exclusivo Plaza Oaxaca</span>
-      <div class="db-card__footer" style="justify-content:flex-end">
-        <div class="db-card__arrow" style="background:#0E9F6E">
-          <svg viewBox="0 0 24 24" style="stroke:#fff"><polyline points="9 18 15 12 9 6"/></svg>
-        </div>
-      </div>
-    </a>
-
-  </div>
-</section>
-
-<section class="dashboards-section folder-panel" id="panel-comercial" role="tabpanel" aria-labelledby="tab-comercial" data-folder-group="comercial" hidden>
-  <div class="dashboards-section__header">
-    <div>
-      <div class="section-label">Comunicación comercial</div>
-      <div class="section-title">Promociones vigentes</div>
-    </div>
-  </div>
-  <div class="dashboards-grid">
-    <a href="dashboards/promociones.html" class="db-card" style="--card-accent:#12608F;--card-icon-bg:rgba(18,96,143,.12);--card-freq-bg:rgba(18,96,143,.12);--card-freq-color:#12608F">
-      <div class="db-card__top">
-        <div class="db-card__icon">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"></rect><circle cx="9" cy="9" r="2"></circle><path d="m21 15-5-5L5 21"></path></svg>
-        </div>
-        <span class="db-card__freq">En vivo</span>
-      </div>
-      <div class="db-card__title">PromosD100</div>
-      <div class="db-card__desc">Galería visual de campañas vigentes, próximas promociones y materiales para tienda.</div>
-      <div class="db-card__footer" style="justify-content:flex-end">
-        <div class="db-card__arrow" style="background:#12608F">
-          <svg viewBox="0 0 24 24" style="stroke:#fff"><polyline points="9 18 15 12 9 6"></polyline></svg>
-        </div>
-      </div>
-    </a>
-  </div>
-
-  <div class="dashboards-section__header">
-    <div>
-      <div class="section-label">Indicadores de avance</div>
-      <div class="section-title">Metas comerciales</div>
-    </div>
-  </div>
-  <div class="dashboards-grid">
-    <a href="dashboards/dashboard-14.html" class="db-card" style="--card-accent:#0D9488;--card-icon-bg:rgba(13,148,136,.10);--card-freq-bg:rgba(13,148,136,.12);--card-freq-color:#0D9488">
-      <div class="db-card__top">
-        <div class="db-card__icon">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg>
-        </div>
-        <span class="db-card__freq">Quincenal</span>
-      </div>
-      <div class="db-card__title">Avance Comercial</div>
-      <div class="db-card__desc">SPIN, Premia, Cruzada Andatti, Venta Sugerida, Banner y MEP vs meta, por tienda y asesor.</div>
-      <div class="db-card__footer" style="justify-content:flex-end">
-        <div class="db-card__arrow" style="background:#0D9488">
-          <svg viewBox="0 0 24 24" style="stroke:#fff"><polyline points="9 18 15 12 9 6"></polyline></svg>
-        </div>
-      </div>
-    </a>
-  </div>
-</section>
-
-<section class="dashboards-section folder-panel" id="panel-administrativo" role="tabpanel" aria-labelledby="tab-administrativo" data-folder-group="administrativo" hidden>
-  <div class="dashboards-section__header">
-    <div>
-      <div class="section-label">Control administrativo</div>
-      <div class="section-title">Indicadores administrativos</div>
-    </div>
-  </div>
-  <div class="dashboards-grid">
-    <a href="dashboards/inventarios.html" class="db-card">
-      <div class="db-card__top">
-        <div class="db-card__icon">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"></path><path d="m3.3 7 8.7 5 8.7-5M12 22V12"></path></svg>
-        </div>
-        <span class="db-card__freq">Mensual</span>
-      </div>
-      <div class="db-card__title">Resultados de Inventario</div>
-      <div class="db-card__desc">Merma, venta sin TAE, inventarios y focos principales por tienda y asesor comercial.</div>
-      <div class="db-card__footer" style="justify-content:flex-end">
-        <div class="db-card__arrow">
-          <svg viewBox="0 0 24 24" style="stroke:#fff"><polyline points="9 18 15 12 9 6"></polyline></svg>
-        </div>
-      </div>
-    </a>
-
-    <a href="dashboards/dashboard-9.html" class="db-card">
-      <div class="db-card__top">
-        <div class="db-card__icon">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M6 10v4M18 10v4"/></svg>
-        </div>
-        <span class="db-card__freq">Semanal</span>
-      </div>
-      <div class="db-card__title">Faltantes y Sobrantes</div>
-      <div class="db-card__desc">Faltantes y sobrantes de caja por asesor, tienda y semana.</div>
-      <div class="db-card__footer" style="justify-content:flex-end">
-        <div class="db-card__arrow">
-          <svg viewBox="0 0 24 24" style="stroke:#fff"><polyline points="9 18 15 12 9 6"/></svg>
-        </div>
-      </div>
-    </a>
-  </div>
-</section>
-
-<script>
-  (function(){
-    var tabs = document.querySelectorAll('.folder-tab');
-    function activateTab(tab){
-      var area = tab.dataset.folderTab || 'rh';
-      tabs.forEach(function(t){
-        t.classList.remove('is-active');
-        t.setAttribute('aria-selected','false');
-        t.setAttribute('tabindex','-1');
-      });
-      tab.classList.add('is-active');
-      tab.setAttribute('aria-selected','true');
-      tab.setAttribute('tabindex','0');
-      document.querySelectorAll('.folder-panel').forEach(function(p){ p.hidden = true; });
-      document.querySelectorAll('[data-folder-group="' + area + '"]').forEach(function(p){ p.hidden = false; });
-      document.body.dataset.area = area;
-      document.dispatchEvent(new CustomEvent('oxxo:area-change', { detail: area }));
-      try { localStorage.setItem('oxxo-dashboard-area', area); } catch(e) {}
-    }
-
-    tabs.forEach(function(tab, index){
-      tab.addEventListener('click', function(){
-        activateTab(tab);
-      });
-      tab.addEventListener('keydown', function(event){
-        if (event.key !== 'ArrowRight' && event.key !== 'ArrowLeft') return;
-        event.preventDefault();
-        var direction = event.key === 'ArrowRight' ? 1 : -1;
-        var next = tabs[(index + direction + tabs.length) % tabs.length];
-        activateTab(next);
-        next.focus();
-      });
-    });
-
-    try {
-      var savedArea = localStorage.getItem('oxxo-dashboard-area');
-      var savedTab = savedArea && document.querySelector('[data-folder-tab="' + savedArea + '"]');
-      if (savedTab) activateTab(savedTab);
-    } catch(e) {}
-  })();
-</script>
-
-<!-- ══════════════════════════════════════════════
-     SECCIÓN: MI DASHBOARD / MI TIENDA (destacada, hasta el final)
-══════════════════════════════════════════════════ -->
-<section class="folder-panel" data-folder-group="rh" style="max-width:1400px;margin:40px auto 0;padding:0 20px;display:flex;flex-direction:column;gap:14px">
-  <a href="dashboards/mi-dashboard.html" style="display:flex;align-items:center;gap:20px;background:linear-gradient(126deg,#FF2430 0%,#D91F2D 52%,#821719 100%);border-radius:18px;padding:22px 28px;text-decoration:none;color:#fff;box-shadow:0 12px 30px rgba(130,23,25,0.24);transition:transform .18s ease, box-shadow .18s ease" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 18px 38px rgba(130,23,25,0.32)'" onmouseout="this.style.transform='none';this.style.boxShadow='0 12px 30px rgba(130,23,25,0.24)'">
-    <div style="width:52px;height:52px;flex:0 0 auto;border-radius:14px;background:rgba(255,255,255,0.16);display:flex;align-items:center;justify-content:center">
-      <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0 1 16 0v1"/></svg>
-    </div>
-    <div style="flex:1;min-width:0">
-      <div style="font-weight:800;font-size:1.15rem;font-family:var(--font-display,inherit)">Mi Dashboard</div>
-      <div style="font-size:13px;opacity:.92;margin-top:2px">Elige tu nombre y consulta tus indicadores de Recursos Humanos en un solo lugar.</div>
-    </div>
-    <div style="width:38px;height:38px;flex:0 0 auto;border-radius:50%;background:rgba(255,255,255,0.18);display:flex;align-items:center;justify-content:center">
-      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
-    </div>
-  </a>
-  <a href="dashboards/mi-tienda.html" style="display:flex;align-items:center;gap:20px;background:linear-gradient(126deg,#FF2430 0%,#D91F2D 52%,#821719 100%);border-radius:18px;padding:22px 28px;text-decoration:none;color:#fff;box-shadow:0 12px 30px rgba(130,23,25,0.24);transition:transform .18s ease, box-shadow .18s ease" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 18px 38px rgba(130,23,25,0.32)'" onmouseout="this.style.transform='none';this.style.boxShadow='0 12px 30px rgba(130,23,25,0.24)'">
-    <div style="width:52px;height:52px;flex:0 0 auto;border-radius:14px;background:rgba(255,255,255,0.16);display:flex;align-items:center;justify-content:center">
-      <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21h18"/><path d="M5 21V9l7-5 7 5v12"/><path d="M9 21v-6h6v6"/></svg>
-    </div>
-    <div style="flex:1;min-width:0">
-      <div style="font-weight:800;font-size:1.15rem;font-family:var(--font-display,inherit)">Mi Tienda</div>
-      <div style="font-size:13px;opacity:.92;margin-top:2px">Busca tu tienda y consulta sus indicadores operativos en un solo lugar.</div>
-    </div>
-    <div style="width:38px;height:38px;flex:0 0 auto;border-radius:50%;background:rgba(255,255,255,0.18);display:flex;align-items:center;justify-content:center">
-      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
-    </div>
-  </a>
-</section>
-
-<!-- ══════════════════════════════════════════════
-     FOOTER GLOBAL
-══════════════════════════════════════════════════ -->
-<footer class="global-footer">
-  <strong>OXXO · Plaza Oaxaca</strong> · Sistema de Dashboards Ejecutivos<br>
-  Los datos se cargan directamente desde Google Sheets. Solo lectura.
-</footer>
-
-<!-- Scripts -->
   <script src="js/config.js?v=515942f1"></script>
-<script src="js/core.js?v=515942f1"></script>
-<script src="js/home-navigation.js?v=515942f1"></script>
-<script>
-  // ── RELOJ EN TOPBAR ──
-  function updateClock() {
-    document.getElementById('topbar-time').textContent =
-      new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
-  }
-  updateClock();
-  setInterval(updateClock, 30000);
-
-  function updateExecutiveOverview(config) {
-    const dashboardIds = ['d1', 'd2', 'd3', 's4', 's5', 's6', 's7'];
-    const withDate = dashboardIds.filter((id) => {
-      const data = config && config[id];
-      return data && data.ultima_actualizacion;
-    }).length;
-    const now = new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
-    const coverageEl = document.getElementById('exec-coverage');
-    const coverageNoteEl = document.getElementById('exec-coverage-note');
-    const countEl = document.getElementById('exec-updated-count');
-    const checkEl = document.getElementById('exec-check-time');
-
-    if (coverageEl) coverageEl.textContent = `${withDate}/${dashboardIds.length}`;
-    if (coverageNoteEl) {
-      coverageNoteEl.textContent = withDate === dashboardIds.length
-        ? 'Todos con fecha registrada'
-        : 'Fechas pendientes por validar';
-      // Solo pintamos de rojo cuando de verdad falta cobertura.
-      coverageNoteEl.classList.toggle('is-neutral', withDate === dashboardIds.length);
-    }
-    if (countEl) countEl.textContent = `${withDate} de ${dashboardIds.length}`;
-    if (checkEl) checkEl.textContent = now;
-  }
-
-  // ── CARGAR CONFIGURACIÓN DESDE SHEETS ──
-  // Rellena la última actualización de cada tarjeta
-  async function loadIndexConfig() {
-    const config = await OXXO.loadSystemConfig();
-    const loadingEl = document.getElementById('config-loading');
-    if (loadingEl) loadingEl.remove();
-
-    // Mapeo: id del elemento → id de la config
-    const MAP = {
-      'd1': 'upd-d1', 'd2': 'upd-d2', 'd3': 'upd-d3',
-      's4': 'upd-s4', 's5': 'upd-s5', 's6': 'upd-s6',
-    };
-
-    Object.entries(MAP).forEach(([configId, elId]) => {
-      const el = document.getElementById(elId);
-      if (!el) return;
-      const data = config[configId];
-      if (data && data.ultima_actualizacion) {
-        el.textContent = OXXO_HOME.formatDate(data.ultima_actualizacion);
-        el.classList.remove('is-empty');
-      } else {
-        el.textContent = 'Sin fecha registrada';
-        // Estado neutro: el rojo se reserva para alertas reales, no para "aun no hay dato".
-        el.classList.add('is-empty');
-      }
+  <script src="js/core.js?v=515942f1"></script>
+  <script>
+    // La portada conserva el diseño limpio y toma las fechas reales de la
+    // configuración central, igual que el índice anterior.
+    document.querySelectorAll('.card__stamp strong').forEach((stamp) => {
+      if (stamp.textContent.trim() === '—') stamp.textContent = 'Sin fecha registrada';
     });
 
-    // Actualizar timestamp de verificación
-    const checkEl = document.getElementById('last-check');
-    if (checkEl) {
-      checkEl.textContent = new Date().toLocaleTimeString('es-MX', {
-        hour: '2-digit', minute: '2-digit', second: '2-digit'
+    document.querySelectorAll('.area-switch__button').forEach((button) => {
+      button.addEventListener('click', () => {
+        document.querySelectorAll('.area-switch__button').forEach((item) => {
+          const active = item === button;
+          item.classList.toggle('is-active', active);
+          item.setAttribute('aria-pressed', String(active));
+        });
+      });
+    });
+
+    // La tarjeta completa es el acceso; se conserva el enlace nativo para
+    // lectores de pantalla y navegación con teclado.
+    document.querySelectorAll('.card').forEach((card) => {
+      const link = card.querySelector('.card__title');
+      if (!link) return;
+      card.tabIndex = 0;
+      card.setAttribute('role', 'link');
+      card.setAttribute('aria-label', `Abrir ${link.textContent.trim()}`);
+      const open = () => { window.location.href = link.href; };
+      card.addEventListener('click', (event) => {
+        if (!event.target.closest('a')) open();
+      });
+      card.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          open();
+        }
+      });
+    });
+
+    async function cargarFechasReales() {
+      if (!window.OXXO || !OXXO.loadSystemConfig) return;
+      const config = await OXXO.loadSystemConfig();
+      const fuentes = {
+        d1: 'dashboards/dashboard-1.html', d2: 'dashboards/dashboard-2.html',
+        d3: 'dashboards/dashboard-3.html', s4: 'dashboards/dashboard-4.html',
+        s5: 'dashboards/dashboard-5.html', s6: 'dashboards/dashboard-6.html'
+      };
+      Object.entries(fuentes).forEach(([clave, ruta]) => {
+        const fecha = config[clave] && config[clave].ultima_actualizacion;
+        const link = document.querySelector(`.card__title[href="${ruta}"]`);
+        const destino = link && link.closest('.card').querySelector('.card__stamp strong');
+        if (destino && fecha) destino.textContent = OXXO_HOME.formatDate(fecha);
       });
     }
-
-    updateExecutiveOverview(config);
-  }
-
-  loadIndexConfig();
-  // Animaciones de entrada al hacer scroll
-  function initScrollReveals() {
-    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const blocks = document.querySelectorAll('.system-bar, .executive-overview, .dashboards-section, .global-footer');
-
-    blocks.forEach((block) => block.classList.add('section-reveal'));
-
-    if (reduceMotion || !('IntersectionObserver' in window)) {
-      blocks.forEach((block) => block.classList.add('is-visible'));
-      return;
-    }
-
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        if (!entry.isIntersecting) return;
-        entry.target.classList.add('is-visible');
-        observer.unobserve(entry.target);
-      });
-    }, { threshold: 0.16, rootMargin: '0px 0px -60px 0px' });
-
-    blocks.forEach((block) => observer.observe(block));
-  }
-
-  initScrollReveals();
-</script>
+    cargarFechasReales();
+  </script>
 
 </body>
 </html>
