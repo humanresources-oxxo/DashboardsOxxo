@@ -83,29 +83,6 @@
     .dias-badge.amarillo { background:#FDF1D6; color:#8A5A00; }
     .dias-badge.rojo     { background:#FBE1E3; color:#B0182A; }
 
-    .row3 { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:16px; }
-    .chart-sm { position:relative; height:220px; }
-    .row2 { display:grid; grid-template-columns:1.3fr 1fr; gap:14px; margin-bottom:16px; }
-    .chart-lg { position:relative; height:300px; }
-
-    .risk-row { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; height:100%; min-height:160px; }
-    .risk-box { border-radius:14px; padding:20px 16px; display:flex; flex-direction:column;
-      justify-content:space-between; align-items:flex-start; transition:var(--transition); }
-    .risk-box:hover { transform:translateY(-2px); box-shadow:var(--shadow-hover); }
-    .risk-box.alto   { background:linear-gradient(135deg,#FFF0F0 0%,#FFE0E0 100%); border:1.5px solid #FFCCCC; }
-    .risk-box.medio  { background:linear-gradient(135deg,#FFF5E8 0%,#FFE8CC 100%); border:1.5px solid #FFCCA0; }
-    .risk-box.bajo   { background:linear-gradient(135deg,#E8FBF0 0%,#D0F5E0 100%); border:1.5px solid #A0E8C0; }
-    .risk-lbl { font-size:11px; font-weight:700; text-transform:uppercase;
-      letter-spacing:1px; margin-bottom:0; }
-    .risk-box.alto  .risk-lbl { color:#C0393B; }
-    .risk-box.medio .risk-lbl { color:#B85000; }
-    .risk-box.bajo  .risk-lbl { color:#007A3D; }
-    .risk-val { font-family:var(--font-display); font-size:3.4rem; font-weight:800; line-height:1; margin-top:auto; padding-top:12px; }
-    .risk-box.alto  .risk-val { color:#D92B2B; }
-    .risk-box.medio .risk-val { color:#FF6B00; }
-    .risk-box.bajo  .risk-val { color:#00A650; }
-    .risk-icon { font-size:28px; opacity:.7; align-self:flex-end; margin-top:-10px; }
-
     .foot { margin-top:8px; padding-top:14px; border-top:1px solid var(--color-border);
       display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap;
       gap:8px; font-size:11px; color:var(--color-gray); }
@@ -126,9 +103,9 @@
     .topbar { border-bottom-color: #00A650 !important; }
     .kpi-card.verde { border-top-color: #00A650 !important; }
 
-    @media (max-width:1100px) { .kpis{grid-template-columns:repeat(3,1fr)} .row2{grid-template-columns:1fr} }
-    @media (max-width:750px)  { .kpis{grid-template-columns:repeat(2,1fr)} .row3{grid-template-columns:1fr} .hero{flex-direction:column;align-items:flex-start} }
-    @media (max-width:600px)  { .kpis{grid-template-columns:1fr 1fr} .row2,.row3{grid-template-columns:1fr} .chart-lg,.chart-sm{height:200px} }
+    @media (max-width:1100px) { .kpis{grid-template-columns:repeat(3,1fr)} }
+    @media (max-width:750px)  { .kpis{grid-template-columns:repeat(2,1fr)} .hero{flex-direction:column;align-items:flex-start} }
+    @media (max-width:600px)  { .kpis{grid-template-columns:1fr 1fr} }
     @media (max-width:400px)  { .vac-filters{grid-template-columns:1fr !important} }</style>
   <link rel="stylesheet" href="../css/dashboard-skin.css?v=99b4e899" />
 <style id="d1-extras">
@@ -574,9 +551,6 @@
     display:flex;flex-wrap:wrap;gap:14px;
     padding:0 20px 10px;
     font-size:12px;font-weight:700;color:var(--color-gray);
-  }
-  .chart-fallback{
-    font-size:12px;font-weight:600;color:var(--color-gray);text-align:center;line-height:1.5;
   }
     .vacantes-asesor-legend .dot{
     display:inline-block;width:9px;height:9px;border-radius:50%;
@@ -2874,14 +2848,6 @@ function poblarFiltros(){
   });
 }
 
-// ── CHART THEME: fijo en modo claro premium ──
-const isDark = () => false;
-const chartTheme = {
-  get tooltipBg(){ return isDark() ? '#1E1E2E' : '#1A1A2E'; },
-  get grid()     { return isDark() ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.07)'; },
-  get text()     { return isDark() ? 'rgba(255,255,255,0.75)' : 'rgba(26,26,46,0.75)'; }
-};
-
 // La dona por puesto y la grafica de barras por asesor se retiraron: sus
 // datos ya viven en las tarjetas de KPI y en la tabla de asesores. Con eso
 // esta pagina dejo de necesitar Chart.js, y su <script> tambien se quito.
@@ -2951,11 +2917,6 @@ async function initDashboard(){
   refreshDashboard();
   loadPlazas();
   OXXO.updateFooterTime('load-time');
-}
-
-// Subconjunto para KPIs y gráficas: respeta todos los filtros activos
-function viewData(){
-  return filtrarDatos();
 }
 
 // Renderiza KPIs + ranking + gráficas. El parámetro se llama allData a
