@@ -226,7 +226,9 @@ a:hover{color:var(--red-dk)}
 .card:hover::after,.card:focus-visible::after{opacity:1;transform:translateX(0)}
 
 /* ── Métrica + sparkline ────────────────────────────── */
-.metric{position:relative;display:flex;align-items:flex-end;justify-content:space-between;gap:10px;padding:2px 0 15px}
+/* Los valores principales viven dentro de cada tablero. No se repiten aquí
+   hasta que estén conectados a una fuente verificable. */
+.metric{display:none}
 .metric::after{content:'Tendencia · últimos 7 días';position:absolute;right:0;bottom:0;font-size:9.5px;font-weight:600;letter-spacing:.01em;color:var(--ink-4)}
 .metric__text{min-width:0}
 .metric__row{display:flex;align-items:baseline;gap:7px}
@@ -674,7 +676,7 @@ a:hover{color:var(--red-dk)}
     // La portada conserva el diseño limpio y toma las fechas reales de la
     // configuración central, igual que el índice anterior.
     document.querySelectorAll('.card__stamp strong').forEach((stamp) => {
-      if (stamp.textContent.trim() === '—') stamp.textContent = 'Sin fecha registrada';
+      if (stamp.textContent.trim() === '—') stamp.textContent = 'Cargando fecha…';
     });
 
     const areas = {
@@ -699,7 +701,7 @@ a:hover{color:var(--red-dk)}
       <article class="card tone-flat"><header class="card__bar"><span class="chip">${frecuencia}</span></header>
         <div class="card__body"><div class="card__head"><span class="card__icon" aria-hidden="true">↗</span><a class="card__title" href="${ruta}">${titulo}</a></div>
         <p class="card__desc">${descripcion}</p></div>
-        <footer class="card__foot"><p class="card__stamp">Acceso al tablero</p><a class="btn btn--sm" href="${ruta}">Abrir</a></footer></article>`;
+        <footer class="card__foot"><p class="card__stamp">Actualización: <strong>Cargando fecha…</strong></p><a class="btn btn--sm" href="${ruta}">Abrir</a></footer></article>`;
     function activarArea(area) {
       const esRh = area === 'rh';
       rhContent.forEach((elemento) => { elemento.hidden = !esRh; });
@@ -707,6 +709,7 @@ a:hover{color:var(--red-dk)}
       if (!esRh) {
         const actual = areas[area];
         otherArea.innerHTML = `<section class="group"><div class="group__head"><div><p class="kicker"><span class="dot"></span>${actual.kicker}</p><h2 class="group__title">${actual.titulo}</h2></div><p class="group__count">${actual.tarjetas.length} dashboards</p></div><div class="rule"></div><div class="grid">${actual.tarjetas.map(cardMarkup).join('')}</div></section>`;
+        aplicarFechas();
       }
       document.querySelectorAll('.area-switch__button').forEach((item) => {
         const active = item.dataset.area === area;
@@ -716,7 +719,8 @@ a:hover{color:var(--red-dk)}
       try { localStorage.setItem('oxxo-dashboard-area', area); } catch (error) {}
     }
     document.querySelectorAll('.area-switch__button').forEach((button) => button.addEventListener('click', () => activarArea(button.dataset.area)));
-    try { activarArea(localStorage.getItem('oxxo-dashboard-area') || 'rh'); } catch (error) { activarArea('rh'); }
+    let areaInicial = 'rh';
+    try { areaInicial = localStorage.getItem('oxxo-dashboard-area') || 'rh'; } catch (error) {}
 
     // La tarjeta completa es el acceso; se conserva el enlace nativo para
     // lectores de pantalla y navegación con teclado.
@@ -738,22 +742,35 @@ a:hover{color:var(--red-dk)}
       });
     });
 
-    async function cargarFechasReales() {
-      if (!window.OXXO || !OXXO.loadSystemConfig) return;
-      const config = await OXXO.loadSystemConfig();
-      const fuentes = {
-        d1: 'dashboards/dashboard-1.html', d2: 'dashboards/dashboard-2.html',
-        d3: 'dashboards/dashboard-3.html', s4: 'dashboards/dashboard-4.html',
-        s5: 'dashboards/dashboard-5.html', s6: 'dashboards/dashboard-6.html'
-      };
-      Object.entries(fuentes).forEach(([clave, ruta]) => {
-        const fecha = config[clave] && config[clave].ultima_actualizacion;
-        const link = document.querySelector(`.card__title[href="${ruta}"]`);
-        const destino = link && link.closest('.card').querySelector('.card__stamp strong');
-        if (destino && fecha) destino.textContent = OXXO_HOME.formatDate(fecha);
+    let configuracionSistema = null;
+    const rutasConfiguracion = {
+      d1: 'dashboards/dashboard-1.html', d2: 'dashboards/dashboard-2.html',
+      d3: 'dashboards/dashboard-3.html', s4: 'dashboards/dashboard-4.html',
+      s5: 'dashboards/dashboard-5.html', s6: 'dashboards/dashboard-6.html',
+      s7: 'dashboards/dashboard-7.html', d8: 'dashboards/dashboard-8.html',
+      s9: 'dashboards/dashboard-9.html', d11: 'dashboards/dashboard-11.html',
+      a13: 'dashboards/dashboard-13.html', c14: 'dashboards/dashboard-14.html'
+    };
+    function textoFecha(fecha) {
+      return String(fecha || '').replace(/\/sept\//i, ' sept ').replace(/\/(\d{2})\//, ' sep ').trim();
+    }
+    function aplicarFechas() {
+      document.querySelectorAll('.card__stamp strong').forEach((destino) => { destino.textContent = 'Sin fecha registrada'; });
+      if (!configuracionSistema) return;
+      Object.entries(rutasConfiguracion).forEach(([clave, ruta]) => {
+        const fecha = configuracionSistema[clave] && configuracionSistema[clave].ultima_actualizacion;
+        document.querySelectorAll(`.card__title[href="${ruta}"]`).forEach((link) => {
+          const destino = link.closest('.card').querySelector('.card__stamp strong');
+          if (destino && fecha) destino.textContent = textoFecha(fecha);
+        });
       });
     }
-    cargarFechasReales();
+    async function cargarFechasReales() {
+      if (!window.OXXO || !OXXO.loadSystemConfig) { aplicarFechas(); return; }
+      configuracionSistema = await OXXO.loadSystemConfig();
+      aplicarFechas();
+    }
+    cargarFechasReales().then(() => activarArea(areaInicial));
   </script>
 
 </body>
