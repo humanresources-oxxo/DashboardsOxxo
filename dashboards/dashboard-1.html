@@ -498,17 +498,6 @@
   .row-main__side>.card:last-child{flex:1;display:flex;flex-direction:column}
   .row-main__side>.card:last-child #plazas-panel{flex:1;display:flex;flex-direction:column;justify-content:space-between}
   .row-main__side{display:flex;flex-direction:column;gap:14px;min-width:0}
-  .riesgo-legend{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
-  .riesgo-legend .rg{display:inline-flex;align-items:baseline;gap:6px;padding:7px 12px;border-radius:10px;
-    font-size:11px;font-weight:700;color:var(--color-gray);border:1px solid var(--color-border)}
-  .riesgo-legend .rg b{font-family:var(--font-display);font-size:17px;font-weight:900}
-  .riesgo-legend .rg em{font-style:normal;font-size:10px;opacity:.8}
-  .riesgo-legend .rg.alto{background:#FFF3F3;border-color:#F7D3D3}
-  .riesgo-legend .rg.alto b{color:var(--semaforo-rojo)}
-  .riesgo-legend .rg.medio{background:#FFFBEE;border-color:#F0E2B4}
-  .riesgo-legend .rg.medio b{color:var(--semaforo-amarillo)}
-  .riesgo-legend .rg.bajo{background:#EFFBF3;border-color:#C8E9D5}
-  .riesgo-legend .rg.bajo b{color:var(--semaforo-verde)}
   .riesgo-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:8px;vertical-align:middle}
   .riesgo-dot.alto{background:var(--semaforo-rojo)}
   .riesgo-dot.medio{background:var(--semaforo-amarillo)}
@@ -1397,7 +1386,6 @@
         <div class="card-title">Vacantes por Asesor<span class="info-tip" tabindex="0" data-tip="Por cada Asesor (filtros activos aplicados): total de vacantes, días promedio y máximo, y cuántas caen en cada tramo de antigüedad (hasta 3 días, hasta 6, más de 6)."></span></div>
         <span class="card-badge" id="vacantes-asesor-badge">— asesores</span>
       </div>
-      <div class="riesgo-legend" id="riesgo-legend"></div>
       <div id="vacantes-asesor-table">
         <div class="state-box"><div class="spinner"></div></div>
       </div>
@@ -2720,20 +2708,6 @@ function renderOverview(allData){
       +`<span><b>${statusLabel}</b> vista activa</span>`;
   }
 
-  // Leyenda de riesgo por asesor: lo que antes ocupaba un panel entero de
-  // tres cajas cabe en una linea sobre la tabla que ya lo desglosa.
-  const legEl=document.getElementById('riesgo-legend');
-  if(legEl){
-    const carga={};
-    allData.forEach(r=>{const a=r.asesor||'Sin asesor';carga[a]=(carga[a]||0)+1});
-    const cargas=Object.values(carga);
-    const alto=cargas.filter(v=>v>=4).length;
-    const medio=cargas.filter(v=>v>=2&&v<4).length;
-    const bajo=cargas.filter(v=>v<2).length;
-    legEl.innerHTML=`<span class="rg alto"><b>${alto}</b> riesgo alto <em>≥4 vacantes</em></span>`
-      +`<span class="rg medio"><b>${medio}</b> riesgo medio <em>2–3 vacantes</em></span>`
-      +`<span class="rg bajo"><b>${bajo}</b> riesgo bajo <em>0–1 vacante</em></span>`;
-  }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
