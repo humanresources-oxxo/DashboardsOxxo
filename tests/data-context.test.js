@@ -222,4 +222,25 @@ const capacidades = normalizers.rowsFromMatrix([
 assert.equal(capacidades.rows.length, 1);
 assert.equal(capacidades.rows[0]['Promedio de PLD2026Certificacion'], '100%');
 
-console.log('data-context, alcance regional, periodos, catalogo de tiendas y avisos: 42 pruebas correctas');
+// TREO cambia el sufijo de periodo del encabezado cada mes. El admin debe
+// conservarlo en la columna tecnica fija sin pedir que se renombre el Excel.
+catalogDashboard = {
+  output: ['Plaza', 'CR', 'Tienda', 'Asesor', 'Estructura Propuesta TREO P2 Jun - Ago'],
+  required: ['Plaza', 'CR', 'Tienda', 'Asesor', 'Estructura Propuesta TREO P2 Jun - Ago'],
+  headerContains: { 'Estructura Propuesta TREO P2 Jun - Ago': ['Estructura Propuesta TREO'] },
+  derive: (row) => row,
+  filter: (row) => Boolean(row.Tienda)
+};
+const treoVariable = normalizers.rowsFromMatrix([
+  ['Plaza', 'CR', 'Tienda', 'Asesor', 'Estructura Propuesta TREO P2 Jun - Ago'],
+  ['Oaxaca', '50AAA', 'OXXO Centro', 'Laura', 12]
+], catalogDashboard);
+assert.equal(treoVariable.rows[0]['Estructura Propuesta TREO P2 Jun - Ago'], 12);
+const treoNuevoPeriodo = normalizers.rowsFromMatrix([
+  ['Plaza', 'CR', 'Tienda', 'Asesor', 'Estructura Propuesta TREO P3 Sep - Nov'],
+  ['Oaxaca', '50AAA', 'OXXO Centro', 'Laura', 13]
+], catalogDashboard);
+assert.equal(treoNuevoPeriodo.rows.length, 1);
+assert.equal(treoNuevoPeriodo.rows[0]['Estructura Propuesta TREO P2 Jun - Ago'], 13);
+
+console.log('data-context, alcance regional, periodos, catalogo de tiendas y avisos: 44 pruebas correctas');

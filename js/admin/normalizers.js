@@ -182,7 +182,17 @@ window.OXXO_ADMIN_NORMALIZERS = function createAdminNormalizers(deps){
     return rows;
   }
 
-  function findHeaderRow(matrix,dash){const limit=Math.min(matrix.length,40);let best={index:0,score:-1};for(let i=0;i<limit;i++){const cells=(matrix[i]||[]).map(norm).filter(Boolean);const score=dash.required.reduce((total,col)=>total+(aliasesFor(col).some(alias=>cells.includes(alias))?1:0),0)+Math.min(cells.length,12)/100;if(score>best.score)best={index:i,score};}return best;}
+  // Algunas fuentes cambian un sufijo de periodo dentro del encabezado cada
+  // mes. El dashboard declara esos casos de forma explicita en
+  // dash.headerContains, para no volver flexible la deteccion de columnas
+  // ajenas ni confundir encabezados parecidos.
+  function headerMatchesColumn(header,column,dash){
+    const key=norm(header);
+    if(!key)return false;
+    if(aliasesFor(column).includes(key))return true;
+    return (dash.headerContains?.[column]||[]).map(norm).some(fragment=>fragment&&key.includes(fragment));
+  }
+  function findHeaderRow(matrix,dash){const limit=Math.min(matrix.length,40);let best={index:0,score:-1};for(let i=0;i<limit;i++){const cells=(matrix[i]||[]).map(norm).filter(Boolean);const score=dash.required.reduce((total,col)=>total+(cells.some(cell=>headerMatchesColumn(cell,col,dash))?1:0),0)+Math.min(cells.length,12)/100;if(score>best.score)best={index:i,score};}return best;}
   // Encabezados repetidos: algunos reportes traen el mismo nombre de columna
   // dos veces con contenidos distintos (el Reporte Enfoque del Lider trae
   // "MEP P.P." y "EVALUACION OPERATIVA" dos veces cada una: primero el valor
@@ -204,7 +214,7 @@ window.OXXO_ADMIN_NORMALIZERS = function createAdminNormalizers(deps){
     });
     return sourceMap;
   }
-  function matchColumns(sourceMap,columns){const matched={};columns.forEach(col=>{const exact=aliasesFor(col).find(alias=>sourceMap.has(alias));if(exact)matched[col]=sourceMap.get(exact);});return matched;}
+  function matchColumns(sourceMap,columns,dash={}){const matched={};columns.forEach(col=>{const exact=aliasesFor(col).find(alias=>sourceMap.has(alias));const partial=exact?null:[...sourceMap.keys()].find(key=>headerMatchesColumn(key,col,dash));const key=exact||partial;if(key)matched[col]=sourceMap.get(key);});return matched;}
   // dash.sourceColumns: columnas a extraer del Excel crudo, cuando difieren de
   // dash.output (ej. d2otras extrae la columna cruda "Plaza" ademas de
   // "Plazas"/"Bajas Plaza"). Si no se define, se extraen las mismas columnas
@@ -217,7 +227,7 @@ window.OXXO_ADMIN_NORMALIZERS = function createAdminNormalizers(deps){
     const headerInfo=findHeaderRow(matrix,dash);
     const sourceHeaders=(matrix[headerInfo.index]||[]).map((value,index)=>String(value||`Columna ${index+1}`).trim());
     const extractColumns=dash.sourceColumns||[...dash.output,...(dash.supplementalSourceColumns||[])];
-    const matched=matchColumns(buildSourceMap(sourceHeaders),extractColumns);
+    const matched=matchColumns(buildSourceMap(sourceHeaders),extractColumns,dash);
     const rawRows=matrix.slice(headerInfo.index+1).map(line=>{const row={};extractColumns.forEach(col=>{row[col]=matched[col]!==undefined?(line[matched[col]]??''):'';});return row;}).filter(row=>Object.values(row).some(v=>String(v??'').trim()!==''));
     const filtered=rawRows.map(row=>dash.derive?dash.derive(row):row).filter(row=>!dash.filter||dash.filter(row)).map(row=>{const cleaned={};extractColumns.forEach(col=>{cleaned[col]=row[col]??'';});return cleaned;});
     const aggregated=dash.aggregate?dash.aggregate(filtered):filtered;
