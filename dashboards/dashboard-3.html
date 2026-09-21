@@ -805,8 +805,21 @@ function buildMapDet(data){
   const s=data.find(r=>Object.values(r).some(v=>String(v||'').trim()!==''))||data[0]||{};
   const m={};
   Object.entries(ALIASES_DET).forEach(([k,al])=>m[k]=findKey(s,al));
+  // Las fechas de rescate no pueden aceptar una coincidencia parcial contra
+  // la columna general "FECHA" (fecha de corte del reporte): de otro modo EC
+  // y TC terminan mostrando la misma fecha para todas las tiendas.
+  m.fechaRescEC=findSpecificHeader(s,ALIASES_DET.fechaRescEC);
+  m.fechaRescTC=findSpecificHeader(s,ALIASES_DET.fechaRescTC);
   fixTiendaCrCollision(s,m);
   return m;
+}
+
+function findSpecificHeader(row,aliases){
+  const keys=Object.keys(row||{});
+  const normalizedAliases=(aliases||[]).map(cleanKey).filter(Boolean);
+  return keys.find(key=>normalizedAliases.includes(cleanKey(key)))
+    || keys.find(key=>normalizedAliases.some(alias=>cleanKey(key).includes(alias)))
+    || null;
 }
 
 function cleanKey(s){return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9%]/g,'');}

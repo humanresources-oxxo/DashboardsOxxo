@@ -243,4 +243,20 @@ const treoNuevoPeriodo = normalizers.rowsFromMatrix([
 assert.equal(treoNuevoPeriodo.rows.length, 1);
 assert.equal(treoNuevoPeriodo.rows[0]['Estructura Propuesta TREO P2 Jun - Ago'], 13);
 
-console.log('data-context, alcance regional, periodos, catalogo de tiendas y avisos: 44 pruebas correctas');
+// Dashboard 3 conserva ambas fechas de rescate con los encabezados que usa
+// la fuente. Son opcionales para no bloquear reportes históricos que aún no
+// las traían, pero una carga nueva no debe descartarlas.
+catalogDashboard = {
+  output: ['Plaza', 'CR TIENDA', 'Asesor', 'Tienda', 'Estructura Diaria', 'Aprovechamiento Estructura', 'Estatus Con impacto Ausentismo', 'FECHA', 'Fecha maxima rescate EC', 'Fecha maxima rescate TC'],
+  required: ['Plaza', 'CR TIENDA', 'Asesor', 'Tienda', 'Estructura Diaria', 'Aprovechamiento Estructura', 'Estatus Con impacto Ausentismo', 'FECHA'],
+  derive: (row) => row,
+  filter: (row) => Boolean(row.Tienda)
+};
+const d3RescueDates = normalizers.rowsFromMatrix([
+  ['Plaza', 'CR TIENDA', 'Asesor', 'Tienda', 'Estructura Diaria', 'Aprovechamiento Estructura', 'Estatus Con impacto Ausentismo', 'FECHA', 'Fecha máxima de rescate EC', 'Fecha máxima de rescate TC'],
+  ['Oaxaca', '50AAA', 'Laura', 'OXXO Centro', 7, 100, 'Equipo Completo', '2026-09-21', '2026-10-05', '2026-09-28']
+], catalogDashboard);
+assert.equal(d3RescueDates.rows[0]['Fecha maxima rescate EC'], '2026-10-05');
+assert.equal(d3RescueDates.rows[0]['Fecha maxima rescate TC'], '2026-09-28');
+
+console.log('data-context, alcance regional, periodos, catalogo de tiendas y avisos: 46 pruebas correctas');
