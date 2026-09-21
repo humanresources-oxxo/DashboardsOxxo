@@ -432,6 +432,14 @@
     #tabla-at .tbl td:first-child{
       width:34% !important;
     }
+    /* El resumen tiene pocos asesores y se usa como reporte: en escritorio
+       debe verse completo, incluida la fila Total, sin una barra vertical. */
+    @media(min-width:721px){
+      #tabla-at .tbl-wrap{
+        max-height:none !important;
+        overflow:visible !important;
+      }
+    }
     #tabla-plazas td:last-child{
       font-size:15px !important;
     }
