@@ -1402,8 +1402,8 @@
       </div>
       <div class="card">
         <div class="card-head">
-          <div class="card-title">Comparativo de plazas<span class="info-tip" tabindex="0" data-tip="Vacantes por cada 100 tiendas operativas de cada plaza, para compararlas entre sí pese a su tamaño. Es el único panel que mira toda la región: no sigue el filtro de plaza."></span></div>
-          <span class="card-badge">Toda la región</span>
+          <div class="card-title">Comparativo de plazas<span class="info-tip" tabindex="0" data-tip="Usa la base regional completa: cuenta vacantes de todas las tiendas registradas en la fuente, excepto Entrenamiento y Operaciones. No sigue los filtros de asesor, tienda o vista operativa; por eso puede diferir de la tabla Vacantes por Asesor."></span></div>
+          <span class="card-badge">Base regional completa</span>
         </div>
         <div id="plazas-panel"><div class="state-box"><div class="spinner"></div></div></div>
       </div>
@@ -2016,8 +2016,8 @@ function renderPlazasPanel(){
   const activa = OXXO.getActiveDataScope?.()?.plaza || '';
   const max = Math.max(...PLAZAS_CACHE.map(p=>p.vacantes), 1);
   const total = PLAZAS_CACHE.reduce((a,p)=>a+p.vacantes, 0);
-    el.innerHTML = `<div class="pz-lead">Comparativo regional con el mes y los puestos seleccionados. <b>${total}</b> vacantes en toda la región.
-      <span class="pz-warn">Este comparativo incluye todas las tiendas; el resumen y la tabla respetan la vista activa de tiendas operativas. Son cifras absolutas: una plaza con más tiendas tiende a tener más vacantes.</span></div>`
+    el.innerHTML = `<div class="pz-lead">Base regional completa para el mes y puestos de tienda: <b>${total}</b> vacantes en toda la región.
+      <span class="pz-warn">Importante: aquí se cuentan todas las tiendas registradas en la fuente (excepto Entrenamiento y Operaciones). La tabla “Vacantes por Asesor” sólo muestra la vista operativa y además respeta sus filtros; por ello los totales pueden ser distintos.</span></div>`
     + `<div class="plazas-chart" role="img" aria-label="Vacantes por plaza">${PLAZAS_CACHE.map(p=>{
       const esActiva = normalizeSearchText(p.plaza) === normalizeSearchText(activa)
         || OXXO.matchesScopeValue?.(p.plaza,'plaza');
