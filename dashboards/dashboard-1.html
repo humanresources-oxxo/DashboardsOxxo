@@ -1402,7 +1402,7 @@
       </div>
       <div class="card">
         <div class="card-head">
-          <div class="card-title">Vacantes por plaza<span class="info-tip" tabindex="0" data-tip="Cuenta únicamente las vacantes de los puestos seleccionados en el filtro. El comparativo conserva todas las tiendas de cada plaza."></span></div>
+          <div class="card-title">Vacantes por plaza<span class="info-tip" tabindex="0" data-tip="Cuenta únicamente las vacantes de los puestos seleccionados y respeta el estado de tienda elegido. El comparativo no aplica filtros individuales de asesor o tienda."></span></div>
           <span class="card-badge" id="plazas-badge">Puestos filtrados</span>
         </div>
         <div id="plazas-panel"><div class="state-box"><div class="spinner"></div></div></div>
@@ -1965,6 +1965,9 @@ function ordenarTabla(filtered){
 // respaldo si la hoja cambia de columnas o la consulta no se puede armar.
 let PLAZAS_CACHE = null;
 let PLAZAS_REQUEST = 0;
+// El mismo catálogo que usa la tabla local. Se conserva para que el
+// comparativo regional también honre Operativas / Sin apertura / Todas.
+let D1_ASESOR_CATALOG = null;
 // Los encabezados de la hoja en su orden real, tal como los devolvio GViz.
 // Sirven para traducir "columna Plaza" -> "columna A" sin fijar la maquetacion
 // del Excel en el codigo: si manana le insertan una columna, las letras se
@@ -2021,7 +2024,7 @@ function renderPlazasPanel(){
   const max = Math.max(...PLAZAS_CACHE.map(p=>p.vacantes), 1);
   const total = PLAZAS_CACHE.reduce((a,p)=>a+p.vacantes, 0);
     el.innerHTML = `<div class="pz-lead"><b>${total}</b> vacantes de los puestos seleccionados en la región.
-      <span class="pz-warn">Incluye todas las tiendas de cada plaza y respeta el filtro de puestos y el mes seleccionado.</span></div>`
+      <span class="pz-warn">Respeta los filtros de puestos, mes y estado de tiendas. No aplica el filtro individual de asesor o tienda.</span></div>`
     + `<div class="plazas-chart" role="img" aria-label="Vacantes por plaza">${PLAZAS_CACHE.map(p=>{
       const esActiva = normalizeSearchText(p.plaza) === normalizeSearchText(activa)
         || OXXO.matchesScopeValue?.(p.plaza,'plaza');
@@ -2072,9 +2075,11 @@ function plazasDesdeAgregado(filas, mes){
   filas.forEach(r=>{
     const vacantes = Number(String(r[PLAZAS_COUNT_HEADER] ?? '').replace(/[^0-9.-]/g,'')) || 0;
     if(vacantes <= 0) return;
+    const tienda = String(gv(r,map,'tienda','')).trim();
+    if(!OXXO.isTiendaValid(D1_ASESOR_CATALOG, tienda)) return;
     acc.add(
       String(gv(r,map,'plaza','')).trim(),
-      String(gv(r,map,'tienda','')).trim(),
+      tienda,
       normalizeMesColumn(gv(r,map,'mes','')).key,
       vacantes
     );
@@ -2093,6 +2098,7 @@ function plazasDesdeHojaCompleta(filas, mes, puestosSeleccionados){
     if(!isVacancySourceRow(r)) return;
     const tienda = String(gv(r,map,'tienda','')).trim();
     if(/entrenamiento|operaciones/i.test(tienda)) return;
+    if(!OXXO.isTiendaValid(D1_ASESOR_CATALOG, tienda, String(gv(r,map,'cr','')).trim())) return;
     if(!puestosSeleccionados.includes(String(gv(r,map,'puesto','')).trim())) return;
     const mesInfo = normalizeMesColumn(gv(r,map,'mes',''));
     acc.add(
@@ -2529,6 +2535,8 @@ async function initDashboard(){
   ]);
   if(rawData===null){['kpi-section','tabla-detalle','ranking-container','semaforo-table','vacantes-asesor-table'].forEach(id=>OXXO.showError(id,'No se pudo conectar.'));return;}
   if(rawData.length===0){['kpi-section','tabla-detalle','ranking-container','semaforo-table','vacantes-asesor-table'].forEach(id=>OXXO.showEmpty(id));return;}
+
+  D1_ASESOR_CATALOG = asesorCatalog;
 
   colMap=buildMap(rawData);
   // Orden real de las columnas publicadas, para armar la consulta agregada del
