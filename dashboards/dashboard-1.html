@@ -1256,7 +1256,7 @@
     body.dashboard-1-page .plazas-chart__plot{display:flex;align-items:flex-end;width:100%;height:100%;padding:0 9px;border-radius:11px 11px 5px 5px;background:linear-gradient(180deg,rgba(217,31,45,.035),rgba(128,63,38,.09));}
     body.dashboard-1-page .plazas-chart__plot i{display:block;width:100%;min-height:8px;border-radius:8px 8px 3px 3px;background:linear-gradient(180deg,#f64650,#d91f2d);box-shadow:0 5px 13px rgba(217,31,45,.16);}
     body.dashboard-1-page .plazas-chart__item.is-active .plazas-chart__plot i{background:linear-gradient(180deg,#f9b943,#e82935);}
-    body.dashboard-1-page .plazas-chart__item>span{overflow:hidden;max-width:100%;color:#755d56;font-size:9px;font-weight:900;text-overflow:ellipsis;white-space:nowrap;}
+    body.dashboard-1-page .plazas-chart__item>span{overflow:hidden;max-width:100%;color:#3a2824;font-size:11.5px;font-weight:900;line-height:1.2;text-overflow:ellipsis;white-space:nowrap;}
     body.dashboard-1-page .plazas-chart__item>span em{display:none;}
     body.dashboard-1-page .plazas-chart__item>small{overflow:hidden;max-width:100%;color:#9a8580;font-size:8px;text-overflow:ellipsis;white-space:nowrap;}
     body.dashboard-1-page #tabla-detalle .tbl tbody tr.row-verde,body.dashboard-1-page #tabla-detalle .tbl tbody tr.row-amarillo,body.dashboard-1-page #tabla-detalle .tbl tbody tr.row-rojo{background:rgba(255,255,255,.52) !important;}
@@ -1267,7 +1267,7 @@
     body.dashboard-1-page #tabla-detalle .tbl tbody tr.row-verde:hover td{background:rgba(63,181,107,.045) !important;}
     body.dashboard-1-page #tabla-detalle .tbl tbody tr.row-amarillo:hover td{background:rgba(246,183,60,.055) !important;}
     body.dashboard-1-page #tabla-detalle .tbl tbody tr.row-rojo:hover td{background:rgba(217,31,45,.04) !important;}
-    @media (max-width:700px){body.dashboard-1-page .plazas-chart{gap:6px;min-height:170px;}body.dashboard-1-page .plazas-chart__item{grid-template-rows:auto minmax(96px,1fr) auto auto;}body.dashboard-1-page .plazas-chart__plot{padding:0 5px;}body.dashboard-1-page .plazas-chart__item>span{font-size:8px}}
+    @media (max-width:700px){body.dashboard-1-page .plazas-chart{gap:6px;min-height:170px;}body.dashboard-1-page .plazas-chart__item{grid-template-rows:auto minmax(96px,1fr) auto auto;}body.dashboard-1-page .plazas-chart__plot{padding:0 5px;}body.dashboard-1-page .plazas-chart__item>span{font-size:9px}}
     @media (max-width:980px){body.dashboard-1-page .page{padding:20px 16px 40px;}body.dashboard-1-page .hero{padding:24px 22px 21px !important;}body.dashboard-1-page .hero-top{align-items:flex-start !important;flex-wrap:wrap !important;}body.dashboard-1-page .hero .oxxo-scope-selector--inline{max-width:100%;width:100%;margin-left:0;}}
   </style>
   <script defer src="../js/rh-dashboard-enhancements.js?v=fdfaa686"></script>
@@ -1402,8 +1402,8 @@
       </div>
       <div class="card">
         <div class="card-head">
-          <div class="card-title">Comparativo de plazas<span class="info-tip" tabindex="0" data-tip="Usa la base regional completa: cuenta vacantes de todas las tiendas registradas en la fuente, excepto Entrenamiento y Operaciones. No sigue los filtros de asesor, tienda o vista operativa; por eso puede diferir de la tabla Vacantes por Asesor."></span></div>
-          <span class="card-badge">Base regional completa</span>
+          <div class="card-title">Vacantes por plaza<span class="info-tip" tabindex="0" data-tip="Cuenta todas las tiendas de cada plaza, excepto Entrenamiento y Operaciones. No aplica los filtros de la tabla de asesores."></span></div>
+          <span class="card-badge">Todas las tiendas</span>
         </div>
         <div id="plazas-panel"><div class="state-box"><div class="spinner"></div></div></div>
       </div>
@@ -2014,10 +2014,12 @@ function renderPlazasPanel(){
   if(!el || !PLAZAS_CACHE) return;
   if(!PLAZAS_CACHE.length){ el.innerHTML = '<div class="state-box">Sin datos de otras plazas.</div>'; return; }
   const activa = OXXO.getActiveDataScope?.()?.plaza || '';
+  const storeStatus = OXXO.getActiveStoreStatus?.() || 'operativas';
+  const storeScopeLabel = storeStatus === 'todas' ? 'Todas las tiendas' : storeStatus === 'preapertura' ? 'Sin apertura' : 'Tiendas operativas';
   const max = Math.max(...PLAZAS_CACHE.map(p=>p.vacantes), 1);
   const total = PLAZAS_CACHE.reduce((a,p)=>a+p.vacantes, 0);
-    el.innerHTML = `<div class="pz-lead">Base regional completa para el mes y puestos de tienda: <b>${total}</b> vacantes en toda la región.
-      <span class="pz-warn">Importante: aquí se cuentan todas las tiendas registradas en la fuente (excepto Entrenamiento y Operaciones). La tabla “Vacantes por Asesor” sólo muestra la vista operativa y además respeta sus filtros; por ello los totales pueden ser distintos.</span></div>`
+    el.innerHTML = `<div class="pz-lead"><b>${total}</b> vacantes en todas las tiendas de la región.
+      <span class="pz-warn">La tabla “Vacantes por Asesor” aplica la vista “${storeScopeLabel}” y los filtros activos; por eso sus totales pueden ser distintos.</span></div>`
     + `<div class="plazas-chart" role="img" aria-label="Vacantes por plaza">${PLAZAS_CACHE.map(p=>{
       const esActiva = normalizeSearchText(p.plaza) === normalizeSearchText(activa)
         || OXXO.matchesScopeValue?.(p.plaza,'plaza');
@@ -2194,7 +2196,7 @@ function renderVacantesPorAsesorDias(allData){
   const badge = document.getElementById('vacantes-asesor-badge');
   if(!el) return;
   const card=el.closest('.tabla-card');
-  if(!allData.length){ card?.classList.remove('tabla-card--balanced'); OXXO.showEmpty('vacantes-asesor-table'); if(badge) badge.textContent='0 asesores'; return; }
+  if(!allData.length){ card?.classList.remove('tabla-card--balanced'); OXXO.showEmpty('vacantes-asesor-table'); if(badge) badge.textContent='0 asesores · Vista activa'; return; }
 
   const byAsesor = {};
   allData.forEach(r=>{
@@ -2220,7 +2222,11 @@ function renderVacantesPorAsesorDias(allData){
   // el asesor mas cargado, no alfabeticamente.
   const asesores = Object.keys(byAsesor).sort((a,b)=>byAsesor[b].count-byAsesor[a].count || a.localeCompare(b,'es'));
   const maxCarga = Math.max(1, ...Object.values(byAsesor).map(v=>v.count));
-  if(badge) badge.textContent = `${asesores.length} asesor${asesores.length===1?'':'es'}`;
+  if(badge){
+    const storeStatus = OXXO.getActiveStoreStatus?.() || 'operativas';
+    const shortScope = storeStatus === 'todas' ? 'Todas' : storeStatus === 'preapertura' ? 'Sin apertura' : 'Operativas';
+    badge.textContent = `${asesores.length} asesor${asesores.length===1?'':'es'} · ${shortScope}`;
+  }
   card?.classList.toggle('tabla-card--balanced',asesores.length>=6);
 
   const total = { count:0, diasCount:0, sinDias:0, sumDias:0, maxDias:0, verde:0, amarillo:0, rojo:0 };
