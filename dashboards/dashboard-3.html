@@ -1718,11 +1718,26 @@ function renderDetalle(asesorSel, estatusSel){
   const aprovTienda = r => (r.aprov>=92.5 ? 100 : 0);
   const vacTot = r => (r.vacLider||0)+(r.vacEnc||0)+(r.vacAyu||0);
   const strCols = { tienda:1, asesor:1, estatus:1, ecSinAus:1 };
+  const rescueDateValue = value => {
+    const raw=String(value||'').trim();
+    if(!raw)return 0;
+    const iso=raw.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+    const dmy=raw.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{2,4})/);
+    if(iso)return Date.UTC(Number(iso[1]),Number(iso[2])-1,Number(iso[3]));
+    if(dmy){const year=Number(dmy[3])<100?2000+Number(dmy[3]):Number(dmy[3]);return Date.UTC(year,Number(dmy[2])-1,Number(dmy[1]));}
+    const parsed=Date.parse(raw);return Number.isNaN(parsed)?0:parsed;
+  };
+  const rescueDate = value => {
+    const raw=String(value||'').trim();
+    if(!raw)return '—';
+    return typeof normalizarFecha==='function'?normalizarFecha(raw):raw;
+  };
   d = d.slice().sort((a,b)=>{
     const c = DET_SORT.col;
     let va, vb;
     if(c==='desglose'){ va=vacTot(a); vb=vacTot(b); }
     else if(c==='aprov'){ va=aprovTienda(a); vb=aprovTienda(b); }
+    else if(c==='fechaRescEC'||c==='fechaRescTC'){ va=rescueDateValue(a[c]); vb=rescueDateValue(b[c]); }
     else if(strCols[c]){ va=String(a[c]||''); vb=String(b[c]||''); return DET_SORT.dir==='asc'?va.localeCompare(vb):vb.localeCompare(va); }
     else { va=a[c]||0; vb=b[c]||0; }
     return DET_SORT.dir==='asc'?va-vb:vb-va;
@@ -1739,8 +1754,8 @@ function renderDetalle(asesorSel, estatusSel){
       <td class="text-center">${r.estructura||'—'}</td>
       <td class="text-center">${r.ausent||0}</td>
       <td class="text-center">${r.vacante||0}</td>
-      <td class="text-center">${dias(r.diasEC)}</td>
-      <td class="text-center">${dias(r.diasTC)}</td>
+      <td class="text-center">${rescueDate(r.fechaRescTC)}</td>
+      <td class="text-center">${rescueDate(r.fechaRescEC)}</td>
       <td class="text-center"><span style="font-weight:800;color:${aprovTienda(r)===100?'var(--semaforo-verde)':'var(--semaforo-rojo)'}">${aprovTienda(r)}%</span></td>
     </tr>`;
   }).join('');
@@ -1754,8 +1769,8 @@ function renderDetalle(asesorSel, estatusSel){
         <th style="${thS};text-align:center" data-sort="estructura">Estructura<br>Diaria${arrowD('estructura')}</th>
         <th style="${thS};text-align:center" data-sort="ausent">Ausentismos${arrowD('ausent')}</th>
         <th style="${thS};text-align:center" data-sort="vacante">Vacantes${arrowD('vacante')}</th>
-        <th style="${thS};text-align:center" data-sort="diasEC">Días rescate<br>EC${arrowD('diasEC')}</th>
-        <th style="${thS};text-align:center" data-sort="diasTC">Días rescate<br>TC${arrowD('diasTC')}</th>
+        <th style="${thS};text-align:center" data-sort="fechaRescTC">Fecha máxima<br>de rescate TC${arrowD('fechaRescTC')}</th>
+        <th style="${thS};text-align:center" data-sort="fechaRescEC">Fecha máxima<br>de rescate EC${arrowD('fechaRescEC')}</th>
         <th style="${thS};text-align:center" data-sort="aprov">Aprov.${arrowD('aprov')}</th>
       </tr></thead>
       <tbody>${rows || `<tr><td colspan="${ncols}" style="text-align:center;color:var(--color-gray);padding:18px">Sin tiendas para los filtros seleccionados.</td></tr>`}</tbody>
