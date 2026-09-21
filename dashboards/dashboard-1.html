@@ -1402,8 +1402,8 @@
       </div>
       <div class="card">
         <div class="card-head">
-          <div class="card-title">Vacantes por plaza<span class="info-tip" tabindex="0" data-tip="Cuenta todas las tiendas de cada plaza, excepto Entrenamiento y Operaciones. No aplica los filtros de la tabla de asesores."></span></div>
-          <span class="card-badge">Todas las tiendas</span>
+          <div class="card-title">Vacantes por plaza<span class="info-tip" tabindex="0" data-tip="Cuenta únicamente las vacantes de los puestos seleccionados en el filtro. El comparativo conserva todas las tiendas de cada plaza."></span></div>
+          <span class="card-badge" id="plazas-badge">Puestos filtrados</span>
         </div>
         <div id="plazas-panel"><div class="state-box"><div class="spinner"></div></div></div>
       </div>
@@ -1953,7 +1953,7 @@ function ordenarTabla(filtered){
 }
 
 // Comparativo de plazas: el unico panel que mira toda la region. Publica
-// cifras absolutas con la advertencia de que no son comparables entre plazas
+// cifras absolutas de los puestos seleccionados, con la advertencia de que no son comparables entre plazas
 // (Oaxaca tiene mas de cinco veces las tiendas de cualquier otra): la tasa por
 // tienda necesitaria el catalogo de las otras cuatro plazas, que hoy no existe.
 // La lectura va sin filtro de plaza y sin bloquear el render, igual que
@@ -1964,6 +1964,7 @@ function ordenarTabla(filtered){
 // y entrega ~20 KB ya agregados; la lectura completa queda unicamente como
 // respaldo si la hoja cambia de columnas o la consulta no se puede armar.
 let PLAZAS_CACHE = null;
+let PLAZAS_REQUEST = 0;
 // Los encabezados de la hoja en su orden real, tal como los devolvio GViz.
 // Sirven para traducir "columna Plaza" -> "columna A" sin fijar la maquetacion
 // del Excel en el codigo: si manana le insertan una columna, las letras se
@@ -1990,7 +1991,7 @@ function gvizColumnFor(key){
 // dispare otra descarga y para que normalizeMesColumn() siga siendo el unico
 // lugar que interpreta "ago-26".
 const PLAZAS_COUNT_HEADER = 'Vacantes';
-function plazasAggregateQuery(){
+function plazasAggregateQuery(puestosSeleccionados){
   const col = {};
   for(const key of ['plaza','tienda','puesto','status','empleado','mes']){
     col[key] = gvizColumnFor(key);
@@ -1998,9 +1999,9 @@ function plazasAggregateQuery(){
   }
   const lit = value => `'${String(value).replace(/'/g, "''")}'`;
   // count() sobre la columna de puesto: el where ya la obliga a ser uno de los
-  // seis puestos, asi que nunca es nula y el conteo es el de filas.
+  // puestos elegidos, asi que nunca es nula y el conteo es el de filas.
   const conteo = `count(${col.puesto})`;
-  const puestos = DEFAULT_PUESTOS.map(pu=>`${col.puesto} = ${lit(pu)}`).join(' or ');
+  const puestos = puestosSeleccionados.map(pu=>`${col.puesto} = ${lit(pu)}`).join(' or ');
   return `select ${col.plaza}, ${col.tienda}, ${col.mes}, ${conteo}`
     + ` where (lower(${col.status}) contains 'vacante' or lower(${col.status}) contains 'no ocupado')`
     + ` and (${puestos})`
@@ -2014,12 +2015,13 @@ function renderPlazasPanel(){
   if(!el || !PLAZAS_CACHE) return;
   if(!PLAZAS_CACHE.length){ el.innerHTML = '<div class="state-box">Sin datos de otras plazas.</div>'; return; }
   const activa = OXXO.getActiveDataScope?.()?.plaza || '';
-  const storeStatus = OXXO.getActiveStoreStatus?.() || 'operativas';
-  const storeScopeLabel = storeStatus === 'todas' ? 'Todas las tiendas' : storeStatus === 'preapertura' ? 'Sin apertura' : 'Tiendas operativas';
+  const puestos = selectedPuestos();
+  const badge = document.getElementById('plazas-badge');
+  if(badge) badge.textContent = puestos.length === 1 ? '1 puesto' : `${puestos.length} puestos`;
   const max = Math.max(...PLAZAS_CACHE.map(p=>p.vacantes), 1);
   const total = PLAZAS_CACHE.reduce((a,p)=>a+p.vacantes, 0);
-    el.innerHTML = `<div class="pz-lead"><b>${total}</b> vacantes en todas las tiendas de la región.
-      <span class="pz-warn">La tabla “Vacantes por Asesor” aplica la vista “${storeScopeLabel}” y los filtros activos; por eso sus totales pueden ser distintos.</span></div>`
+    el.innerHTML = `<div class="pz-lead"><b>${total}</b> vacantes de los puestos seleccionados en la región.
+      <span class="pz-warn">Incluye todas las tiendas de cada plaza y respeta el filtro de puestos y el mes seleccionado.</span></div>`
     + `<div class="plazas-chart" role="img" aria-label="Vacantes por plaza">${PLAZAS_CACHE.map(p=>{
       const esActiva = normalizeSearchText(p.plaza) === normalizeSearchText(activa)
         || OXXO.matchesScopeValue?.(p.plaza,'plaza');
@@ -2083,7 +2085,7 @@ function plazasDesdeAgregado(filas, mes){
 // Respaldo: la lectura completa de siempre, fila por fila. Se conserva porque
 // la consulta agregada depende de la posicion de las columnas en la hoja; si
 // esa suposicion se rompe, el panel sigue siendo correcto (solo mas pesado).
-function plazasDesdeHojaCompleta(filas, mes){
+function plazasDesdeHojaCompleta(filas, mes, puestosSeleccionados){
   if(!Array.isArray(filas) || !filas.length) return null;
   const map = buildMap(filas);
   const acc = plazasAccumulator(mes);
@@ -2091,7 +2093,7 @@ function plazasDesdeHojaCompleta(filas, mes){
     if(!isVacancySourceRow(r)) return;
     const tienda = String(gv(r,map,'tienda','')).trim();
     if(/entrenamiento|operaciones/i.test(tienda)) return;
-    if(!isAllowedPuesto(String(gv(r,map,'puesto','')).trim())) return;
+    if(!puestosSeleccionados.includes(String(gv(r,map,'puesto','')).trim())) return;
     const mesInfo = normalizeMesColumn(gv(r,map,'mes',''));
     acc.add(
       String(gv(r,map,'plaza','')).trim(),
@@ -2106,21 +2108,33 @@ function plazasDesdeHojaCompleta(filas, mes){
 async function loadPlazas(){
   const el = document.getElementById('plazas-panel');
   const mes = document.getElementById('filtro-mes')?.value || '';
+  const puestos = selectedPuestos();
+  const requestId = ++PLAZAS_REQUEST;
+  if(!puestos.length){
+    PLAZAS_CACHE = [];
+    const badge = document.getElementById('plazas-badge');
+    if(badge) badge.textContent = 'Sin puestos';
+    if(el) el.innerHTML = '<div class="state-box" style="min-height:80px">Selecciona al menos un puesto para ver el comparativo.</div>';
+    return;
+  }
   try{
     let plazas = null;
-    const query = plazasAggregateQuery();
+    const query = plazasAggregateQuery(puestos);
     if(query){
       const agregado = await OXXO.fetchSheetData(TAB, { scoped:false, query });
+      if(requestId !== PLAZAS_REQUEST) return;
       plazas = plazasDesdeAgregado(agregado, mes);
       if(!plazas) console.warn('[D1] consulta agregada de plazas sin la forma esperada; se usa la hoja completa');
     }
     if(!plazas){
-      plazas = plazasDesdeHojaCompleta(await OXXO.fetchSheetData(TAB, { scoped:false }), mes);
+      plazas = plazasDesdeHojaCompleta(await OXXO.fetchSheetData(TAB, { scoped:false }), mes, puestos);
+      if(requestId !== PLAZAS_REQUEST) return;
     }
     if(!plazas) throw new Error('sin datos');
     PLAZAS_CACHE = plazas;
     renderPlazasPanel();
   }catch(error){
+    if(requestId !== PLAZAS_REQUEST) return;
     console.warn('[D1] comparativo de plazas no disponible:', error);
     PLAZAS_CACHE = [];
     if(el) el.innerHTML = '<div class="state-box" style="min-height:80px">No se pudo cargar el comparativo regional.</div>';
