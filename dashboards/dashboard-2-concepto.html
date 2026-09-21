@@ -1,0 +1,2197 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <script>(function(){try{if(localStorage.getItem('oxxo_site_unlocked')!=='1')document.documentElement.classList.add('oxxo-locked');}catch(e){}})();</script>
+  <style>html.oxxo-locked{background:#2D0B0C}html.oxxo-locked body>*{visibility:hidden!important}#oxxo-lock-overlay{visibility:visible!important}</style>
+  <script defer src="../js/site-lock.js?v=f7b746e7"></script>
+  <meta charset="UTF-8" />
+  <meta name="robots" content="noindex, nofollow"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Concepto · Bajas Diarias · Dashboards Ats</title>
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <link rel="icon" type="image/png" href="../assets/favicon.png" />
+  <link rel="apple-touch-icon" href="../assets/favicon.png" />
+  <link rel="stylesheet" href="../css/global.css?v=f7b746e7" />
+  <script defer src="../assets/vendor/chart.umd.min.js?v=f7b746e7"></script>
+  <style>
+    .bajas-page { max-width: 1520px; margin: 0 auto; padding: 14px 16px 28px; }
+
+    .bajas-header {
+      background: linear-gradient(135deg, #c0181f 0%, #e42929 60%, #b01218 100%);
+      border-radius: 14px;
+      padding: 20px 26px;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      box-shadow: 0 4px 24px rgba(180,0,0,.18);
+      margin-bottom: 14px;
+      position: relative;
+      z-index: 30;
+      overflow: visible;
+    }
+    .bajas-logo {
+      width:78px;height:42px;border-radius:6px;background:#e42929;color:#fff;
+      display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:900;font-size:24px;
+      border:3px solid #fff;box-shadow:inset 0 -6px 0 rgba(255,210,0,.9);letter-spacing:-1px;
+    }
+    .bajas-header__title { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; flex-wrap:wrap; }
+    .bajas-header h1 { font-family:var(--font-display); font-size:28px; font-weight:900; margin:0; letter-spacing:.4px; }
+    .bajas-header__meta { font-size:12px; color:rgba(255,255,255,0.75); font-weight:700; margin-top:4px; }
+    .bajas-header__badge { background:rgba(0,0,0,.18); border:1px solid rgba(255,255,255,.25); border-radius:999px; padding:6px 14px; font-size:11px; font-weight:700; letter-spacing:.08em; white-space:nowrap; }
+    .hero-download-link { text-decoration:none !important; cursor:pointer; }
+    .bajas-filters { display:grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap:12px 16px; align-items:end; }
+    .filter-box { display:flex; flex-direction:column; gap:6px; min-width:0; }
+    .filter-title { font-size:11px; font-weight:800; letter-spacing:0.14em; text-transform:uppercase; color:rgba(255,255,255,0.85); margin:0; }
+    .chips { display:none; }
+
+    .filter-select {
+      width: 100%; box-sizing:border-box;
+      background: rgba(255,255,255,0.14);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.32);
+      border-radius: 999px;
+      padding: 10px 16px;
+      font-family: var(--font-body);
+      font-size: 12px;
+      font-weight: 700;
+      outline: none;
+      cursor: pointer;
+      transition: background .2s ease, border-color .2s ease;
+    }
+    .filter-select:hover, .filter-select:focus { background: rgba(255,255,255,0.22); border-color:#fff; }
+    .filter-select option { background:#fff; color:#1A1A2E; }
+    .reset-filters {
+      width:100%; box-sizing:border-box;
+      background: rgba(255,255,255,0.14);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.32);
+      border-radius: 999px;
+      padding: 10px 16px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background .2s ease, color .2s ease;
+    }
+    .reset-filters:hover { background:#fff; color:var(--hb-red,#F71926); border-color:#fff; }
+
+    /* ── Smart filter (Asesor) — mismo comportamiento que el filtro de Tienda ── */
+    .smart-filter{ position:relative; width:100%; }
+    .smart-filter__button{
+      width:100%; box-sizing:border-box;
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      background:rgba(255,255,255,0.14); color:#fff;
+      border:1px solid rgba(255,255,255,0.32); border-radius:999px;
+      padding:10px 16px; cursor:pointer; text-align:left;
+      font-family:var(--font-body); font-size:12px; font-weight:700;
+      transition:background .2s ease, border-color .2s ease;
+    }
+    .smart-filter__button:hover{ background:rgba(255,255,255,0.22); border-color:#fff; }
+    .smart-filter__label{ min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .smart-filter__chev{ color:#fff; flex:0 0 auto; font-size:12px; }
+    .smart-filter__button-main{display:flex;align-items:center;gap:8px;min-width:0}
+    .smart-filter__button-main svg{width:16px;height:16px;flex:0 0 16px;fill:none;stroke:#d91f2d;stroke-width:2;stroke-linecap:round}
+    .smart-filter__menu{
+      position:absolute; left:0; right:0; top:calc(100% + 8px); z-index:60;
+      display:none; max-height:330px; overflow:hidden;
+      border-radius:16px; border:1px solid rgba(255,255,255,.76);
+      background:rgba(255,250,246,.98); color:#241413;
+      box-shadow:0 24px 54px rgba(61,13,18,.28), inset 0 1px 0 rgba(255,255,255,.82);
+    }
+    .smart-filter.open .smart-filter__menu{ display:block; }
+    .smart-filter__search{
+      width:calc(100% - 20px); margin:10px; box-sizing:border-box;
+      border-radius:12px; border:1px solid rgba(181,18,28,.18);
+      padding:10px 12px; outline:none; font-family:var(--font-body); font-size:12px; font-weight:700;
+      background:rgba(255,255,255,.9); color:#241413;
+    }
+    .smart-filter__list{ max-height:244px; overflow:auto; padding:6px 8px 10px; scrollbar-width:thin; }
+    .smart-filter__option{
+      display:flex; align-items:center; gap:10px; width:100%;
+      padding:9px 10px; border:0; border-radius:12px; background:transparent;
+      color:#241413; cursor:pointer; font-family:var(--font-body); font-size:12px; font-weight:700; text-align:left;
+    }
+    .smart-filter__option:hover{ background:rgba(246,183,60,.16); }
+    .smart-filter__option.is-active{ background:rgba(217,31,45,.10); color:#b5121c; }
+    .smart-filter__check{
+      width:16px; height:16px; border-radius:5px; flex:0 0 auto;
+      display:grid; place-items:center; border:1px solid rgba(181,18,28,.25); background:#fff;
+      color:#fff; font-size:11px;
+    }
+    .smart-filter__option.is-active .smart-filter__check{ background:#d91f2d; border-color:#d91f2d; }
+    .smart-filter__option.is-active .smart-filter__check::before{ content:"✓"; }
+    .smart-filter__empty{ padding:16px; color:#8b6a5f; font-size:12px; font-weight:700; text-align:center; }
+
+    .bajas-kpis { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:12px; }
+    .bajas-kpis .kpi-card { border-top-width:3px; border-radius:14px; min-height:104px; padding:16px 18px; cursor:pointer; }
+    .bajas-kpis .kpi-card.active { transform:translateY(-3px); box-shadow:0 8px 32px rgba(0,0,0,0.15); border-top-width:5px; }
+    .bajas-kpis .kpi-card.rojo.active    { background:#FFF0F0; }
+    .bajas-kpis .kpi-card.naranja.active { background:#FFF4EC; }
+    .bajas-kpis .kpi-card.amarillo.active{ background:#FFFBE6; }
+    .bajas-kpis .kpi-card__value { font-size:2.9rem; }
+
+    .bajas-top-grid { display:grid; grid-template-columns: 1.05fr .9fr 2.1fr 2.5fr; gap:12px; margin-bottom:14px; align-items:stretch; }
+    .bajas-panel {
+      background:#fff; border:1px solid #d8d1c6; border-radius:28px; box-shadow:0 4px 10px rgba(0,0,0,.18); padding:14px 18px; overflow:hidden;
+    }
+    .bajas-panel.compact { border-radius:22px; padding:13px 16px; }
+    .bajas-panel.wide { border-radius:30px; }
+    .bajas-panel__title { font-family:var(--font-display); font-size:1rem; font-weight:700; color:#06060a; margin-bottom:8px; }
+    .chart-sm { position:relative; height:155px; }
+    .chart-md { position:relative; height:188px; }
+    .chart-lg { position:relative; height:215px; }
+    .chart-wide { position:relative; height:205px; }
+
+    .bajas-row-panel { margin-bottom:14px; }
+    .heatmap-panel { margin-bottom:14px; padding:18px 22px; }
+    .heatmap-wrap { display:flex; gap:28px; align-items:stretch; flex-wrap:nowrap; }
+    .heatmap-table-wrap { flex:1 1 auto; min-width:0; }
+    .heatmap-table { border-collapse:separate; border-spacing:6px 6px; font-size:13px; width:100%; table-layout:fixed; }
+    .heatmap-table th, .heatmap-table td { text-align:center; padding:0; }
+    .heatmap-table thead th { font-size:12px; font-weight:700; color:#06060a; padding:4px 6px 10px; white-space:nowrap; }
+    .heatmap-table thead th.heatmap-axis-x { font-size:13px; }
+    .heatmap-table thead th.heatmap-corner { width:78px; }
+    .heatmap-table tbody th { font-size:13px; font-weight:700; color:#06060a; text-align:right; padding:0 14px 0 4px; white-space:nowrap; width:78px; }
+    .heatmap-cell { width:100%; height:60px; border-radius:10px; font-weight:700; font-size:16px; color:#06060a; cursor:default; transition:transform .12s; display:flex; align-items:center; justify-content:center; }
+    .heatmap-cell:hover { transform:scale(1.04); outline:2px solid #c0181f; outline-offset:-2px; }
+    .heatmap-cell.is-active { outline:3px solid #06060a; outline-offset:-3px; box-shadow:0 0 0 2px #fff inset; transform:scale(1.02); }
+    .heatmap-cell.is-empty { color:#b2ab9e; font-weight:500; font-size:14px; background:#f7f3ec; }
+    .heatmap-axes-label { font-size:11px; font-weight:700; color:#6b6358; text-transform:uppercase; letter-spacing:.05em; margin-bottom:10px; }
+    .heatmap-legend { display:flex; flex-direction:column; gap:10px; min-width:130px; padding-top:32px; flex:0 0 auto; }
+    .heatmap-legend__title { font-size:11px; font-weight:700; color:#06060a; margin-bottom:2px; text-transform:uppercase; letter-spacing:.04em; }
+    .heatmap-legend__item { display:flex; align-items:center; gap:10px; font-size:13px; color:#3a352c; font-weight:600; }
+    .heatmap-legend__swatch { width:22px; height:22px; border-radius:6px; flex:0 0 auto; }
+    .heatmap-empty-msg { font-size:12px; color:#6b6358; padding:20px 4px; }
+    @media (max-width:900px){
+      .heatmap-wrap{ flex-wrap:wrap; }
+      .heatmap-legend{ flex-direction:row; padding-top:0; min-width:0; }
+    }
+    @media (max-width:760px){
+      .heatmap-cell{ height:46px; font-size:13px; }
+      .heatmap-table thead th, .heatmap-table tbody th{ font-size:11px; }
+      .heatmap-table tbody th, .heatmap-table thead th.heatmap-corner{ width:58px; }
+    }
+    .bajas-detail-panel { border-radius:18px; padding:18px; }
+    .bajas-detail-panel .table-wrapper { max-height:420px; overflow:auto; }
+    .bajas-detail-panel .data-table { font-size:12px; }
+    .bajas-detail-panel .data-table td { padding:8px 10px; }
+
+    .bar-mini-list { display:flex; flex-direction:column; gap:9px; padding:5px 0; }
+    .bar-mini-item { display:grid; grid-template-columns: 1fr 44px; gap:10px; align-items:center; font-size:12px; }
+    .bar-mini-name { font-weight:700; color:#222; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .bar-mini-track { height:9px; background:#e2ded5; border-radius:999px; overflow:hidden; margin-top:4px; }
+    .bar-mini-fill { height:100%; background:#ff7924; border-radius:999px; }
+    .bar-mini-value { font-family:var(--font-display); font-size:16px; font-weight:900; color:#111; text-align:right; }
+
+    .panel__badge.orange { background:#ffefe4; color:#e35e0f; }
+
+
+
+    /* Tabla fija de compromiso vs resultado */
+    .bajas-analisis-grid {
+      display:grid;
+      grid-template-columns: 360px minmax(0,1fr);
+      gap:12px;
+      margin-bottom:14px;
+      align-items:stretch;
+    }
+    .compromiso-panel { border-radius:16px; padding:0; overflow:hidden; border:1px solid #d8d1c6; box-shadow:0 4px 10px rgba(0,0,0,.14); }
+    .compromiso-title { background:#c0181f; color:#fff; font-family:var(--font-display); font-size:18px; font-weight:900; letter-spacing:.6px; padding:9px 12px; text-transform:uppercase; }
+    .compromiso-table { width:100%; border-collapse:collapse; font-size:12px; background:#fff; }
+    .compromiso-table th { background:var(--color-bg); color:var(--color-gray); padding:7px 9px; text-align:left; font-weight:900; }
+    .compromiso-table td { padding:6px 9px; border-bottom:1px solid #edf0f3; }
+    .compromiso-table tr:nth-child(even) td { background:#fafafa; }
+    .compromiso-table .num { text-align:center; font-weight:900; }
+    .compromiso-table .pill { display:inline-flex; min-width:30px; justify-content:center; border-radius:8px; padding:2px 8px; color:#fff; font-weight:900; }
+
+    .denom-panel{ border-radius:16px; padding:0; overflow:hidden; border:1px solid #d9d2e8; box-shadow:0 4px 14px rgba(56,30,110,.10); margin-top:28px; margin-bottom:14px; }
+    .denom-panel__header{
+      background:linear-gradient(120deg,#2c1a52 0%,#4a2f8a 60%,#3a2270 100%);
+      color:#fff; padding:14px 20px; display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap;
+    }
+    .denom-panel__title{ font-family:var(--font-display); font-size:18px; font-weight:900; letter-spacing:.3px; display:flex; align-items:center; gap:8px; }
+    .denom-panel__badge{ background:rgba(255,255,255,.16); border:1px solid rgba(255,255,255,.3); border-radius:999px; padding:5px 14px; font-size:11px; font-weight:800; letter-spacing:.04em; white-space:nowrap; }
+    .denom-panel > .denom-kpis, .denom-panel > #tabla-denominaciones{ padding-left:20px; padding-right:20px; }
+    .denom-kpis{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin:18px 0 16px; }
+    .denom-kpi{ background:#faf8ff; border:1px solid #e6e0f5; border-radius:14px; padding:14px 16px; transition:transform .15s ease, box-shadow .2s ease; }
+    .denom-kpi:hover{ transform:translateY(-2px); box-shadow:0 8px 18px rgba(56,30,110,.10); }
+    .denom-kpi__val{ font-family:var(--font-display); font-size:1.7rem; font-weight:900; line-height:1; color:#2c1a52; }
+    .denom-kpi__lbl{ font-size:11px; font-weight:700; letter-spacing:.04em; color:#8b7fa8; margin-top:5px; text-transform:uppercase; }
+    #tabla-denominaciones{ padding-bottom:18px; }
+    .denom-toolbar{ display:flex; justify-content:flex-end; align-items:center; gap:10px; margin:0 0 12px; }
+    .denom-toolbar label{ font-size:11px; font-weight:900; letter-spacing:.12em; text-transform:uppercase; color:#7d6f9b; }
+    .denom-sort{ min-width:230px; border:1px solid #e1d8f2; background:#fff; color:#2c1a52; border-radius:999px; padding:9px 14px; font-size:12px; font-weight:850; box-shadow:0 8px 18px rgba(56,30,110,.07); }
+    .denom-sort:focus{ outline:none; border-color:#6d4bc8; box-shadow:0 0 0 3px rgba(109,75,200,.14); }
+    #tabla-denominaciones .tbl-wrap{ max-height:520px; overflow:auto !important; border-radius:14px; scrollbar-width:thin; scrollbar-color:#F71926 rgba(44,26,82,.08); }
+    #tabla-denominaciones .tbl-wrap::-webkit-scrollbar{ width:6px; height:6px; }
+    #tabla-denominaciones .tbl-wrap::-webkit-scrollbar-track{ background:rgba(44,26,82,.08); border-radius:999px; }
+    #tabla-denominaciones .tbl-wrap::-webkit-scrollbar-thumb{ background:#F71926; border-radius:999px; }
+    #tabla-denominaciones .tbl{ table-layout:fixed; width:100%; border-collapse:separate !important; border-spacing:0 !important; }
+    #tabla-denominaciones .tbl thead th{ background:#2c1a52 !important; padding:13px 16px !important; height:auto !important; position:sticky; top:0; z-index:2; }
+    #tabla-denominaciones .tbl td{
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+      padding:14px 16px !important; line-height:1.4; vertical-align:middle;
+      border-bottom:1px solid #efe9f9;
+    }
+    #tabla-denominaciones .tbl tbody tr:last-child td{ border-bottom:none; }
+    .denom-pill{ display:inline-flex; align-items:center; gap:4px; padding:3px 10px; border-radius:999px; font-weight:800; font-size:12px; }
+    .denom-pill.up{ background:#e8f8f0; color:#138c3e; }
+    .denom-pill.down{ background:#fdeaea; color:#C0393B; }
+    .denom-pill.lateral{ background:#eef1f5; color:#5a6472; }
+
+    /* Tabla de detalle: encabezados ordenables + fila clicable */
+    #tabla-detalle .data-table thead th{ cursor:pointer; user-select:none; white-space:nowrap; }
+    #tabla-detalle .data-table thead th:hover{ background:#3a1517; }
+    #tabla-detalle .data-table tbody tr{ cursor:pointer; }
+
+    /* Modal detalle de baja */
+    .baja-overlay{ position:fixed; inset:0; z-index:1000; background:rgba(30,16,12,.55);display:none; align-items:center; justify-content:center; padding:28px 16px; overflow-y:auto; }
+    .baja-overlay.open{ display:flex; }
+    .baja-modal{ position:relative; width:min(620px,100%); background:#fff; border-radius:20px; box-shadow:0 30px 80px rgba(30,16,12,.4); padding:26px 28px; animation:bajaIn .22s ease; }
+    @keyframes bajaIn{ from{opacity:0; transform:translateY(10px) scale(.98)} to{opacity:1; transform:none} }
+    .baja-close{ position:absolute; top:14px; right:16px; border:0; background:#f5f0ea; width:32px; height:32px; border-radius:50%; cursor:pointer; font-size:14px; color:#8a7a72; }
+    .baja-close:hover{ background:#c0181f; color:#fff; }
+    .baja-eyebrow{ font-size:11px; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:#a6968d; }
+    .baja-title{ font-family:var(--font-display); font-size:1.5rem; font-weight:800; margin:2px 0 16px; }
+    .baja-kpis{ display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:18px; }
+    .baja-kpi{ background:#faf6f2; border:1px solid #ede4dc; border-radius:14px; padding:12px 8px; text-align:center; }
+    .baja-kpi .v{ font-family:var(--font-display); font-size:1.15rem; font-weight:800; line-height:1.1; }
+    .baja-kpi .l{ font-size:10px; font-weight:700; letter-spacing:.5px; text-transform:uppercase; color:#a6968d; margin-top:6px; }
+    .baja-tbl{ width:100%; border-collapse:collapse; }
+    .baja-tbl td{ padding:9px 4px; border-bottom:1px solid #f0e9e2; font-size:13px; }
+    .baja-tbl td:first-child{ font-weight:600; color:#8a7a72; width:42%; }
+    .baja-tbl td:last-child{ text-align:right; font-weight:600; }
+    .baja-tbl tr:last-child td{ border-bottom:none; }
+    .compromiso-table .pill.good { background:#19ad63; }
+    .compromiso-table .pill.mid { background:#ffd044; color:#1a1a2e; }
+    .compromiso-table .pill.warn { background:#ff7a22; }
+    .compromiso-table .pill.bad { background:#e23636; }
+    .compromiso-table .desfase.pos { color:#19ad63; font-weight:900; }
+    .compromiso-table .desfase.neg { color:#d92b2b; font-weight:900; }
+    .compromiso-table tfoot td { background:#c0181f !important; color:#fff; font-weight:900; border-bottom:0; }
+
+    @media (max-width:1200px){
+      .bajas-filters{grid-template-columns:repeat(2,1fr)}
+      .bajas-top-grid{grid-template-columns:1fr 1fr}
+      .bajas-analisis-grid{grid-template-columns:1fr}
+    }
+    @media (max-width:760px){
+      .bajas-header{grid-template-columns:1fr}.bajas-logo{display:none}
+      .bajas-filters{grid-template-columns:1fr}.bajas-kpis{grid-template-columns:1fr 1fr}.bajas-top-grid{grid-template-columns:1fr}
+      .chart-wide,.chart-lg{height:230px}
+    }
+
+    /* Layout sin gráficas superiores: rankings más protagonistas */
+    .bajas-row-panel {
+      min-height: 250px;
+    }
+    .bajas-row-panel .chart-container {
+      height: 210px;
+    }
+
+
+    /* FIX: que las gráficas de rankings ocupen todo el panel */
+    .bajas-analisis-grid .bajas-row-panel,
+    .bajas-page > .bajas-row-panel {
+      display: flex !important;
+      flex-direction: column !important;
+    }
+
+    .bajas-analisis-grid .bajas-row-panel .chart-wide {
+      flex: 1 1 auto !important;
+      height: 390px !important;
+      min-height: 390px !important;
+      width: 100% !important;
+    }
+
+    .bajas-page > .bajas-row-panel .chart-wide {
+      height: 360px !important;
+      min-height: 360px !important;
+      width: 100% !important;
+    }
+
+    #chart-asesores,
+    #chart-tiendas {
+      width: 100% !important;
+      height: 100% !important;
+    }
+
+    @media (max-width:760px){
+      .bajas-analisis-grid .bajas-row-panel .chart-wide,
+      .bajas-page > .bajas-row-panel .chart-wide {
+        height: 300px !important;
+        min-height: 300px !important;
+      }
+    }
+    @media (max-width:600px){
+      .bajas-header h1{font-size:1.5rem !important}
+      .bajas-kpis{grid-template-columns:1fr 1fr !important}
+      .bajas-kpis .kpi-card__value{font-size:1.9rem}
+      .compromiso-panel,.bajas-detail-panel{overflow-x:auto}
+    }
+    @media (max-width:400px){
+      .bajas-header h1{font-size:1.25rem !important}
+      .bajas-kpis{grid-template-columns:1fr 1fr !important}
+    }</style>
+  <link rel="stylesheet" href="../css/dashboard-skin.css?v=f7b746e7" />
+<style id="d2-extras">
+  /* neutralize dashboard-skin overrides on filter-select inside dark header */
+  .bajas-header .filter-title,
+  .bajas-filters .filter-title { color: rgba(255,255,255,0.85) !important; }
+  .bajas-header h1,
+  .bajas-header__meta,
+  .bajas-header__badge {
+    color: #fff !important;
+    -webkit-text-fill-color: #fff !important;
+  }
+  .bajas-header .filter-select,
+  .bajas-filters .filter-select {
+    background: rgba(255,255,255,0.14) !important;
+    border:1px solid rgba(255,255,255,0.32) !important;
+    color:#fff !important;
+    border-radius:999px !important;
+  }
+  .bajas-header .filter-select:hover,
+  .bajas-filters .filter-select:hover,
+  .bajas-header .filter-select:focus,
+  .bajas-filters .filter-select:focus {
+    background: rgba(255,255,255,0.22) !important; border-color:#fff !important;
+    outline:none !important; box-shadow:none !important; transform:none !important;
+  }
+  .bajas-filters .reset-filters {
+    background: rgba(255,255,255,0.14) !important;
+    border:1px solid rgba(255,255,255,0.32) !important;
+    color:#fff !important; border-radius:999px !important;
+  }
+  .bajas-filters .reset-filters:hover {
+    background:#fff !important; color:var(--hb-red,#F71926) !important; border-color:#fff !important;
+    box-shadow:none !important; transform:none !important;
+  }
+  .tbl-wrap, .table-wrap{ border-radius: 14px !important; overflow: hidden; }
+</style>
+  <link rel="stylesheet" href="../css/dashboard-skin.css?v=f7b746e7" />
+  <style id="d2-asesor-overrides">
+    /* permitir que el desplegable del filtro Asesor sobresalga del header */
+    .bajas-header{ overflow: visible !important; position: relative; z-index: 40; }
+    .bajas-filters{ overflow: visible !important; }
+    .bajas-header .smart-filter__menu{ color:#241413; }
+    .bajas-header .smart-filter__option{ color:#241413; }
+    .bajas-header .smart-filter__option.is-active{ color:#b5121c; }
+  </style>
+
+
+  <style id="d2-floating-filter-layout">
+    .bajas-page { max-width: 1520px; padding-top: 18px; }
+    .bajas-header {
+      min-height: 138px !important;
+      padding: 26px 34px 58px !important;
+      margin-bottom: 70px !important;
+      border-radius: 16px !important;
+      background:
+        radial-gradient(circle at 80% 10%, rgba(255,255,255,.08), transparent 28%),
+        linear-gradient(135deg, #e92a31 0%, #c91421 48%, #9d1018 100%) !important;
+      box-shadow: 0 22px 52px rgba(125, 25, 18, .20) !important;
+    }
+    .bajas-header::after {
+      content: "";
+      position: absolute;
+      right: 70px;
+      bottom: 0;
+      width: 120px;
+      height: 92px;
+      background: rgba(255,255,255,.08);
+      clip-path: polygon(18% 0, 100% 0, 78% 100%, 42% 100%);
+      pointer-events: none;
+    }
+    .bajas-header__title { position: relative; z-index: 2; align-items: flex-start; }
+    .bajas-header h1 { font-size: 2.25rem !important; line-height: 1 !important; letter-spacing: 0 !important; }
+    .bajas-header__meta { color: rgba(255,255,255,.92) !important; font-size: 14px !important; margin-top: 8px !important; }
+    .bajas-header__badge {
+      background: rgba(255,255,255,.12) !important;
+      border: 1px solid rgba(255,255,255,.35) !important;
+      color: #fff !important;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.12);
+      padding: 8px 18px !important;
+      text-transform: none !important;
+      letter-spacing: .02em !important;
+    }
+    body .bajas-filters {
+      position: absolute !important;
+      z-index: 45 !important;
+      left: 24px !important;
+      right: 24px !important;
+      bottom: -44px !important;
+      display: grid !important;
+      grid-template-columns: repeat(2, minmax(150px, 1.25fr)) repeat(4, minmax(105px, 1fr)) minmax(190px, auto) !important;
+      gap: 14px !important;
+      align-items: end !important;
+      padding: 16px 18px !important;
+      border-radius: 12px !important;
+      border: 1px solid rgba(120, 47, 39, .12) !important;
+      background: rgba(255,255,255,.94) !important;
+      box-shadow: 0 18px 45px rgba(89, 36, 24, .20), inset 0 1px 0 rgba(255,255,255,.88) !important;
+      overflow: visible !important;
+    }
+    .bajas-filters .filter-title {
+      color: #8b6a5f !important;
+      font-size: 10px !important;
+      letter-spacing: .08em !important;
+      margin-left: 2px !important;
+    }
+    .bajas-filters .filter-select,
+    .bajas-filters .smart-filter__button {
+      height: 40px !important;
+      min-height: 40px !important;
+      background: rgba(255,255,255,.96) !important;
+      border: 1px solid rgba(72, 45, 40, .16) !important;
+      border-radius: 8px !important;
+      color: #241413 !important;
+      -webkit-text-fill-color: #241413 !important;
+      box-shadow: 0 3px 10px rgba(90, 42, 24, .06) !important;
+      padding: 9px 12px !important;
+      font-weight: 800 !important;
+    }
+    .bajas-filters .filter-select:hover,
+    .bajas-filters .filter-select:focus,
+    .bajas-filters .smart-filter__button:hover {
+      background: #fff !important;
+      border-color: rgba(217, 31, 45, .34) !important;
+      box-shadow: 0 0 0 3px rgba(217,31,45,.08), 0 8px 18px rgba(90,42,24,.08) !important;
+    }
+    .bajas-filters .smart-filter__chev { color: #7d655f !important; }
+    body .bajas-filters .filter-box--actions { min-width: 190px !important; }
+    .filter-actions { display: grid; grid-template-columns: 1fr 1.15fr; gap: 10px; align-items: center; }
+    .bajas-filters .reset-filters {
+      height: 40px !important;
+      min-height: 40px !important;
+      padding: 9px 14px !important;
+      border-radius: 8px !important;
+      background: rgba(255,255,255,.96) !important;
+      border: 1px solid rgba(72,45,40,.16) !important;
+      color: #241413 !important;
+      -webkit-text-fill-color: #241413 !important;
+      box-shadow: 0 3px 10px rgba(90,42,24,.06) !important;
+      font-weight: 900 !important;
+      white-space: nowrap;
+    }
+    .bajas-filters .reset-filters:hover {
+      background: #fff !important;
+      color: #d91f2d !important;
+      -webkit-text-fill-color: #d91f2d !important;
+      border-color: rgba(217,31,45,.30) !important;
+    }
+    .bajas-filters #download-base,
+    .bajas-filters .download-filter {
+      background: linear-gradient(135deg, #f32932, #c91421) !important;
+      color: #fff !important;
+      -webkit-text-fill-color: #fff !important;
+      border-color: rgba(160,12,22,.16) !important;
+      box-shadow: 0 10px 22px rgba(201,20,33,.22) !important;
+    }
+        .bajas-filters #download-base:hover {
+      transform: translateY(-1px) !important;
+      box-shadow: 0 14px 28px rgba(201,20,33,.28) !important;
+    }
+    .bajas-filters .smart-filter__menu { top: calc(100% + 10px) !important; border-radius: 14px !important; }
+    @media (max-width: 1180px) {
+      .bajas-header { padding-bottom: 24px !important; margin-bottom: 18px !important; }
+      .bajas-filters {
+        position: relative !important;
+        left: auto !important;
+        right: auto !important;
+        bottom: auto !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        margin-top: 14px !important;
+      }
+      .filter-box--actions { min-width: 0; }
+    }
+    @media (max-width: 640px) {
+      .bajas-header { padding: 22px 18px !important; }
+      .bajas-header h1 { font-size: 1.8rem !important; }
+      .bajas-filters { grid-template-columns: 1fr !important; padding: 14px !important; }
+      .filter-actions { grid-template-columns: 1fr; }
+    }
+  </style>
+
+  <link rel="stylesheet" href="../css/floating-filter-layout.css?v=f7b746e7" />
+  <link rel="stylesheet" href="../css/rh-dashboard-refresh.css?v=f7b746e7" />
+  <link rel="stylesheet" href="../css/rh-table-tools.css?v=f7b746e7" />
+  <link rel="stylesheet" href="../css/rh-filter-summary.css?v=f7b746e7" />
+  <style id="d2-concept-macos">
+    /* Prototipo: misma familia visual del Dashboard 1, con prioridad a la
+       lectura de bajas y no a superficies rojas pesadas. */
+    body.hr-dashboard{background:linear-gradient(180deg,#fbf8f5 0%,#f8f3ee 54%,#fcfaf8 100%) !important;}
+    body.hr-dashboard nav.topbar{background:linear-gradient(135deg,rgba(255,255,255,.48),rgba(255,244,236,.18)) !important;border-color:rgba(255,255,255,.56) !important;-webkit-backdrop-filter:blur(34px) saturate(185%) !important;backdrop-filter:blur(34px) saturate(185%) !important;box-shadow:0 14px 34px rgba(87,46,32,.10),inset 0 1px 0 rgba(255,255,255,.74),inset 0 -1px 0 rgba(255,255,255,.14) !important;}
+    body.hr-dashboard nav.topbar::after{background:linear-gradient(112deg,rgba(255,255,255,.52),rgba(255,255,255,.08) 44%,transparent 72%),radial-gradient(56% 150% at 100% 0%,rgba(248,86,81,.13),transparent 66%),radial-gradient(45% 120% at 0% 100%,rgba(246,183,60,.12),transparent 68%) !important;}
+    body.hr-dashboard .bajas-page{max-width:1480px;padding:26px 24px 52px;}
+    body.hr-dashboard .bajas-header{min-height:172px;padding:22px 28px 20px !important;gap:14px;margin-bottom:14px !important;border-radius:26px;background:linear-gradient(135deg,rgba(255,255,255,.94),rgba(255,247,240,.70)) !important;border:1px solid rgba(255,255,255,.94);box-shadow:none !important;overflow:visible;}
+    body.hr-dashboard .bajas-header::before,body.hr-dashboard .bajas-header::after{display:none !important;}
+    /* El encabezado no proyecta sombras: el único relieve intencional es el del título. */
+    body.hr-dashboard .bajas-header *:not(h1){box-shadow:none !important;text-shadow:none !important;filter:none !important;}
+    body.hr-dashboard .bajas-header__title{align-items:center;gap:14px;}
+    body.hr-dashboard .bajas-header h1{color:#281b19 !important;-webkit-text-fill-color:#281b19 !important;font-size:clamp(2.15rem,3vw,2.8rem) !important;letter-spacing:-.035em !important;text-shadow:none !important;filter:drop-shadow(0 12px 22px rgba(55,4,10,.18)) !important;}
+    body.hr-dashboard .bajas-header__meta{display:none;}
+    body.hr-dashboard .bajas-header .bajas-header__badge:not(a){display:none !important;}
+    body.hr-dashboard .bajas-header__title>a.bajas-header__badge{margin-left:0;background:rgba(217,31,45,.08) !important;border-color:rgba(217,31,45,.15) !important;color:#bd1724 !important;-webkit-text-fill-color:#bd1724 !important;box-shadow:none;}
+    body.hr-dashboard .bajas-header [data-oxxo-scope-mount]{min-width:0;}
+    body.hr-dashboard .bajas-header .oxxo-scope-selector--inline{max-width:780px;margin-left:auto;padding:6px;border-radius:15px;}
+    body.hr-dashboard .bajas-header .oxxo-scope-selector__intro{gap:6px;padding:0 5px 0 1px;}
+    body.hr-dashboard .bajas-header .oxxo-scope-selector__pin{width:26px;height:26px;border-radius:9px;}
+    body.hr-dashboard .bajas-header .oxxo-scope-selector__label strong{font-size:9px;}
+    body.hr-dashboard .bajas-header .oxxo-scope-selector__label small{font-size:7.5px;margin-top:2px;}
+    body.hr-dashboard .bajas-header .oxxo-scope-switch{gap:2px;padding:3px;border-radius:11px;}
+    body.hr-dashboard .bajas-header .oxxo-scope-switch__opt{gap:5px;padding:7px 8px;border-radius:8px;font-size:9.5px;}
+    body.hr-dashboard .bajas-hero-context{display:flex;flex-wrap:wrap;gap:9px;margin-top:auto;}
+    body.hr-dashboard .bajas-hero-context span{display:inline-flex;align-items:baseline;gap:5px;padding:9px 11px;border-radius:999px;background:rgba(255,255,255,.66);border:1px solid rgba(128,63,38,.10);box-shadow:inset 0 1px 0 rgba(255,255,255,.9);color:#69544e;font-size:11px;font-weight:750;}
+    body.hr-dashboard .bajas-hero-context b{color:#c91825;font-family:var(--font-display);font-size:17px;line-height:1;}
+    body.hr-dashboard .bajas-filters{position:relative !important;z-index:20 !important;left:auto !important;right:auto !important;bottom:auto !important;width:auto !important;margin:0 0 24px !important;padding:14px 16px;border-radius:18px;background:rgba(255,255,255,.58);border:1px solid rgba(255,255,255,.86);box-shadow:0 10px 26px rgba(93,52,36,.08),inset 0 1px 0 rgba(255,255,255,.92);-webkit-backdrop-filter:blur(28px) saturate(155%);backdrop-filter:blur(28px) saturate(155%);}
+    body.hr-dashboard .bajas-filters::before{display:none !important;}
+    body.hr-dashboard .bajas-filters .filter-title{color:#8b756d !important;font-size:9px;}
+    body.hr-dashboard .bajas-filters .filter-select,body.hr-dashboard .bajas-filters .smart-filter__button,body.hr-dashboard .bajas-filters input{min-height:40px;border-radius:11px;background:rgba(255,255,255,.74) !important;box-shadow:inset 0 1px 0 rgba(255,255,255,.92),0 2px 8px rgba(82,42,28,.04);}
+    body.hr-dashboard .bajas-kpis{gap:14px;margin:22px 0 18px;}
+    body.hr-dashboard .bajas-kpis .kpi-card{min-height:144px;padding:21px 22px;border-radius:18px;background:rgba(255,255,255,.68) !important;box-shadow:0 8px 20px rgba(93,52,36,.07),inset 0 1px 0 rgba(255,255,255,.92) !important;-webkit-backdrop-filter:blur(18px) saturate(150%);backdrop-filter:blur(18px) saturate(150%);}
+    body.hr-dashboard .bajas-kpis .kpi-card.active{transform:translateY(-2px);box-shadow:0 12px 26px rgba(93,52,36,.12),inset 0 1px 0 rgba(255,255,255,.92) !important;}
+    body.hr-dashboard .bajas-kpis .kpi-card__value{font-size:clamp(2.4rem,2.65vw,3rem);}
+    body.hr-dashboard .bajas-panel,body.hr-dashboard .bajas-detail-panel,body.hr-dashboard .denom-panel{border-radius:20px;background:rgba(255,255,255,.72) !important;border-color:rgba(255,255,255,.82) !important;box-shadow:0 9px 24px rgba(93,52,36,.07),inset 0 1px 0 rgba(255,255,255,.9);-webkit-backdrop-filter:blur(18px) saturate(145%);backdrop-filter:blur(18px) saturate(145%);}
+    body.hr-dashboard .bajas-panel__title,body.hr-dashboard .panel__title,body.hr-dashboard .compromiso-title{color:#3b2925;}
+    body.hr-dashboard .compromiso-title{background:rgba(247,244,241,.82) !important;color:#725d57 !important;-webkit-text-fill-color:#725d57 !important;border-bottom:1px solid rgba(128,63,38,.13);}
+    body.hr-dashboard .compromiso-panel{overflow:hidden;border-color:rgba(255,255,255,.82) !important;}
+    body.hr-dashboard .compromiso-table{background:transparent;}
+    body.hr-dashboard .compromiso-table thead th{padding:12px 14px;background:rgba(247,244,241,.86) !important;color:#725d57 !important;-webkit-text-fill-color:#725d57 !important;border-bottom:1px solid rgba(128,63,38,.13);font-size:10px;letter-spacing:.08em;text-transform:uppercase;}
+    body.hr-dashboard .compromiso-table tbody tr{background:rgba(255,255,255,.40);}
+    body.hr-dashboard .compromiso-table tbody tr:nth-child(even){background:rgba(255,249,245,.42);}
+    body.hr-dashboard .compromiso-table td{padding:9px 14px;border-bottom-color:rgba(128,63,38,.08);}
+    body.hr-dashboard .compromiso-table tfoot td{background:rgba(217,31,45,.055);color:#7d3433;border-top:1px solid rgba(217,31,45,.12);}
+    body.hr-dashboard .compromiso-combined{display:block;}
+    body.hr-dashboard .compromiso-combined .bajas-row-panel{min-height:0;}
+    body.hr-dashboard .compromiso-combined .chart-wide{height:474px!important;min-height:474px!important;}
+    body.hr-dashboard .compromiso-chart-layout{display:block!important;}
+    body.hr-dashboard .compromiso-chart-layout canvas{width:100%!important;height:100%!important;min-width:0;}
+    body.hr-dashboard .compromiso-details{display:none!important;}
+    body.hr-dashboard .compromiso-detail-head,body.hr-dashboard .compromiso-detail-row{display:grid;grid-template-columns:repeat(3,1fr);align-items:center;text-align:center;gap:2px;}
+    body.hr-dashboard .compromiso-detail-head{font-size:9px;letter-spacing:.08em;font-weight:800;color:#8b756d;}
+    body.hr-dashboard .compromiso-detail-row{font:900 12px Barlow,sans-serif;color:#3b2925;}
+    body.hr-dashboard .compromiso-detail-row .meta{color:#75645e;}
+    body.hr-dashboard .compromiso-detail-row .up{color:#c91825;}
+    body.hr-dashboard .compromiso-detail-row .down{color:#15945e;}
+    body.hr-dashboard .compromiso-summary{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 8px;}
+    body.hr-dashboard .compromiso-summary span{display:inline-flex;gap:5px;align-items:baseline;padding:6px 10px;border-radius:999px;background:rgba(255,255,255,.62);border:1px solid rgba(128,63,38,.10);color:#735c55;font-size:10px;font-weight:750;}
+    body.hr-dashboard .compromiso-summary b{font-family:var(--font-display);font-size:15px;color:#c91825;}
+    body.hr-dashboard .compromiso-summary .is-meta b{color:#75645e;}
+    body.hr-dashboard .compromiso-summary .is-desfase b{color:#de4a27;}
+    @media (max-width:760px){body.hr-dashboard .compromiso-combined .chart-wide{height:390px!important;min-height:390px!important;}body.hr-dashboard .compromiso-detail-row{font-size:10px;}}
+    body.hr-dashboard .bajas-panel canvas{filter:saturate(.9);}
+    @media (max-width:980px){body.hr-dashboard .bajas-page{padding:20px 16px 40px;}body.hr-dashboard .bajas-header{padding:24px 22px 21px !important;}body.hr-dashboard .bajas-header__title{align-items:flex-start;flex-wrap:wrap;}body.hr-dashboard .bajas-header .oxxo-scope-selector--inline{max-width:100%;width:100%;margin-left:0;}}
+  </style>
+  <script defer src="../js/rh-dashboard-enhancements.js?v=f7b746e7"></script>
+  <script defer src="../js/rh-table-tools.js?v=f7b746e7"></script>
+  <script defer src="../js/rh-filter-summary.js?v=f7b746e7"></script>
+</head>
+<body class="hr-dashboard">
+<nav class="topbar">
+  <div class="topbar__brand">
+    <div class="topbar__logo"><img src="../assets/oxxo-logo-original.png" alt="OXXO"></div>
+    <div>
+      <div class="topbar__title">Dashboards Ats</div>
+      <div class="topbar__subtitle">Plaza Oaxaca-ByPamsb</div>
+    </div>
+  </div>
+  <div class="topbar__meta"><a href="../index.html" class="topbar__back">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      Inicio
+    </a>
+  </div>
+</nav>
+
+<main class="bajas-page">
+  <section class="bajas-header">
+    <div class="bajas-header__title" data-oxxo-scope-mount>
+      <div>
+        <h1>Bajas Diarias</h1>
+        <div class="bajas-header__meta">Análisis diario · Plaza Oaxaca</div>
+      </div>
+      <span class="bajas-header__badge">⟳ Diario · Plaza Oaxaca</span>
+      <a href="dashboard-2-analisis.html" class="bajas-header__badge" style="text-decoration:none;cursor:pointer"><svg class="icon-inline" viewBox="0 0 24 24" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>Análisis de Bajas</a>
+      <span id="hero-download" style="display:none"></span>
+    </div>
+    <div class="bajas-hero-context" id="bajas-hero-context" aria-live="polite"></div>
+  </section>
+  <section class="bajas-filters" id="filter-bar">
+      <div class="filter-box"><label class="filter-title">Asesor</label><div class="spinner" style="width:20px;height:20px;margin:4px 0"></div></div>
+      <div class="filter-box"><label class="filter-title">Mes</label></div>
+      <div class="filter-box"><label class="filter-title">Temporalidad</label></div>
+      <div class="filter-box"><label class="filter-title">Rot. Temp.</label></div>
+      <div class="filter-box"><label class="filter-title">Puesto</label></div>
+  </section>
+
+  <section class="bajas-kpis" id="kpi-section">
+    <div class="kpi-card"><div class="kpi-card__label">Cargando…</div><div class="kpi-card__value"><div class="spinner"></div></div></div>
+  </section>
+
+  <!-- Se eliminaron las gráficas superiores pequeñas para dejar el dashboard más limpio.
+       El análisis principal se conserva en los rankings y en el detalle completo. -->
+
+  <!-- DENOMINACIONES (cambios de puesto: ascensos/descensos) -->
+  <section class="bajas-analisis-grid">
+    <article class="bajas-panel compromiso-panel">
+      <div class="compromiso-title">Compromiso vs resultado<span class="info-tip" tabindex="0" data-tip="Compara las bajas reales contra la meta comprometida por asesor. Incluye “Sin asesor asignado” para que el total coincida con las bajas mostradas."></span></div>
+      <div id="tabla-compromiso"><div class="state-box"><div class="spinner"></div></div></div>
+    </article>
+
+    <article class="bajas-panel bajas-row-panel" style="margin:0">
+      <div class="bajas-panel__title">Bajas por Asesor<span class="info-tip" tabindex="0" data-tip="Total de bajas por asesor con los filtros activos. Incluye “Sin asesor asignado” cuando existan registros sin responsable."></span></div>
+      <div class="chart-wide"><canvas id="chart-asesores"></canvas></div>
+    </article>
+  </section>
+
+  <!-- TABLA RANKING PLAZAS -->
+  <section class="bajas-panel plazas-panel" style="margin-bottom:14px;padding:20px">
+    <div class="plazas-panel__toolbar">
+      <button type="button" id="plazas-scope-toggle" class="plazas-scope-toggle">Ver todas las plazas</button>
+    </div>
+    <div class="plazas-panel__grid">
+      <!-- Ranking plazas -->
+      <div>
+        <div class="bajas-panel__title" style="margin-bottom:14px"><svg class="icon-inline" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></svg>Ranking de Plazas · Bajas acumuladas del mes actual<span class="info-tip" tabindex="0" data-tip="Cuenta bajas por Plaza del mes en curso. Este ranking NO se ve afectado por los filtros de Temporalidad, Rot. Temprana, Puesto o Asesor — siempre refleja el total real de la plaza."></span></div>
+        <div id="tabla-plazas">
+          <div class="state-box"><div class="spinner"></div></div>
+        </div>
+      </div>
+      <!-- Gráfica plazas -->
+      <div>
+        <div class="bajas-panel__title" style="margin-bottom:14px">Comparativo por Plaza<span class="info-tip" tabindex="0" data-tip="Misma base que el ranking de plazas: bajas del mes en curso por Plaza, sin filtros activos."></span></div>
+        <div class="plazas-chart"><canvas id="chart-plazas"></canvas></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="bajas-panel bajas-row-panel">
+    <div class="bajas-panel__title">Top 10 tiendas con más bajas<span class="info-tip" tabindex="0" data-tip="Agrupa las bajas filtradas por Tienda y muestra las 10 con mayor número de bajas, de mayor a menor."></span></div>
+    <div class="chart-wide"><canvas id="chart-tiendas"></canvas></div>
+  </section>
+
+  <section class="bajas-panel heatmap-panel">
+    <div class="bajas-panel__title">Mapa de calor de bajas<span class="info-tip" tabindex="0" data-tip="Cruza rango de Edad vs rango de Antigüedad de las bajas filtradas. El color indica concentración de bajas; clic en una celda filtra el dashboard a ese cruce."></span></div>
+    <div id="heatmap-bajas"></div>
+  </section>
+
+  <section class="panel bajas-detail-panel panel--accent-red">
+    <div class="panel__header">
+      <div class="panel__title">Detalle completo de bajas<span class="info-tip" tabindex="0" data-tip="Listado fila por fila de Dashboard_2_Diario con los filtros activos aplicados (Temporalidad, Rot. Temprana, Puesto, Asesor)."></span></div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <button type="button" id="btn-motivos-pastel" onclick="openMotivosModal()" style="border-radius:999px;border:1px solid rgba(217,31,45,.22);background:rgba(217,31,45,.06);color:#b5121c;font-size:11px;font-weight:800;padding:6px 14px;cursor:pointer;white-space:nowrap"><svg class="icon-inline" viewBox="0 0 24 24" aria-hidden="true"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path><path d="M22 12A10 10 0 0 0 12 2v10z"></path></svg>Motivos</button>
+        <span class="panel__badge orange" id="row-count">— registros</span>
+      </div>
+    </div>
+    <div id="tabla-detalle"><div class="state-box"><div class="spinner"></div><div class="state-box__text">Cargando detalle desde Google Sheets…</div></div></div>
+  </section>
+
+  <!-- Modal: grafica de pastel de motivos -->
+  <div class="baja-overlay" id="motivos-modal" onclick="if(event.target===this)closeMotivosModal()">
+    <div class="baja-modal" style="width:min(560px,100%)">
+      <button class="baja-close" onclick="closeMotivosModal()">✕</button>
+      <div class="baja-eyebrow">Detalle completo de bajas · filtros activos</div>
+      <div class="baja-title">Motivos de baja</div>
+      <div style="position:relative;height:320px">
+        <canvas id="chart-motivos-pastel"></canvas>
+      </div>
+      <div id="motivos-pastel-empty" style="display:none;text-align:center;color:#a6968d;font-weight:700;padding:24px 0">Sin datos con los filtros actuales.</div>
+    </div>
+  </div>
+
+  <section class="panel denom-panel" id="denom-section" style="display:none">
+    <div class="denom-panel__header">
+      <div class="denom-panel__title"><svg class="icon-inline" viewBox="0 0 24 24" aria-hidden="true"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>Denominaciones · Cambios de Puesto<span class="info-tip" tabindex="0" data-tip="Movimientos de puesto (ascensos y descensos) registrados en la pestaña Denominaciones_Dashboard_2_Diario, agrupados por Asesor. Solo se cuentan filas que coinciden con el formato esperado."></span></div>
+      <span class="denom-panel__badge" id="denom-count">— movimientos</span>
+    </div>
+    <div class="denom-kpis" id="denom-kpis"></div>
+    <div id="tabla-denominaciones"><div class="state-box"><div class="spinner"></div></div></div>
+  </section>
+
+  <div class="dash-footer">
+    <div class="dash-footer__update"><div class="dash-footer__update-dot"></div>Datos cargados: <span id="load-time">—</span></div>
+    <div>Solo lectura · Google Sheets · Plaza Oaxaca</div>
+  </div>
+</main>
+
+<!-- Modal detalle de baja -->
+<div class="baja-overlay" id="baja-modal" onclick="if(event.target===this)closeBajaModal()">
+  <div class="baja-modal">
+    <button class="baja-close" onclick="closeBajaModal()" aria-label="Cerrar">✕</button>
+    <div class="baja-eyebrow">Detalle de la baja</div>
+    <h3 class="baja-title" id="baja-title">—</h3>
+    <div id="baja-body"></div>
+  </div>
+</div>
+
+  <script src="../js/config.js?v=f7b746e7"></script>
+<script src="../js/core.js?v=f7b746e7"></script>
+<script>
+const TAB = OXXO.SHEETS_CONFIG.TABS.d2;
+
+const ALIASES = {
+  mes: ['Mes','MES','Mes baja','Mes de baja','Mes_baja'],
+  semana: ['Semana','SEMANA','Week','Semana de baja'],
+  region: ['Región','Region','REGION','División','Division'],
+  plaza: ['Plaza','PLAZA','Zona'],
+  asesor: ['Asesor','ASESOR','AT','Asesor AT','Responsable','Asesor Responsable','Nombre asesor','Nombre del asesor'],
+  tienda: ['Tienda','Unidad org.','Unidad org','Unidad Organizativa','Unidad organizativa','Unidad','Sucursal','Nombre Tienda','Nombre de tienda','Denominación U.Org. Actual','Denominacion U.Org. Actual','Denominación U.Organ.Actual','Denominacion U.Organ.Actual','Denom. Unidad','U.Or.Act'],
+  puesto: ['Puesto','Puestos Homologados','Descripción de Posición','Descripcion de Posicion','Descripción de Puesto','Descripcion de Puesto','Posición','Posicion','Cargo','Denominación Función Actual','Denominacion Funcion Actual'],
+  motivo: ['Motivo de baja','Motivo_baja','Motivo','Causa','Causa baja','Baja con causal','Tipo de baja','Denominación Motivo','Denominacion Motivo'],
+  detalle: ['Detalle de Baja','Detalle_baja','Detalle baja','Comentarios'],
+  temporalidad: ['Temporalidad','Temporalidad baja','Rango antigüedad','Rango antiguedad','Antigüedad rango','Antiguedad rango'],
+  aplica: ['Aplica en %','Aplica en % de rotación','Aplica en % de rotacion','Aplica','Aplica porcentaje','Aplica rotación','Aplica rotacion'],
+  rotTemp: ['Rot. Temp.','Rot Temp','Rotación temporal','Rotacion temporal','Rot. Temprana','Rot Temprana','Temporal'],
+  fecha: ['Fecha','Fecha baja','Fecha de baja','Fecha_validez','Fecha validez','F. Validez','Corte'],
+  personal: ['No. Personal','No Personal','N° Personal','Nº Personal','Num. Personal','Num Personal','Núm. Personal','Numero Personal','Número Personal','Numero de Personal','Número de Personal','ID Personal','Id Personal','Personal','No. empleado','No empleado','Numero empleado','Número empleado'],
+  antiguedad: ['Antiguedad_dias','Antigüedad_dias','Antiguedad dias','Antigüedad días','Dias','Días','Días Activo','Dias Activo'],
+  empleado: ['Nombre_empleado','Nombre empleado','Empleado','Colaborador','Nombre colaborador','Nombre del empleado'],
+  genero: ['Genero','Género','Sexo'],
+  medida: ['Denominación Medida','Denominacion Medida','Medida','Med.'],
+  bajas2025: ['2025','Bajas 2025','Total 2025','Bajas_2025'],
+  bajas2026: ['2026','Bajas 2026','Total 2026','Bajas_2026','Total de bajas'],
+  bajasSemana: ['Bajas temprana','Bajas Semana','Bajas semana','Bajas_semana','Conteo bajas temprana'],
+  totalBajas: ['Total de bajas','Total bajas','Bajas','TOTAL BAJAS'],
+  colPlazas:   ['Plazas','PLAZAS','Plaza ranking','Nombre Plaza'],
+  colBajas:    ['Bajas Plaza','Bajas_Plaza','BAJAS PLAZA','Bajas plazas'],
+  edad: ['Edad','EDAD','Edad años','Edad (años)','Edad Años','Edad_anios','Edad_años'],
+};
+
+function cleanKey(str){return String(str||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');}
+function cleanText(str){return String(str||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/\s+/g,' ').trim();}
+function canonicalPlazaName(value){
+  const raw=String(value||'').trim();
+  const token=cleanText(raw);
+  for(const region of OXXO.getScopeCatalog()){
+    for(const plaza of region.plazas){
+      const candidates=[plaza.name,plaza.shortName,...plaza.aliases].map(cleanText).filter(Boolean);
+      if(candidates.some(candidate=>token===candidate||token.includes(candidate)||candidate.includes(token)))return plaza.shortName||plaza.name;
+    }
+  }
+  return raw||'Sin plaza';
+}
+// Delegado a core.js (OXXO.metricsFindKey): misma implementacion exacta,
+// para que dashboards y presentaciones nunca vuelvan a divergir.
+function findRealKey(row, aliases){ return OXXO.metricsFindKey(row, aliases); }
+function buildCols(data){
+  const sample = data.find(r => Object.values(r).some(v => String(v||'').trim() !== '')) || data[0] || {};
+  const cols = {}; Object.entries(ALIASES).forEach(([k,v]) => cols[k] = findRealKey(sample, v));
+  return cols;
+}
+function val(row, cols, key, fallback=''){ const k=cols[key]; const v=k ? row[k] : undefined; return (v===undefined || v===null || String(v).trim()==='') ? fallback : v; }
+function num(v){ const n = Number(String(v??'').replace(/[$,%]/g,'').replace(/,/g,'').trim()); return Number.isFinite(n) ? n : 0; }
+function countBy(data, getter){ const o={}; data.forEach(r=>{const k = getter(r) || 'Sin dato'; o[k]=(o[k]||0)+1;}); return o; }
+function topEntries(obj, limit=15){ return Object.entries(obj).map(([label,total])=>({label,total})).sort((a,b)=>b.total-a.total).slice(0,limit); }
+function uniq(data, getter, limit=8){ return [...new Set(data.map(getter).filter(Boolean))].slice(0,limit); }
+function chipHTML(values){ return values.length ? values.map(v=>`<span class="chip-orange">${OXXO.truncate(String(v),22)}</span>`).join('') : '<span class="chip-orange">—</span>'; }
+const MONTH_ABBR = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+const MONTH_MAP = {
+  ene:1, enero:1, jan:1, january:1,
+  feb:2, febrero:2, february:2,
+  mar:3, marzo:3, march:3,
+  abr:4, abril:4, apr:4, april:4,
+  may:5, mayo:5,
+  jun:6, junio:6, june:6,
+  jul:7, julio:7, july:7,
+  ago:8, agosto:8, aug:8, august:8,
+  sep:9, sept:9, septiembre:9, set:9, september:9,
+  oct:10, octubre:10, october:10,
+  nov:11, noviembre:11, november:11,
+  dic:12, diciembre:12, dec:12, december:12,
+};
+function normalizeMonthKey(value){
+  return OXXO.metricsNormalizeMonthKey(value);
+}
+function monthKeyFromRow(row, cols){
+  return normalizeMonthKey(val(row, cols, 'mes')) || normalizeMonthKey(val(row, cols, 'fecha'));
+}
+function monthLabel(key){
+  const m = String(key || '').match(/^(\d{4})-(\d{2})$/);
+  if(!m) return key || 'Sin mes';
+  const names = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  return `${names[+m[2]-1]} ${m[1]}`;
+}
+let BASE_BAJAS_DATA = [];
+// Filas crudas (con el asesor ya resuelto por catalogo), ANTES del filtro de
+// Medida/Puesto de filterData(). Sirve unicamente para calcular que meses
+// existen de verdad -- ver uniqueFilterOptions.
+let RAW_BAJAS_DATA = [];
+let BAJAS_COLS = {};
+// Boton local "Ver todas las plazas" del panel Ranking/Comparativo de
+// Plazas: por defecto solo muestra la plaza activa (ver renderPlazas).
+let PLAZAS_SHOW_ALL = false;
+let OTRAS_PLAZAS_DATA = [];
+// Meta mensual de bajas por asesor (pestana Compromisos_Bajas: Plaza | Asesor
+// | Compromiso), cargada una vez en initDashboard -- antes vivia hardcodeada
+// como nombres reales en OXXO.SHEETS_CONFIG.BAJAS_COMMITMENTS (config.js,
+// archivo JS publico). byPlaza: Map de plaza normalizada -> {Asesor: valor}.
+let COMPROMISOS_BY_PLAZA = new Map();
+let FILTER_STATE = {};
+let SELECTED_ASESORES = null; // array de asesores seleccionados (multi-select)
+
+const SIN_ASESOR = 'SIN ASESOR ASIGNADO';
+function getAsesorValue(row, cols){
+  const raw = String(val(row, cols, 'asesor', '') || '').trim();
+  if(!raw) return SIN_ASESOR;
+  const c = cleanText(raw);
+  if(c.includes('SIN ASESOR') || c.includes('NO ASIGNADO')) return SIN_ASESOR;
+  return raw;
+}
+function asesorOptionsList(data, cols){
+  const set = new Set(data.map(r => getAsesorValue(r, cols)));
+  const arr = [...set].filter(v => v !== SIN_ASESOR).sort((a,b)=>a.localeCompare(b,'es'));
+  if(set.has(SIN_ASESOR)) arr.push(SIN_ASESOR);
+  return arr;
+}
+function defaultAsesorSelection(data, cols){
+  // Arranca con TODOS los asesores, incluido "Sin asesor asignado" (bajas de
+  // tiendas de Entrenamiento y Operaciones). Antes esas quedaban fuera por
+  // defecto y la tarjeta "Total Bajas" no era el total: eran bajas reales que
+  // no aparecian en ningun KPI y nada en pantalla lo decia. Se sigue pudiendo
+  // des-seleccionar a mano desde el filtro de asesor.
+  return asesorOptionsList(data, cols);
+}
+function passesAsesorFilter(row, cols){
+  if(!SELECTED_ASESORES) return true;
+  return SELECTED_ASESORES.includes(getAsesorValue(row, cols));
+}
+
+function getFilterValue(row, cols, key) {
+  if (key === 'mes') return monthKeyFromRow(row, cols);
+  if (key === 'temporalidad') return getTemporalidad(row, cols);
+  if (key === 'puesto') return normalizePuesto(val(row, cols, 'puesto'));
+  if (key === 'motivo') return normalizeMotivo(val(row, cols, 'motivo'));
+  if (key === 'edadRange') { const g = ageGroup(num(val(row, cols, 'edad', ''))); return g ? g.label : ''; }
+  if (key === 'antiguedadRange') { const g = tenureGroupHeatmap(val(row, cols, 'temporalidad', '')); return g ? g.label : ''; }
+  return String(val(row, cols, key, '') || '').trim();
+}
+
+function uniqueFilterOptions(data, cols, key) {
+  // 'mes' se calcula sobre RAW_BAJAS_DATA (crudo), no sobre `data` (que ya
+  // paso por filterData(): Medida="BAJA" y Puesto operativo). Esos filtros
+  // se aplican al conjunto COMPLETO ("si queda algo, usalo") y pueden dejar
+  // fuera TODAS las filas de un mes reciente si, por ejemplo, la carga de
+  // hoy todavia no trae la columna Medida poblada -- ese mes desaparecia
+  // por completo del selector (ni siquiera aparecia como opcion), en vez de
+  // solo quedar vacio al elegirlo. Mismo patron de bug que ya se corrigio en
+  // Dashboard 1 (mes vigente elegido sobre datos ya filtrados).
+  const source = (key === 'mes' && RAW_BAJAS_DATA.length) ? RAW_BAJAS_DATA : data;
+  const values = [...new Set(source.map(r => getFilterValue(r, cols, key)).filter(Boolean))];
+  if(key === 'mes') return values.sort((a,b)=>String(a).localeCompare(String(b)));
+  return values.sort((a,b) => String(a).localeCompare(String(b), 'es'));
+}
+
+function filterOptionLabel(key, value){
+  if(key === 'mes') return monthLabel(value);
+  return OXXO.truncate(String(value), 28);
+}
+
+function latestMonthKey(data, cols){
+  return uniqueFilterOptions(data, cols, 'mes').slice(-1)[0] || '';
+}
+
+function defaultFilterState(data, cols, restoreShared = true){
+  const available = uniqueFilterOptions(data, cols, 'mes');
+  const latest = available.slice(-1)[0] || '';
+  const mes = restoreShared ? OXXO.restoreDashboardPeriod(available, latest) : latest;
+  return mes ? { mes } : {};
+}
+
+function updateAsesorLabel(data, cols){
+  const label = document.getElementById('asesor-label');
+  if(!label) return;
+  const total = asesorOptionsList(data, cols).length;
+  const n = SELECTED_ASESORES ? SELECTED_ASESORES.length : total;
+  if(!SELECTED_ASESORES || n === total) label.textContent = 'Todos los asesores';
+  else if(n === 0) label.textContent = 'Ningún asesor';
+  else if(n === 1) label.textContent = OXXO.truncate(SELECTED_ASESORES[0], 24);
+  else label.textContent = `${n} asesores seleccionados`;
+}
+function renderAsesorOptions(data, cols, query=''){
+  const wrap = document.getElementById('asesor-options');
+  if(!wrap) return;
+  const q = String(query||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+  const all = asesorOptionsList(data, cols);
+  const filtered = all.filter(v => !q || v.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().includes(q));
+  const allSelected = SELECTED_ASESORES && SELECTED_ASESORES.length === all.length;
+  const rows = [{value:'', label:'Todos los asesores', isAll:true}]
+    .concat(filtered.map(v => ({value:v, label:v, isAll:false})))
+    .map(opt => {
+      const active = opt.isAll ? allSelected : (SELECTED_ASESORES ? SELECTED_ASESORES.includes(opt.value) : true);
+      // "Solo" aisla ese asesor de un clic. La regla de abajo (estado implicito
+      // "Todos" -> el clic aisla) no alcanza desde una seleccion parcial: ahi el
+      // clic solo quita, y quedarse con uno obligaba a apagar los demas a mano.
+      const opcion = `<button type="button" class="smart-filter__option ${active?'is-active':''}" data-asesor="${esc2(opt.value)}" title="${esc2(opt.label)}">
+        <span class="smart-filter__check"></span>
+        <span class="sf-text">${esc2(opt.label)}</span>
+      </button>`;
+      if(opt.isAll) return `<div class="sf-row">${opcion}</div>`;
+      return `<div class="sf-row">${opcion}<button type="button" class="sf-only" data-solo-asesor="${esc2(opt.value)}" title="Ver solo ${esc2(opt.label)}">Solo</button></div>`;
+    }).join('');
+  wrap.innerHTML = rows || '<div class="smart-filter__empty">Sin resultados</div>';
+}
+function updateTiendaLabel(){
+  const label = document.getElementById('tienda-label');
+  if(!label) return;
+  label.textContent = FILTER_STATE.tienda ? OXXO.truncate(FILTER_STATE.tienda, 24) : 'Buscar tienda…';
+}
+function renderTiendaOptions(data, cols, query=''){
+  const wrap = document.getElementById('tienda-options');
+  if(!wrap) return;
+  const q = String(query||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+  const all = uniqueFilterOptions(data, cols, 'tienda');
+  const filtered = all.filter(v => !q || v.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().includes(q));
+  const rows = [{value:'', label:'Todas las tiendas'}]
+    .concat(filtered.map(value => ({value, label:value})))
+    .map(opt => {
+      const active = opt.value ? FILTER_STATE.tienda === opt.value : !FILTER_STATE.tienda;
+      return `<button type="button" class="smart-filter__option ${active?'is-active':''}" data-tienda="${esc2(opt.value)}">
+        <span class="smart-filter__check"></span>
+        <span>${esc2(opt.label)}</span>
+      </button>`;
+    }).join('');
+  wrap.innerHTML = rows || '<div class="smart-filter__empty">Sin resultados</div>';
+}
+function esc2(value){
+  return String(value??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+let _asesorDocClickBound = false;
+function setFilterBar(data, cols){
+  const filterDefs = [
+    ['mes', 'Mes'],
+    ['temporalidad', 'Temporalidad'],
+    ['rotTemp', 'Rot. Temp.'],
+    ['puesto', 'Puesto'],
+  ];
+
+  const asesorBox = `
+    <div class="filter-box">
+      <label class="filter-title">Asesor</label>
+      <div class="smart-filter" id="asesor-filter">
+        <button class="smart-filter__button" type="button" id="asesor-button">
+          <span class="smart-filter__label" id="asesor-label">Todos los asesores</span>
+          <span class="smart-filter__chev">▾</span>
+        </button>
+        <div class="smart-filter__menu" id="asesor-menu">
+          <input class="smart-filter__search" id="asesor-search" type="search" placeholder="Buscar asesor..." autocomplete="off">
+          <div class="smart-filter__list" id="asesor-options"></div>
+        </div>
+      </div>
+    </div>`;
+
+  const tiendaBox = `
+    <div class="filter-box">
+      <label class="filter-title">Tienda</label>
+      <div class="smart-filter" id="tienda-filter">
+        <button class="smart-filter__button" type="button" id="tienda-button">
+          <span class="smart-filter__button-main">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg>
+            <span class="smart-filter__label" id="tienda-label">Buscar tienda…</span>
+          </span>
+          <span class="smart-filter__chev">▾</span>
+        </button>
+        <div class="smart-filter__menu" id="tienda-menu">
+          <input class="smart-filter__search" id="tienda-search" type="search" placeholder="Escribe el nombre de la tienda..." autocomplete="off">
+          <div class="smart-filter__list" id="tienda-options"></div>
+        </div>
+      </div>
+    </div>`;
+
+  const selects = filterDefs.map(([key,title]) => {
+    const values = uniqueFilterOptions(data, cols, key);
+    const selected = FILTER_STATE[key] || '';
+    const options = [''].concat(values).map(v => {
+      const label = v === '' ? (key === 'mes' ? 'Todos los meses' : 'Todos') : filterOptionLabel(key, v);
+      return `<option value="${String(v).replace(/"/g,'&quot;')}" ${String(v) === String(selected) ? 'selected' : ''}>${label}</option>`;
+    }).join('');
+    return `
+      <div class="filter-box">
+        <label class="filter-title">${title}</label>
+        <select class="filter-select" data-filter="${key}">${options}</select>
+      </div>`;
+  }).join('');
+
+  document.getElementById('filter-bar').innerHTML = asesorBox + tiendaBox + selects +
+    `<div class="filter-box filter-box--actions"><label class="filter-title">Acciones</label><div class="filter-actions"><button class="reset-filters" id="reset-filters">✕ Limpiar</button><button class="reset-filters download-filter" type="button" id="download-base">Descargar base</button></div></div>`;
+
+  document.querySelectorAll('.filter-select').forEach(select => {
+    select.addEventListener('change', () => {
+      const key = select.dataset.filter;
+      FILTER_STATE[key] = select.value;
+      if (!FILTER_STATE[key]) delete FILTER_STATE[key];
+      if(key === 'mes') OXXO.persistDashboardPeriod(select.value);
+      document.querySelectorAll('.bajas-kpis .kpi-card[data-kpi]').forEach(c => c.classList.remove('active'));
+      renderBajasDashboard(applyUserFilters(BASE_BAJAS_DATA, BAJAS_COLS), BAJAS_COLS);
+      if(key === 'mes' && BASE_DENOM_DATA.length) renderDenominaciones(filterDenomByMes(BASE_DENOM_DATA));
+    });
+  });
+
+  // Smart-filter Asesor
+  updateAsesorLabel(data, cols);
+  renderAsesorOptions(data, cols);
+  document.getElementById('asesor-button').addEventListener('click', e => {
+    e.stopPropagation();
+    const box = document.getElementById('asesor-filter');
+    const willOpen = !box.classList.contains('open');
+    document.getElementById('tienda-filter')?.classList.remove('open');
+    box.classList.toggle('open', willOpen);
+    if(willOpen) setTimeout(()=>document.getElementById('asesor-search').focus(),0);
+  });
+  document.getElementById('asesor-search').addEventListener('input', e => {
+    renderAsesorOptions(BASE_BAJAS_DATA, BAJAS_COLS, e.target.value);
+  });
+  document.getElementById('asesor-options').addEventListener('click', e => {
+    const solo = e.target.closest('[data-solo-asesor]');
+    if(solo){
+      e.stopPropagation();
+      SELECTED_ASESORES = [solo.dataset.soloAsesor];
+      updateAsesorLabel(BASE_BAJAS_DATA, BAJAS_COLS);
+      renderAsesorOptions(BASE_BAJAS_DATA, BAJAS_COLS, document.getElementById('asesor-search').value);
+      document.querySelectorAll('.bajas-kpis .kpi-card[data-kpi]').forEach(c => c.classList.remove('active'));
+      renderBajasDashboard(applyUserFilters(BASE_BAJAS_DATA, BAJAS_COLS), BAJAS_COLS);
+      return;
+    }
+    const btn = e.target.closest('[data-asesor]');
+    if(!btn) return;
+    e.stopPropagation();
+    const value = btn.dataset.asesor || '';
+    const all = asesorOptionsList(BASE_BAJAS_DATA, BAJAS_COLS);
+    if(!value){
+      const allSelected = SELECTED_ASESORES && SELECTED_ASESORES.length === all.length;
+      SELECTED_ASESORES = allSelected ? [] : [...all];
+    } else if(!SELECTED_ASESORES || SELECTED_ASESORES.length === all.length){
+      // Estado implicito "Todos": un clic en un asesor puntual selecciona SOLO ese,
+      // en vez de quitarlo del grupo completo (lo cual obligaba a deseleccionar
+      // uno por uno para quedarse con un solo asesor).
+      SELECTED_ASESORES = [value];
+    } else {
+      const set = new Set(SELECTED_ASESORES);
+      set.has(value) ? set.delete(value) : set.add(value);
+      SELECTED_ASESORES = [...set];
+    }
+    updateAsesorLabel(BASE_BAJAS_DATA, BAJAS_COLS);
+    renderAsesorOptions(BASE_BAJAS_DATA, BAJAS_COLS, document.getElementById('asesor-search').value);
+    document.querySelectorAll('.bajas-kpis .kpi-card[data-kpi]').forEach(c => c.classList.remove('active'));
+    renderBajasDashboard(applyUserFilters(BASE_BAJAS_DATA, BAJAS_COLS), BAJAS_COLS);
+  });
+
+  // Buscador de tienda (selección única)
+  updateTiendaLabel();
+  renderTiendaOptions(data, cols);
+  document.getElementById('tienda-button').addEventListener('click', e => {
+    e.stopPropagation();
+    const box = document.getElementById('tienda-filter');
+    const willOpen = !box.classList.contains('open');
+    document.getElementById('asesor-filter')?.classList.remove('open');
+    box.classList.toggle('open', willOpen);
+    if(willOpen) setTimeout(()=>document.getElementById('tienda-search').focus(),0);
+  });
+  document.getElementById('tienda-search').addEventListener('input', e => {
+    renderTiendaOptions(BASE_BAJAS_DATA, BAJAS_COLS, e.target.value);
+  });
+  document.getElementById('tienda-options').addEventListener('click', e => {
+    const btn = e.target.closest('[data-tienda]');
+    if(!btn) return;
+    e.stopPropagation();
+    const value = btn.dataset.tienda || '';
+    if(value) FILTER_STATE.tienda = value;
+    else delete FILTER_STATE.tienda;
+    document.getElementById('tienda-search').value = '';
+    updateTiendaLabel();
+    renderTiendaOptions(BASE_BAJAS_DATA, BAJAS_COLS);
+    document.getElementById('tienda-filter').classList.remove('open');
+    document.querySelectorAll('.bajas-kpis .kpi-card[data-kpi]').forEach(c => c.classList.remove('active'));
+    renderBajasDashboard(applyUserFilters(BASE_BAJAS_DATA, BAJAS_COLS), BAJAS_COLS);
+  });
+  if(!_asesorDocClickBound){
+    document.addEventListener('click', e => {
+      if(!e.target.closest('#asesor-filter')){
+        const box = document.getElementById('asesor-filter');
+        if(box) box.classList.remove('open');
+      }
+      if(!e.target.closest('#tienda-filter')){
+        const box = document.getElementById('tienda-filter');
+        if(box) box.classList.remove('open');
+      }
+    });
+    _asesorDocClickBound = true;
+  }
+
+  document.getElementById('download-base')?.addEventListener('click', event => {
+    OXXO.handleDownloadButton(event.currentTarget, () => OXXO.downloadSheetTab(TAB, 'dashboard-2-bajas.csv'));
+  });
+
+  const resetBtn = document.getElementById('reset-filters');
+  if (resetBtn) {
+    resetBtn.addEventListener('click', () => {
+      FILTER_STATE = defaultFilterState(BASE_BAJAS_DATA, BAJAS_COLS, false);
+      OXXO.persistDashboardPeriod(FILTER_STATE.mes || '');
+      SELECTED_ASESORES = defaultAsesorSelection(BASE_BAJAS_DATA, BAJAS_COLS);
+      document.querySelectorAll('.bajas-kpis .kpi-card[data-kpi]').forEach(c => c.classList.remove('active'));
+      setFilterBar(BASE_BAJAS_DATA, BAJAS_COLS);
+      renderBajasDashboard(applyUserFilters(BASE_BAJAS_DATA, BAJAS_COLS), BAJAS_COLS);
+    });
+  }
+}
+
+function applyUserFilters(data, cols) {
+  return data.filter(row => {
+    if(!passesAsesorFilter(row, cols)) return false;
+    return Object.entries(FILTER_STATE).every(([key, selected]) => {
+      if (!selected) return true;
+      return String(getFilterValue(row, cols, key)) === String(selected);
+    });
+  });
+}
+
+function normalizePuesto(p){
+  const t=cleanText(p);
+  if(t.includes('AYUDANTE')) return 'Ayudante Tienda';
+  if(t.includes('ENCARGADO')) return 'Encargado';
+  if(t.includes('LIDER') || t.includes('LÍDER')) return 'Líder';
+  return String(p||'Sin puesto').trim() || 'Sin puesto';
+}
+function normalizeMotivo(m){
+  const t=cleanText(m);
+  if(!t) return 'Sin motivo';
+  if(t.includes('RENUNCIA')) return 'RENUNCIA';
+  if(t.includes('CAUSAL')) return 'BAJA CON CAUSAL';
+  if(t.includes('ABANDONO')) return 'ABANDONO';
+  return String(m).trim();
+}
+function getTemporalidad(row, cols){
+  const direct = val(row, cols, 'temporalidad');
+  if(direct) return direct;
+  const d = num(val(row, cols, 'antiguedad'));
+  if(!d && d !== 0) return 'Sin dato';
+  if(d <= 45) return '0 - 45 días';
+  if(d <= 90) return '46 - 90 días';
+  if(d <= 180) return '3 - 6 meses';
+  if(d <= 365) return '6 - 12 meses';
+  return '> 1 año';
+}
+function filterData(data, cols){
+  let rows = data.filter(r => Object.values(r).some(v => String(v||'').trim() !== ''));
+  // Para base cruda: quedarse solo con movimientos de BAJA.
+  if(cols.medida){
+    const bajas = rows.filter(r => cleanText(val(r, cols, 'medida')).includes('BAJA'));
+    if(bajas.length) rows = bajas;
+  }
+  // La plaza o región seleccionada ya viene filtrada por fetchSheetData().
+  // Puestos operativos que sí entran al tablero.
+  if(cols.puesto){
+    const operativos = rows.filter(r => {
+      const p = cleanText(val(r, cols, 'puesto'));
+      return p.includes('AYUDANTE') || p.includes('ENCARGADO') || p.includes('LIDER') || p.includes('LÍDER');
+    });
+    if(operativos.length) rows = operativos;
+  }
+  return rows;
+}
+function chartTheme(){
+  if (window.OXXO && OXXO.getChartThemeColors) return OXXO.getChartThemeColors();
+  return { text: '#2D2D44', muted: '#6B6678', grid: 'rgba(128,63,38,.10)', tooltipBg: '#251313' };
+}
+function chartReady(canvas){
+  if (window.Chart) return true;
+  if (window.OXXO && OXXO.ensureChartReady) return OXXO.ensureChartReady(canvas);
+  canvas.style.display = 'none';
+  console.warn('Chart.js no esta disponible.');
+  return false;
+}
+function renderChart(canvasId, type, labels, values, opts={}){
+  const canvas = document.getElementById(canvasId); if(!canvas) return;
+    if(!chartReady(canvas)) return;
+  if(canvas._chartInstance) canvas._chartInstance.destroy();
+  const ctx=canvas.getContext('2d');
+  const theme = chartTheme();
+  const tickColor = theme.text;
+  const tickStrokeWidth = 0;
+  const isRanking = !!opts.ranking;
+  const isLollipop = !!opts.lollipop;
+  const colors = opts.colors || labels.map((_, index) => {
+    if (!isRanking) return opts.color || '#F07B22';
+    return index < 3 ? '#D91F2D' : index < 8 ? '#F07B22' : '#F6B73C';
+  });
+  const rankingValuePlugin = {
+    id: `rankingValueLabels-${canvasId}`,
+    afterDatasetsDraw(chart) {
+      if(!isRanking) return;
+      const { ctx } = chart;
+      const meta = chart.getDatasetMeta(0);
+      ctx.save();
+      ctx.font = '900 12px Barlow, sans-serif';
+      ctx.textBaseline = 'middle';
+      meta.data.forEach((bar, index) => {
+        const value = values[index];
+        const text = `${value} ${value === 1 ? 'baja' : 'bajas'}`;
+        const sitsInside = bar.x > chart.chartArea.right - 58;
+        ctx.fillStyle = sitsInside ? '#FFF8F2' : '#C91825';
+        ctx.textAlign = sitsInside ? 'right' : 'left';
+        ctx.fillText(text, sitsInside ? bar.x - 10 : bar.x + 10, bar.y);
+      });
+      ctx.restore();
+    }
+  };
+  const rankingLollipopPlugin = {
+    id: `rankingLollipop-${canvasId}`,
+    beforeDatasetsDraw(chart) {
+      if(!isLollipop) return;
+      const average=values.reduce((sum,value)=>sum+Number(value||0),0)/Math.max(values.length,1);
+      const {ctx,chartArea,scales}=chart;
+      const averageX=scales.x.getPixelForValue(average);
+      ctx.save();
+      ctx.strokeStyle='rgba(130,92,76,.34)';
+      ctx.lineWidth=1;
+      ctx.setLineDash([4,4]);
+      ctx.beginPath();ctx.moveTo(averageX,chartArea.top);ctx.lineTo(averageX,chartArea.bottom);ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle='#8a6c60';
+      ctx.font='800 10px Barlow, sans-serif';
+      ctx.textAlign='center';
+      ctx.fillText(`Prom. ${average.toFixed(1)}`,averageX,chartArea.top-4);
+      ctx.restore();
+    },
+    afterDatasetsDraw(chart) {
+      if(!isLollipop) return;
+      const {ctx,chartArea}=chart;
+      const meta=chart.getDatasetMeta(0);
+      ctx.save();
+      ctx.font='900 12px Barlow, sans-serif';
+      ctx.textBaseline='middle';
+      meta.data.forEach((bar,index)=>{
+        const value=Number(values[index])||0;
+        const color=colors[index];
+        // Cuando el valor máximo toca el límite del eje, reservamos unos
+        // píxeles para que el punto y su etiqueta no se recorten.
+        const pointX=Math.min(bar.x,chartArea.right-10);
+        const labelInside=bar.x>=chartArea.right-28;
+        ctx.beginPath();ctx.arc(pointX,bar.y,8,0,Math.PI*2);
+        ctx.fillStyle=color;ctx.fill();
+        ctx.lineWidth=3;ctx.strokeStyle='rgba(255,255,255,.95)';ctx.stroke();
+        ctx.fillStyle=labelInside?'#ad2631':'#ad2631';ctx.textAlign=labelInside?'right':'left';
+        ctx.fillText(`${value} ${value===1?'baja':'bajas'}`,labelInside?pointX-13:pointX+13,bar.y);
+      });
+      ctx.restore();
+    }
+  };
+  canvas._chartInstance = new Chart(ctx, {
+    type,
+    data:{ labels, datasets:[{ label:opts.label||'Bajas', data:values, backgroundColor:colors, borderColor:'rgba(255,255,255,.68)', borderWidth:isLollipop?0:1, borderRadius: opts.borderRadius ?? 999, borderSkipped:false, barThickness:isLollipop?3:undefined, barPercentage: opts.barPercentage ?? (isRanking ? .62 : .62), categoryPercentage: opts.categoryPercentage ?? (isRanking ? .82 : .7) }]},
+    options:{ indexAxis: opts.horizontal ? 'y' : 'x', responsive:true, maintainAspectRatio:false,
+      layout: { padding: opts.horizontal ? { top: isLollipop?22:10, right: 74, bottom: 8, left: 4 } : { top: 6, right: 8, bottom: 4, left: 4 } },
+      plugins:{ legend:{display:!!opts.legend, position:'top', labels:{color:'#5A4037', usePointStyle:true, pointStyle:'circle', font:{family:'Barlow', size:12, weight:'800'}}}, tooltip:{backgroundColor:'#251313',titleColor:'#FFF8EE',bodyColor:'#FFF8EE',padding:12,cornerRadius:14,displayColors:false}, datalabels:{display:false} },
+      scales:{
+        x:{ border:{display:false}, grid:{display:!!opts.horizontal, color:'rgba(128,63,38,.045)', drawTicks:false}, ticks:{precision:0, color:tickColor, textStrokeColor:'rgba(0,0,0,0.55)', textStrokeWidth:tickStrokeWidth, font:{family:'Barlow', size: opts.tickSize || 12, weight:'800'}, maxRotation: opts.horizontal ? 0 : (opts.rotate ?? 55), minRotation: opts.horizontal ? 0 : (opts.rotate ?? 0)}, beginAtZero:true, max:isLollipop?opts.max:undefined, suggestedMax: opts.suggestedMax },
+        y:{ border:{display:false}, grid:{display:!opts.horizontal, color:'rgba(128,63,38,.045)', drawTicks:false}, ticks:{color:tickColor, textStrokeColor:'rgba(0,0,0,0.55)', textStrokeWidth:tickStrokeWidth, font:{family:'Barlow', size: opts.tickSize || 12, weight:'800'}, crossAlign:'far'}, beginAtZero:true }
+      }
+    },
+    plugins: isLollipop ? [rankingLollipopPlugin] : (isRanking ? [rankingValuePlugin] : [])
+  });
+}
+function renderTotalChart(labels, values){
+  const theme = chartTheme();
+  const canvas=document.getElementById('chart-total'); if(!canvas) return; if(!chartReady(canvas)) return; if(canvas._chartInstance) canvas._chartInstance.destroy();
+  canvas._chartInstance = new Chart(canvas.getContext('2d'),{
+    type:'bar', data:{labels,datasets:[{label:'Bajas temprana',data:[values[0],0],backgroundColor:'#1f3b4b',borderRadius:4},{label:'Total de bajas',data:[0,values[1]],backgroundColor:'#ff7924',borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'top',labels:{boxWidth:8,font:{size:11, weight:'700'},color:theme.text}}},scales:{x:{grid:{display:false},ticks:{font:{size:11, weight:'700'},color:theme.text}},y:{beginAtZero:true,grid:{display:false},ticks:{display:false,color:theme.text}}}}
+  });
+}
+
+function shortAsesorName(fullName){
+  const parts=String(fullName||'').trim().split(/\s+/).filter(Boolean);
+  if(parts.length<=2)return parts.join(' ');
+  return `${parts[0]} ${parts.slice(1).map(part=>`${part[0].toUpperCase()}.`).join('')}`;
+}
+
+// Carga la pestana Compromisos_Bajas (Plaza | Asesor | Compromiso) una sola
+// vez en initDashboard y arma COMPROMISOS_BY_PLAZA: Map de plaza (texto tal
+// cual viene en la hoja) -> {Asesor: valor}. Si la pestana no existe todavia
+// o viene vacia, queda vacio y compromisoConfigForScope() usa solo el
+// default -- no rompe el dashboard mientras se crea/migra la pestana.
+async function loadCompromisosBajas(){
+  const sheetName=OXXO.SHEETS_CONFIG.COMMITMENTS_SHEET;
+  if(!sheetName)return;
+  const rows=await OXXO.fetchSheetData(sheetName,{scoped:false}).catch(()=>null);
+  if(!Array.isArray(rows))return;
+  const byPlaza=new Map();
+  rows.forEach(row=>{
+    const plaza=String(row['Plaza']||'').trim();
+    const asesor=String(row['Asesor']||'').trim();
+    const compromiso=Number(row['Compromiso']);
+    if(!plaza||!asesor||!Number.isFinite(compromiso))return;
+    if(!byPlaza.has(plaza))byPlaza.set(plaza,{});
+    byPlaza.get(plaza)[asesor]=compromiso;
+  });
+  COMPROMISOS_BY_PLAZA=byPlaza;
+}
+
+function compromisoConfigForScope(){
+  const scope=OXXO.getActiveDataScope();
+  const target=[...COMPROMISOS_BY_PLAZA.entries()].find(([plaza])=>OXXO.matchesScopeValue(plaza,'plaza',scope));
+  return {defaultValue:Number(OXXO.SHEETS_CONFIG.BAJAS_COMMITMENTS_DEFAULT)||0,values:target?target[1]:{}};
+}
+
+function compromisoRoster(cols){
+  const month=FILTER_STATE.mes||latestMonthKey(BASE_BAJAS_DATA,cols);
+  const source=month?BASE_BAJAS_DATA.filter(row=>monthKeyFromRow(row,cols)===month):BASE_BAJAS_DATA;
+  const roster=new Map();
+  source.forEach(row=>{
+    const name=getAsesorValue(row,cols);
+    if(!name||name===SIN_ASESOR)return;
+    roster.set(cleanKey(name),name);
+  });
+  // Oaxaca ya tenía metas configuradas incluso para asesores con cero bajas.
+  // Se agregan al roster únicamente cuando Oaxaca es el alcance activo; las
+  // demás plazas se construyen exclusivamente con sus propios datos.
+  const configured=compromisoConfigForScope().values;
+  Object.keys(configured).forEach(name=>roster.set(cleanKey(name),name));
+  return roster;
+}
+
+function compPillClass(bajas){
+  const n = Number(bajas)||0;
+  if(n <= 1) return 'good';
+  if(n <= 3) return 'mid';
+  if(n <= 5) return 'warn';
+  return 'bad';
+}
+
+function renderCompromisoChart(items,totalBajas,totalComp,totalDesfase){
+  const summary=document.getElementById('compromiso-summary');
+  if(summary) summary.innerHTML=`<span><b>${totalBajas}</b> bajas reales</span><span class="is-meta"><b>${totalComp}</b> meta comprometida</span><span class="is-desfase"><b>${totalDesfase > 0 ? '+' : ''}${totalDesfase}</b> desfase</span><span title="Punto lleno = bajas reales · círculo hueco = meta">● bajas reales &nbsp; ○ meta comprometida</span>`;
+  const details=document.getElementById('compromiso-details');
+  if(details){
+    details.style.setProperty('--comp-rows',String(items.length));
+    details.innerHTML=`<div class="compromiso-detail-head"><span>REAL</span><span>META</span><span>DIF.</span></div>${items.map(item=>{const diff=item.bajas-item.comp;return `<div class="compromiso-detail-row"><span>${item.bajas}</span><span class="meta">${item.comp}</span><span class="${diff>0?'up':'down'}">${diff>0?'+':''}${diff}</span></div>`;}).join('')}`;
+  }
+  const canvas=document.getElementById('chart-asesores');
+  if(!canvas || !chartReady(canvas)) return;
+  if(canvas._chartInstance) canvas._chartInstance.destroy();
+  const labels=items.map(item=>OXXO.truncate(item.nombre,30));
+  const values=items.map(item=>item.bajas);
+  const goals=items.map(item=>item.comp);
+  const colors=items.map(item=>item.bajas>item.comp?'#D91F2D':'#20A365');
+  const ceiling=Math.max(...values,...goals,1);
+  const axisMax=Math.ceil((ceiling+2)/2)*2;
+  const commitmentMarkers={
+    id:'commitmentMarkers',
+    afterDatasetsDraw(chart){
+      const {ctx,chartArea,scales}=chart;
+      const meta=chart.getDatasetMeta(0);
+      const nameX=chartArea.left-336;
+      const realX=chartArea.left-128;
+      const metaX=chartArea.left-72;
+      const diffX=chartArea.left-22;
+      ctx.save();ctx.font='800 10px Barlow, sans-serif';ctx.textBaseline='middle';ctx.textAlign='left';ctx.fillStyle='#8b756d';
+      ctx.fillText('ASESOR',nameX,chartArea.top-12);ctx.textAlign='center';ctx.fillText('BAJAS',realX,chartArea.top-12);ctx.fillText('META',metaX,chartArea.top-12);ctx.fillText('DESFASE',diffX,chartArea.top-12);
+      ctx.font='900 14px Barlow, sans-serif';
+      meta.data.forEach((bar,index)=>{
+        const pointX=Math.min(bar.x,chartArea.right-10);
+        const goalX=Math.max(chartArea.left+8,Math.min(scales.x.getPixelForValue(goals[index]),chartArea.right-10));
+        ctx.beginPath();ctx.arc(goalX,bar.y,8,0,Math.PI*2);ctx.fillStyle='rgba(255,255,255,.95)';ctx.fill();ctx.lineWidth=2.5;ctx.strokeStyle='#75645e';ctx.stroke();
+        ctx.beginPath();ctx.arc(pointX,bar.y,9,0,Math.PI*2);ctx.fillStyle=colors[index];ctx.fill();ctx.lineWidth=3;ctx.strokeStyle='rgba(255,255,255,.96)';ctx.stroke();
+        const diff=values[index]-goals[index];
+        ctx.textAlign='left';ctx.fillStyle='#4b3833';ctx.fillText(OXXO.truncate(items[index].nombre,24),nameX,bar.y);
+        ctx.textAlign='center';ctx.fillStyle='#3b2925';ctx.fillText(String(values[index]),realX,bar.y);
+        ctx.fillStyle='#75645e';ctx.fillText(String(goals[index]),metaX,bar.y);
+        ctx.fillStyle=diff>0?'#c91825':'#15945e';ctx.fillText(`${diff>0?'+':''}${diff}`,diffX,bar.y);
+      });
+      ctx.restore();
+    }
+  };
+  canvas._chartInstance=new Chart(canvas.getContext('2d'),{
+    type:'bar',
+    data:{labels,datasets:[{label:'Bajas reales',data:values,backgroundColor:colors,borderWidth:0,barThickness:6,borderRadius:4,borderSkipped:false}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,layout:{padding:{top:28,right:32,bottom:8,left:350}},
+      onClick(_event,elements){
+        if(!elements.length)return;
+        const item=items[elements[0].index];
+        SELECTED_ASESORES=[item.full];updateAsesorLabel(BASE_BAJAS_DATA,BAJAS_COLS);
+        renderAsesorOptions(BASE_BAJAS_DATA,BAJAS_COLS,document.getElementById('asesor-search')?.value||'');
+        document.querySelectorAll('.bajas-kpis .kpi-card[data-kpi]').forEach(card=>card.classList.remove('active'));
+        renderBajasDashboard(applyUserFilters(BASE_BAJAS_DATA,BAJAS_COLS),BAJAS_COLS);
+      },
+      plugins:{legend:{display:false},tooltip:{backgroundColor:'#251313',titleColor:'#FFF8EE',bodyColor:'#FFF8EE',padding:12,cornerRadius:14,displayColors:false,callbacks:{title:context=>items[context[0].dataIndex].full,label:context=>{const item=items[context.dataIndex];return [`Bajas reales: ${item.bajas}`,`Meta: ${item.comp}`,`Desfase: ${item.bajas-item.comp}`];}}}},
+      scales:{x:{min:0,max:axisMax,border:{display:false},grid:{color:'rgba(128,63,38,.055)',drawTicks:false},ticks:{precision:0,color:chartTheme().text,font:{family:'Barlow',size:11,weight:'800'}},beginAtZero:true},y:{border:{display:false},grid:{display:false},ticks:{display:false}}}
+    },plugins:[commitmentMarkers]
+  });
+}
+function renderCompromiso(data, cols){
+  const counts = {};
+  data.forEach(r => {
+    const name=getAsesorValue(r,cols);
+    const id=cleanKey(name);
+    counts[id]=(counts[id]||0)+1;
+  });
+  const commitmentConfig=compromisoConfigForScope();
+  const configuredByKey=new Map(Object.entries(commitmentConfig.values).map(([name,value])=>[cleanKey(name),Number(value)||0]));
+  let totalBajas = 0;
+  let totalComp = 0;
+  const sinAsesorId=cleanKey(SIN_ASESOR);
+  const roster=compromisoRoster(cols);
+  // No hay una meta individual para estas bajas, pero se listan con meta 0
+  // para que la suma de esta tabla sea exactamente el total filtrado.
+  if(counts[sinAsesorId]) roster.set(sinAsesorId,SIN_ASESOR);
+  const sorted = [...roster].map(([id,full])=>({
+    id,full,nombre:id===sinAsesorId?'Sin asesor asignado':shortAsesorName(full),bajas:counts[id]||0,
+    comp:id===sinAsesorId?0:(configuredByKey.has(id)?configuredByKey.get(id):commitmentConfig.defaultValue)
+  })).sort((a,b) => b.bajas - a.bajas || a.full.localeCompare(b.full, 'es'));
+  const rows = sorted.map(item => {
+    const bajas = item.bajas;
+    const desfase = bajas - item.comp;
+    totalBajas += bajas;
+    totalComp += item.comp;
+    return `<tr${item.id===sinAsesorId?' class="compromiso-sin-asesor"':''}>
+      <td>${item.nombre}</td>
+      <td class="num"><span class="pill ${compPillClass(bajas)}">${bajas}</span></td>
+      <td class="num">${item.comp}</td>
+      <td class="num desfase ${desfase <= 0 ? 'pos' : 'neg'}">${desfase}</td>
+    </tr>`;
+  }).join('');
+  const totalDesfase = totalBajas - totalComp;
+  document.getElementById('tabla-compromiso').innerHTML = `
+    <table class="compromiso-table">
+      <thead><tr><th>AT</th><th class="num">Bajas</th><th class="num">Comp.</th><th class="num">Desfase</th></tr></thead>
+      <tbody>${rows}</tbody>
+      <tfoot><tr><td>PLAZA</td><td class="num">${totalBajas}</td><td class="num">${totalComp}</td><td class="num">${totalDesfase}</td></tr></tfoot>
+    </table>`;
+  renderChart('chart-asesores','bar',sorted.map(item=>OXXO.truncate(item.nombre,28)),sorted.map(item=>item.bajas),{horizontal:true,ranking:true,tickSize:12,label:'Bajas por asesor'});
+}
+
+// Tabla de detalle de bajas: columnas reducidas (lo esencial para escanear rápido).
+// El resto de los campos se muestran en la ventana emergente al hacer clic en una fila,
+// sin repetir lo que ya se ve en la tabla.
+// Misma implementacion que OXXO.escHtml (js/core.js). Antes esta copia no
+// escapaba la comilla simple, asi que divergia del resto del sitio: las otras
+// cinco copias (dashboards 3, 4, 9, 9-analisis y admin-pptx-rae) si la escapan.
+function escHtml(s){ return String(s ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch])); }
+const DET_MAIN_COLS = [
+  ['mes','Mes'], ['asesor','Asesor'], ['tienda','Tienda'], ['empleado','Colaborador'], ['puesto','Puesto'], ['motivo','Motivo'], ['genero','Género']
+];
+let DET_DATA = [], DET_COLS = null;
+let DET_SORT = { col:'mes', dir:'desc' };
+function detValue(r, cols, key){
+  if(key==='mes') return monthKeyFromRow(r,cols) || '';
+  if(key==='puesto') return normalizePuesto(val(r,cols,key));
+  if(key==='motivo') return val(r,cols,'detalle') || normalizeMotivo(val(r,cols,key));
+  if(key==='temporalidad') return getTemporalidad(r,cols);
+  return val(r,cols,key,'');
+}
+function detDisplay(r, cols, key){
+  if(key==='mes') return monthLabel(monthKeyFromRow(r,cols));
+  return detValue(r,cols,key) || '—';
+}
+function renderDetail(data, cols){
+  DET_DATA = data; DET_COLS = cols;
+  DET_DATA.forEach((r,i)=>{ r.__detIdx = i; });
+  renderDetailTable();
+}
+function renderDetailTable(){
+  const data = DET_DATA, cols = DET_COLS;
+  const sorted = data.slice().sort((a,b)=>{
+    const va = detValue(a,cols,DET_SORT.col), vb = detValue(b,cols,DET_SORT.col);
+    const na = Number(va), nb = Number(vb);
+    const bothNum = va!=='' && vb!=='' && !isNaN(na) && !isNaN(nb);
+    const cmp = bothNum ? (na-nb) : String(va).localeCompare(String(vb), 'es');
+    return DET_SORT.dir==='asc' ? cmp : -cmp;
+  });
+  const arrow = col => DET_SORT.col!==col ? '<span style="opacity:.35;margin-left:4px">⇅</span>' : (DET_SORT.dir==='asc'?'<span style="margin-left:4px">↑</span>':'<span style="margin-left:4px">↓</span>');
+  const thead = `<tr>${DET_MAIN_COLS.map(([k,label])=>`<th data-col="${k}">${label}${arrow(k)}</th>`).join('')}</tr>`;
+  const rows = sorted.map(r => `<tr class="det-row" data-idx="${r.__detIdx}">` + DET_MAIN_COLS.map(([k]) => {
+    const v = detDisplay(r,cols,k);
+    return `<td title="${escHtml(v)}">${OXXO.truncate(String(v||'—'), 32)}</td>`;
+  }).join('') + '</tr>').join('');
+  document.getElementById('tabla-detalle').innerHTML = `<div class="table-wrapper"><table class="data-table" id="tbl-detalle-bajas" data-rh-tools data-rh-sort="false" data-rh-page-size="25"><thead>${thead}</thead><tbody>${rows}</tbody></table></div>`;
+
+  document.querySelectorAll('#tbl-detalle-bajas thead th[data-col]').forEach(th=>{
+    th.addEventListener('click', ()=>{
+      const col = th.dataset.col;
+      if(DET_SORT.col===col) DET_SORT.dir = DET_SORT.dir==='asc'?'desc':'asc';
+      else { DET_SORT.col = col; DET_SORT.dir='asc'; }
+      renderDetailTable();
+    });
+  });
+  document.querySelectorAll('#tbl-detalle-bajas tbody tr.det-row').forEach(tr=>{
+    tr.addEventListener('click', ()=> openBajaModal(Number(tr.dataset.idx)));
+  });
+}
+
+// ── MODAL: GRAFICA DE PASTEL DE MOTIVOS ───────────────────
+let chartMotivosPastel = null;
+const PASTEL_COLORS = ['#D91F2D','#F07B22','#F6B73C','#19AD63','#1F6FD9','#7B1FA2','#00838F','#8A7A72','#C0181F','#3F51B5'];
+function closeMotivosModal(){ document.getElementById('motivos-modal')?.classList.remove('open'); }
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeMotivosModal(); });
+function openMotivosModal(){
+  const cols = DET_COLS;
+  const counts = new Map();
+  DET_DATA.forEach(r => {
+    const label = (val(r,cols,'detalle') || normalizeMotivo(val(r,cols,'motivo'))).trim() || 'Sin dato';
+    counts.set(label, (counts.get(label)||0) + 1);
+  });
+  const entries = [...counts.entries()].sort((a,b)=>b[1]-a[1]);
+  const canvas = document.getElementById('chart-motivos-pastel');
+  const emptyBox = document.getElementById('motivos-pastel-empty');
+  document.getElementById('motivos-modal').classList.add('open');
+  if(!entries.length){
+    canvas.style.display = 'none'; emptyBox.style.display = 'block';
+    if(chartMotivosPastel){ chartMotivosPastel.destroy(); chartMotivosPastel = null; }
+    return;
+  }
+  canvas.style.display = ''; emptyBox.style.display = 'none';
+  if(!chartReady(canvas)) return;
+  if(chartMotivosPastel) chartMotivosPastel.destroy();
+  const theme = chartTheme();
+  chartMotivosPastel = new Chart(canvas.getContext('2d'), {
+    type: 'pie',
+    data: {
+      labels: entries.map(([label]) => label),
+      datasets: [{
+        data: entries.map(([,n]) => n),
+        backgroundColor: entries.map((_,i) => PASTEL_COLORS[i % PASTEL_COLORS.length]),
+        borderColor: '#fff',
+        borderWidth: 2,
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'right', labels: { color: theme.text, boxWidth: 10, font: { size: 11, weight: '700' } } },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => {
+              const total = entries.reduce((s,[,n])=>s+n,0);
+              const pct = total ? ((ctx.raw/total)*100).toFixed(1) : '0.0';
+              return ` ${ctx.label}: ${ctx.raw} (${pct}%)`;
+            },
+          },
+        },
+      },
+    },
+  });
+}
+
+// ── MODAL DETALLE DE BAJA ─────────────────────────────────
+function closeBajaModal(){ document.getElementById('baja-modal')?.classList.remove('open'); }
+function openBajaModal(idx){
+  const r = DET_DATA.find(x=>x.__detIdx===idx);
+  if(!r) return;
+  const cols = DET_COLS;
+  const kv = (l,v) => { v = String(v==null?'':v).trim(); return v ? `<tr><td>${l}</td><td>${escHtml(v)}</td></tr>` : ''; };
+
+  document.getElementById('baja-title').textContent = val(r,cols,'empleado','Colaborador');
+  document.getElementById('baja-body').innerHTML = `
+    <div class="baja-kpis">
+      <div class="baja-kpi"><div class="v">${escHtml(val(r,cols,'asesor','—'))}</div><div class="l">Asesor</div></div>
+      <div class="baja-kpi"><div class="v">${escHtml(val(r,cols,'tienda','—'))}</div><div class="l">Tienda</div></div>
+      <div class="baja-kpi"><div class="v">${escHtml(normalizeMotivo(val(r,cols,'motivo')))}</div><div class="l">Motivo</div></div>
+    </div>
+    <table class="baja-tbl"><tbody>
+      ${kv('Puesto', normalizePuesto(val(r,cols,'puesto')))}
+      ${kv('Detalle de baja', val(r,cols,'detalle'))}
+      ${kv('Mes', monthLabel(monthKeyFromRow(r,cols)))}
+      ${kv('Semana', val(r,cols,'semana'))}
+      ${kv('Plaza', val(r,cols,'plaza'))}
+      ${kv('Región', val(r,cols,'region'))}
+      ${kv('Temporalidad', getTemporalidad(r,cols))}
+      ${kv('Rot. Temprana', val(r,cols,'rotTemp'))}
+      ${kv('Género', val(r,cols,'genero'))}
+      ${kv('Edad', val(r,cols,'edad'))}
+      ${kv('Antigüedad (días)', val(r,cols,'antiguedad'))}
+      ${kv('Fecha', val(r,cols,'fecha'))}
+      ${kv('No. Personal', val(r,cols,'personal'))}
+    </tbody></table>`;
+  document.getElementById('baja-modal').classList.add('open');
+}
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeBajaModal(); });
+const AGE_GROUPS = [
+  {label:'18-25', min:18, max:25},
+  {label:'26-35', min:26, max:35},
+  {label:'36-45', min:36, max:45},
+  {label:'46-55', min:46, max:55},
+  {label:'56+',   min:56, max:Infinity},
+];
+// Antes se agrupaba por 'antiguedad' en días (columna que no existe en el sheet actual).
+// Ahora se usa directamente la columna 'Temporalidad' (ya viene en buckets de texto), igual
+// que en la página de Análisis de Bajas, para que ambas vistas coincidan siempre.
+const TENURE_GROUPS = ['0 - 45 días','46 - 90 días','3 - 6 meses','6 - 12 meses','> 1 año'].map(label => ({label}));
+function ageGroup(edad){
+  const n = Number(edad);
+  if(!Number.isFinite(n) || n <= 0) return null;
+  return AGE_GROUPS.find(g => n >= g.min && n <= g.max) || null;
+}
+function tenureGroupHeatmap(temporalidad){
+  const label = String(temporalidad||'').trim();
+  if(!label) return null;
+  return TENURE_GROUPS.find(g => g.label === label) || null;
+}
+function heatColor(ratio){
+  const r0=[255,242,224], r1=[192,24,31];
+  const t = Math.max(0, Math.min(1, ratio));
+  const r = Math.round(r0[0] + (r1[0]-r0[0])*t);
+  const g = Math.round(r0[1] + (r1[1]-r0[1])*t);
+  const b = Math.round(r0[2] + (r1[2]-r0[2])*t);
+  return `rgb(${r},${g},${b})`;
+}
+function renderHeatmapBajas(data, cols){
+  const container = document.getElementById('heatmap-bajas');
+  if(!container) return;
+  const heatmapData = BASE_BAJAS_DATA.filter(row => {
+    if(!passesAsesorFilter(row, cols)) return false;
+    return Object.entries(FILTER_STATE).every(([key, selected]) => {
+      if (!selected) return true;
+      if (key === 'edadRange' || key === 'antiguedadRange') return true;
+      return String(getFilterValue(row, cols, key)) === String(selected);
+    });
+  });
+  const matrix = {};
+  AGE_GROUPS.forEach(a => { matrix[a.label] = {}; TENURE_GROUPS.forEach(t => matrix[a.label][t.label] = 0); });
+  let any = false;
+  heatmapData.forEach(row => {
+    const edadRaw = val(row, cols, 'edad', '');
+    const temporalidadRaw = val(row, cols, 'temporalidad', '');
+    if(edadRaw === '' || temporalidadRaw === '') return;
+    const ag = ageGroup(num(edadRaw));
+    const tg = tenureGroupHeatmap(temporalidadRaw);
+    if(!ag || !tg) return;
+    matrix[ag.label][tg.label]++;
+    any = true;
+  });
+  if(!any){
+    container.innerHTML = `<div class="heatmap-empty-msg">No hay suficientes datos de edad/antigüedad para construir el mapa de calor.</div>`;
+    return;
+  }
+  const activeEdad = FILTER_STATE.edadRange || '';
+  const activeAnt = FILTER_STATE.antiguedadRange || '';
+  let maxVal = 0;
+  AGE_GROUPS.forEach(a => TENURE_GROUPS.forEach(t => { maxVal = Math.max(maxVal, matrix[a.label][t.label]); }));
+  const headerCells = TENURE_GROUPS.map(t => `<th class="heatmap-axis-x">${t.label}</th>`).join('');
+  const bodyRows = AGE_GROUPS.map(a => {
+    const cells = TENURE_GROUPS.map(t => {
+      const v = matrix[a.label][t.label];
+      const isActive = activeEdad === a.label && activeAnt === t.label;
+      const attrs = `data-edad="${a.label}" data-ant="${t.label}" title="Edad: ${a.label} · Antigüedad: ${t.label} · Bajas: ${v}"`;
+      if(v === 0){
+        return `<td><div class="heatmap-cell is-empty${isActive?' is-active':''}" ${attrs}>—</div></td>`;
+      }
+      const ratio = maxVal > 0 ? v / maxVal : 0;
+      const bg = heatColor(ratio);
+      return `<td><div class="heatmap-cell${isActive?' is-active':''}" style="background:${bg}" ${attrs}>${v}</div></td>`;
+    }).join('');
+    return `<tr><th>${a.label}</th>${cells}</tr>`;
+  }).join('');
+  container.innerHTML = `
+    <div class="heatmap-wrap">
+      <div class="heatmap-table-wrap">
+        <div class="heatmap-axes-label">Antigüedad antes de la baja →  /  Edad ↓</div>
+        <table class="heatmap-table">
+          <thead><tr><th class="heatmap-corner"></th>${headerCells}</tr></thead>
+          <tbody>${bodyRows}</tbody>
+        </table>
+      </div>
+      <div class="heatmap-legend">
+        <div class="heatmap-legend__title">Intensidad</div>
+        <div class="heatmap-legend__item"><span class="heatmap-legend__swatch" style="background:${heatColor(0.12)}"></span>Bajo</div>
+        <div class="heatmap-legend__item"><span class="heatmap-legend__swatch" style="background:${heatColor(0.55)}"></span>Medio</div>
+        <div class="heatmap-legend__item"><span class="heatmap-legend__swatch" style="background:${heatColor(1)}"></span>Alto</div>
+      </div>
+    </div>`;
+  container.querySelectorAll('.heatmap-cell').forEach(cell => {
+    cell.style.cursor = 'pointer';
+    cell.addEventListener('click', () => {
+      const e = cell.dataset.edad;
+      const t = cell.dataset.ant;
+      const isCurrent = FILTER_STATE.edadRange === e && FILTER_STATE.antiguedadRange === t;
+      if(isCurrent){
+        delete FILTER_STATE.edadRange;
+        delete FILTER_STATE.antiguedadRange;
+      } else {
+        FILTER_STATE.edadRange = e;
+        FILTER_STATE.antiguedadRange = t;
+      }
+      renderBajasDashboard(applyUserFilters(BASE_BAJAS_DATA, BAJAS_COLS), BAJAS_COLS);
+    });
+  });
+}
+function renderBajasDashboard(data, cols){
+  if(!data.length){
+    const heroContext=document.getElementById('bajas-hero-context');
+    if(heroContext) heroContext.innerHTML='';
+    document.getElementById('kpi-section').innerHTML = `
+      <div class="kpi-card rojo"><div class="kpi-card__label">Total bajas</div><div class="kpi-card__value">0</div><div class="kpi-card__delta neg">Sin datos con filtros activos</div><div class="kpi-card__icon"><svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg></div></div>`;
+    document.getElementById('tabla-detalle').innerHTML = `<div class="state-box"><div class="state-box__icon">📭</div><div class="state-box__title">Sin resultados</div><div class="state-box__text">Limpia o cambia los filtros para volver a ver información.</div></div>`;
+    document.getElementById('row-count').textContent = '0 bajas';
+    ['chart-puesto','chart-total','chart-temporalidad','chart-motivos','chart-asesores','chart-tiendas'].forEach(id => {
+      const c = document.getElementById(id);
+      if(c && c._chartInstance) c._chartInstance.destroy();
+    });
+    const heatmapEl = document.getElementById('heatmap-bajas');
+    if(heatmapEl) heatmapEl.innerHTML = `<div class="heatmap-empty-msg">Sin datos suficientes para el mapa de calor con los filtros activos.</div>`;
+    renderPlazas(BASE_BAJAS_DATA, cols);
+    return;
+  }
+
+
+
+  const total = data.length;
+  const byPuesto = countBy(data, r=>normalizePuesto(val(r,cols,'puesto')));
+  const byMotivo = countBy(data, r=>normalizeMotivo(val(r,cols,'motivo')));
+  const byTemp = countBy(data, r=>getTemporalidad(r,cols));
+  const byAsesor = countBy(data, r=>val(r,cols,'asesor','Sin asesor'));
+  const byTienda = countBy(data, r=>val(r,cols,'tienda','Sin tienda'));
+  const topAsesor = topEntries(byAsesor,12);
+  const topTienda = topEntries(byTienda,10);
+  const topPlaza = topEntries(countBy(data,r=>val(r,cols,'plaza','Oaxaca')),1)[0]?.label || 'Oaxaca';
+  const maxAsesor = topAsesor[0] || {label:'—',total:0};
+  const bajaTemprana = (byTemp['0 - 45 días'] || 0);
+  const heroContext=document.getElementById('bajas-hero-context');
+  if(heroContext){
+    heroContext.innerHTML=`<span><b>${total}</b>bajas registradas</span>`
+      +`<span><b>${Object.keys(byAsesor).length}</b>asesores con bajas</span>`
+      +`<span><b>${Object.keys(byTienda).length}</b>tiendas con bajas</span>`
+      +`<span><b>${bajaTemprana}</b>rotación temprana</span>`;
+  }
+
+  document.getElementById('kpi-section').innerHTML = `
+    <div class="kpi-card rojo" data-kpi="todos" title="Ver todas las bajas"><div class="kpi-card__label">Total Bajas<span class="info-tip" tabindex="0" onclick="event.stopPropagation()" data-tip="Cuenta cada fila de Dashboard_2_Diario (1 fila = 1 baja) con los filtros activos de Mes, Temporalidad, Rot. Temprana, Puesto y Asesor aplicados."></span></div><div class="kpi-card__value">${total}</div><div class="kpi-card__delta neg">según filtros activos</div><div class="kpi-card__icon"><svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline><polyline points="17 18 23 18 23 12"></polyline></svg></div></div>
+    <div class="kpi-card rojo" data-kpi="asesor" data-kpi-val="${maxAsesor.label}" title="Filtrar por ${maxAsesor.label}"><div class="kpi-card__label">AT con más bajas<span class="info-tip" tabindex="0" onclick="event.stopPropagation()" data-tip="Agrupa las bajas filtradas por columna 'Asesor' y toma el que tiene mayor número."></span></div><div class="kpi-card__value">${maxAsesor.total}</div><div class="kpi-card__delta neg">${OXXO.truncate(maxAsesor.label,24)} · clic para filtrar</div><div class="kpi-card__icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></div></div>
+    <div class="kpi-card naranja" data-kpi="tienda" data-kpi-val="${topEntries(byTienda,1)[0]?.label||''}" title="Filtrar por ${topEntries(byTienda,1)[0]?.label||''}"><div class="kpi-card__label">Tienda con más bajas<span class="info-tip" tabindex="0" onclick="event.stopPropagation()" data-tip="Agrupa las bajas filtradas por columna 'Tienda' y toma la que tiene mayor número."></span></div><div class="kpi-card__value" style="font-size:1.3rem">${OXXO.truncate(topEntries(byTienda,1)[0]?.label||'—',16)}</div><div class="kpi-card__delta neu">${topEntries(byTienda,1)[0]?.total||0} bajas · clic para filtrar</div><div class="kpi-card__icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg></div></div>
+    <div class="kpi-card amarillo" data-kpi="rotTemp" data-kpi-val="Si" title="Filtrar rotación temprana"><div class="kpi-card__label">Rot. Temprana<span class="info-tip" tabindex="0" onclick="event.stopPropagation()" data-tip="Bajas donde la columna 'Rot_Temp' = Sí, es decir colaboradores que se fueron poco después de su ingreso, con los filtros activos aplicados."></span></div><div class="kpi-card__value">${countBy(data,r=>val(r,cols,'rotTemp','No'))['Si']||countBy(data,r=>val(r,cols,'rotTemp','No'))['SI']||0}</div><div class="kpi-card__delta neu">${total>0?Math.round(((countBy(data,r=>val(r,cols,'rotTemp','No'))['Si']||countBy(data,r=>val(r,cols,'rotTemp','No'))['SI']||0)/total)*100):0}% del total · clic para filtrar</div><div class="kpi-card__icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg></div></div>`;
+
+  // Eventos click en KPIs
+  document.querySelectorAll('.bajas-kpis .kpi-card[data-kpi]').forEach(card => {
+    card.addEventListener('click', () => {
+      const kpi = card.dataset.kpi;
+      const kpiVal = card.dataset.kpiVal;
+      const isActive = card.classList.contains('active');
+
+      // Quitar active de todos
+      document.querySelectorAll('.bajas-kpis .kpi-card[data-kpi]').forEach(c => c.classList.remove('active'));
+
+      if(!isActive) {
+        card.classList.add('active');
+        if(kpi === 'todos') {
+          FILTER_STATE = defaultFilterState(BASE_BAJAS_DATA, BAJAS_COLS);
+        } else {
+          FILTER_STATE = { ...defaultFilterState(BASE_BAJAS_DATA, BAJAS_COLS), [kpi]: kpiVal };
+        }
+      } else {
+        FILTER_STATE = defaultFilterState(BASE_BAJAS_DATA, BAJAS_COLS);
+      }
+      updateTiendaLabel();
+      renderTiendaOptions(BASE_BAJAS_DATA, BAJAS_COLS);
+      renderBajasDashboard(applyUserFilters(BASE_BAJAS_DATA, BAJAS_COLS), BAJAS_COLS);
+    });
+  });
+
+  renderCompromiso(data, cols);
+
+  const puestoData = topEntries(byPuesto,5);
+  renderChart('chart-puesto','bar',puestoData.map(x=>x.label),puestoData.map(x=>x.total),{horizontal:true,color:'#ff7924',tickSize:10});
+  renderTotalChart(['Bajas temprana','Total de bajas'], [bajaTemprana,total]);
+
+  const tempOrder = ['0 - 45 días','46 - 90 días','3 - 6 meses','6 - 12 meses','> 1 año'];
+  const tempLabels = tempOrder.filter(t=>byTemp[t]!==undefined).concat(Object.keys(byTemp).filter(t=>!tempOrder.includes(t)));
+  renderChart('chart-temporalidad','bar',tempLabels,tempLabels.map(t=>byTemp[t]),{color:'#ff7924',tickSize:10,rotate:0});
+
+  const motivoData = topEntries(byMotivo,8);
+  renderChart('chart-motivos','bar',motivoData.map(x=>OXXO.truncate(x.label,24)),motivoData.map(x=>x.total),{color:'#ff7924',tickSize:10,rotate:45});
+
+  const maxTienda = Math.max(...topTienda.map(x=>x.total), 1);
+  renderChart('chart-tiendas','bar',topTienda.map(x=>OXXO.truncate(x.label,30)),topTienda.map(x=>x.total),{horizontal:true,ranking:true,tickSize:12,label:'Bajas por tienda',suggestedMax:maxTienda + 1,barPercentage:.52,categoryPercentage:.86});
+
+  renderDetail(data, cols);
+  renderPlazas(BASE_BAJAS_DATA, cols);
+  renderHeatmapBajas(data, cols);
+  document.getElementById('row-count').textContent = `${data.length} bajas`;
+  OXXO.updateFooterTime('load-time');
+}
+
+function renderPlazas(allData, cols) {
+  // Leer columnas "Plazas" y "Bajas Plaza" que vienen junto a los datos
+  // Estas columnas tienen los datos en las primeras filas (ej: fila 0=Oaxaca/35, fila 1=Chontalpa/21...)
+  let plazasData = [];
+
+  // El titulo del panel es "del mes actual": se restringe al mes mas reciente presente en los
+  // datos, aunque allData (BASE_BAJAS_DATA) trae el historico completo sin filtro de mes.
+  const mesActual = latestMonthKey(allData, cols);
+  const data = mesActual ? allData.filter(r => monthKeyFromRow(r, cols) === mesActual) : allData;
+
+  const keyPlaza = cols.colPlazas;
+  const keyBajas = cols.colBajas;
+
+  if(keyPlaza && keyBajas) {
+    // Leer todas las filas que tengan plaza y bajas
+    data.forEach(r => {
+      const plaza = String(r[keyPlaza]||'').trim();
+      const bajas = Number(String(r[keyBajas]||'').replace(/[^0-9.-]/g,''));
+      if(plaza && !isNaN(bajas) && bajas > 0) {
+        // Evitar duplicados
+        if(!plazasData.find(p => p.plaza === plaza)) {
+          plazasData.push({ plaza, bajas });
+        }
+      }
+    });
+    plazasData.sort((a,b) => b.bajas - a.bajas);
+  }
+
+  // Fallback: contar por columna Plaza. Se normalizan los alias territoriales
+  // (p. ej. "OXXO OAXACA"/"Oaxaca" o "Plaza Tuxtla"/"Tuxtla") para que
+  // nunca aparezcan duplicados en el comparativo regional.
+  if(!plazasData.length && cols.plaza) {
+    const byPlaza = countBy(data, r => canonicalPlazaName(val(r, cols, 'plaza', 'Sin plaza')));
+    plazasData = Object.entries(byPlaza)
+      .map(([plaza, bajas]) => ({ plaza, bajas }))
+      .sort((a,b) => b.bajas - a.bajas)
+      .slice(0, 8);
+  }
+
+  // Agregar otras plazas cargadas desde Dashboard_2_Otras_Plazas. Se usa findRealKey (match
+  // flexible) en vez de acceso directo por nombre exacto: si el encabezado llega con texto
+  // pegado (bug de exportacion de Google que a veces mezcla la fila "sacrificio" con el
+  // encabezado real), el nombre exacto 'Plazas' ya no existe tal cual.
+  if(OTRAS_PLAZAS_DATA.length) {
+    const keyPlazaOtras = findRealKey(OTRAS_PLAZAS_DATA[0], ['Plazas','PLAZAS']);
+    const keyBajasOtras = findRealKey(OTRAS_PLAZAS_DATA[0], ['Bajas Plaza','Bajas_Plaza']);
+    OTRAS_PLAZAS_DATA.forEach(r => {
+      const plaza = canonicalPlazaName((keyPlazaOtras ? r[keyPlazaOtras] : '') || '');
+      const bajas = Number(String((keyBajasOtras ? r[keyBajasOtras] : '') || '').replace(/[^0-9.-]/g, ''));
+      if(plaza && !isNaN(bajas) && bajas > 0 && !plazasData.find(p => cleanText(p.plaza) === cleanText(plaza))) {
+        plazasData.push({ plaza, bajas });
+      }
+    });
+    plazasData.sort((a, b) => b.bajas - a.bajas);
+  }
+
+  // En alcance de plaza, ambos componentes deben hablar únicamente de la
+  // plaza seleccionada. El comparativo completo se ve solo si el usuario
+  // activa el boton "Ver todas las plazas" (PLAZAS_SHOW_ALL) -- el switch
+  // global de Alcance ya no ofrece un nivel de "region", asi que este
+  // toggle local es la unica forma de ver el comparativo completo.
+  const activeScope=OXXO.getActiveDataScope();
+  if(!PLAZAS_SHOW_ALL){
+    plazasData=plazasData.filter(item=>OXXO.matchesScopeValue(item.plaza,'plaza',activeScope));
+  }
+
+  // El comparativo regional necesita más altura; una plaza individual se
+  // presenta automáticamente en una versión compacta.
+  const plazasPanel=document.querySelector('.plazas-panel');
+  if(plazasPanel){
+    plazasPanel.classList.toggle('is-single-plaza', !PLAZAS_SHOW_ALL);
+  }
+  const plazasToggleBtn=document.getElementById('plazas-scope-toggle');
+  if(plazasToggleBtn){
+    plazasToggleBtn.textContent=PLAZAS_SHOW_ALL ? `Ver solo · ${String(activeScope.plaza||'Oaxaca').replace(/^Plaza\s+/i,'')}` : 'Ver todas las plazas';
+    plazasToggleBtn.classList.toggle('is-active',PLAZAS_SHOW_ALL);
+  }
+
+  if(!plazasData.length) {
+    document.getElementById('tabla-plazas').innerHTML = '<div style="font-size:12px;color:var(--color-gray);padding:16px">No se encontraron columnas de plazas en los datos.</div>';
+    return;
+  }
+
+  // Renderizar tabla
+  const maxBajas = Math.max(...plazasData.map(p => p.bajas), 1);
+  const totalBajas = plazasData.reduce((s,p) => s + p.bajas, 0);
+
+  const rows = plazasData.map((p, i) => {
+    const pct = Math.round(p.bajas / totalBajas * 100);
+    const barW = Math.round(p.bajas / maxBajas * 100);
+    const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i+1}`;
+    const tone = i === 0 ? 'red' : i === 1 ? 'orange' : i === 2 ? 'gold' : 'neutral';
+    return `<div class="plaza-rank-row ${tone}">
+      <div class="plaza-rank-medal">${medal}</div>
+      <div class="plaza-rank-main">
+        <div class="plaza-rank-top">
+          <strong>${p.plaza}</strong>
+          <span>${pct}% del total</span>
+        </div>
+        <div class="plaza-rank-track"><div class="plaza-rank-fill" style="width:${barW}%"></div></div>
+      </div>
+      <div class="plaza-rank-value">${p.bajas}</div>
+    </div>`;
+  }).join('');
+
+  const otrasKeyPlaza = OTRAS_PLAZAS_DATA.length ? findRealKey(OTRAS_PLAZAS_DATA[0], ['Actualizado']) : null;
+  const otrasActualizado = otrasKeyPlaza ? String(OTRAS_PLAZAS_DATA[0][otrasKeyPlaza]||'').trim() : '';
+  document.getElementById('tabla-plazas').innerHTML = `
+    <div class="plaza-rank-list">${rows}</div>
+    <div class="plaza-rank-total">
+      <span>Total acumulado</span>
+      <strong>${totalBajas}</strong>
+      <em>100%</em>
+    </div>
+    ${otrasActualizado ? `<div style="font-size:11px;color:var(--color-gray);margin-top:8px">Otras plazas actualizado: ${otrasActualizado}</div>` : ''}`;
+
+  // Gráfica de plazas
+  const canvas = document.getElementById('chart-plazas');
+  if(canvas) {
+    const theme = chartTheme();
+    const tickColor = theme.text;
+    const tickStrokeWidth = 0;
+    if(!chartReady(canvas)) return;
+    if(canvas._chartInstance) canvas._chartInstance.destroy();
+    canvas._chartInstance = new Chart(canvas.getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: plazasData.map(p => p.plaza),
+        datasets: [{
+          label: 'Bajas', data: plazasData.map(p => p.bajas),
+          backgroundColor: plazasData.map((p,i) => ['#D92B2B','#FF6B00','#FFD200','#00A650','#0066CC'][i] || '#8A8A99'),
+          borderRadius: 999, borderSkipped: false,
+          barPercentage: 0.54, categoryPercentage: 0.82, maxBarThickness: 28
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true, maintainAspectRatio: false,
+        layout: { padding: { top: 6, right: 50, bottom: 4, left: 4 } },
+        plugins: { legend: { display: false }, tooltip: { backgroundColor: theme.tooltipBg, padding: 10, cornerRadius: 8 }},
+        scales: {
+          x: { beginAtZero: true, grid: { color: theme.grid }, ticks: { precision: 0, font: { family: 'Barlow', size: 12, weight: '800' }, color: tickColor, textStrokeColor:'rgba(0,0,0,0.55)', textStrokeWidth: tickStrokeWidth }},
+          y: { grid: { display: false }, ticks: { font: { family: 'Barlow', size: 13, weight: '900' }, color: tickColor, textStrokeColor:'rgba(0,0,0,0.55)', textStrokeWidth: tickStrokeWidth }}
+        }
+      }
+    });
+  }
+}
+
+// ─────────────────────────────────────────────────────────
+// DENOMINACIONES (cambios de puesto: ascensos / descensos)
+// La pestaña puede traer filas de otro origen pegadas por error (distinto
+// número de columnas / esquema). Solo se procesan filas que calcen con el
+// formato esperado de Denominaciones; el resto se descarta en silencio.
+const ALIASES_DENOM = {
+  asesor:    ['Asesor'],
+  medida:    ['Denominación Medida','Denominacion Medida'],
+  motivo:    ['Denominación Motivo','Denominacion Motivo'],
+  empleado:  ['Nombre del empleado'],
+  fecha:     ['F. Crea.','F.Crea','F. Crea'],
+  mes:       ['Mes'],
+  // La columna 'Denominación Posición Anterior/Actual' suele venir vacía; el dato real
+  // del cambio de puesto está en 'Denominación Función Anterior/Actual' (Func.Ant/Func.Act).
+  posAnt:    ['Denominación Función Anterior','Denominacion Funcion Anterior','Denominación Posición Anterior'],
+  posAct:    ['Denominación Función Actual','Denominacion Funcion Actual','Denominación Posición Actual'],
+  uOrgAct:   ['Denominación  U.Org.Act','Denominación U.Org.Act','Denominacion U.Org.Act','Denominación U.Org. Actual'],
+};
+function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function jerarquiaPuesto(desc){
+  const d=String(desc||'').toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+  if(d.includes('LIDER'))return 3;
+  if(d.includes('ENCARGADO'))return 2;
+  if(d.includes('AYUDANTE')||d.includes('AYUDANTA'))return 1;
+  return 0;
+}
+// Una fila es válida si tiene Asesor, Nombre del empleado y la "Denominación Medida"
+// es texto (no un nombre de región/plaza, que es lo que aparece en las filas mezcladas).
+function denomRowValida(row, cols){
+  const asesor = val(row, cols, 'asesor', '').trim();
+  const empleado = val(row, cols, 'empleado', '').trim();
+  const medida = val(row, cols, 'medida', '').trim();
+  if(!asesor || !empleado || !medida) return false;
+  // Las filas mezcladas traen nombres de región/plaza (p.ej. "BAJA") en motivo con
+  // numero "36" o "1"/"29" en la columna Med., y el campo 'medida' termina siendo
+  // un nombre propio en vez de un tipo de movimiento — se descartan si no contienen
+  // ninguna palabra esperada de cambio de puesto.
+  const m = medida.toUpperCase();
+  return m.includes('CAMBIO') || m.includes('PUESTO') || m.includes('AYUDANTE') || m.includes('ENCARGADO') || m.includes('LIDER') || m.includes('PROMOCION') || m.includes('ASCENSO');
+}
+let BASE_DENOM_DATA = [];
+let DENOM_SORT = 'fecha-desc';
+async function loadDenominaciones(rawData){
+  const section = document.getElementById('denom-section');
+  try {
+    const raw = rawData === undefined
+      ? await OXXO.fetchSheetData(OXXO.SHEETS_CONFIG.TABS.d2denom)
+      : rawData;
+    if(!raw || !raw.length) return;
+    const cols = buildColsGeneric(raw, ALIASES_DENOM);
+    // Misma correccion que en initDashboard: no se descarta a nadie por su nombre.
+    const rows = raw.filter(r => denomRowValida(r, cols)).map(r => {
+      const posAntDesc = val(r, cols, 'posAnt','');
+      const posActDesc = val(r, cols, 'posAct','');
+      const jAnt = jerarquiaPuesto(posAntDesc), jAct = jerarquiaPuesto(posActDesc);
+      let direccion = 'lateral';
+      if(jAnt && jAct){ direccion = jAct>jAnt ? 'up' : jAct<jAnt ? 'down' : 'lateral'; }
+      else if(/AUMENTO|INCREMENTO|PROMOCION|ASCENSO/i.test(val(r,cols,'motivo',''))) direccion='up';
+      else if(/DISMINUCION|DEGRADACION|REDUCCION/i.test(val(r,cols,'motivo',''))) direccion='down';
+      return {
+        asesor: val(r,cols,'asesor','Sin asesor').trim(),
+        medida: val(r,cols,'medida','').trim(),
+        motivo: val(r,cols,'motivo','').trim(),
+        empleado: val(r,cols,'empleado','').trim(),
+        fecha: val(r,cols,'fecha','').trim(),
+        posAnt: posAntDesc.trim(),
+        posAct: posActDesc.trim(),
+        tienda: val(r,cols,'uOrgAct','').trim(),
+        direccion,
+        mesKey: monthKeyFromRow(r, cols),
+      };
+    });
+    if(!rows.length) return;
+    BASE_DENOM_DATA = rows;
+    if(section) section.style.display = '';
+    renderDenominaciones(filterDenomByMes(rows));
+  } catch(e){ /* sección opcional: si falla, se mantiene oculta sin afectar el resto */ }
+}
+function filterDenomByMes(rows){
+  const mes = FILTER_STATE.mes || '';
+  return mes ? rows.filter(r => r.mesKey === mes) : rows;
+}
+function denomDateRank(value){
+  const raw = String(value || '').trim();
+  const m = raw.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2,4})$/);
+  if (m) {
+    const y = Number(m[3].length === 2 ? '20' + m[3] : m[3]);
+    return new Date(y, Number(m[2]) - 1, Number(m[1])).getTime();
+  }
+  const t = Date.parse(raw);
+  return Number.isNaN(t) ? 0 : t;
+}
+function sortDenominaciones(rows){
+  const txt = key => (a,b)=>String(a[key] || '').localeCompare(String(b[key] || ''), 'es-MX', { sensitivity:'base' });
+  const dateDesc = (a,b)=>denomDateRank(b.fecha) - denomDateRank(a.fecha);
+  const rank = { up:1, down:2, lateral:3 };
+  const list = rows.slice();
+  if (DENOM_SORT === 'asesor-asc') return list.sort((a,b)=>txt('asesor')(a,b) || dateDesc(a,b));
+  if (DENOM_SORT === 'empleado-asc') return list.sort((a,b)=>txt('empleado')(a,b) || dateDesc(a,b));
+  if (DENOM_SORT === 'tienda-asc') return list.sort((a,b)=>txt('tienda')(a,b) || dateDesc(a,b));
+  if (DENOM_SORT === 'movimiento-asc') return list.sort((a,b)=>(rank[a.direccion]||9)-(rank[b.direccion]||9) || dateDesc(a,b));
+  if (DENOM_SORT === 'fecha-asc') return list.sort((a,b)=>denomDateRank(a.fecha)-denomDateRank(b.fecha));
+  return list.sort(dateDesc);
+}
+function setDenomSort(value){ DENOM_SORT = value || 'fecha-desc'; renderDenominaciones(BASE_DENOM_DATA); }
+function renderDenominaciones(rows){
+  const subieron = rows.filter(r=>r.direccion==='up').length;
+  const bajaron  = rows.filter(r=>r.direccion==='down').length;
+  const laterales= rows.filter(r=>r.direccion==='lateral').length;
+  const porAsesor = countBy(rows.filter(r=>!/sin asesor/i.test(r.asesor)), r=>r.asesor);
+  const atTop = topEntries(porAsesor,1)[0];
+
+  document.getElementById('denom-count').textContent = `${rows.length} movimiento${rows.length===1?'':'s'}`;
+  document.getElementById('denom-kpis').innerHTML = `
+    <div class="denom-kpi"><div class="denom-kpi__val">${rows.length}</div><div class="denom-kpi__lbl">Total movimientos</div></div>
+    <div class="denom-kpi"><div class="denom-kpi__val" style="color:#138c3e">${subieron}</div><div class="denom-kpi__lbl">▲ Ascensos</div></div>
+    <div class="denom-kpi"><div class="denom-kpi__val" style="color:#C0393B">${bajaron}</div><div class="denom-kpi__lbl">▼ Descensos</div></div>
+    <div class="denom-kpi"><div class="denom-kpi__val" style="color:#5a6472">${laterales}</div><div class="denom-kpi__lbl">↔ Laterales</div></div>
+    <div class="denom-kpi"><div class="denom-kpi__val" style="font-size:1.05rem">${atTop?OXXO.truncate(atTop.label,20):'—'}</div><div class="denom-kpi__lbl">AT con más movimientos${atTop?` (${atTop.total})`:''}</div></div>`;
+
+  const sorted = sortDenominaciones(rows);
+  const trs = sorted.map(r=>{
+    const pillClass = r.direccion==='up'?'up':r.direccion==='down'?'down':'lateral';
+    const pillIcon = r.direccion==='up'?'▲':r.direccion==='down'?'▼':'↔';
+    const pillTxt = r.direccion==='up'?'Ascenso':r.direccion==='down'?'Descenso':'Lateral';
+    const movTxt = `${r.posAnt||'—'} → ${r.posAct||'—'}`;
+    return `<tr>
+      <td style="font-weight:600" title="${esc(r.asesor)}">${OXXO.truncate(r.asesor,22)}</td>
+      <td title="${esc(r.empleado)}">${OXXO.truncate(r.empleado,24)}</td>
+      <td class="text-center"><span class="denom-pill ${pillClass}">${pillIcon} ${pillTxt}</span></td>
+      <td style="font-size:12px;color:var(--color-gray)" title="${esc(movTxt)}">${OXXO.truncate(r.posAnt||'—',18)} → <strong>${OXXO.truncate(r.posAct||'—',18)}</strong></td>
+      <td style="font-size:12px;color:var(--color-gray)" title="${esc(r.tienda)}">${OXXO.truncate(r.tienda||'—',20)}</td>
+      <td style="font-size:12px;color:var(--color-gray);text-align:center;white-space:nowrap">${r.fecha||'—'}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('tabla-denominaciones').innerHTML = `
+    <div class="denom-toolbar">
+      <label for="denom-sort">Ordenar por</label>
+      <select class="denom-sort" id="denom-sort" onchange="setDenomSort(this.value)">
+        <option value="fecha-desc" ${DENOM_SORT==='fecha-desc'?'selected':''}>Fecha reciente primero</option>
+        <option value="fecha-asc" ${DENOM_SORT==='fecha-asc'?'selected':''}>Fecha antigua primero</option>
+        <option value="empleado-asc" ${DENOM_SORT==='empleado-asc'?'selected':''}>Empleado A-Z</option>
+        <option value="asesor-asc" ${DENOM_SORT==='asesor-asc'?'selected':''}>Asesor A-Z</option>
+        <option value="tienda-asc" ${DENOM_SORT==='tienda-asc'?'selected':''}>Tienda A-Z</option>
+        <option value="movimiento-asc" ${DENOM_SORT==='movimiento-asc'?'selected':''}>Movimiento</option>
+      </select>
+    </div>
+    <div class="tbl-wrap"><table class="tbl">
+      <colgroup>
+        <col style="width:17%"><col style="width:18%"><col style="width:12%">
+        <col style="width:28%"><col style="width:17%"><col style="width:8%">
+      </colgroup>
+      <thead><tr>
+        <th>Asesor</th><th>Empleado</th><th class="text-center">Movimiento</th><th>Puesto Ant. → Actual</th><th>Tienda</th><th class="text-center">Fecha</th>
+      </tr></thead>
+      <tbody>${trs || '<tr><td colspan="6" style="text-align:center;padding:16px;color:var(--color-gray)">Sin denominaciones registradas.</td></tr>'}</tbody>
+    </table></div>`;
+}
+function buildColsGeneric(data, aliases){
+  const sample = data.find(r => Object.values(r).some(v => String(v||'').trim() !== '')) || data[0] || {};
+  const cols = {}; Object.entries(aliases).forEach(([k,v]) => cols[k] = findRealKey(sample, v));
+  return cols;
+}
+
+async function initDashboard(){
+  OXXO.renderDownloadButton('hero-download','d2','bajas-header__badge');
+  // Estas cuatro fuentes no dependen entre si. La tabla opcional de
+  // denominaciones tambien arranca ya, pero no bloquea el tablero principal.
+  const rawDenominacionesPromise = OXXO.fetchSheetData(OXXO.SHEETS_CONFIG.TABS.d2denom);
+  const [raw, asesorCatalog, rawOtras] = await Promise.all([
+    OXXO.fetchSheetData(TAB),
+    OXXO.loadAsesorCatalog(),
+    OXXO.fetchSheetData(OXXO.SHEETS_CONFIG.TABS.d2otras,{scoped:false}),
+    loadCompromisosBajas(),
+  ]);
+  if(raw === null){ ['kpi-section','tabla-detalle'].forEach(id=>OXXO.showError(id,'No se pudo conectar con Google Sheets.')); return; }
+  if(!raw.length){ ['kpi-section','tabla-detalle'].forEach(id=>OXXO.showEmpty(id)); return; }
+  const cols = buildCols(raw);
+  // NO se descarta ninguna fila por el nombre de su asesor. Hasta aqui habia
+  // un filter que borraba toda baja cuyo Asesor fuera Timoteo Antonio Perez:
+  // 79 de 895 filas de Plaza Oaxaca (8.8% de la base; 7 solo en sep-26). Se
+  // revisaron una por una y son bajas reales -- nombre, Nº de personal, tienda
+  // y motivo distintos, sin duplicados -- asi que el tablero reportaba de
+  // menos. Ademas contradecia al comentario de aqui abajo, que dice justo lo
+  // contrario: que a ese asesor se le ATRIBUYEN las bajas sin asesor. Entro
+  // sin comentario propio dentro de un commit de otro tema (112a9e2, sobre el
+  // switch de Alcance), asi que fue un descuido, no una regla de negocio.
+  const filasBajas = raw;
+  // Corregir el asesor de cada baja contra el catalogo por Tienda (D2 no trae CR):
+  // asi las bajas se agrupan bajo el asesor que realmente tiene esa tienda hoy,
+  // igual que el resto de dashboards. resolveAsesorD1 aplica la regla completa:
+  // "Sin Asesor Asignado" (de tienda real sin AT vigente, crudo o via catalogo)
+  // se atribuye a Timoteo; Entrenamiento/Operaciones se queda con su propio
+  // "Sin Asesor Asignado" en vez de fusionarse.
+  filasBajas.forEach(row => {
+    if(!cols.asesor) return;
+    row[cols.asesor] = OXXO.resolveAsesorD1(asesorCatalog, {
+      tienda: cols.tienda ? row[cols.tienda] : '',
+      asesor: row[cols.asesor],
+    });
+  });
+  const data = filterData(filasBajas, cols);
+  if(!data.length){ ['kpi-section','tabla-detalle'].forEach(id=>OXXO.showEmpty(id)); return; }
+
+  RAW_BAJAS_DATA = filasBajas;
+  BASE_BAJAS_DATA = data;
+  BAJAS_COLS = cols;
+  if(rawOtras && rawOtras.length) OTRAS_PLAZAS_DATA = rawOtras;
+  FILTER_STATE = defaultFilterState(BASE_BAJAS_DATA, BAJAS_COLS);
+  OXXO.persistDashboardPeriod(FILTER_STATE.mes || '');
+  SELECTED_ASESORES = defaultAsesorSelection(BASE_BAJAS_DATA, BAJAS_COLS);
+  setFilterBar(BASE_BAJAS_DATA, BAJAS_COLS);
+  renderBajasDashboard(applyUserFilters(BASE_BAJAS_DATA, BAJAS_COLS), BAJAS_COLS);
+  void rawDenominacionesPromise.then(loadDenominaciones).catch(() => {});
+  document.getElementById('plazas-scope-toggle')?.addEventListener('click', () => {
+    PLAZAS_SHOW_ALL = !PLAZAS_SHOW_ALL;
+    renderPlazas(BASE_BAJAS_DATA, BAJAS_COLS);
+  });
+}
+window.addEventListener('oxxo-theme-change', () => {
+  if (BASE_BAJAS_DATA.length && BAJAS_COLS) renderBajasDashboard(applyUserFilters(BASE_BAJAS_DATA, BAJAS_COLS), BAJAS_COLS);
+});
+document.addEventListener('DOMContentLoaded', initDashboard);
+
+window.buildExcelSheets = async function(){
+  return [
+    { name: 'KPIs', rows: OXXO.scrapeKpiCards('kpi-section') },
+    { name: 'Compromiso', rows: OXXO.scrapeHtmlTable('#tabla-compromiso table') },
+    { name: 'Otras Plazas', rows: OXXO.scrapeHtmlTable('#tabla-plazas table') },
+    { name: 'Detalle de Bajas', rows: OXXO.scrapeHtmlTable('#tbl-detalle-bajas') },
+    { name: 'Denominaciones', rows: OXXO.scrapeHtmlTable('#tabla-denominaciones table') }
+  ];
+};
+</script>
+</body>
+</html>
