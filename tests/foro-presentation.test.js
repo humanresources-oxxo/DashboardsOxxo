@@ -36,7 +36,7 @@ vm.runInContext(fs.readFileSync(path.join(root, 'js/config.js'), 'utf8'), sandbo
 vm.runInContext(fs.readFileSync(path.join(root, 'js/core.js'), 'utf8'), sandbox);
 
 vm.runInContext(fs.readFileSync(path.join(root,'js/metrics-periods.js'),'utf8'),sandbox);
-vm.runInContext(fs.readFileSync(path.join(root,'js/admin-pptx.js'),'utf8').replace(/\}\)\(\);\s*$/,'window.foro={kpiD1,kpiD2,kpiD3,kpiD4,kpiD5,kpiD6,kpiD7,addKpiSlide,addCover,addPlazaRankingSlide,addD3StoreListSlides,generatePresentation,DASHBOARDS};})();'),sandbox);
+vm.runInContext(fs.readFileSync(path.join(root,'js/admin-pptx.js'),'utf8').replace(/\}\)\(\);\s*$/,'window.foro={kpiD1,kpiD2,kpiD3,kpiD4,kpiD5,kpiD6,kpiD7,addKpiSlide,addCover,addPlazaRankingSlide,generatePresentation,DASHBOARDS};})();'),sandbox);
 let fixture=[];
 sandbox.fetchSheetData=sandbox.OXXO.fetchSheetData=async()=>fixture;
 sandbox.loadAsesorCatalog=sandbox.OXXO.loadAsesorCatalog=async()=>null;
@@ -57,27 +57,20 @@ const allText=pptx=>pptx.slides.flatMap(s=>s.texts.map(t=>t.t)).join('\n');
  const d6=await sandbox.foro.kpiD6();assert.equal(d6.chart.values.reduce((a,b)=>a+b,0),3);assert.equal(d6.chart.labels.at(-1),'Otro');
  fixture=[{Tienda:'OXXO A',Asesor:'Ana',Fecha:'2026-09-09',Estatus:'CRITICA'}];
  const d3=await sandbox.foro.kpiD3();assert.equal(d3.ranking.items.length,1);assert.equal(d3.ranking.items[0].value,0);assert.match(d3.sub,/2026-09-09/);
- fixture=[
-  {Tienda:'OXXO Rescatable',Asesor:'Ana',Fecha:'2026-09-22',Estatus:'CRITICA','Aprovechamiento Estructura':80,'Fecha máxima rescate EC':'22/09/2026',Ausentismos:1,Vacante:2},
-  {Tienda:'OXXO Vencida',Asesor:'Beto',Fecha:'2026-09-22',Estatus:'CRITICA','Aprovechamiento Estructura':0,'Fecha máxima rescate EC':'21/09/2026',Ausentismos:0,Vacante:1},
-  {Tienda:'OXXO Completa',Asesor:'Ceci',Fecha:'2026-09-22',Estatus:'COMPLETA','Aprovechamiento Estructura':95,'Fecha máxima rescate EC':'23/09/2026',Ausentismos:0,Vacante:0}
- ];
- const d3Rescate=await sandbox.foro.kpiD3(new Date(2026,8,22));
- assert.equal(d3Rescate.zeroAprovechamiento.length,2);assert.equal(d3Rescate.rescatablesEc.length,1);assert.equal(d3Rescate.rescatablesEc[0].tienda,'OXXO Rescatable');
  fixture=[];for(const d of sandbox.foro.DASHBOARDS)assert.equal(await d.fn(),null,d.name+' sin filas');
  const kpi={label:'Total',value:'40',sub:'Datos de ejemplo',secondary:[],chart:{title:'Puestos',labels:['Otro'],values:[40]},ranking:{title:'Asesores',items:Array.from({length:20},(_,i)=>({name:'Asesor completo '+i,value:20-i}))}};
  const paged=new FakePptx();sandbox.foro.addKpiSlide(paged,'Vacantes',kpi);assert.equal(paged.slides.length,2);assert.match(allText(paged),/Asesor completo 19/);
  const firstBar=paged.slides[0].shapes.find(s=>s.o.x===9.45 && s.o.fill.color==='CC0000');
  const nextBar=paged.slides[1].shapes.find(s=>s.o.x===9.45 && s.o.fill.color==='CC0000');assert.equal(nextBar.o.w/firstBar.o.w,5/20);
- for(const d of sandbox.foro.DASHBOARDS)d.fn=async()=>({...kpi,ranking:null,plazaRanking:d.name.includes('2 ·')?[{plaza:'Oaxaca',bajas:40}]:undefined,zeroAprovechamiento:d.name.includes('3 ·')?[{tienda:'OXXO A',asesor:'Ana',ausentismos:1,vacantes:2,fechaRescateEc:new Date(2026,8,22),fechaRescateEcLabel:'22 sep 2026'}]:undefined,rescatablesEc:d.name.includes('3 ·')?[{tienda:'OXXO A',asesor:'Ana',ausentismos:1,vacantes:2,fechaRescateEc:new Date(2026,8,22),fechaRescateEcLabel:'22 sep 2026'}]:undefined,rescueReferenceDate:new Date(2026,8,22)});
- await sandbox.foro.generatePresentation();const complete=instances.at(-1);assert.equal(complete.slides.length,11);assert.match(allText(complete),/Tiendas con 0% de aprovechamiento/);assert.match(allText(complete),/Tiendas con rescate EC vigente/);assert.equal(complete.layout,'LAYOUT_WIDE');assert.equal(complete.written,true);assert.equal(btn.disabled,false);assert.match(status.textContent,/correctamente/);
+ for(const d of sandbox.foro.DASHBOARDS)d.fn=async()=>({...kpi,ranking:null,plazaRanking:d.name.includes('2 ·')?[{plaza:'Oaxaca',bajas:40}]:undefined});
+ await sandbox.foro.generatePresentation();const complete=instances.at(-1);assert.equal(complete.slides.length,9);assert.equal(complete.layout,'LAYOUT_WIDE');assert.equal(complete.written,true);assert.equal(btn.disabled,false);assert.match(status.textContent,/correctamente/);
  for(const slide of complete.slides)for(const {o} of [...slide.texts,...slide.shapes]){for(const key of ['x','y','w','h'])assert.ok(Number.isFinite(o[key]));assert.ok(o.x+o.w<=13.334 && o.y+o.h<=7.5);}
  sandbox.foro.DASHBOARDS[0].fn=async()=>null;
  await sandbox.foro.generatePresentation();assert.match(status.textContent,/1 indicador/);assert.match(allText(instances.at(-1)),/Sin datos disponibles/);assert.equal(btn.disabled,false);
  sandbox.console={...console,error(){}};sandbox.foro.DASHBOARDS[0].fn=async()=>{throw Error('red no disponible');};
  await sandbox.foro.generatePresentation();assert.match(status.textContent,/1 indicador/);assert.equal(instances.at(-1).written,true);assert.equal(btn.disabled,false);
  failWrite=true;await sandbox.foro.generatePresentation();assert.match(status.textContent,/descarga fallida/);assert.equal(btn.disabled,false);
- console.log('Foro: category totals, rescue lists, zero percentage, pagination, shared scale, 11-slide generation, bounds, missing data and download failure OK');
+ console.log('Foro: category totals, zero percentage, pagination, shared scale, 9-slide generation, bounds, missing data and download failure OK');
 })().catch(e=>{console.error(e);process.exitCode=1});
 
 

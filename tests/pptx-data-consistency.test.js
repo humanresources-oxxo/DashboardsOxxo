@@ -43,7 +43,7 @@ vm.runInContext(fs.readFileSync(path.join(root, 'js/config.js'), 'utf8'), sandbo
 vm.runInContext(fs.readFileSync(path.join(root, 'js/core.js'), 'utf8'), sandbox);
 
 vm.runInContext(fs.readFileSync(path.join(root,'js/metrics-periods.js'),'utf8'),sandbox);
-for(const [file,api,names] of [['admin-pptx.js','general','kpiD1,kpiD2,kpiD4,kpiD6'],['admin-pptx-rae.js','rae','dataD1,dataD2,dataD8,dataFocusKpis,buildD1,buildD2Analysis,buildFocusKpis'],['admin-pptx-asesor.js','advisor','datosAsesorD1,datosAsesorD2']]){
+for(const [file,api,names] of [['admin-pptx.js','general','kpiD1,kpiD2,kpiD4,kpiD6'],['admin-pptx-rae.js','rae','dataD1,dataD2,dataD3,dataD8,dataFocusKpis,buildD1,buildD2Analysis,buildFocusKpis,buildD3ZeroAprovechamiento,buildD3RescateEc,buildD8Capability'],['admin-pptx-asesor.js','advisor','datosAsesorD1,datosAsesorD2']]){
  const code=fs.readFileSync(path.join(root,'js',file),'utf8').replace(/\}\)\(\);\s*$/, 'window.'+api+'={'+names+'};})();');vm.runInContext(code,sandbox);
 }
 let fixture=[], fixtureByTab=null;
@@ -111,6 +111,9 @@ sandbox.loadAsesorCatalog=async()=>null;sandbox.OXXO.loadAsesorCatalog=sandbox.l
  assert.equal(capacidades.cercaSiempre.asesores[0].name,'Beto');
  assert.equal(capacidades.capacidades.length,2);
  assert.equal(capacidades.capacidades.find(item=>item.label==='Código de Ética').asesores.length,2);
+ const capabilitySlides=[];
+ sandbox.rae.buildD8Capability({addSlide(){const slide={background:{},addText(){},addShape(){}};capabilitySlides.push(slide);return slide;}},{...capacidades.cercaSiempre,asesores:Array.from({length:12},(_,i)=>({name:'Asesor '+i,pct:60,pendientes:2}))},'Corte vigente');
+ assert.equal(capabilitySlides.length,1);
  const applyCatalogOriginal = sandbox.OXXO.applyAsesorCatalog;
  sandbox.OXXO.applyAsesorCatalog = (row) => {
   if(row.Asesor_Correcto === 'Centralizacion') row.Asesor_Correcto = 'Edgar Jonathan Bautista Ventura';
@@ -124,20 +127,30 @@ sandbox.loadAsesorCatalog=async()=>null;sandbox.OXXO.loadAsesorCatalog=sandbox.l
   [sandbox.OXXO.SHEETS_CONFIG.TABS.d1]: [{Mes:'2026-09',Tienda:'OXXO A',Asesor:'Ana',Puesto:'AYUDANTE TIENDA','Status ocupacion':'Vacante',Empleados:'','Dias Vacantes':4}],
   [sandbox.OXXO.SHEETS_CONFIG.TABS.d2]: [{Mes:'2026-09',Tienda:'OXXO A',Asesor:'Ana',Puesto:'AYUDANTE TIENDA',Medida:'BAJA'}],
   [sandbox.OXXO.SHEETS_CONFIG.TABS.d3]: [
-   {Plaza:'Oaxaca',Tienda:'OXXO A',Asesor:'Ana',Fecha:'2026-09-22',Estatus:'COMPLETA'},
-   {Plaza:'Oaxaca',Tienda:'OXXO B',Asesor:'Beto',Fecha:'2026-09-22',Estatus:'CRITICA'}
+   {Plaza:'Oaxaca',Tienda:'OXXO A',Asesor:'Ana',Fecha:'2026-09-22',Estatus:'COMPLETA','Aprovechamiento Estructura':95,'Fecha máxima rescate EC':'23/09/2026'},
+   {Plaza:'Oaxaca',Tienda:'OXXO B',Asesor:'Beto',Fecha:'2026-09-22',Estatus:'CRITICA','Aprovechamiento Estructura':0,'Fecha máxima rescate EC':'23/09/2026'},
+   {Plaza:'Oaxaca',Tienda:'OXXO C',Asesor:'Edgar Jonathan Bautista Ventura',Fecha:'2026-09-22',Estatus:'COMPLETA','Aprovechamiento Estructura':100,'Fecha máxima rescate EC':'23/09/2026'}
   ]
  };
  const foco = await sandbox.rae.dataFocusKpis();
- assert.equal(foco.rows.length,2);
+ assert.equal(foco.rows.length,3);
  assert.equal(foco.rows.find(item=>item.name==='Ana').diasPromedio,4);
  assert.equal(foco.rows.find(item=>item.name==='Ana').bajas,1);
  assert.equal(foco.rows.find(item=>item.name==='Beto').aprovechamiento,0);
+ assert.equal(foco.rows.find(item=>item.name==='Edgar Jonathan Bautista Ventura').apego,80);
+ const d3Rescate = await sandbox.rae.dataD3(new Date(2026,8,22));
+ assert.equal(d3Rescate.zeroAprovechamiento.length,1);
+ assert.equal(d3Rescate.rescatablesEc[0].tienda,'OXXO B');
  const focoDrawn=[];
  const focoSlide={background:{},addText(...args){focoDrawn.push(['text',...args]);},addShape(...args){focoDrawn.push(['shape',...args]);}};
  sandbox.rae.buildFocusKpis({addSlide(){return focoSlide;}},foco,foco.sub);
  assert.ok(focoDrawn.some(([kind,value])=>kind==='text'&&String(value).includes('Tiempo promedio')));
  assert.ok(focoDrawn.some(([kind,value])=>kind==='text'&&String(value)==='META'));
+ const rescateDrawn=[];
+ const rescateSlide={background:{},addText(...args){rescateDrawn.push(['text',...args]);},addShape(...args){rescateDrawn.push(['shape',...args]);}};
+ sandbox.rae.buildD3ZeroAprovechamiento({addSlide(){return rescateSlide;}},d3Rescate,d3Rescate.sub);
+ sandbox.rae.buildD3RescateEc({addSlide(){return rescateSlide;}},d3Rescate,d3Rescate.sub);
+ assert.ok(rescateDrawn.some(([kind,value])=>kind==='text'&&String(value).includes('Tiendas con rescate EC vigente')));
  fixtureByTab={
   [sandbox.OXXO.SHEETS_CONFIG.TABS.d1]: [{Mes:'2026-09',Tienda:'OXXO A','CR TIENDA':'50AAA',Empleados:'Persona',Puesto:'AYUDANTE TIENDA'}],
   [sandbox.OXXO.SHEETS_CONFIG.TABS.s7]: [{Tienda:'OXXO A',CR:'50AAA',Asesor:'Timoteo Antonio Perez','Estructura Propuesta TREO P2 Jun - Ago':1,'Estructura SAP':1,'Empleados Activos':1,Vacantes:0,'Dif SAP vs Est Optima Final':0}]

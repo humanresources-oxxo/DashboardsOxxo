@@ -14,7 +14,6 @@
   const rowMonthKeyD2 = OXXO.metricsRowMonthKeyD2;
   const filterLatestMonth = OXXO.metricsFilterLatestMonth;
   const coerceTreoRowsD7 = OXXO.metricsCoerceTreoRows;
-  const parseFecha = OXXO.metricsParseFecha;
   // Ranking de conteo por nombre (p.ej. vacantes o bajas por Asesor), top N
   // descendente. Misma logica ya verificada de rankCount() en
   // admin-pptx-rae.js (copia local para no acoplar los dos archivos).
@@ -36,34 +35,6 @@
     if(d.includes('MATERN') || d.includes('PATERN') || d.includes('PERMISO')) return 'Permisos';
     return 'Otro';
   }
-
-  // Dashboard 3 muestra el aprovechamiento como binario: una tienda con
-  // menos de 92.5% aparece con 0%. Conservamos esa misma regla en la
-  // presentación para que ambas vistas siempre coincidan.
-  function aprovechamientoBinario(value){
-    const raw=String(value ?? '').replace(/%/g,'').trim();
-    if(!raw) return null;
-    const parsed=/^-?\d+,\d{1,2}$/.test(raw) ? Number(raw.replace(',','.')) : Number(raw.replace(/,/g,''));
-    if(!Number.isFinite(parsed)) return null;
-    const pct=parsed>150 ? parsed/100 : parsed;
-    return pct>=92.5 ? 100 : 0;
-  }
-
-  function findExactDataKey(row, aliases){
-    const keys=Object.keys(row||{});
-    const clean=value=>normText(value).replace(/[^A-Z0-9]/g,'');
-    const wanted=(aliases||[]).map(clean).filter(Boolean);
-    return keys.find(key=>wanted.includes(clean(key)))
-      || keys.find(key=>wanted.some(alias=>clean(key).includes(alias)));
-  }
-
-  function rescueDateLabel(date){
-    if(!date) return 'Sin fecha';
-    const months=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
-    return `${String(date.getDate()).padStart(2,'0')} ${months[date.getMonth()]} ${date.getFullYear()}`;
-  }
-
-  function startOfDay(date){ return new Date(date.getFullYear(),date.getMonth(),date.getDate()); }
 
   async function kpiD1(){
     const source = await OXXO.metricsD1Rows();
@@ -118,7 +89,7 @@
     };
   }
 
-  async function kpiD3(today=new Date()){
+  async function kpiD3(){
     const raw = await OXXO.fetchSheetData(OXXO.SHEETS_CONFIG.TABS.d3);
     if(!raw || !raw.length) return null;
     const estatusKey = findKey(raw[0], ['Clas Aprov','Estatus Con impacto Ausentismo','Estatus']);
@@ -126,12 +97,6 @@
     const tiendaKey = findKey(raw[0], ['Tienda']);
     const crKey = findKey(raw[0], ['CR TIENDA','CR Tienda','CR','ID Tienda']);
     const fechaKey = findKey(raw[0], ['Mes Semana','Semana','Fecha','FECHA']);
-    const aprovechamientoKey = findDataKey(raw, ['Aprovechamiento Estructura','Aprovechamiento'], 25, true);
-    // No usar findKey(['Fecha']) aquí: podría tomar la fecha de corte en vez
-    // de la fecha máxima de rescate y listar falsos rescatables.
-    const fechaRescateEcKey = findExactDataKey(raw[0], ['Fecha maxima rescate EC','Fecha máxima rescate EC']);
-    const ausentismosKey = findKey(raw[0], ['Ausentismos','AUSENTISMOS','aus no justificado']);
-    const vacantesKey = findKey(raw[0], ['Vacante','Vacantes','% Vacantes']);
     const asesorCatalog = await OXXO.loadAsesorCatalog();
     const visible = raw.filter(r => OXXO.isTiendaValid(asesorCatalog, val(r, tiendaKey), val(r, crKey)));
     if(!visible.length) return null;
@@ -174,26 +139,6 @@
       .map(([name, v]) => ({ name, value: v.total > 0 ? (v.completas / v.total * 100) : 0 }))
       .sort((a,b) => b.value - a.value)
       .slice(0, 20);
-    const day=startOfDay(today);
-    const zeroAprovechamiento=rows
-      .map(r=>{
-        const aprovechamiento=aprovechamientoBinario(val(r, aprovechamientoKey));
-        if(aprovechamiento!==0) return null;
-        const fechaRescateEc=parseFecha(val(r, fechaRescateEcKey));
-        return {
-          tienda: String(val(r, tiendaKey)||'Sin tienda').trim(),
-          asesor: String(OXXO.resolveAsesorD1(asesorCatalog, { cr: val(r, crKey), tienda: val(r, tiendaKey), asesor: val(r, asesorKey) }) || 'Sin asesor asignado').trim(),
-          ausentismos: num(val(r, ausentismosKey)),
-          vacantes: num(val(r, vacantesKey)),
-          fechaRescateEc,
-          fechaRescateEcLabel: rescueDateLabel(fechaRescateEc),
-        };
-      })
-      .filter(Boolean)
-      .sort((a,b)=>a.tienda.localeCompare(b.tienda,'es'));
-    const rescatablesEc=zeroAprovechamiento
-      .filter(r=>r.fechaRescateEc && startOfDay(r.fechaRescateEc).getTime()>=day.getTime())
-      .sort((a,b)=>a.fechaRescateEc-b.fechaRescateEc || a.tienda.localeCompare(b.tienda,'es'));
     return {
       label: 'Aprovechamiento General', value: pct.toFixed(2) + '%', sub: fecha ? 'Corte '+fecha : 'Corte no informado',
       secondary: [
@@ -203,9 +148,6 @@
       ],
       chart: { title: 'Tiendas por Estatus', labels: ['Completas','Incompletas','Criticas'], values: [completas, incompletas, criticas], type: 'pie' },
       ranking: { title: 'Aprovechamiento por AT', items: ranking, pct: true },
-      zeroAprovechamiento,
-      rescatablesEc,
-      rescueReferenceDate: day,
     };
   }
 
@@ -417,37 +359,6 @@
     drawRows(frame,'Comparativo regional',rows.map(p=>({name:p.plaza,value:p.bajas})));
   }
 
-  function addD3StoreListSlides(pptx, title, period, rows, options={}){
-    const items=rows||[], pageSize=10, pages=Math.max(1,Math.ceil(items.length/pageSize));
-    for(let page=0;page<pages;page++){
-      const visible=items.slice(page*pageSize,(page+1)*pageSize);
-      const frame=slideFrame(pptx,title,period), {text,rect}=frame;
-      text(String(items.length),.5,1.98,3.85,.95,56,RED,true);
-      text(options.countLabel||'TIENDAS',.53,3.08,3.7,.42,15,DARK,true);
-      text(options.detail||'',.53,4.02,3.55,1.1,13,GRAY);
-      rect(4.4,1.97,.015,4.86,'E5DCD6');
-      const x=4.8, y=2.04, widths=[3.15,1.55,.72,.72,1.45];
-      const headers=['Tienda','AT','Aus.','Vac.','Fecha máx. EC'];
-      let cursor=x;
-      headers.forEach((header,i)=>{ text(header,cursor,y,widths[i],.3,10,GRAY,true); cursor+=widths[i]; });
-      rect(x,y+.42,7.6,.015,'E5DCD6');
-      if(!visible.length){
-        text(options.emptyText||'Sin tiendas para este criterio.',x,2.85,7.45,.45,16,GRAY);
-      }else{
-        const rowH=.39;
-        visible.forEach((item,i)=>{
-          const rowY=2.65+i*rowH;
-          if(i%2===0) rect(x,rowY-.035,7.6,rowH,'FFF5F2');
-          cursor=x;
-          [item.tienda,item.asesor,OXXO.formatNum(item.ausentismos),OXXO.formatNum(item.vacantes),item.fechaRescateEcLabel].forEach((value,j)=>{
-            text(value,cursor,rowY,widths[j],.28,j<2?10:10,j===4&&item.fechaRescateEc?'CC0000':DARK,j===0); cursor+=widths[j];
-          });
-        });
-      }
-      if(pages>1) text(`Continuación ${page+1} / ${pages}`,9,7.04,3.8,.2,9,GRAY,false,{align:'right'});
-    }
-  }
-
   function addCover(pptx,today){
     const {text,rect}=slideFrame(pptx,'Foro Bienestar',today.toLocaleDateString('es-MX',{year:'numeric',month:'long',day:'numeric'}));
     text('Indicadores de recursos humanos',.5,2.5,11.9,.8,34,DARK,true);
@@ -471,7 +382,7 @@
       const today = new Date();
       for(const d of DASHBOARDS){
         try {
-          const kpi = await d.fn(today);
+          const kpi = await d.fn();
           results.push({ name: d.name, kpi });
         } catch(e) {
           console.error('Error KPI', d.name, e);
@@ -487,22 +398,6 @@
         addKpiSlide(pptx, name, kpi);
         if(name === 'Dashboard 2 · Bajas' && kpi && kpi.plazaRanking){
           addPlazaRankingSlide(pptx, kpi.plazaRanking);
-        }
-        if(name === 'Dashboard 3 · Aprovechamiento' && kpi){
-          addD3StoreListSlides(
-            pptx,
-            'Tiendas con 0% de aprovechamiento',
-            kpi.sub,
-            kpi.zeroAprovechamiento,
-            { countLabel: 'TIENDAS CON 0%', detail: 'Tiendas cuyo aprovechamiento actual está por debajo de 92.5%.', emptyText: 'No hay tiendas con 0% de aprovechamiento en el corte actual.' }
-          );
-          addD3StoreListSlides(
-            pptx,
-            'Tiendas con rescate EC vigente',
-            kpi.sub,
-            kpi.rescatablesEc,
-            { countLabel: 'AÚN RESCATABLES', detail: `0% actual con fecha máxima EC vigente al ${rescueDateLabel(kpi.rescueReferenceDate)}.`, emptyText: 'No hay tiendas con 0% y fecha máxima de rescate EC vigente.' }
-          );
         }
       });
 

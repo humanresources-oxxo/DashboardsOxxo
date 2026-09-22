@@ -19,6 +19,7 @@
   const filterLatestMonth = OXXO.metricsFilterLatestMonth;
   const tipoPuesto = OXXO.metricsTipoPuesto;
   const coerceTreoRowsD7 = OXXO.metricsCoerceTreoRows;
+  const parseFecha = OXXO.metricsParseFecha;
   // Misma regla que normalizePct() en dashboard-3.html: solo se divide entre
   // 100 cuando el valor viene claramente duplicado por el formato Porcentaje
   // de Sheets (>150). Un aprovechamiento real de 100-150% (tienda con mas
@@ -54,6 +55,23 @@
       return Number.isFinite(fixed) ? fixed : 0;
     }
     return Number.isFinite(value) ? value : null;
+  }
+  function findExactHeader(row, aliases){
+    const keys=Object.keys(row||{});
+    const clean=value=>normText(value).replace(/[^A-Z0-9]/g,'');
+    const wanted=(aliases||[]).map(clean).filter(Boolean);
+    return keys.find(key=>wanted.includes(clean(key))) || keys.find(key=>wanted.some(alias=>clean(key).includes(alias))) || null;
+  }
+  function startOfDay(date){ return new Date(date.getFullYear(),date.getMonth(),date.getDate()); }
+  function rescueDateLabel(date){
+    if(!date) return 'Sin fecha';
+    const months=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+    return `${String(date.getDate()).padStart(2,'0')} ${months[date.getMonth()]} ${date.getFullYear()}`;
+  }
+  function aprovechamientoBinario(value){
+    if(String(value ?? '').trim()==='') return null;
+    const pct=normPct(value);
+    return Number.isFinite(pct) ? (pct>=92.5?100:0) : null;
   }
   // Acorta un nombre largo a "Nombre(s) Apellido1 A." (inicial del ultimo
   // apellido) en vez de cortarlo a solo el primer nombre: la plaza suele tener
@@ -196,7 +214,7 @@
     };
   }
 
-  async function dataD3(){
+  async function dataD3(today=new Date()){
     // La RAE es una presentación exclusiva de Plaza Oaxaca. El panel puede
     // conservar un alcance regional de una navegación previa; no debe hacer
     // que esta diapositiva mezcle asesores de otras plazas ni nombres crudos
@@ -215,6 +233,11 @@
     const ecPorAtKey = OXXO.metricsFindKeyExact(scoped[0], ['Ec por AT','EC POR AT','Ec Por AT','EC']);
     const atKey = OXXO.metricsFindKeyExact(scoped[0], ['Ats','ATS','AT','At']);
     const fechaKey = findKey(scoped[0], ['Mes Semana','Semana','Fecha','FECHA']);
+    const aprovechamientoKey = findDataKey(scoped, ['Aprovechamiento Estructura','Aprovechamiento'], 25, true);
+    // Es específica para no confundirla con la fecha de corte de la carga.
+    const fechaRescateEcKey = findExactHeader(scoped[0], ['Fecha maxima rescate EC','Fecha máxima rescate EC']);
+    const ausentismosKey = findKey(scoped[0], ['Ausentismos','AUSENTISMOS','aus no justificado']);
+    const vacantesKey = findKey(scoped[0], ['Vacante','Vacantes','% Vacantes']);
     const asesorCatalog = await OXXO.loadAsesorCatalog();
     const visible = scoped.filter(r => OXXO.isTiendaValid(asesorCatalog, val(r, tiendaKey), val(r, crKey)));
     if(!visible.length) return null;
@@ -311,6 +334,19 @@
       })
       .sort((a,b) => b.value - a.value || a.name.localeCompare(b.name, 'es'));
     const ranking = rankingAll.filter(x => x.hasData).slice(0, 15);
+    const rescueReferenceDate=startOfDay(today);
+    const zeroAprovechamiento=rows.map(r=>{
+      if(aprovechamientoBinario(val(r, aprovechamientoKey))!==0) return null;
+      const fechaRescateEc=parseFecha(val(r, fechaRescateEcKey));
+      return {
+        tienda:String(val(r, tiendaKey)||'Sin tienda').trim(),
+        asesor:String(OXXO.resolveAsesorD1(asesorCatalog,{cr:val(r,crKey),tienda:val(r,tiendaKey),asesor:val(r,asesorKey)})||'Sin asesor asignado').trim(),
+        ausentismos:num(val(r,ausentismosKey)), vacantes:num(val(r,vacantesKey)), fechaRescateEc,
+        fechaRescateEcLabel:rescueDateLabel(fechaRescateEc),
+      };
+    }).filter(Boolean).sort((a,b)=>a.tienda.localeCompare(b.tienda,'es'));
+    const rescatablesEc=zeroAprovechamiento.filter(item=>item.fechaRescateEc && startOfDay(item.fechaRescateEc).getTime()>=rescueReferenceDate.getTime())
+      .sort((a,b)=>a.fechaRescateEc-b.fechaRescateEc || a.tienda.localeCompare(b.tienda,'es'));
 
     return {
       sub: fecha ? `Corte ${fecha}` : 'Corte no informado',
@@ -318,14 +354,39 @@
       plazas: plazas.slice(0, 5),
       ranking,
       rankingAll,
+      zeroAprovechamiento,
+      rescatablesEc,
+      rescueReferenceDate,
     };
   }
 
   function advisorKey(value){ return normText(value).replace(/[^A-Z]/g,''); }
+  // Estos tres indicadores no provienen todavía de un dashboard conectado.
+  // Se conservan como referencia fija de la tabla KPI de Enfoque original;
+  // los otros tres campos se refrescan con cada generación de la RAE.
+  const FOCUS_STATIC_METRICS = [
+    { aliases:['MIRNAMARTINEZLORENZO','MIRNA'], rotacion:63.8, banca:9, apego:60 },
+    { aliases:['TIMOTEOANTONIOPEREZ','TIMOTEO'], rotacion:69.3, banca:11, apego:20 },
+    { aliases:['ERNESTOCRUZMARQUEZ','ERNESTO'], rotacion:40.7, banca:10, apego:80 },
+    { aliases:['HECTORDEMETRIOREYESGALO','HECTOR'], rotacion:75.7, banca:16, apego:20 },
+    { aliases:['JORGEADRIANPOSADASLOPEZ','ADRIAN'], rotacion:47.5, banca:11, apego:80 },
+    { aliases:['LAURAALEJANDRAMORENOMAYORAL','LAURA'], rotacion:61.8, banca:7, apego:60 },
+    { aliases:['MARISELAMUNOZSARABIA','MARISELA'], rotacion:85.6, banca:11, apego:40 },
+    { aliases:['REYNAALICIAREYESGARCIA','ALICIA'], rotacion:88.1, banca:8, apego:60 },
+    { aliases:['SOFIACARIDADJIMENEZGOMEZ','SOFIA'], rotacion:78.9, banca:17, apego:40 },
+    { aliases:['LUISJAVIERRAMOSCRUZ','LUIS'], rotacion:24.1, banca:11, apego:80 },
+    { aliases:['JORDANVAZQUEZTOALA','JORDAN'], rotacion:33.5, banca:2, apego:40 },
+    { aliases:['EDGARJONATHANBAUTISTAVENTURA','EDGAR'], rotacion:0, banca:0, apego:80 },
+  ];
+  function focusStaticMetrics(name){
+    const key=advisorKey(name);
+    const index=FOCUS_STATIC_METRICS.findIndex(item=>item.aliases.some(alias=>alias===key || (alias.length>=4 && key.includes(alias))));
+    return index<0 ? { rotacion:null, banca:null, apego:null, order:999 } : { ...FOCUS_STATIC_METRICS[index], order:index };
+  }
 
-  async function dataFocusKpis(mesD1 = '', mesD2 = ''){
+  async function dataFocusKpis(mesD1 = '', mesD2 = '', today=new Date()){
     const [vacantes, bajas, aprovechamiento] = await Promise.all([
-      dataD1(mesD1), dataD2(mesD2), dataD3()
+      dataD1(mesD1), dataD2(mesD2), dataD3(today)
     ]);
     if(!vacantes && !bajas && !aprovechamiento) return null;
     const rows=new Map();
@@ -333,7 +394,7 @@
       const clean=String(name||'').trim();
       const key=advisorKey(clean);
       if(!key || key.includes('SINASESOR')) return null;
-      if(!rows.has(key)) rows.set(key,{ name:clean, aprovechamiento:null, diasPromedio:null, bajas:0 });
+      if(!rows.has(key)) rows.set(key,{ name:clean, aprovechamiento:null, diasPromedio:null, bajas:0, ...focusStaticMetrics(clean) });
       return rows.get(key);
     };
     (aprovechamiento?.rankingAll||[]).forEach(item=>{ const row=ensure(item.name); if(row) row.aprovechamiento=item.value; });
@@ -341,7 +402,7 @@
     (bajas?.asesores||[]).forEach(item=>{ const row=ensure(item.name); if(row) row.bajas=item.bajas; });
     return {
       sub: `Aprovechamiento: ${aprovechamiento?.sub||'sin corte'}. Vacantes: ${vacantes?.sub||'sin mes'}. Bajas: ${bajas?.sub||'sin mes'}.`,
-      rows: [...rows.values()].sort((a,b)=>a.name.localeCompare(b.name,'es')),
+      rows: [...rows.values()].sort((a,b)=>a.order-b.order || a.name.localeCompare(b.name,'es')),
     };
   }
 
@@ -952,6 +1013,48 @@
     });
   }
 
+  function buildD3StoreListSlides(pptx, d, dateLabel, options){
+    const items=options.items||[], pageSize=10, pages=Math.max(1,Math.ceil(items.length/pageSize));
+    for(let page=0;page<pages;page++){
+      const {text,rect}=editorialSlide(pptx,options.title,dateLabel);
+      text(String(items.length),.5,1.98,3.85,.9,56,RED,true);
+      text(options.countLabel,.53,2.98,3.7,.28,11,DARK,true);
+      text(options.detail,.53,3.36,3.65,.82,12,MUTED);
+      rect(4.4,1.97,.015,4.86,'E5DCD6');
+      const x=4.8, y=2.04, widths=[3.15,1.55,.72,.72,1.45], headers=['Tienda','AT','Aus.','Vac.','Fecha máx. EC'];
+      let cursor=x;
+      headers.forEach((header,i)=>{text(header,cursor,y,widths[i],.3,10,MUTED,true);cursor+=widths[i];});
+      rect(x,y+.42,7.6,.015,'E5DCD6');
+      const visible=items.slice(page*pageSize,(page+1)*pageSize);
+      if(!visible.length) text(options.emptyText,x,2.85,7.4,.45,16,MUTED);
+      visible.forEach((item,i)=>{
+        const rowY=2.65+i*.39;
+        if(i%2===0) rect(x,rowY-.035,7.6,.39,'FFF5F2');
+        cursor=x;
+        [item.tienda,item.asesor,OXXO.formatNum(item.ausentismos),OXXO.formatNum(item.vacantes),item.fechaRescateEcLabel].forEach((value,j)=>{
+          text(value,cursor,rowY,widths[j],.28,10,j===4&&item.fechaRescateEc?RED:TEXT,j===0); cursor+=widths[j];
+        });
+      });
+      if(pages>1) text(`Continuación ${page+1} / ${pages}`,9,7.04,3.8,.2,9,MUTED,false,{align:'right'});
+    }
+  }
+
+  function buildD3ZeroAprovechamiento(pptx,d,dateLabel){
+    buildD3StoreListSlides(pptx,d,dateLabel,{
+      title:'Tiendas con 0% de aprovechamiento', items:d.zeroAprovechamiento,
+      countLabel:'TIENDAS CON 0%', detail:'Tiendas cuyo aprovechamiento actual está por debajo de 92.5%.',
+      emptyText:'No hay tiendas con 0% de aprovechamiento en el corte actual.'
+    });
+  }
+
+  function buildD3RescateEc(pptx,d,dateLabel){
+    buildD3StoreListSlides(pptx,d,dateLabel,{
+      title:'Tiendas con rescate EC vigente', items:d.rescatablesEc,
+      countLabel:'AÚN RESCATABLES', detail:`0% actual con fecha máxima EC vigente al ${rescueDateLabel(d.rescueReferenceDate)}.`,
+      emptyText:'No hay tiendas con 0% y fecha máxima de rescate EC vigente.'
+    });
+  }
+
   function buildD8(pptx, d, dateLabel){
     const {text,rect}=editorialSlide(pptx,'Capacidades 2026',dateLabel);
     text(d.pct.toFixed(1)+'%',.5,1.98,3.85,.9,56,d.pct>=80?GREEN:(d.pct>=50?GOLD:RED),true);
@@ -983,8 +1086,7 @@
   }
 
   function buildD8Capability(pptx, d, dateLabel){
-    const items=d.asesores || [], pageSize=10, pages=Math.max(1,Math.ceil(items.length/pageSize));
-    for(let page=0;page<pages;page++){
+    const items=d.asesores || [];
     const title=capKey(d.label).includes('cercasiempre') ? 'Módulo Cerca Siempre' : `Capacidad · ${d.label}`;
     const {text,rect}=editorialSlide(pptx,title,dateLabel);
     const color = d.pct >= 80 ? GREEN : (d.pct >= 50 ? GOLD : RED);
@@ -1006,20 +1108,18 @@
     rect(4.4,1.97,.015,4.86,'E5DCD6');
     text('Asesores con seguimiento pendiente',4.8,2.02,6.2,.35,18,DARK,true);
     text('Cumplimiento y personas pendientes',9.9,2.08,2.85,.25,10,MUTED,false,{align:'right'});
-    const pageItems=items.slice(page*pageSize,(page+1)*pageSize);
-    const rowH = Math.min(.43,4.12/Math.max(1,pageItems.length));
+    const rowH = Math.min(.43,4.12/Math.max(1,items.length));
+    const nameSize = items.length>16 ? 8.5 : items.length>12 ? 9 : 10;
     if(!items.length) text('Sin registros aplicables para el módulo',4.8,2.8,7,.5,15,MUTED);
-    pageItems.forEach((item,i)=>{
+    items.forEach((item,i)=>{
       const y=2.65+i*rowH;
       const itemColor=item.pct>=80?GREEN:(item.pct>=50?GOLD:RED);
-      text(shortenName(item.name,30),4.8,y,3.7,rowH*.84,items.length>8?10:11,TEXT);
+      text(shortenName(item.name,30),4.8,y,3.7,rowH*.84,nameSize,TEXT);
       rect(8.68,y+rowH*.31,2.18,.07,'EDE6DF');
       if(item.pct>0) rect(8.68,y+rowH*.31,2.18*Math.min(item.pct,100)/100,.07,itemColor);
       text(item.pct.toFixed(1)+'%',10.98,y,.8,rowH*.84,11,itemColor,true,{align:'right'});
       text(item.pendientes+' pend.',11.86,y,.9,rowH*.84,10,MUTED,false,{align:'right'});
     });
-    if(pages>1) text(`Continuación ${page+1} / ${pages}`,9,7.04,3.8,.2,9,MUTED,false,{align:'right'});
-    }
   }
 
   function buildD8Capabilities(pptx, d, dateLabel){
@@ -1034,6 +1134,12 @@
     if(metric === 'diasPromedio') return value <= 4 ? 'C6EFCE' : value <= 6 ? 'FFEB9C' : 'FFC7CE';
     return value <= 3 ? 'C6EFCE' : value <= 4 ? 'FFEB9C' : 'FFC7CE';
   }
+  function focusStaticCellColor(metric, value){
+    if(value === null || value === undefined) return WHITE;
+    if(metric === 'rotacion') return value <= 60 ? 'C6EFCE' : value < 65 ? 'FFEB9C' : 'FFC7CE';
+    if(metric === 'banca') return value >= 6 && value <= 12 ? 'C6EFCE' : 'FFC7CE';
+    return value >= 80 ? 'C6EFCE' : value >= 60 ? 'FFEB9C' : 'FFC7CE';
+  }
 
   function buildFocusKpis(pptx, d, dateLabel){
     const items=d.rows||[], pageSize=12, pages=Math.max(1,Math.ceil(items.length/pageSize));
@@ -1041,7 +1147,7 @@
       const {text,rect}=editorialSlide(pptx,'KPI de enfoque 2026',dateLabel);
       text('Indicadores actualizados automáticamente',.5,1.92,7,.3,15,DARK,true);
       text(d.sub,.5,2.27,12.3,.28,10,MUTED);
-      const x=.55, y=2.82, widths=[4.35,2.45,2.45,2.45], headers=['Asesor','Aprovechamiento\nde estructura','Tiempo promedio\nde vacantes','Bajas del mes'];
+      const x=.55, y=2.82, widths=[3,1.6,1.45,1.35,1.55,1.45,1.6], headers=['Asesor','Aprovechamiento\nde estructura','Tiempo promedio\nde vacantes','Bajas del mes','Rotación\nde equipo','Banca\noperativa','% Apego a\nindicadores'];
       let cursor=x;
       headers.forEach((header,i)=>{ rect(cursor,y,widths[i],.62,i===0?'CC0000':'E30613'); text(header,cursor+.06,y+.13,widths[i]-.12,.36,12,WHITE,true,{align:i?'center':'left',breakLine:false}); cursor+=widths[i]; });
       const rowH=.27;
@@ -1050,6 +1156,9 @@
         { text:'90.0%', metric:'aprovechamiento', value:90 },
         { text:'6.0', metric:'diasPromedio', value:6 },
         { text:'4', metric:'bajas', value:4 },
+        { text:'60.0%', metric:null, value:null },
+        { text:'6.0', metric:null, value:null },
+        { text:'', metric:null, value:null },
       ];
       cursor=x;
       meta.forEach((cell,j)=>{
@@ -1066,15 +1175,17 @@
           { text:item.aprovechamiento===null?'—':item.aprovechamiento.toFixed(1)+'%', metric:'aprovechamiento', value:item.aprovechamiento },
           { text:item.diasPromedio===null?'—':item.diasPromedio.toFixed(1), metric:'diasPromedio', value:item.diasPromedio },
           { text:String(item.bajas||0), metric:'bajas', value:item.bajas||0 },
+          { text:item.rotacion===null?'—':item.rotacion.toFixed(1)+'%', metric:'rotacion', value:item.rotacion, fixed:true },
+          { text:item.banca===null?'—':item.banca.toFixed(1), metric:'banca', value:item.banca, fixed:true },
+          { text:item.apego===null?'—':item.apego.toFixed(1)+'%', metric:'apego', value:item.apego, fixed:true },
         ];
         cursor=x;
         values.forEach((cell,j)=>{
-          rect(cursor,rowY,widths[j],rowH,cell.metric?focusCellColor(cell.metric,cell.value):(i%2?'F7F7F7':'FFFFFF'));
+          rect(cursor,rowY,widths[j],rowH,cell.metric?(cell.fixed?focusStaticCellColor(cell.metric,cell.value):focusCellColor(cell.metric,cell.value)):(i%2?'F7F7F7':'FFFFFF'));
           text(cell.text,cursor+.06,rowY+.045,widths[j]-.12,.18,11,TEXT,j===0,{align:j?'center':'left'});
           cursor+=widths[j];
         });
       });
-      text('Verde: desempeño dentro del objetivo. Amarillo: seguimiento. Rojo: atención prioritaria.',.55,6.76,8.6,.18,9,MUTED);
       if(pages>1) text(`Continuación ${page+1} / ${pages}`,9,7.04,3.8,.2,9,MUTED,false,{align:'right'});
     }
   }
@@ -1156,18 +1267,22 @@
 
   // RAE reúne Vacantes, Bajas, Aprovechamiento, Capacidades y TREO. Tiempo
   // Extra/Vacaciones/Ausentismos se mantienen fuera de esta presentación.
-  function buildDashboardList(mesD1, mesD2){
+  function buildDashboardList(mesD1, mesD2, today){
     let capacidadesPromise;
     const loadCapacidades = () => capacidadesPromise || (capacidadesPromise = dataD8());
     let bajasPromise;
     const loadBajas = () => bajasPromise || (bajasPromise = dataD2(mesD2));
     let focusPromise;
-    const loadFocus = () => focusPromise || (focusPromise = dataFocusKpis(mesD1, mesD2));
+    const loadFocus = () => focusPromise || (focusPromise = dataFocusKpis(mesD1, mesD2, today));
+    let aprovechamientoPromise;
+    const loadAprovechamiento = () => aprovechamientoPromise || (aprovechamientoPromise = dataD3(today));
     return [
       { title: 'VACANTES', fetch: () => dataD1(mesD1), build: buildD1 },
       { title: 'BAJAS', fetch: loadBajas, build: buildD2 },
       { title: 'ANÁLISIS DE BAJAS', fetch: loadBajas, build: buildD2Analysis },
-      { title: 'APROVECHAMIENTO DE ESTRUCTURA', fetch: dataD3, build: buildD3 },
+      { title: 'APROVECHAMIENTO DE ESTRUCTURA', fetch: loadAprovechamiento, build: buildD3 },
+      { title: 'TIENDAS CON 0% DE APROVECHAMIENTO', fetch: loadAprovechamiento, build: buildD3ZeroAprovechamiento },
+      { title: 'TIENDAS CON RESCATE EC VIGENTE', fetch: loadAprovechamiento, build: buildD3RescateEc },
       { title: 'KPI DE ENFOQUE 2026', fetch: loadFocus, build: buildFocusKpis },
       { title: 'CAPACIDADES 2026', fetch: loadCapacidades, build: buildD8 },
       { title: 'CAPACIDADES POR MÓDULO', fetch: loadCapacidades, build: buildD8Capabilities },
@@ -1199,7 +1314,7 @@
 
       buildCover(pptx, today.toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' }));
 
-      const DASHBOARDS = buildDashboardList(mesD1, mesD2);
+      const DASHBOARDS = buildDashboardList(mesD1, mesD2, today);
       for(const d of DASHBOARDS){
         try {
           const data = await d.fetch();
