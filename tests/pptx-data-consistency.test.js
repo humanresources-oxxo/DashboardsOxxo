@@ -109,6 +109,8 @@ sandbox.loadAsesorCatalog=async()=>null;sandbox.OXXO.loadAsesorCatalog=sandbox.l
  assert.equal(capacidades.cercaSiempre.completadas,1);
  assert.equal(capacidades.cercaSiempre.pendientes,1);
  assert.equal(capacidades.cercaSiempre.asesores[0].name,'Beto');
+ assert.equal(capacidades.capacidades.length,2);
+ assert.equal(capacidades.capacidades.find(item=>item.label==='Código de Ética').asesores.length,2);
  const applyCatalogOriginal = sandbox.OXXO.applyAsesorCatalog;
  sandbox.OXXO.applyAsesorCatalog = (row) => {
   if(row.Asesor_Correcto === 'Centralizacion') row.Asesor_Correcto = 'Edgar Jonathan Bautista Ventura';

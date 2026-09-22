@@ -373,13 +373,13 @@
       .sort((a,b) => a.pct - b.pct || a.name.localeCompare(b.name));
     const empleados = new Set(rows.map(row => String(val(row, empleadoKey) || '').trim()).filter(Boolean)).size;
     const tiendas = new Set(rows.map(row => String(val(row, tiendaKey) || '').trim()).filter(Boolean)).size;
-    const cercaKey = certifications.find(key => capKey(key).includes('cercasiempre'));
-    let cercaSiempre = null;
-    if(cercaKey){
-      const resumen = stats.find(item => item.key === cercaKey);
+    // Cada capacidad conserva su propio resumen y su lista completa de AT.
+    // Así la presentación puede crear una lámina por capacidad sin recortar
+    // personas ni calcular porcentajes con otra base distinta al dashboard.
+    const capacidades = stats.map(resumen => {
       const porAsesor = new Map();
       rows.forEach(row => {
-        const value = capValue(row, cercaKey);
+        const value = capValue(row, resumen.key);
         if(value === null) return;
         const name = String(val(row, asesorKey) || 'Sin Asesor Asignado').trim();
         if(!porAsesor.has(name)) porAsesor.set(name, { name, aplic: 0, comp: 0 });
@@ -387,25 +387,27 @@
         item.aplic++;
         if(value >= 1) item.comp++;
       });
-      const asesoresCerca = [...porAsesor.values()]
+      const asesores = [...porAsesor.values()]
         .map(item => ({ ...item, pendientes: item.aplic - item.comp, pct: item.aplic ? item.comp / item.aplic * 100 : 0 }))
         .filter(item => item.aplic && !normText(item.name).replace(/[^A-Z]/g,'').includes('SINASESOR'))
         .sort((a,b) => a.pct - b.pct || b.pendientes - a.pendientes || a.name.localeCompare(b.name));
-      cercaSiempre = {
+      return {
         label: resumen.label,
         aplicables: resumen.aplic,
         completadas: resumen.comp,
         pendientes: resumen.aplic - resumen.comp,
         pct: resumen.pct || 0,
-        asesores: asesoresCerca.slice(0, 10),
+        asesores,
       };
-    }
+    });
+    const cercaSiempre = capacidades.find(item => capKey(item.label).includes('cercasiempre')) || null;
     return {
       sub: 'Corte vigente', empleados, tiendas, pct: aplic ? comp / aplic * 100 : 0,
       completadas: comp, aplicables: aplic,
       criticas: stats.sort((a,b) => a.pct - b.pct).slice(0, 3),
       asesores: asesores.slice(0, 10),
       cercaSiempre,
+      capacidades,
     };
   }
 
@@ -952,11 +954,14 @@
     });
   }
 
-  function buildD8CercaSiempre(pptx, d, dateLabel){
-    const {text,rect}=editorialSlide(pptx,'Módulo Cerca Siempre',dateLabel);
+  function buildD8Capability(pptx, d, dateLabel){
+    const items=d.asesores || [], pageSize=10, pages=Math.max(1,Math.ceil(items.length/pageSize));
+    for(let page=0;page<pages;page++){
+    const title=capKey(d.label).includes('cercasiempre') ? 'Módulo Cerca Siempre' : `Capacidad · ${d.label}`;
+    const {text,rect}=editorialSlide(pptx,title,dateLabel);
     const color = d.pct >= 80 ? GREEN : (d.pct >= 50 ? GOLD : RED);
     text(d.pct.toFixed(1)+'%',.5,1.98,3.85,.9,56,color,true);
-    text('CUMPLIMIENTO DEL MÓDULO',.53,2.98,3.7,.28,11,DARK,true);
+    text('CUMPLIMIENTO DE LA CAPACIDAD',.53,2.98,3.7,.28,11,DARK,true);
     text('Capacidades 2026 · corte vigente',.53,3.34,3.7,.28,11,MUTED);
     const metrics = [
       ['Personal aplicable', d.aplicables, DARK],
@@ -973,10 +978,10 @@
     rect(4.4,1.97,.015,4.86,'E5DCD6');
     text('Asesores con seguimiento pendiente',4.8,2.02,6.2,.35,18,DARK,true);
     text('Cumplimiento y personas pendientes',9.9,2.08,2.85,.25,10,MUTED,false,{align:'right'});
-    const items = d.asesores || [];
-    const rowH = Math.min(.43,4.12/Math.max(1,items.length));
+    const pageItems=items.slice(page*pageSize,(page+1)*pageSize);
+    const rowH = Math.min(.43,4.12/Math.max(1,pageItems.length));
     if(!items.length) text('Sin registros aplicables para el módulo',4.8,2.8,7,.5,15,MUTED);
-    items.forEach((item,i)=>{
+    pageItems.forEach((item,i)=>{
       const y=2.65+i*rowH;
       const itemColor=item.pct>=80?GREEN:(item.pct>=50?GOLD:RED);
       text(shortenName(item.name,30),4.8,y,3.7,rowH*.84,items.length>8?10:11,TEXT);
@@ -985,6 +990,14 @@
       text(item.pct.toFixed(1)+'%',10.98,y,.8,rowH*.84,11,itemColor,true,{align:'right'});
       text(item.pendientes+' pend.',11.86,y,.9,rowH*.84,10,MUTED,false,{align:'right'});
     });
+    if(pages>1) text(`Continuación ${page+1} / ${pages}`,9,7.04,3.8,.2,9,MUTED,false,{align:'right'});
+    }
+  }
+
+  function buildD8Capabilities(pptx, d, dateLabel){
+    const capacidades=d.capacidades||[];
+    if(!capacidades.length){ emptySlide(pptx,'Capacidades por módulo',dateLabel); return; }
+    capacidades.forEach(capacidad=>buildD8Capability(pptx,capacidad,dateLabel));
   }
 
   function buildD7(pptx, d, dateLabel){
@@ -1023,7 +1036,7 @@
     const {text,rect}=editorialSlide(pptx,'Presentación RAE',dateLabel);
     text('Indicadores de recursos humanos',.5,2.5,11.9,.8,34,DARK,true);
     text('Plaza Oaxaca',.5,3.52,11.9,.5,22,RED,true);
-    const sections=['Vacantes','Bajas','Análisis de bajas','Aprovechamiento','Capacidades','Cerca Siempre','TREO'];
+    const sections=['Vacantes','Bajas','Análisis de bajas','Aprovechamiento','Capacidades','Por módulo','TREO'];
     sections.forEach((label,i)=>{
       const sectionW = 1.54;
       const x=.5+i*1.78;
@@ -1075,7 +1088,7 @@
       { title: 'ANÁLISIS DE BAJAS', fetch: loadBajas, build: buildD2Analysis },
       { title: 'APROVECHAMIENTO DE ESTRUCTURA', fetch: dataD3, build: buildD3 },
       { title: 'CAPACIDADES 2026', fetch: loadCapacidades, build: buildD8 },
-      { title: 'MÓDULO CERCA SIEMPRE', fetch: async () => (await loadCapacidades())?.cercaSiempre || null, build: buildD8CercaSiempre },
+      { title: 'CAPACIDADES POR MÓDULO', fetch: loadCapacidades, build: buildD8Capabilities },
       { title: 'TREO · ESTRUCTURA', fetch: dataD7, build: buildD7 },
     ];
   }
