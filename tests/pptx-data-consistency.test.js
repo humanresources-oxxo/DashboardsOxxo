@@ -43,7 +43,7 @@ vm.runInContext(fs.readFileSync(path.join(root, 'js/config.js'), 'utf8'), sandbo
 vm.runInContext(fs.readFileSync(path.join(root, 'js/core.js'), 'utf8'), sandbox);
 
 vm.runInContext(fs.readFileSync(path.join(root,'js/metrics-periods.js'),'utf8'),sandbox);
-for(const [file,api,names] of [['admin-pptx.js','general','kpiD1,kpiD2,kpiD4,kpiD6'],['admin-pptx-rae.js','rae','dataD1,dataD2,dataD8,buildD1,buildD2Analysis'],['admin-pptx-asesor.js','advisor','datosAsesorD1,datosAsesorD2']]){
+for(const [file,api,names] of [['admin-pptx.js','general','kpiD1,kpiD2,kpiD4,kpiD6'],['admin-pptx-rae.js','rae','dataD1,dataD2,dataD8,dataFocusKpis,buildD1,buildD2Analysis,buildFocusKpis'],['admin-pptx-asesor.js','advisor','datosAsesorD1,datosAsesorD2']]){
  const code=fs.readFileSync(path.join(root,'js',file),'utf8').replace(/\}\)\(\);\s*$/, 'window.'+api+'={'+names+'};})();');vm.runInContext(code,sandbox);
 }
 let fixture=[], fixtureByTab=null;
@@ -120,6 +120,24 @@ sandbox.loadAsesorCatalog=async()=>null;sandbox.OXXO.loadAsesorCatalog=sandbox.l
  const capacidadesCatalogadas = await sandbox.rae.dataD8();
  assert.equal(capacidadesCatalogadas.cercaSiempre.asesores[0].name,'Edgar Jonathan Bautista Ventura');
  sandbox.OXXO.applyAsesorCatalog = applyCatalogOriginal;
+ fixtureByTab={
+  [sandbox.OXXO.SHEETS_CONFIG.TABS.d1]: [{Mes:'2026-09',Tienda:'OXXO A',Asesor:'Ana',Puesto:'AYUDANTE TIENDA','Status ocupacion':'Vacante',Empleados:'','Dias Vacantes':4}],
+  [sandbox.OXXO.SHEETS_CONFIG.TABS.d2]: [{Mes:'2026-09',Tienda:'OXXO A',Asesor:'Ana',Puesto:'AYUDANTE TIENDA',Medida:'BAJA'}],
+  [sandbox.OXXO.SHEETS_CONFIG.TABS.d3]: [
+   {Plaza:'Oaxaca',Tienda:'OXXO A',Asesor:'Ana',Fecha:'2026-09-22',Estatus:'COMPLETA'},
+   {Plaza:'Oaxaca',Tienda:'OXXO B',Asesor:'Beto',Fecha:'2026-09-22',Estatus:'CRITICA'}
+  ]
+ };
+ const foco = await sandbox.rae.dataFocusKpis();
+ assert.equal(foco.rows.length,2);
+ assert.equal(foco.rows.find(item=>item.name==='Ana').diasPromedio,4);
+ assert.equal(foco.rows.find(item=>item.name==='Ana').bajas,1);
+ assert.equal(foco.rows.find(item=>item.name==='Beto').aprovechamiento,0);
+ const focoDrawn=[];
+ const focoSlide={background:{},addText(...args){focoDrawn.push(['text',...args]);},addShape(...args){focoDrawn.push(['shape',...args]);}};
+ sandbox.rae.buildFocusKpis({addSlide(){return focoSlide;}},foco,foco.sub);
+ assert.ok(focoDrawn.some(([kind,value])=>kind==='text'&&String(value).includes('Tiempo promedio')));
+ assert.ok(focoDrawn.some(([kind,value])=>kind==='text'&&String(value)==='META'));
  fixtureByTab={
   [sandbox.OXXO.SHEETS_CONFIG.TABS.d1]: [{Mes:'2026-09',Tienda:'OXXO A','CR TIENDA':'50AAA',Empleados:'Persona',Puesto:'AYUDANTE TIENDA'}],
   [sandbox.OXXO.SHEETS_CONFIG.TABS.s7]: [{Tienda:'OXXO A',CR:'50AAA',Asesor:'Timoteo Antonio Perez','Estructura Propuesta TREO P2 Jun - Ago':1,'Estructura SAP':1,'Empleados Activos':1,Vacantes:0,'Dif SAP vs Est Optima Final':0}]

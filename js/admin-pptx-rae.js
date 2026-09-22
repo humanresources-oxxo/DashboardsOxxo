@@ -182,10 +182,14 @@
       const tenureIndex = antiguedades.indexOf(String(val(row, temporalidadKey) || '').trim());
       if(ageIndex >= 0 && tenureIndex >= 0) mapaCalor[ageIndex].values[tenureIndex]++;
     });
+    const asesores = rankBy(asesorKey, value => String(value || '').trim() || 'Sin asesor asignado', Infinity)
+      .filter(item => !normText(item.label).replace(/[^A-Z]/g,'').includes('SINASESOR'))
+      .map(item => ({ name: item.label, bajas: item.total }));
     return {
       total: rows.length, sub: mes ? `Mes ${mes}` : 'Plaza Oaxaca',
       byPuesto,
       ranking: rankCount(rows, asesorKey, 15),
+      asesores,
       motivos: rankBy(motivoKey, normalizeMotivo, 8),
       tiendas: rankBy(tiendaKey, undefined, 10),
       heatmap: { edades: edades.map(group => group.label), antiguedades, values: mapaCalor },
@@ -299,21 +303,45 @@
       acc.total++;
       if(clasifica(r) === 'completas') acc.completas++;
     });
-    const ranking = [...byAsesor.entries()]
+    const rankingAll = [...byAsesor.entries()]
       .map(([name, v]) => {
         const ecAt = ecByAt.get(name.trim().toUpperCase());
         const ec = v.total > 0 ? v.completas / v.total : 0;
-        return { name, value: ecAt ? ecAt.sum / ecAt.n : ec * 100, hasData: !!ecAt || ec > 0 };
+        return { name, value: ecAt ? ecAt.sum / ecAt.n : ec * 100, hasData: !!ecAt || v.total > 0 };
       })
-      .filter(x => x.hasData)
-      .sort((a,b) => b.value - a.value)
-      .slice(0, 15);
+      .sort((a,b) => b.value - a.value || a.name.localeCompare(b.name, 'es'));
+    const ranking = rankingAll.filter(x => x.hasData).slice(0, 15);
 
     return {
       sub: fecha ? `Corte ${fecha}` : 'Corte no informado',
       pct, completas, incompletas, criticas,
       plazas: plazas.slice(0, 5),
       ranking,
+      rankingAll,
+    };
+  }
+
+  function advisorKey(value){ return normText(value).replace(/[^A-Z]/g,''); }
+
+  async function dataFocusKpis(mesD1 = '', mesD2 = ''){
+    const [vacantes, bajas, aprovechamiento] = await Promise.all([
+      dataD1(mesD1), dataD2(mesD2), dataD3()
+    ]);
+    if(!vacantes && !bajas && !aprovechamiento) return null;
+    const rows=new Map();
+    const ensure=name=>{
+      const clean=String(name||'').trim();
+      const key=advisorKey(clean);
+      if(!key || key.includes('SINASESOR')) return null;
+      if(!rows.has(key)) rows.set(key,{ name:clean, aprovechamiento:null, diasPromedio:null, bajas:0 });
+      return rows.get(key);
+    };
+    (aprovechamiento?.rankingAll||[]).forEach(item=>{ const row=ensure(item.name); if(row) row.aprovechamiento=item.value; });
+    (vacantes?.tablaAsesores||[]).forEach(item=>{ const row=ensure(item.name); if(row) row.diasPromedio=item.promedio; });
+    (bajas?.asesores||[]).forEach(item=>{ const row=ensure(item.name); if(row) row.bajas=item.bajas; });
+    return {
+      sub: `Aprovechamiento: ${aprovechamiento?.sub||'sin corte'}. Vacantes: ${vacantes?.sub||'sin mes'}. Bajas: ${bajas?.sub||'sin mes'}.`,
+      rows: [...rows.values()].sort((a,b)=>a.name.localeCompare(b.name,'es')),
     };
   }
 
@@ -1000,6 +1028,57 @@
     capacidades.forEach(capacidad=>buildD8Capability(pptx,capacidad,dateLabel));
   }
 
+  function focusCellColor(metric, value){
+    if(value === null || value === undefined) return WHITE;
+    if(metric === 'aprovechamiento') return value >= 90 ? 'C6EFCE' : value >= 80 ? 'FFEB9C' : 'FFC7CE';
+    if(metric === 'diasPromedio') return value <= 4 ? 'C6EFCE' : value <= 6 ? 'FFEB9C' : 'FFC7CE';
+    return value <= 3 ? 'C6EFCE' : value <= 4 ? 'FFEB9C' : 'FFC7CE';
+  }
+
+  function buildFocusKpis(pptx, d, dateLabel){
+    const items=d.rows||[], pageSize=12, pages=Math.max(1,Math.ceil(items.length/pageSize));
+    for(let page=0;page<pages;page++){
+      const {text,rect}=editorialSlide(pptx,'KPI de enfoque 2026',dateLabel);
+      text('Indicadores actualizados automáticamente',.5,1.92,7,.3,15,DARK,true);
+      text(d.sub,.5,2.27,12.3,.28,10,MUTED);
+      const x=.55, y=2.82, widths=[4.35,2.45,2.45,2.45], headers=['Asesor','Aprovechamiento\nde estructura','Tiempo promedio\nde vacantes','Bajas del mes'];
+      let cursor=x;
+      headers.forEach((header,i)=>{ rect(cursor,y,widths[i],.62,i===0?'CC0000':'E30613'); text(header,cursor+.06,y+.13,widths[i]-.12,.36,12,WHITE,true,{align:i?'center':'left',breakLine:false}); cursor+=widths[i]; });
+      const rowH=.27;
+      const meta=[
+        { text:'META', metric:null, value:null },
+        { text:'90.0%', metric:'aprovechamiento', value:90 },
+        { text:'6.0', metric:'diasPromedio', value:6 },
+        { text:'4', metric:'bajas', value:4 },
+      ];
+      cursor=x;
+      meta.forEach((cell,j)=>{
+        rect(cursor,y+.62,widths[j],rowH,j===0?'FFF2CC':focusCellColor(cell.metric,cell.value));
+        text(cell.text,cursor+.06,y+.665,widths[j]-.12,.18,11,'7F6000',true,{align:j?'center':'left'});
+        cursor+=widths[j];
+      });
+      const visible=items.slice(page*pageSize,(page+1)*pageSize);
+      if(!visible.length) text('Sin datos disponibles para los indicadores seleccionados.',x,3.75,11.7,.45,16,MUTED);
+      visible.forEach((item,i)=>{
+        const rowY=y+.62+(i+1)*rowH;
+        const values=[
+          { text:shortenName(item.name,34), metric:null, value:null },
+          { text:item.aprovechamiento===null?'—':item.aprovechamiento.toFixed(1)+'%', metric:'aprovechamiento', value:item.aprovechamiento },
+          { text:item.diasPromedio===null?'—':item.diasPromedio.toFixed(1), metric:'diasPromedio', value:item.diasPromedio },
+          { text:String(item.bajas||0), metric:'bajas', value:item.bajas||0 },
+        ];
+        cursor=x;
+        values.forEach((cell,j)=>{
+          rect(cursor,rowY,widths[j],rowH,cell.metric?focusCellColor(cell.metric,cell.value):(i%2?'F7F7F7':'FFFFFF'));
+          text(cell.text,cursor+.06,rowY+.045,widths[j]-.12,.18,11,TEXT,j===0,{align:j?'center':'left'});
+          cursor+=widths[j];
+        });
+      });
+      text('Verde: desempeño dentro del objetivo. Amarillo: seguimiento. Rojo: atención prioritaria.',.55,6.76,8.6,.18,9,MUTED);
+      if(pages>1) text(`Continuación ${page+1} / ${pages}`,9,7.04,3.8,.2,9,MUTED,false,{align:'right'});
+    }
+  }
+
   function buildD7(pptx, d, dateLabel){
     const {text,rect}=editorialSlide(pptx,'TREO · Estructura',dateLabel);
     text(d.cobertura.toFixed(0)+'%',.5,1.98,3.85,.9,56,RED,true);
@@ -1082,11 +1161,14 @@
     const loadCapacidades = () => capacidadesPromise || (capacidadesPromise = dataD8());
     let bajasPromise;
     const loadBajas = () => bajasPromise || (bajasPromise = dataD2(mesD2));
+    let focusPromise;
+    const loadFocus = () => focusPromise || (focusPromise = dataFocusKpis(mesD1, mesD2));
     return [
       { title: 'VACANTES', fetch: () => dataD1(mesD1), build: buildD1 },
       { title: 'BAJAS', fetch: loadBajas, build: buildD2 },
       { title: 'ANÁLISIS DE BAJAS', fetch: loadBajas, build: buildD2Analysis },
       { title: 'APROVECHAMIENTO DE ESTRUCTURA', fetch: dataD3, build: buildD3 },
+      { title: 'KPI DE ENFOQUE 2026', fetch: loadFocus, build: buildFocusKpis },
       { title: 'CAPACIDADES 2026', fetch: loadCapacidades, build: buildD8 },
       { title: 'CAPACIDADES POR MÓDULO', fetch: loadCapacidades, build: buildD8Capabilities },
       { title: 'TREO · ESTRUCTURA', fetch: dataD7, build: buildD7 },
