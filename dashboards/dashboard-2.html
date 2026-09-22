@@ -680,6 +680,7 @@
     <div class="panel__header">
       <div class="panel__title">Detalle completo de bajas<span class="info-tip" tabindex="0" data-tip="Listado fila por fila de Dashboard_2_Diario con los filtros activos aplicados (Temporalidad, Rot. Temprana, Puesto, Asesor)."></span></div>
       <div style="display:flex;align-items:center;gap:8px">
+        <button type="button" id="btn-denominaciones" onclick="toggleDenominaciones()" style="display:none;border-radius:999px;border:1px solid rgba(74,47,138,.22);background:rgba(74,47,138,.07);color:#3a2270;font-size:11px;font-weight:800;padding:6px 14px;cursor:pointer;white-space:nowrap">Cambios de puesto</button>
         <button type="button" id="btn-motivos-pastel" onclick="openMotivosModal()" style="border-radius:999px;border:1px solid rgba(217,31,45,.22);background:rgba(217,31,45,.06);color:#b5121c;font-size:11px;font-weight:800;padding:6px 14px;cursor:pointer;white-space:nowrap"><svg class="icon-inline" viewBox="0 0 24 24" aria-hidden="true"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path><path d="M22 12A10 10 0 0 0 12 2v10z"></path></svg>Motivos</button>
         <span class="panel__badge orange" id="row-count">— registros</span>
       </div>
@@ -2004,6 +2005,27 @@ function denomRowValida(row, cols){
 }
 let BASE_DENOM_DATA = [];
 let DENOM_SORT = 'fecha-desc';
+let DENOM_VISIBLE = false;
+function syncDenomToggle(rows = BASE_DENOM_DATA){
+  const button = document.getElementById('btn-denominaciones');
+  if(!button) return;
+  const total = rows.length;
+  button.style.display = BASE_DENOM_DATA.length ? '' : 'none';
+  button.textContent = DENOM_VISIBLE
+    ? 'Ocultar cambios de puesto'
+    : `Ver cambios de puesto${total ? ` (${total})` : ''}`;
+  button.setAttribute('aria-expanded', String(DENOM_VISIBLE));
+}
+function toggleDenominaciones(){
+  if(!BASE_DENOM_DATA.length) return;
+  DENOM_VISIBLE = !DENOM_VISIBLE;
+  const section = document.getElementById('denom-section');
+  if(section) {
+    section.style.display = DENOM_VISIBLE ? '' : 'none';
+    if(DENOM_VISIBLE) section.scrollIntoView({ behavior:'smooth', block:'start' });
+  }
+  syncDenomToggle(filterDenomByMes(BASE_DENOM_DATA));
+}
 async function loadDenominaciones(rawData){
   const section = document.getElementById('denom-section');
   try {
@@ -2036,7 +2058,6 @@ async function loadDenominaciones(rawData){
     });
     if(!rows.length) return;
     BASE_DENOM_DATA = rows;
-    if(section) section.style.display = '';
     renderDenominaciones(filterDenomByMes(rows));
   } catch(e){ /* sección opcional: si falla, se mantiene oculta sin afectar el resto */ }
 }
@@ -2075,6 +2096,7 @@ function renderDenominaciones(rows){
   const atTop = topEntries(porAsesor,1)[0];
 
   document.getElementById('denom-count').textContent = `${rows.length} movimiento${rows.length===1?'':'s'}`;
+  syncDenomToggle(rows);
   document.getElementById('denom-kpis').innerHTML = `
     <div class="denom-kpi"><div class="denom-kpi__val">${rows.length}</div><div class="denom-kpi__lbl">Total movimientos</div></div>
     <div class="denom-kpi"><div class="denom-kpi__val" style="color:#138c3e">${subieron}</div><div class="denom-kpi__lbl">▲ Ascensos</div></div>
