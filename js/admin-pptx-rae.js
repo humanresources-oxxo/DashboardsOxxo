@@ -168,6 +168,7 @@
     const sample = rows[0] || {};
     const tiendaKey = findKey(sample, ['Tienda','Unidad org.','Unidad org','Unidad Organizativa','Unidad','Sucursal','Nombre Tienda']);
     const motivoKey = findKey(sample, ['Motivo de baja','Motivo_baja','Motivo','Causa','Causa baja','Baja con causal','Tipo de baja']);
+    const detalleBajaKey = findKey(sample, ['Detalle de Baja','Detalle_baja','Detalle baja','Comentarios']);
     const edadKey = findKey(sample, ['Edad']);
     const temporalidadKey = findKey(sample, ['Temporalidad','Temporalidad baja','Rango antigüedad','Rango antiguedad','Antigüedad rango','Antiguedad rango']);
     const normalizeMotivo = raw => {
@@ -181,7 +182,7 @@
     const rankBy = (key, normalize = value => String(value || '').trim() || 'Sin dato', limit = 10) => {
       const counts = new Map();
       rows.forEach(row => {
-        const label = normalize(val(row, key));
+        const label = normalize(val(row, key), row);
         counts.set(label, (counts.get(label) || 0) + 1);
       });
       return [...counts.entries()].map(([label,total]) => ({ label, total }))
@@ -208,7 +209,10 @@
       byPuesto,
       ranking: rankCount(rows, asesorKey, 15),
       asesores,
-      motivos: rankBy(motivoKey, normalizeMotivo, 8),
+      // Replica el pastel del Dashboard 2: usa el detalle cuando existe,
+      // conserva todos los motivos y sólo agrupa cuando la fuente no trae
+      // ese nivel de detalle.
+      motivos: rankBy(motivoKey, (motivo, row) => String(detalleBajaKey ? val(row, detalleBajaKey) : '').trim() || normalizeMotivo(motivo), Infinity),
       tiendas: rankBy(tiendaKey, undefined, 10),
       heatmap: { edades: edades.map(group => group.label), antiguedades, values: mapaCalor },
     };
@@ -926,24 +930,23 @@
 
     rect(5.4,1.97,.015,4.86,'E5DCD6');
     text('Motivos de baja',5.8,1.98,3.05,.32,17,DARK,true);
-    text('Top 8 del corte',5.8,2.32,3.05,.2,10,MUTED);
+    text('Motivos con filtros activos',5.8,2.32,3.05,.2,10,MUTED);
     const motivos = d.motivos || [];
-    const motivosVisibles = motivos.filter(item => item.total > 0).slice(0,8);
+    const motivosVisibles = motivos.filter(item => item.total > 0);
     if(motivosVisibles.length){
-      // Gráfica nativa y editable: concentra los motivos sin sustituir la
-      // evidencia por una imagen. La leyenda conserva nombre y porcentaje.
+      // Mismo corte y desagregación que el pastel del Dashboard 2. La gráfica
+      // sigue siendo nativa y editable dentro de la presentación.
       slide.addChart(pptx.ChartType.pie, [{
         name: 'Motivos de baja',
-        labels: motivosVisibles.map(item => shortenName(item.label,24)),
+        labels: motivosVisibles.map(item => item.label),
         values: motivosVisibles.map(item => item.total)
       }], {
-        x:5.72, y:2.58, w:3.05, h:2.82,
-        chartColors:['C0181F','EE7203','F5B700','48A868','2A76A8','7452A3','008C95','9C6B3E'],
-        showLegend:true, legendPos:'b',
-        showValue:true, showPercent:true, showCategoryName:false,
-        dataLabelPosition:'bestFit',
+        x:5.62, y:2.55, w:3.28, h:3.58,
+        chartColors:['D91F2D','F07B22','F6B73C','19AD63','1F6FD9','7B1FA2','00838F','8A7A72','C0181F','3F51B5'],
+        showLegend:true, legendPos:'r',
+        showValue:false, showPercent:false, showCategoryName:false,
         dataBorder:{ pt:1.5, color:WHITE },
-        fontFace:'Arial', fontSize:8.5,
+        fontFace:'Arial', fontSize:7,
       });
     } else {
       text('Sin motivos de baja registrados para el corte.',5.8,3.05,2.8,.45,12,MUTED);

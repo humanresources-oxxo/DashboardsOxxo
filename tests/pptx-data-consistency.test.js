@@ -99,6 +99,10 @@ sandbox.loadAsesorCatalog=async()=>null;sandbox.OXXO.loadAsesorCatalog=sandbox.l
  const other=await sandbox.general.kpiD2();
  assert.equal(other.value,'1');
  assert.equal(other.chart.values.reduce((sum,n)=>sum+n,0),1);
+ fixture=Array.from({length:9},(_,i)=>({Mes:'2026-09',Tienda:'OXXO A',Asesor:'Ana',Puesto:'AYUDANTE TIENDA',Medida:'BAJA',Motivo:'RENUNCIA','Detalle de Baja':`Motivo ${i+1}`}));
+ const motivosCompletos=await sandbox.rae.dataD2();
+ assert.equal(motivosCompletos.motivos.length,9);
+ assert.equal(motivosCompletos.motivos[0].label,'Motivo 1');
  fixture=[
   {Plaza:'Oaxaca',Asesor_Correcto:'Ana',Empleados:'1','Unidad org.':'OXXO A','Cr de tienda':'50AAA','Promedio de Modulo Cerca Siempre 2026':1,'Promedio de Codigo de Etica 2026':1},
   {Plaza:'Oaxaca',Asesor_Correcto:'Beto',Empleados:'2','Unidad org.':'OXXO B','Cr de tienda':'50AAB','Promedio de Modulo Cerca Siempre 2026':0,'Promedio de Codigo de Etica 2026':1}
