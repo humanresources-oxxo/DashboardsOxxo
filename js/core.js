@@ -2228,9 +2228,8 @@ function metricsFilterBajasD2(rows, keys) {
   return base;
 }
 // isTiendaEntrenamientoOperacionesD2() de dashboard-2.html: unidades de
-// Entrenamiento/Operaciones sin AT real. Sus bajas se cuentan mas no se
-// atribuyen a un asesor de catalogo: se fusionan en Timoteo (via Sin Asesor
-// Asignado), igual que el resto de bajas sin AT vigente.
+// Entrenamiento/Operaciones son unidades administrativas, no tiendas
+// operativas. Se excluyen de los indicadores y rankings de bajas.
 function metricsIsTiendaEntrenamientoOperacionesD2(tienda) {
   const t = String(tienda || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
     .toUpperCase().replace(/\s+/g, ' ').trim();
@@ -2497,6 +2496,9 @@ async function metricsD2Rows(targetMes = '') {
     const operativos = base.filter(r => /AYUDANTE|ENCARGADO|LIDER/.test(metricsNormText(metricsVal(r, puestoKey))));
     if (operativos.length) base = operativos;
   }
+  // Igual que la vista operativa del dashboard: estas unidades no representan
+  // una tienda y no deben modificar total, ranking ni presentación RAE.
+  base = base.filter(r => !metricsIsTiendaEntrenamientoOperacionesD2(metricsVal(r, tiendaKey)));
   const monthOf = r => metricsRowMonthKeyD2(r, mesKey, fechaKey);
   const months = [...new Set(base.map(monthOf).filter(Boolean))].sort();
   if (targetMes && !months.includes(targetMes)) return null;

@@ -77,13 +77,14 @@ sandbox.loadAsesorCatalog=async()=>null;sandbox.OXXO.loadAsesorCatalog=sandbox.l
  fixture=[{Mes:12,Ano:2025,Semana:'52',Tienda:'OXXO A',Dias:52},{Mes:1,Ano:2026,Semana:'1',Tienda:'OXXO A',Dias:1}];
  assert.equal((await sandbox.general.kpiD6()).value,'1');
  fixture=[{Mes:'2026-09',Tienda:'ENTRENAMIENTO OAXACA',Asesor:'Sin Asesor Asignado',Puesto:'AYUDANTE TIENDA',Medida:'BAJA',Motivo:'Renuncia',Edad:24,Temporalidad:'0 - 45 días'},
+ {Mes:'2026-09',Tienda:'OPERACIONES 11 OAXACA',Asesor:'Sin Asesor Asignado',Puesto:'AYUDANTE TIENDA',Medida:'BAJA',Motivo:'Renuncia',Edad:24,Temporalidad:'0 - 45 días'},
  {Mes:'2026-09',Tienda:'OXXO A',Asesor:'Timoteo Antonio Perez',Puesto:'AYUDANTE TIENDA',Medida:'BAJA',Motivo:'Baja con causal',Edad:34,Temporalidad:'46 - 90 días'}];
- assert.equal((await sandbox.general.kpiD2()).value,'2');
+ assert.equal((await sandbox.general.kpiD2()).value,'1');
  const bajasRae = await sandbox.rae.dataD2();
- assert.equal(bajasRae.total,2);
+ assert.equal(bajasRae.total,1);
  assert.equal(bajasRae.motivos[0].label,'BAJA CON CAUSAL');
- assert.equal(bajasRae.tiendas.length,2);
- assert.equal(bajasRae.heatmap.values[0].values[0],1);
+ assert.equal(bajasRae.tiendas.length,1);
+ assert.equal(bajasRae.heatmap.values[0].values[0],0);
  assert.equal(bajasRae.heatmap.values[1].values[1],1);
  const drawn = [];
  const fakeSlide = { background: {}, addText(...args) { drawn.push(['text', ...args]); }, addShape(...args) { drawn.push(['shape', ...args]); }, addChart(...args) { drawn.push(['chart', ...args]); } };
@@ -91,10 +92,10 @@ sandbox.loadAsesorCatalog=async()=>null;sandbox.OXXO.loadAsesorCatalog=sandbox.l
  assert.ok(drawn.some(([kind]) => kind === 'shape'));
  assert.ok(drawn.some(([kind, type]) => kind === 'chart' && type === 'pie'));
  assert.ok(drawn.some(([kind, value]) => kind === 'text' && String(value).includes('Top 10 tiendas')));
- assert.equal((await sandbox.OXXO.metricsD2Rows()).rows.length,2);
+ assert.equal((await sandbox.OXXO.metricsD2Rows()).rows.length,1);
  assert.equal((await sandbox.advisor.datosAsesorD2('Timoteo Antonio Perez')).total,1);
  assert.equal(await sandbox.rae.dataD2('2026-08'),null);
- assert.equal(fixture[1].Asesor,'Timoteo Antonio Perez'); // normalization does not mutate the source
+ assert.equal(fixture[2].Asesor,'Timoteo Antonio Perez'); // normalization does not mutate the source
  fixture=[{Mes:'2026-09',Tienda:'OXXO A',Asesor:'Ana',Puesto:'ADMINISTRATIVO',Medida:'BAJA'}];
  const other=await sandbox.general.kpiD2();
  assert.equal(other.value,'1');

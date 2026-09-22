@@ -1188,6 +1188,9 @@ function filterData(data, cols){
     });
     if(operativos.length) rows = operativos;
   }
+  // Entrenamiento y Operaciones son unidades administrativas, no tiendas
+  // operativas. No deben aparecer en los indicadores, rankings ni pastel.
+  rows = rows.filter(r => !OXXO.metricsIsTiendaEntrenamientoOperacionesD2(val(r, cols, 'tienda')));
   return rows;
 }
 function chartTheme(){
