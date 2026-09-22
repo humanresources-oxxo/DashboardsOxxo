@@ -1014,28 +1014,41 @@
   }
 
   function buildD3StoreListSlides(pptx, d, dateLabel, options){
-    const items=options.items||[], pageSize=10, pages=Math.max(1,Math.ceil(items.length/pageSize));
-    for(let page=0;page<pages;page++){
-      const {text,rect}=editorialSlide(pptx,options.title,dateLabel);
-      text(String(items.length),.5,1.98,3.85,.9,56,RED,true);
-      text(options.countLabel,.53,2.98,3.7,.28,11,DARK,true);
-      text(options.detail,.53,3.36,3.65,.82,12,MUTED);
-      rect(4.4,1.97,.015,4.86,'E5DCD6');
-      const x=4.8, y=2.04, widths=[3.15,1.55,.72,.72,1.45], headers=['Tienda','AT','Aus.','Vac.','Fecha máx. EC'];
+    // El destinatario recibe esta lámina como foto diaria. Se concentra toda
+    // la lista en una sola página, en dos columnas, para evitar adjuntar una
+    // secuencia de continuaciones y conservar todos los datos visibles.
+    const items=options.items||[];
+    const {text,rect}=editorialSlide(pptx,options.title,dateLabel);
+    const columnCount=items.length>16?2:1;
+    const rowsPerColumn=Math.max(1,Math.ceil(items.length/columnCount));
+    const xStart=.5, tableWidth=12.33, gutter=.28;
+    const columnWidth=(tableWidth-gutter*(columnCount-1))/columnCount;
+    const widths=[columnWidth*.40,columnWidth*.29,columnWidth*.08,columnWidth*.08,columnWidth*.15];
+    const headers=['Tienda','AT','Aus.','Vac.','Fecha máx. EC'];
+    const headerY=2.34, firstRowY=2.73;
+    const rowH=Math.min(.285,4.1/rowsPerColumn);
+    const fontSize=rowsPerColumn>16?7.5:8.5;
+    text(`${items.length} ${options.countLabel.toLowerCase()}`,.5,1.95,5.9,.32,15,DARK,true);
+    text(options.detail,.5,2.19,11.9,.24,10,MUTED);
+    if(!items.length){ text(options.emptyText,.5,2.9,11.8,.45,16,MUTED); return; }
+    for(let column=0;column<columnCount;column++){
+      const x=xStart+column*(columnWidth+gutter);
       let cursor=x;
-      headers.forEach((header,i)=>{text(header,cursor,y,widths[i],.3,10,MUTED,true);cursor+=widths[i];});
-      rect(x,y+.42,7.6,.015,'E5DCD6');
-      const visible=items.slice(page*pageSize,(page+1)*pageSize);
-      if(!visible.length) text(options.emptyText,x,2.85,7.4,.45,16,MUTED);
-      visible.forEach((item,i)=>{
-        const rowY=2.65+i*.39;
-        if(i%2===0) rect(x,rowY-.035,7.6,.39,'FFF5F2');
+      headers.forEach((header,i)=>{ text(header,cursor,headerY,widths[i],.24,8.5,MUTED,true); cursor+=widths[i]; });
+      rect(x,headerY+.3,columnWidth,.015,'E5DCD6');
+      items.slice(column*rowsPerColumn,(column+1)*rowsPerColumn).forEach((item,i)=>{
+        const rowY=firstRowY+i*rowH;
+        if(i%2===0) rect(x,rowY-.025,columnWidth,rowH,'FFF5F2');
+        const values=[
+          shortenName(item.tienda,28), shortenName(item.asesor,22),
+          OXXO.formatNum(item.ausentismos), OXXO.formatNum(item.vacantes), item.fechaRescateEcLabel
+        ];
         cursor=x;
-        [item.tienda,item.asesor,OXXO.formatNum(item.ausentismos),OXXO.formatNum(item.vacantes),item.fechaRescateEcLabel].forEach((value,j)=>{
-          text(value,cursor,rowY,widths[j],.28,10,j===4&&item.fechaRescateEc?RED:TEXT,j===0); cursor+=widths[j];
+        values.forEach((value,j)=>{
+          text(value,cursor,rowY,widths[j],rowH-.035,fontSize,j===4&&item.fechaRescateEc?RED:TEXT,j===0,{breakLine:false});
+          cursor+=widths[j];
         });
       });
-      if(pages>1) text(`Continuación ${page+1} / ${pages}`,9,7.04,3.8,.2,9,MUTED,false,{align:'right'});
     }
   }
 

@@ -43,7 +43,7 @@ vm.runInContext(fs.readFileSync(path.join(root, 'js/config.js'), 'utf8'), sandbo
 vm.runInContext(fs.readFileSync(path.join(root, 'js/core.js'), 'utf8'), sandbox);
 
 vm.runInContext(fs.readFileSync(path.join(root,'js/metrics-periods.js'),'utf8'),sandbox);
-for(const [file,api,names] of [['admin-pptx.js','general','kpiD1,kpiD2,kpiD4,kpiD6'],['admin-pptx-rae.js','rae','dataD1,dataD2,dataD3,dataD8,dataFocusKpis,buildD1,buildD2Analysis,buildFocusKpis,buildD3ZeroAprovechamiento,buildD3RescateEc,buildD8Capability'],['admin-pptx-asesor.js','advisor','datosAsesorD1,datosAsesorD2']]){
+for(const [file,api,names] of [['admin-pptx.js','general','kpiD1,kpiD2,kpiD4,kpiD6'],['admin-pptx-rae.js','rae','dataD1,dataD2,dataD3,dataD8,dataFocusKpis,buildD1,buildD2Analysis,buildFocusKpis,buildD3StoreListSlides,buildD3ZeroAprovechamiento,buildD3RescateEc,buildD8Capability'],['admin-pptx-asesor.js','advisor','datosAsesorD1,datosAsesorD2']]){
  const code=fs.readFileSync(path.join(root,'js',file),'utf8').replace(/\}\)\(\);\s*$/, 'window.'+api+'={'+names+'};})();');vm.runInContext(code,sandbox);
 }
 let fixture=[], fixtureByTab=null;
@@ -151,6 +151,11 @@ sandbox.loadAsesorCatalog=async()=>null;sandbox.OXXO.loadAsesorCatalog=sandbox.l
  sandbox.rae.buildD3ZeroAprovechamiento({addSlide(){return rescateSlide;}},d3Rescate,d3Rescate.sub);
  sandbox.rae.buildD3RescateEc({addSlide(){return rescateSlide;}},d3Rescate,d3Rescate.sub);
  assert.ok(rescateDrawn.some(([kind,value])=>kind==='text'&&String(value).includes('Tiendas con rescate EC vigente')));
+ const listSlides=[];
+ const listItems=Array.from({length:32},(_,i)=>({tienda:`OXXO TIENDA ${i+1}`,asesor:`Asesor ${i+1}`,ausentismos:i%4,vacantes:i%2,fechaRescateEc:new Date(2026,8,23),fechaRescateEcLabel:'23 sep 2026'}));
+ sandbox.rae.buildD3StoreListSlides({addSlide(){const slide={background:{},addText(...args){listSlides.push(['text',...args]);},addShape(){}};return slide;}},d3Rescate,d3Rescate.sub,{title:'Lista completa',items:listItems,countLabel:'TIENDAS CON 0%',detail:'Detalle',emptyText:'Sin datos'});
+ assert.equal(listSlides.filter(([kind])=>kind==='text').filter(([,value])=>String(value)==='OXXO TIENDA 1').length,1);
+ assert.equal(listSlides.filter(([kind])=>kind==='text').filter(([,value])=>String(value)==='OXXO TIENDA 32').length,1);
  fixtureByTab={
   [sandbox.OXXO.SHEETS_CONFIG.TABS.d1]: [{Mes:'2026-09',Tienda:'OXXO A','CR TIENDA':'50AAA',Empleados:'Persona',Puesto:'AYUDANTE TIENDA'}],
   [sandbox.OXXO.SHEETS_CONFIG.TABS.s7]: [{Tienda:'OXXO A',CR:'50AAA',Asesor:'Timoteo Antonio Perez','Estructura Propuesta TREO P2 Jun - Ago':1,'Estructura SAP':1,'Empleados Activos':1,Vacantes:0,'Dif SAP vs Est Optima Final':0}]
