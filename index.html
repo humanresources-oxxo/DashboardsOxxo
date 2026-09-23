@@ -806,7 +806,12 @@ body[data-area="rh"] .group .card::after{color:var(--red)}
       s7: 'dashboards/dashboard-7.html', d8: 'dashboards/dashboard-8.html',
       s9: 'dashboards/dashboard-9.html', d11: 'dashboards/dashboard-11.html',
       a13: 'dashboards/dashboard-13.html', c14: 'dashboards/dashboard-14.html',
-      m12: 'dashboards/dashboard-12.html'
+      m12: 'dashboards/dashboard-12.html',
+      // Tarjetas de las areas comercial y administrativo, que se arman
+      // dinamicamente mas abajo: sin su clave se quedaban en "Sin fecha
+      // registrada" aunque la pestaña Configuracion ya trajera la fila.
+      promos: 'dashboards/promociones.html',
+      inventories: 'dashboards/inventarios.html'
     };
     // El formato vive en js/home-dates.js (probado en tests/home-dates.test.js).
     // Antes se resolvia aqui con un replace fijo que convertia cualquier mes en
