@@ -6,6 +6,36 @@
   const status = document.getElementById('contact-directory-status');
   if (!fileInput || !publishButton || !status) return;
 
+  // Saca de la hoja publicada un directorio que haya quedado ahi y borra la
+  // pestaña expuesta. Ocultarla no bastaba: el exportador de datos la servia
+  // igual, sin pedir credenciales.
+  const migrateButton = document.getElementById('contact-directory-migrate');
+  const migrateStatus = document.getElementById('contact-directory-migrate-status');
+  if (migrateButton && migrateStatus) {
+    migrateButton.addEventListener('click', async () => {
+      const context = window.OXXO_ADMIN_CTX;
+      if (!context || !context.getAdminPassword || !context.postAdminPayload) {
+        migrateStatus.textContent = 'Inicia sesión en el panel admin antes de mover el directorio.';
+        return;
+      }
+      migrateButton.disabled = true;
+      const original = migrateButton.textContent;
+      migrateButton.textContent = 'Moviendo…';
+      try {
+        const result = await context.postAdminPayload({
+          action: 'migrateContactDirectory',
+          adminPassword: context.getAdminPassword()
+        });
+        migrateStatus.textContent = result.mensaje || 'Directorio movido al archivo privado.';
+      } catch (error) {
+        migrateStatus.textContent = `No se movió el directorio: ${error.message || error}`;
+      } finally {
+        migrateButton.textContent = original;
+        migrateButton.disabled = false;
+      }
+    });
+  }
+
   let contacts = [];
   const key = value => String(value || '')
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '')

@@ -2871,7 +2871,12 @@ function initScopeSelector() {
         @media(max-width:640px){
           .oxxo-scope-selector{align-items:stretch;gap:7px}
           .oxxo-scope-selector--floating{right:10px;bottom:10px;left:10px;flex-direction:column}
-          .oxxo-scope-selector--inline{width:100%;margin-left:0;flex-direction:column;border-radius:16px}
+          /* max-width evita que el ancho minimo de las filas de chips empuje al
+             contenedor mas alla de la pantalla: el hero quedaba en 512px dentro
+             de 344px y el titulo se recortaba sin poder desplazarse. La variante
+             --floating ya tenia su propio max-width; a --inline le faltaba. */
+          .oxxo-scope-selector--inline{width:100%;max-width:100%;margin-left:0;flex-direction:column;border-radius:16px}
+          .hero-top,.bajas-header__title{max-width:100%}
           .oxxo-scope-selector__intro{padding:1px 3px}
           .oxxo-scope-selector__pin{width:27px;height:27px;border-radius:9px}
           .oxxo-scope-switch{width:100%;justify-content:flex-start}

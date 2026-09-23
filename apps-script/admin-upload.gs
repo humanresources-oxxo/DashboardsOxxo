@@ -12,7 +12,7 @@
  * Despues de eso, admin.html publica directo sin pedir URL.
  */
 const SPREADSHEET_ID = '1EbUuyy-PRXiDwPmn9L14P93cGN6VXTyLfAHx-CE8M_A';
-const APP_VERSION = '46';
+const APP_VERSION = '47';
 const ADMIN_PASSWORD_PROPERTY = 'ADMIN_PASSWORD';
 const AUDIT_SHEET = '_Admin_Bitacora';
 const BACKUP_PREFIX = '_BK_';
@@ -27,6 +27,15 @@ const STORE_CATALOG_HEADERS = ['CR', 'Tienda', 'Region', 'Plaza', 'Zona', 'Aseso
 // portada: solo el Web App lo lee después de validar la contraseña exclusiva.
 const CONTACT_DIRECTORY_SHEET = 'Directorio_Contactos_Bajas';
 const CONTACT_DIRECTORY_HEADERS = ['No. Personal', 'Telefono', 'Actualizado'];
+// El directorio vive en un ARCHIVO APARTE, no publicado. Ocultar la pestaña
+// dentro del archivo publicado no servia: hideSheet() la esconde de la interfaz
+// pero NO del exportador de datos, asi que
+//   /gviz/tq?sheet=Directorio_Contactos_Bajas
+// devolvia los telefonos sin pedir credenciales, y el nombre de la pestaña esta
+// escrito en este archivo, que vive en un repositorio publico.
+// Configurar en Apps Script -> Configuracion del proyecto -> Propiedades del
+// script, con el ID del archivo privado (no hace falta publicarlo).
+const CONTACT_DIRECTORY_SPREADSHEET_PROPERTY = 'DIRECTORIO_CONTACTOS_SPREADSHEET_ID';
 const CONTACT_PASSWORD_PROPERTY = 'BAJAS_CONTACTOS_PASSWORD';
 const CONTACT_DOWNLOAD_MAX_ROWS = 100000;
 const HOME_SHEET_ORDER = [
@@ -293,6 +302,10 @@ function doPost(e) {
 
     if (String(payload.action || '') === 'replaceContactDirectory') {
       return jsonResponse(replaceContactDirectory(payload));
+    }
+
+    if (String(payload.action || '') === 'migrateContactDirectory') {
+      return jsonResponse(migrateContactDirectory(payload));
     }
 
     if (String(payload.action || '') === 'getAudit') {
@@ -1349,8 +1362,30 @@ function contactRowsFromSheet(sheet) {
   return { headers: headers, rows: rows };
 }
 
-function getContactDirectoryMap(ss) {
-  const sheet = ss.getSheetByName(CONTACT_DIRECTORY_SHEET);
+function openContactDirectorySpreadsheet_() {
+  const id = String(PropertiesService.getScriptProperties().getProperty(CONTACT_DIRECTORY_SPREADSHEET_PROPERTY) || '').trim();
+  if (!id) {
+    throw new Error(
+      'El directorio de contactos no esta configurado. Crea una hoja de calculo NUEVA y sin publicar, ' +
+      'y guarda su ID en la propiedad de script ' + CONTACT_DIRECTORY_SPREADSHEET_PROPERTY + '. ' +
+      'No se escriben telefonos en el archivo publicado.'
+    );
+  }
+  if (id === SPREADSHEET_ID) {
+    throw new Error(
+      'El directorio de contactos no puede vivir en el archivo publicado: cualquiera podria leer los ' +
+      'telefonos sin credenciales. Usa una hoja de calculo aparte y sin publicar.'
+    );
+  }
+  try {
+    return SpreadsheetApp.openById(id);
+  } catch (error) {
+    throw new Error('No se pudo abrir el archivo privado del directorio de contactos. Revisa el ID en ' + CONTACT_DIRECTORY_SPREADSHEET_PROPERTY + '.');
+  }
+}
+
+function getContactDirectoryMap() {
+  const sheet = openContactDirectorySpreadsheet_().getSheetByName(CONTACT_DIRECTORY_SHEET);
   if (!sheet) throw new Error('No hay un directorio de contactos cargado todavía.');
   const parsed = contactRowsFromSheet(sheet);
   const personalIndex = contactHeaderIndex(parsed.headers, ['No. Personal', 'Numero Personal', 'N° Personal', 'Nº Personal']);
@@ -1380,7 +1415,7 @@ function replaceContactDirectory(payload) {
   });
   if (!contacts.length) throw new Error('No se encontraron filas válidas con número de personal y teléfono.');
 
-  const ss = SPREADSHEET_ID ? SpreadsheetApp.openById(SPREADSHEET_ID) : SpreadsheetApp.getActiveSpreadsheet();
+  const ss = openContactDirectorySpreadsheet_();
   let sheet = ss.getSheetByName(CONTACT_DIRECTORY_SHEET);
   if (!sheet) sheet = ss.insertSheet(CONTACT_DIRECTORY_SHEET);
   sheet.clearContents();
@@ -1388,9 +1423,60 @@ function replaceContactDirectory(payload) {
   sheet.getRange(2, 1, contacts.length, CONTACT_DIRECTORY_HEADERS.length).setValues(contacts);
   sheet.getRange(2, 1, contacts.length, 2).setNumberFormat('@');
   sheet.setFrozenRows(1);
-  if (!sheet.isSheetHidden()) sheet.hideSheet();
   SpreadsheetApp.flush();
   return { ok: true, contacts: contacts.length };
+}
+
+function migrateContactDirectory(payload) {
+  // Mueve un directorio que haya quedado dentro del archivo publicado hacia el
+  // archivo privado y BORRA la pestaña expuesta. Idempotente: si ya no hay nada
+  // que mover, lo dice y no falla.
+  const destino = openContactDirectorySpreadsheet_();
+  const publico = SPREADSHEET_ID ? SpreadsheetApp.openById(SPREADSHEET_ID) : SpreadsheetApp.getActiveSpreadsheet();
+  const expuesta = publico.getSheetByName(CONTACT_DIRECTORY_SHEET);
+  if (!expuesta) {
+    return { ok: true, movidos: 0, mensaje: 'El archivo publicado ya no contiene el directorio.' };
+  }
+
+  const parsed = contactRowsFromSheet(expuesta);
+  const personalIndex = contactHeaderIndex(parsed.headers, ['No. Personal', 'Numero Personal', 'N° Personal', 'Nº Personal']);
+  const phoneIndex = contactHeaderIndex(parsed.headers, ['Telefono', 'Teléfono', 'Celular', 'Número telefónico', 'Numero telefonico']);
+
+  let movidos = 0;
+  if (personalIndex !== -1 && phoneIndex !== -1) {
+    const byPersonal = {};
+    parsed.rows.forEach(function(row) {
+      const personal = contactCell(row[personalIndex]);
+      const phone = contactCell(row[phoneIndex]);
+      if (personal && phone) byPersonal[personal] = phone;
+    });
+    const contacts = Object.keys(byPersonal).sort().map(function(personal) {
+      return [personal, byPersonal[personal], new Date()];
+    });
+    if (contacts.length) {
+      let sheet = destino.getSheetByName(CONTACT_DIRECTORY_SHEET);
+      if (!sheet) sheet = destino.insertSheet(CONTACT_DIRECTORY_SHEET);
+      sheet.clearContents();
+      sheet.getRange(1, 1, 1, CONTACT_DIRECTORY_HEADERS.length).setValues([CONTACT_DIRECTORY_HEADERS]);
+      sheet.getRange(2, 1, contacts.length, CONTACT_DIRECTORY_HEADERS.length).setValues(contacts);
+      sheet.getRange(2, 1, contacts.length, 2).setNumberFormat('@');
+      sheet.setFrozenRows(1);
+      SpreadsheetApp.flush();
+      movidos = contacts.length;
+    }
+  }
+
+  // Se borra pase lo que pase: mientras la pestaña exista en el archivo
+  // publicado, sus filas se pueden leer sin credenciales.
+  publico.deleteSheet(expuesta);
+  SpreadsheetApp.flush();
+  return {
+    ok: true,
+    movidos: movidos,
+    mensaje: movidos
+      ? (movidos + ' contactos movidos al archivo privado; la pestaña expuesta fue eliminada.')
+      : 'No habia filas legibles; la pestaña expuesta fue eliminada de todos modos.'
+  };
 }
 
 function downloadBajasWithContact(payload) {
@@ -1401,7 +1487,7 @@ function downloadBajasWithContact(payload) {
   const bajas = contactRowsFromSheet(bajasSheet);
   const personalIndex = contactHeaderIndex(bajas.headers, ['No. Personal', 'Numero Personal', 'N° Personal', 'Nº Personal', 'No. empleado', 'Numero empleado']);
   if (personalIndex === -1) throw new Error('La base de bajas no tiene “No. Personal”; no es posible unir contactos de forma segura.');
-  const contacts = getContactDirectoryMap(ss);
+  const contacts = getContactDirectoryMap();
   const headers = bajas.headers.concat(['Telefono']);
   let matched = 0;
   const rows = bajas.rows.map(function(row) {
