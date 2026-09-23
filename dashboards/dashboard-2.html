@@ -1237,9 +1237,9 @@ function filterData(data, cols){
     if(operativos.length) rows = operativos;
   }
   // Se conservan Entrenamiento y Operaciones para que sus bajas aparezcan
-  // bajo "Sin asesor asignado" y en el detalle. Al construir rankings de
-  // tiendas/plazas se excluyen de manera puntual, porque no son tiendas
-  // operativas y no deben competir en esos comparativos.
+  // bajo "Sin asesor asignado" y en el detalle. Se excluyen únicamente del
+  // ranking de tiendas, porque no son tiendas operativas; sí cuentan en el
+  // total de su plaza para que todos los totales permanezcan sincronizados.
   return rows;
 }
 function chartTheme(){
@@ -1873,10 +1873,7 @@ function renderPlazas(allData, cols) {
   // El titulo del panel es "del mes actual": se restringe al mes mas reciente presente en los
   // datos, aunque allData (BASE_BAJAS_DATA) trae el historico completo sin filtro de mes.
   const mesActual = latestMonthKey(allData, cols);
-  const monthData = mesActual ? allData.filter(r => monthKeyFromRow(r, cols) === mesActual) : allData;
-  const data = monthData.filter(r =>
-    !OXXO.metricsIsTiendaEntrenamientoOperacionesD2(val(r, cols, 'tienda'))
-  );
+  const data = mesActual ? allData.filter(r => monthKeyFromRow(r, cols) === mesActual) : allData;
 
   const keyPlaza = cols.colPlazas;
   const keyBajas = cols.colBajas;
