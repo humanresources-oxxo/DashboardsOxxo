@@ -12,7 +12,7 @@
  * Despues de eso, admin.html publica directo sin pedir URL.
  */
 const SPREADSHEET_ID = '1EbUuyy-PRXiDwPmn9L14P93cGN6VXTyLfAHx-CE8M_A';
-const APP_VERSION = '45';
+const APP_VERSION = '46';
 const ADMIN_PASSWORD_PROPERTY = 'ADMIN_PASSWORD';
 const AUDIT_SHEET = '_Admin_Bitacora';
 const BACKUP_PREFIX = '_BK_';
@@ -23,6 +23,12 @@ const SYSTEM_NOTICES_SHEET = 'Avisos_Sistema';
 const HOME_SHEET = '00_INICIO';
 const STORE_CATALOG_SHEET = 'Catalogo_Tiendas';
 const STORE_CATALOG_HEADERS = ['CR', 'Tienda', 'Region', 'Plaza', 'Zona', 'Asesor', 'ACTIVA', 'Fuente', 'Actualizado'];
+// Directorio aislado de contactos. Nunca se agrega a ALLOWED_SHEETS ni a la
+// portada: solo el Web App lo lee después de validar la contraseña exclusiva.
+const CONTACT_DIRECTORY_SHEET = 'Directorio_Contactos_Bajas';
+const CONTACT_DIRECTORY_HEADERS = ['No. Personal', 'Telefono', 'Actualizado'];
+const CONTACT_PASSWORD_PROPERTY = 'BAJAS_CONTACTOS_PASSWORD';
+const CONTACT_DOWNLOAD_MAX_ROWS = 100000;
 const HOME_SHEET_ORDER = [
   HOME_SHEET,
   // Recursos Humanos
@@ -276,7 +282,18 @@ function doPost(e) {
       return jsonResponse({ ok: true, authenticated: true });
     }
 
+    // Esta ruta no usa la credencial de administración: valida una contraseña
+    // distinta y solo devuelve los teléfonos de las filas de bajas solicitadas.
+    // El directorio nunca se expone mediante doGet/readSheet.
+    if (String(payload.action || '') === 'downloadBajasWithContact') {
+      return jsonResponse(downloadBajasWithContact(payload));
+    }
+
     assertAuthorized(payload);
+
+    if (String(payload.action || '') === 'replaceContactDirectory') {
+      return jsonResponse(replaceContactDirectory(payload));
+    }
 
     if (String(payload.action || '') === 'getAudit') {
       return jsonResponse(readAudit(Number(payload.limit || 100)));
@@ -1278,6 +1295,121 @@ function assertAuthorized(payload) {
     registrarIntentoFallido(total);
     throw new Error('No autorizado');
   }
+}
+
+function contactHeaderKey(value) {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '')
+    .trim();
+}
+
+function contactCell(value) {
+  return String(value == null ? '' : value).trim();
+}
+
+function contactHeaderIndex(headers, aliases) {
+  const wanted = aliases.map(contactHeaderKey);
+  for (let index = 0; index < headers.length; index += 1) {
+    if (wanted.indexOf(contactHeaderKey(headers[index])) !== -1) return index;
+  }
+  return -1;
+}
+
+function assertContactDownloadAuthorized(payload) {
+  const configured = PropertiesService.getScriptProperties().getProperty(CONTACT_PASSWORD_PROPERTY) || '';
+  if (!configured) throw new Error('La descarga con contacto aún no está configurada.');
+  const received = String((payload && payload.contactPassword) || '');
+  if (!received || received !== configured) {
+    // Reutiliza la protección progresiva de credenciales sin almacenar ni
+    // registrar la contraseña ni los teléfonos.
+    const total = registrarFalloAuth();
+    Utilities.sleep(Math.min(250 * Math.pow(2, Math.min(total - 1, 3)), AUTH_FAIL_MAX_DELAY_MS));
+    throw new Error('Contraseña incorrecta.');
+  }
+}
+
+function contactRowsFromSheet(sheet) {
+  const values = sheet.getDataRange().getDisplayValues();
+  if (!values.length) return { headers: [], rows: [] };
+  let headerIndex = -1;
+  for (let index = 0; index < Math.min(values.length, 5); index += 1) {
+    if (contactHeaderIndex(values[index], ['No. Personal', 'Numero Personal', 'N° Personal', 'Nº Personal']) !== -1) {
+      headerIndex = index;
+      break;
+    }
+  }
+  if (headerIndex === -1) return { headers: [], rows: [] };
+  const headers = values[headerIndex].map(contactCell);
+  const rows = values.slice(headerIndex + 1).filter(function(row) {
+    return row.some(function(value) { return contactCell(value) !== ''; });
+  });
+  return { headers: headers, rows: rows };
+}
+
+function getContactDirectoryMap(ss) {
+  const sheet = ss.getSheetByName(CONTACT_DIRECTORY_SHEET);
+  if (!sheet) throw new Error('No hay un directorio de contactos cargado todavía.');
+  const parsed = contactRowsFromSheet(sheet);
+  const personalIndex = contactHeaderIndex(parsed.headers, ['No. Personal', 'Numero Personal', 'N° Personal', 'Nº Personal']);
+  const phoneIndex = contactHeaderIndex(parsed.headers, ['Telefono', 'Teléfono', 'Celular', 'Número telefónico', 'Numero telefonico']);
+  if (personalIndex === -1 || phoneIndex === -1) throw new Error('El directorio privado no contiene las columnas requeridas.');
+  const contacts = {};
+  parsed.rows.forEach(function(row) {
+    const personal = contactCell(row[personalIndex]);
+    const phone = contactCell(row[phoneIndex]);
+    if (personal && phone) contacts[personal] = phone;
+  });
+  return contacts;
+}
+
+function replaceContactDirectory(payload) {
+  const source = Array.isArray(payload && payload.contacts) ? payload.contacts : [];
+  if (!source.length) throw new Error('No se recibieron contactos para actualizar.');
+  if (source.length > CONTACT_DOWNLOAD_MAX_ROWS) throw new Error('El directorio excede el límite permitido.');
+  const byPersonal = {};
+  source.forEach(function(item) {
+    const personal = contactCell(item && item.personal);
+    const phone = contactCell(item && item.telefono);
+    if (personal && phone) byPersonal[personal] = phone;
+  });
+  const contacts = Object.keys(byPersonal).sort().map(function(personal) {
+    return [personal, byPersonal[personal], new Date()];
+  });
+  if (!contacts.length) throw new Error('No se encontraron filas válidas con número de personal y teléfono.');
+
+  const ss = SPREADSHEET_ID ? SpreadsheetApp.openById(SPREADSHEET_ID) : SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName(CONTACT_DIRECTORY_SHEET);
+  if (!sheet) sheet = ss.insertSheet(CONTACT_DIRECTORY_SHEET);
+  sheet.clearContents();
+  sheet.getRange(1, 1, 1, CONTACT_DIRECTORY_HEADERS.length).setValues([CONTACT_DIRECTORY_HEADERS]);
+  sheet.getRange(2, 1, contacts.length, CONTACT_DIRECTORY_HEADERS.length).setValues(contacts);
+  sheet.getRange(2, 1, contacts.length, 2).setNumberFormat('@');
+  sheet.setFrozenRows(1);
+  if (!sheet.isSheetHidden()) sheet.hideSheet();
+  SpreadsheetApp.flush();
+  return { ok: true, contacts: contacts.length };
+}
+
+function downloadBajasWithContact(payload) {
+  assertContactDownloadAuthorized(payload);
+  const ss = SPREADSHEET_ID ? SpreadsheetApp.openById(SPREADSHEET_ID) : SpreadsheetApp.getActiveSpreadsheet();
+  const bajasSheet = ss.getSheetByName('Dashboard_2_Diario');
+  if (!bajasSheet) throw new Error('No se encontró la base de bajas.');
+  const bajas = contactRowsFromSheet(bajasSheet);
+  const personalIndex = contactHeaderIndex(bajas.headers, ['No. Personal', 'Numero Personal', 'N° Personal', 'Nº Personal', 'No. empleado', 'Numero empleado']);
+  if (personalIndex === -1) throw new Error('La base de bajas no tiene “No. Personal”; no es posible unir contactos de forma segura.');
+  const contacts = getContactDirectoryMap(ss);
+  const headers = bajas.headers.concat(['Telefono']);
+  let matched = 0;
+  const rows = bajas.rows.map(function(row) {
+    const phone = contacts[contactCell(row[personalIndex])] || '';
+    if (phone) matched += 1;
+    return row.concat([phone]);
+  });
+  return { ok: true, headers: headers, rows: rows, matched: matched, total: rows.length };
 }
 
 // FIX 1: antes se hacia sheet.clearContents() y luego setValues() como dos pasos separados.

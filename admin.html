@@ -234,6 +234,15 @@
         </section>
       </section>
     </section>
+    <section class="admin-card" id="contact-directory-section" style="margin-top:18px">
+      <h2>Directorio privado de contacto · Bajas</h2>
+      <p style="color:#7a4a42;font-size:13px;font-weight:650;margin:0 0 16px">Carga la plantilla operativa para habilitar la descarga protegida de teléfonos. El sistema extrae únicamente <strong>N° personal</strong> y <strong>Teléfono</strong>; RFC, CURP, IMSS, domicilio y las demás columnas no se guardan.</p>
+      <div class="admin-actions" style="align-items:center">
+        <input class="admin-input" type="file" id="contact-directory-file" accept=".xlsx,.xls,.xlsm,.csv" style="max-width:420px" />
+        <button class="admin-btn primary" type="button" id="contact-directory-publish" disabled>Actualizar directorio privado</button>
+      </div>
+      <div class="helper-box" id="contact-directory-status" style="margin-top:12px">Selecciona una plantilla operativa con N° personal y Teléfono.</div>
+    </section>
     <section class="admin-card hidden" id="manual-entry-section" style="margin-top:18px">
       <h2>Bajas otras plazas · Respaldo manual</h2>
       <p style="color:#7a4a42;font-size:13px;font-weight:650;margin:0 0 16px">Esto ya se calcula solo al publicar la base de arriba (Bajas diarias) desde el Excel ABC. Usa este formulario solo si necesitas corregir una plaza a mano. Al publicar se ordenan automáticamente de mayor a menor y aparecen en el ranking del Dashboard 2.</p>
@@ -476,6 +485,7 @@
   <script src="js/admin/ui.js?v=4611bc84"></script>
   <script src="js/admin-assets.js?v=4611bc84"></script>
   <script src="js/admin.js?v=4611bc84"></script>
+  <script src="js/admin-contact-directory.js?v=4611bc84"></script>
   <script src="js/admin-console.js?v=4611bc84"></script>
   <script src="js/admin-system-map.js?v=4611bc84"></script>
   <script src="js/admin-data-quality.js?v=4611bc84"></script>

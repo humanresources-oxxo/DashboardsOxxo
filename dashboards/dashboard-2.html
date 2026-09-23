@@ -461,6 +461,7 @@
     .bajas-filters .smart-filter__chev { color: #7d655f !important; }
     body .bajas-filters .filter-box--actions { min-width: 190px !important; }
     .filter-actions { display: grid; grid-template-columns: 1fr 1.15fr; gap: 10px; align-items: center; }
+    .filter-actions--contact { grid-template-columns: 1fr 1.15fr 1.25fr; }
     .bajas-filters .reset-filters {
       height: 40px !important;
       min-height: 40px !important;
@@ -492,6 +493,8 @@
       transform: translateY(-1px) !important;
       box-shadow: 0 14px 28px rgba(201,20,33,.28) !important;
     }
+    .bajas-filters #download-contact { background:linear-gradient(135deg,#8c1c25,#5f1017) !important; }
+    @media(max-width:760px){.filter-actions--contact{grid-template-columns:1fr !important;}}
     .bajas-filters .smart-filter__menu { top: calc(100% + 10px) !important; border-radius: 14px !important; }
     @media (max-width: 1180px) {
       .bajas-header { padding-bottom: 24px !important; margin-bottom: 18px !important; }
@@ -1015,7 +1018,7 @@ function setFilterBar(data, cols){
   }).join('');
 
   document.getElementById('filter-bar').innerHTML = asesorBox + tiendaBox + selects +
-    `<div class="filter-box filter-box--actions"><label class="filter-title">Acciones</label><div class="filter-actions"><button class="reset-filters" id="reset-filters">✕ Limpiar</button><button class="reset-filters download-filter" type="button" id="download-base">Descargar base</button></div></div>`;
+    `<div class="filter-box filter-box--actions"><label class="filter-title">Acciones</label><div class="filter-actions filter-actions--contact"><button class="reset-filters" id="reset-filters">✕ Limpiar</button><button class="reset-filters download-filter" type="button" id="download-base">Descargar base</button><button class="reset-filters download-filter" type="button" id="download-contact" title="Descarga protegida: incluye teléfono solo después de validar contraseña">Base con contacto</button></div></div>`;
 
   document.querySelectorAll('.filter-select').forEach(select => {
     select.addEventListener('change', () => {
@@ -1122,6 +1125,25 @@ function setFilterBar(data, cols){
 
   document.getElementById('download-base')?.addEventListener('click', event => {
     OXXO.handleDownloadButton(event.currentTarget, () => OXXO.downloadSheetTab(TAB, 'dashboard-2-bajas.csv'));
+  });
+  document.getElementById('download-contact')?.addEventListener('click', async event => {
+    const contactPassword = window.prompt('Contraseña para descargar la base con contacto:');
+    if (contactPassword === null || !contactPassword) return;
+    const button = event.currentTarget;
+    await OXXO.handleDownloadButton(button, async () => {
+      const endpoint = OXXO.SHEETS_CONFIG.ADMIN_UPLOAD_URL;
+      if (!endpoint) throw new Error('No está configurado el servicio de descarga protegida.');
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        mode: 'cors',
+        credentials: 'omit',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'downloadBajasWithContact', contactPassword })
+      });
+      const result = await response.json().catch(() => null);
+      if (!response.ok || !result || result.ok === false) throw new Error((result && result.error) || 'No se pudo generar la descarga protegida.');
+      OXXO.downloadRowsAsCSV(result.rows, 'dashboard-2-bajas-con-contacto.csv', result.headers);
+    });
   });
 
   const resetBtn = document.getElementById('reset-filters');
