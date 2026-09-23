@@ -1236,9 +1236,10 @@ function filterData(data, cols){
     });
     if(operativos.length) rows = operativos;
   }
-  // Entrenamiento y Operaciones son unidades administrativas, no tiendas
-  // operativas. No deben aparecer en los indicadores, rankings ni pastel.
-  rows = rows.filter(r => !OXXO.metricsIsTiendaEntrenamientoOperacionesD2(val(r, cols, 'tienda')));
+  // Se conservan Entrenamiento y Operaciones para que sus bajas aparezcan
+  // bajo "Sin asesor asignado" y en el detalle. Al construir rankings de
+  // tiendas/plazas se excluyen de manera puntual, porque no son tiendas
+  // operativas y no deben competir en esos comparativos.
   return rows;
 }
 function chartTheme(){
@@ -1792,7 +1793,10 @@ function renderBajasDashboard(data, cols){
   const byMotivo = countBy(data, r=>normalizeMotivo(val(r,cols,'motivo')));
   const byTemp = countBy(data, r=>getTemporalidad(r,cols));
   const byAsesor = countBy(data, r=>val(r,cols,'asesor','Sin asesor'));
-  const byTienda = countBy(data, r=>val(r,cols,'tienda','Sin tienda'));
+  const tiendasOperativasData = data.filter(r =>
+    !OXXO.metricsIsTiendaEntrenamientoOperacionesD2(val(r, cols, 'tienda'))
+  );
+  const byTienda = countBy(tiendasOperativasData, r=>val(r,cols,'tienda','Sin tienda'));
   const topAsesor = topEntries(byAsesor,12);
   const topTienda = topEntries(byTienda,10);
   const topPlaza = topEntries(countBy(data,r=>val(r,cols,'plaza','Oaxaca')),1)[0]?.label || 'Oaxaca';
@@ -1869,7 +1873,10 @@ function renderPlazas(allData, cols) {
   // El titulo del panel es "del mes actual": se restringe al mes mas reciente presente en los
   // datos, aunque allData (BASE_BAJAS_DATA) trae el historico completo sin filtro de mes.
   const mesActual = latestMonthKey(allData, cols);
-  const data = mesActual ? allData.filter(r => monthKeyFromRow(r, cols) === mesActual) : allData;
+  const monthData = mesActual ? allData.filter(r => monthKeyFromRow(r, cols) === mesActual) : allData;
+  const data = monthData.filter(r =>
+    !OXXO.metricsIsTiendaEntrenamientoOperacionesD2(val(r, cols, 'tienda'))
+  );
 
   const keyPlaza = cols.colPlazas;
   const keyBajas = cols.colBajas;
