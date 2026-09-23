@@ -32,7 +32,10 @@
 
     .an-kpis { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:14px; margin-bottom:16px; }
 
-    .an-card { background:var(--color-card,#fff); border-radius:14px; padding:18px 20px; box-shadow:var(--shadow-card,0 2px 12px rgba(0,0,0,.06)); margin-bottom:16px; }
+    /* min-width:0 evita que la tabla interior estire la tarjeta: como elemento
+       de grid conservaba min-width:auto y crecia hasta el ancho de su contenido,
+       sacando la tarjeta de la pantalla en vez de dejar que la tabla se desplace. */
+    .an-card { min-width:0; background:var(--color-card,#fff); border-radius:14px; padding:18px 20px; box-shadow:var(--shadow-card,0 2px 12px rgba(0,0,0,.06)); margin-bottom:16px; }
     .an-card h2 { font-family:var(--font-display); font-size:16px; font-weight:800; margin:0 0 14px; display:flex; align-items:center; gap:8px; }
     .an-grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; align-items:start; }
     @media (max-width:980px){ .an-grid-2{ grid-template-columns:1fr; } }
@@ -45,6 +48,7 @@
 
     .an-bar-row { display:flex; align-items:center; gap:10px; padding:6px 0; }
     .an-bar-label { width:150px; flex-shrink:0; font-size:12px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    @media (max-width:640px){ .an-page{ padding:14px 12px 40px; } .an-card{ padding:16px 14px; } .an-bar-label{ width:104px; } .an-bar-val{ width:54px; } }
     .an-bar-track { flex:1; height:14px; background:var(--color-border); border-radius:7px; position:relative; overflow:hidden; }
     .an-bar-fill { height:100%; border-radius:7px; background:linear-gradient(90deg,#e42929,#c0181f); transition:width .6s ease; }
     .an-bar-val { width:60px; text-align:right; font-size:12px; font-weight:800; flex-shrink:0; }

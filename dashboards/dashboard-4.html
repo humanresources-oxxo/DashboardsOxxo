@@ -47,9 +47,13 @@
 .rank-list{padding:4px 0}
 .rank-row{display:grid;grid-template-columns:28px 1fr 80px 90px;align-items:center;gap:8px;padding:7px 12px;border-bottom:1px solid var(--color-border)}
 .rank-row:last-child{border-bottom:none}
+@media(max-width:640px){.rank-row{grid-template-columns:24px 1fr 46px 72px;gap:6px;padding:7px 8px}}
 .rank-num{width:22px;height:22px;border-radius:50%;background:#f0f0f0;color:#666;font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .rank-num.top{background:#FF6B00;color:#fff}
-.rank-name{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--color-dark)}
+/* min-width:0 permite que la columna 1fr se encoja: como elemento de grid
+   conservaba min-width:auto, asi que el nombre imponia su ancho completo y
+   empujaba la fila fuera de la pantalla en lugar de recortarse con puntos. */
+.rank-name{min-width:0;font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--color-dark)}
 .rank-bar-wrap{height:8px;background:#f0f0f0;border-radius:999px;overflow:hidden}
 .rank-bar{height:100%;border-radius:999px}
 .rank-val{font-size:12px;font-weight:800;color:#FF6B00;text-align:right;white-space:nowrap}

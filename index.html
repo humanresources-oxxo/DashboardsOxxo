@@ -724,6 +724,7 @@ body[data-area="rh"] .group .card::after{color:var(--red)}
 
   <script src="js/config.js?v=f2f1473d"></script>
   <script src="js/core.js?v=f2f1473d"></script>
+  <script src="js/home-dates.js?v=f2f1473d"></script>
   <script>
     // La portada conserva el diseño limpio y toma las fechas reales de la
     // configuración central, igual que el índice anterior.
@@ -804,11 +805,13 @@ body[data-area="rh"] .group .card::after{color:var(--red)}
       s5: 'dashboards/dashboard-5.html', s6: 'dashboards/dashboard-6.html',
       s7: 'dashboards/dashboard-7.html', d8: 'dashboards/dashboard-8.html',
       s9: 'dashboards/dashboard-9.html', d11: 'dashboards/dashboard-11.html',
-      a13: 'dashboards/dashboard-13.html', c14: 'dashboards/dashboard-14.html'
+      a13: 'dashboards/dashboard-13.html', c14: 'dashboards/dashboard-14.html',
+      m12: 'dashboards/dashboard-12.html'
     };
-    function textoFecha(fecha) {
-      return String(fecha || '').replace(/\/sept\//i, ' sept ').replace(/\/(\d{2})\//, ' sep ').trim();
-    }
+    // El formato vive en js/home-dates.js (probado en tests/home-dates.test.js).
+    // Antes se resolvia aqui con un replace fijo que convertia cualquier mes en
+    // "sep": un dato de agosto se mostraba como septiembre.
+    const textoFecha = (fecha) => (window.OXXO_HOME ? OXXO_HOME.formatDate(fecha) : String(fecha || '').trim());
     function aplicarFechas() {
       document.querySelectorAll('.card__stamp strong').forEach((destino) => { destino.textContent = 'Sin fecha registrada'; });
       if (!configuracionSistema) return;

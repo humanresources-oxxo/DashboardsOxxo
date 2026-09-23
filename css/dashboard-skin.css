@@ -2484,6 +2484,16 @@ body:has(#chart-barras) .kpis.kpi-grid .kpi-card__delta {
   margin-bottom: 8px !important;
 }
 
+/* En movil el minimo de 250px de la barra no cabe: 42 + 250 + valor + gaps
+   supera el ancho de la pantalla y la fila se salia recortada. Se deja que la
+   barra se encoja y el nombre conserve espacio para su elipsis. */
+@media (max-width: 640px) {
+  .te-row1 .rank-row {
+    grid-template-columns: 30px minmax(0,1fr) minmax(48px,.35fr) auto !important;
+    gap: 6px !important;
+  }
+}
+
 .te-row1 .rank-name {
   white-space: nowrap;
   overflow: hidden;

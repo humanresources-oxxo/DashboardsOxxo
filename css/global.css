@@ -388,6 +388,15 @@ body {
   border-bottom: 1px solid var(--color-border);
 }
 
+/* En pantallas angostas el titulo y sus acciones no caben en una sola linea:
+   sin envolver, el grupo de botones se salia de la pantalla. */
+@media (max-width: 640px) {
+  .panel__header {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+}
+
 .panel__title {
   font-family: var(--font-display);
   font-size: 1.1rem;

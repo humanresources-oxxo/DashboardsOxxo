@@ -242,6 +242,14 @@
         <button class="admin-btn primary" type="button" id="contact-directory-publish" disabled>Actualizar directorio privado</button>
       </div>
       <div class="helper-box" id="contact-directory-status" style="margin-top:12px">Selecciona una plantilla operativa con N° personal y Teléfono.</div>
+      <div style="margin-top:18px;padding-top:16px;border-top:1px solid #efe0dc">
+        <h3 style="margin:0 0 6px;font-size:14px">Sacar el directorio del archivo publicado</h3>
+        <p style="color:#7a4a42;font-size:13px;font-weight:650;margin:0 0 12px">El directorio debe vivir en una hoja de cálculo aparte y sin publicar. Si quedó dentro del archivo publicado, esta acción mueve los contactos al archivo privado y <strong>borra la pestaña expuesta</strong>. Se puede ejecutar varias veces sin riesgo.</p>
+        <div class="admin-actions" style="align-items:center">
+          <button class="admin-btn" type="button" id="contact-directory-migrate">Mover y limpiar</button>
+        </div>
+        <div class="helper-box" id="contact-directory-migrate-status" style="margin-top:12px">Requiere la propiedad de script <strong>DIRECTORIO_CONTACTOS_SPREADSHEET_ID</strong> con el ID del archivo privado.</div>
+      </div>
     </section>
     <section class="admin-card hidden" id="manual-entry-section" style="margin-top:18px">
       <h2>Bajas otras plazas · Respaldo manual</h2>
