@@ -459,13 +459,14 @@
       box-shadow: 0 0 0 3px rgba(217,31,45,.08), 0 8px 18px rgba(90,42,24,.08) !important;
     }
     .bajas-filters .smart-filter__chev { color: #7d655f !important; }
-    body .bajas-filters .filter-box--actions { min-width: 190px !important; }
-    .filter-actions { display: grid; grid-template-columns: 1fr 1.15fr; gap: 10px; align-items: center; }
-    .filter-actions--contact { grid-template-columns: 1fr 1.15fr 1.25fr; }
+    body .bajas-filters .filter-box--actions { min-width: 158px !important; }
+    .filter-actions { display: grid; grid-template-columns: repeat(3, 42px); gap: 8px; align-items: center; }
+    .filter-actions--contact { grid-template-columns: repeat(3, 42px); }
     .bajas-filters .reset-filters {
       height: 40px !important;
       min-height: 40px !important;
-      padding: 9px 14px !important;
+      width: 42px !important;
+      padding: 0 !important;
       border-radius: 8px !important;
       background: rgba(255,255,255,.96) !important;
       border: 1px solid rgba(72,45,40,.16) !important;
@@ -474,6 +475,20 @@
       box-shadow: 0 3px 10px rgba(90,42,24,.06) !important;
       font-weight: 900 !important;
       white-space: nowrap;
+    }
+    .bajas-filters .filter-action-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .bajas-filters .filter-action-icon svg {
+      width: 17px;
+      height: 17px;
+      stroke: currentColor;
+      stroke-width: 2;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
     }
     .bajas-filters .reset-filters:hover {
       background: #fff !important;
@@ -494,7 +509,7 @@
       box-shadow: 0 14px 28px rgba(201,20,33,.28) !important;
     }
     .bajas-filters #download-contact { background:linear-gradient(135deg,#8c1c25,#5f1017) !important; }
-    @media(max-width:760px){.filter-actions--contact{grid-template-columns:1fr !important;}}
+    @media(max-width:760px){.filter-actions--contact{grid-template-columns:repeat(3,42px) !important;}}
     .bajas-filters .smart-filter__menu { top: calc(100% + 10px) !important; border-radius: 14px !important; }
     @media (max-width: 1180px) {
       .bajas-header { padding-bottom: 24px !important; margin-bottom: 18px !important; }
@@ -585,6 +600,16 @@
     body.hr-dashboard .compromiso-summary .is-desfase b{color:#de4a27;}
     @media (max-width:760px){body.hr-dashboard .compromiso-combined .chart-wide{height:390px!important;min-height:390px!important;}body.hr-dashboard .compromiso-detail-row{font-size:10px;}}
     body.hr-dashboard .bajas-panel canvas{filter:saturate(.9);}
+    /* Acciones compactas: conservar los tres accesos en una sola fila. */
+    body.hr-dashboard .bajas-filters .filter-box--actions{min-width:158px!important;}
+    body.hr-dashboard .bajas-filters .filter-box--actions .filter-actions,
+    body.hr-dashboard .bajas-filters .filter-box--actions .filter-actions--contact{
+      display:grid!important;
+      grid-template-columns:repeat(3,42px)!important;
+      width:max-content!important;
+      gap:8px!important;
+      justify-content:start!important;
+    }
     @media (max-width:980px){body.hr-dashboard .bajas-page{padding:20px 16px 40px;}body.hr-dashboard .bajas-header{padding:24px 22px 21px !important;}body.hr-dashboard .bajas-header__title{align-items:flex-start;flex-wrap:wrap;}body.hr-dashboard .bajas-header .oxxo-scope-selector--inline{max-width:100%;width:100%;margin-left:0;}}
   </style>
   <script defer src="../js/rh-dashboard-enhancements.js?v=2e0a3faf"></script>
@@ -1018,7 +1043,7 @@ function setFilterBar(data, cols){
   }).join('');
 
   document.getElementById('filter-bar').innerHTML = asesorBox + tiendaBox + selects +
-    `<div class="filter-box filter-box--actions"><label class="filter-title">Acciones</label><div class="filter-actions filter-actions--contact"><button class="reset-filters" id="reset-filters">✕ Limpiar</button><button class="reset-filters download-filter" type="button" id="download-base">Descargar base</button><button class="reset-filters download-filter" type="button" id="download-contact" title="Descarga protegida: incluye teléfono solo después de validar contraseña">Base con contacto</button></div></div>`;
+    `<div class="filter-box filter-box--actions"><label class="filter-title">Acciones</label><div class="filter-actions filter-actions--contact"><button class="reset-filters filter-action-icon" id="reset-filters" type="button" title="Limpiar filtros" aria-label="Limpiar filtros"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 1-2.34-5.66"/><path d="M20 4v7h-7"/></svg></button><button class="reset-filters download-filter filter-action-icon" type="button" id="download-base" title="Descargar base" aria-label="Descargar base"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg></button><button class="reset-filters download-filter filter-action-icon" type="button" id="download-contact" title="Descargar base con contacto" aria-label="Descargar base con contacto protegida"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 5 6v5c0 5 3 8.5 7 10 4-1.5 7-5 7-10V6l-7-3Z"/><path d="M9 12h6"/><path d="M12 9v6"/></svg></button></div></div>`;
 
   document.querySelectorAll('.filter-select').forEach(select => {
     select.addEventListener('change', () => {
