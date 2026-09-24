@@ -1,0 +1,29 @@
+# Compuerta de calidad offline en cada PR y push a main. No corre las pruebas
+# en vivo (dependen de produccion y de la red) ni toca la publicacion de Pages.
+name: Calidad
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  pruebas:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - run: npm ci
+
+      - name: Pruebas offline
+        run: npm test
+
+      - name: Assets versionados
+        run: npm run assets:check

@@ -54,9 +54,26 @@ operational.forEach(row => {
   const tienda = String(row[tiendaKey] || '').trim();
   if (cr || tienda) currentStores.set(cr || sandbox.OXXO.normalizeCatalogTienda(tienda), { cr, tienda });
 });
-const missing = [...currentStores.values()].filter(store => !(
+// Regla "mundo abierto": una tienda ausente de TREO/catalogo se INCLUYE (TREO
+// se actualiza con retraso). Aqui solo se exige que las exclusiones explicitas
+// sigan funcionando; la deriva contra D1 se imprime como diagnostico.
+const storeCatalog = catalog;
+const valid = (tienda, cr = '') => sandbox.OXXO.isTiendaValid({ storeCatalog }, tienda, cr);
+
+const inactivas = catalog.rows.filter(row => row.activa === false);
+inactivas.forEach(row => assert.equal(valid(row.tienda, row.cr), false, `ACTIVA=NO debe rechazarse: ${row.tienda}`));
+
+const preaperturas = ['Parador Boca del Monte VSA', 'Papaya VSA', 'Small Beach OAX VSA', 'Piedra Parada VSA', 'Gas Nopala VSA', '5 de Septiembre VSA', 'Union y Progreso VSA'];
+preaperturas.forEach(tienda => assert.equal(valid(tienda), false, `la preapertura ${tienda} no debe entrar en "operativas"`));
+
+assert.equal(valid('Tienda Nueva Inexistente en TREO 999', '99-ZZZ999'), true, 'una tienda ausente del catalogo debe aceptarse (regla de mundo abierto)');
+
+const ausentes = [...currentStores.values()].filter(store => !(
   (store.cr && catalog.byCr.has(store.cr)) || catalog.byTienda.has(sandbox.OXXO.normalizeCatalogTienda(store.tienda))
 ));
-assert.equal(missing.length, 0, `Tiendas del último corte D1 ausentes de TREO: ${missing.map(item => item.tienda).join(', ')}`);
+const claves = tienda => sandbox.OXXO.normalizeCatalogTienda(tienda);
+const clavesPreapertura = new Set(preaperturas.map(claves));
+ausentes.filter(store => !clavesPreapertura.has(claves(store.tienda))).forEach(store => assert.equal(valid(store.tienda, store.cr), true, `tienda de D1 ausente del catalogo debe seguir aceptada: ${store.tienda}`));
+if (ausentes.length) console.warn(`[diagnostico] ${ausentes.length} tiendas del ultimo corte D1 aun no estan en TREO/catalogo: ${ausentes.map(item => item.tienda).join(', ')}`);
 
-console.log({ source: catalog.source, tiendas: catalog.byCr.size, plazas, periodoD1: latest.mes, tiendasD1: currentStores.size, faltantesD1: missing.length });
+console.log({ source: catalog.source, tiendas: catalog.byCr.size, plazas, periodoD1: latest.mes, tiendasD1: currentStores.size, inactivasRechazadas: inactivas.length, ausentesEnCatalogo: ausentes.length });

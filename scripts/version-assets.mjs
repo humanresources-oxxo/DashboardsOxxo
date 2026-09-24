@@ -22,13 +22,20 @@
      node scripts/version-assets.mjs 20260910a  # o una etiqueta propia
      node scripts/version-assets.mjs --check    # solo revisa, no escribe
 
+   --check sin etiqueta exige que TODAS las referencias compartan una
+   misma version (la que ya traen); con etiqueta compara contra esa.
+
+   --check sin etiqueta exige que TODAS las referencias compartan una
+   misma version (la que ya traen); con etiqueta compara contra esa.
+
    Las URLs externas (CDN, Google Fonts) no se tocan.
    ========================================================== */
 import fs from 'node:fs';
 import path from 'node:path';
 import { execSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 
-const raiz = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
+const raiz = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const soloRevisar = process.argv.includes('--check');
 const etiqueta = process.argv.slice(2).find(a => !a.startsWith('--'));
 
@@ -36,8 +43,6 @@ function versionDelCommit() {
   try { return execSync('git rev-parse --short=8 HEAD', { cwd: raiz }).toString().trim(); }
   catch { return String(Date.now()); }
 }
-const version = etiqueta || versionDelCommit();
-
 function htmlsDe(dir, acc = []) {
   for (const entrada of fs.readdirSync(dir, { withFileTypes: true })) {
     if (entrada.name === '.git' || entrada.name === 'node_modules') continue;
@@ -51,6 +56,20 @@ function htmlsDe(dir, acc = []) {
 // src="..." o href="..." que apunte a un .js/.css LOCAL. Se excluyen las
 // absolutas (http://, https://, //cdn...) porque versionarlas rompe la URL.
 const REFERENCIA = /(\b(?:src|href)=")(?!https?:|\/\/)([^"?]+\.(?:js|css))(\?[^"]*)?(")/g;
+
+// En --check sin etiqueta no se compara contra el commit actual (el commit del
+// bot que versiona nunca coincide con el sufijo que escribio): se comprueba
+// que las referencias esten todas versionadas con un mismo valor.
+function versionExistente() {
+  const versiones = new Set();
+  for (const archivo of htmlsDe(raiz)) {
+    for (const m of fs.readFileSync(archivo, 'utf8').matchAll(REFERENCIA)) {
+      versiones.add((m[3] || '').match(/[?&]v=([^&]*)/)?.[1] || '');
+    }
+  }
+  return versiones.size === 1 && !versiones.has('') ? [...versiones][0] : null;
+}
+const version = etiqueta || (soloRevisar && versionExistente()) || versionDelCommit();
 
 let archivosTocados = 0, referencias = 0;
 const pendientes = [];

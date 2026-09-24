@@ -36,7 +36,7 @@ jobs:
 
       # Que el versionado nunca publique un sitio roto.
       - name: Pruebas
-        run: node --test tests/*.test.js
+        run: npm ci && npm test
 
       - name: Escribir la version en los assets
         run: node scripts/version-assets.mjs

@@ -92,13 +92,13 @@ const pieces = [
   take(/function gvizColumnLetter\(index\)\{[\s\S]*?\n\}/, 'gvizColumnLetter()'),
   take(/function gvizColumnFor\(key\)\{[\s\S]*?\n\}/, 'gvizColumnFor()'),
   take(/const PLAZAS_COUNT_HEADER = [^\r\n]*\r?\n/, 'PLAZAS_COUNT_HEADER'),
-  take(/function plazasAggregateQuery\(\)\{[\s\S]*?\n\}/, 'plazasAggregateQuery()'),
+  take(/function plazasAggregateQuery\([^)]*\)\{[\s\S]*?\n\}/, 'plazasAggregateQuery(puestosSeleccionados)'),
   take(/function plazasAccumulator\(mesSeleccionado\)\{[\s\S]*?\n\}/, 'plazasAccumulator()'),
   take(/function plazasDesdeAgregado\(filas, mes\)\{[\s\S]*?\n\}/, 'plazasDesdeAgregado()'),
-  take(/function plazasDesdeHojaCompleta\(filas, mes\)\{[\s\S]*?\n\}/, 'plazasDesdeHojaCompleta()'),
-  'return { setContext(headers, map){ RAW_HEADERS = headers; colMap = map; }, buildMap, gv, normalizeMesColumn, plazasAggregateQuery, plazasDesdeAgregado, plazasDesdeHojaCompleta, gvizColumnFor };'
+  take(/function plazasDesdeHojaCompleta\([^)]*\)\{[\s\S]*?\n\}/, 'plazasDesdeHojaCompleta(filas, mes, puestosSeleccionados)'),
+  'return { setContext(headers, map){ RAW_HEADERS = headers; colMap = map; }, buildMap, gv, normalizeMesColumn, plazasAggregateQuery, plazasDesdeAgregado, plazasDesdeHojaCompleta, gvizColumnFor, DEFAULT_PUESTOS };'
 ].join('\n');
-const D1 = new Function('OXXO', `let RAW_HEADERS = []; let colMap = {};\n${pieces}`)(OXXO);
+const D1 = new Function('OXXO', `let RAW_HEADERS = []; let colMap = {}; let D1_ASESOR_CATALOG = null;\n${pieces}`)(OXXO);
 
 const TAB = OXXO.SHEETS_CONFIG.TABS.d1;
 
@@ -107,7 +107,9 @@ const completa = await OXXO.fetchSheetData(TAB, { scoped: false });
 assert(completa?.length, 'la hoja completa no devolvio filas');
 D1.setContext(Object.keys(completa[0] || {}), D1.buildMap(completa));
 
-const query = D1.plazasAggregateQuery();
+// La misma lista de puestos por la ruta rapida y por el respaldo.
+const PUESTOS = D1.DEFAULT_PUESTOS;
+const query = D1.plazasAggregateQuery(PUESTOS);
 assert(query, 'no se pudo armar la consulta agregada: falta alguna columna esperada en la hoja');
 assert.match(query, /contains 'vacante'/, 'la consulta debe contar solo estatus declarados como vacante');
 assert.match(query, /contains 'no ocupado'/, 'la consulta debe incluir estatus No ocupado');
@@ -137,7 +139,7 @@ const tabla = [];
 for (const mes of meses) {
   const rapido = D1.plazasDesdeAgregado(agregado, mes);
   assert(rapido, `${mes || '(todos)'}: la respuesta agregada no trae la forma esperada`);
-  const lento = D1.plazasDesdeHojaCompleta(completa, mes);
+  const lento = D1.plazasDesdeHojaCompleta(completa, mes, PUESTOS);
   assert.deepEqual(
     rapido, lento,
     `${mes || '(todos)'}: el comparativo agregado no coincide con la lectura completa`

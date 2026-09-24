@@ -1,0 +1,14 @@
+{
+  "name": "dashboards-oxxo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Dashboards estaticos de RH/Comercial/Administrativo (GitHub Pages, sin build).",
+  "scripts": {
+    "test": "node scripts/run-tests.mjs",
+    "test:live": "node scripts/run-live-tests.mjs",
+    "assets:check": "node scripts/version-assets.mjs --check"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
