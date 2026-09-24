@@ -37,3 +37,7 @@ tr[data-row-action]:focus-within { background: rgba(247, 25, 38, .06); }
   .oxxo-dialog { width: 100% !important; }
   .oxxo-dialog button[aria-label="Cerrar"] { min-width: 44px; min-height: 44px; }
 }
+
+/* El aviso de conexion (fijo, abajo) no debe tapar el contenido de un dialogo abierto. */
+html.oxxo-dialog-open .connection-banner,
+html.oxxo-dialog-open .oxxo-scope-selector--floating { z-index: 900 !important; }
