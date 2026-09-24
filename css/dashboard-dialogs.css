@@ -20,7 +20,15 @@ html.oxxo-dialog-open body { overflow: hidden; }
 
 /* Boton nativo dentro de la primera celda de una fila accionable: se ve como
    el texto de la celda. */
-.row-action { display: inline; margin: 0; padding: 0; border: 0; background: none; font: inherit; color: inherit; text-align: inherit; cursor: pointer; }
+button.row-action {
+  display: inline; margin: 0; padding: 0; min-height: 0; cursor: pointer; text-align: inherit;
+  color: inherit; letter-spacing: inherit; text-transform: inherit;
+  /* dashboard-skin.css da a todo <button> fondo degradado, sombra y radio de pildora:
+     aqui debe verse como el texto de la celda. */
+  border: 0 !important; border-radius: 0 !important; background: none !important; box-shadow: none !important;
+  transform: none !important; text-shadow: none !important;
+  font-family: inherit !important; font-size: inherit !important; font-weight: inherit !important; line-height: inherit !important;
+}
 .row-action:focus-visible { outline: 2px solid #f71926; outline-offset: 2px; border-radius: 4px; }
 tr[data-row-action]:focus-within { background: rgba(247, 25, 38, .06); }
 
