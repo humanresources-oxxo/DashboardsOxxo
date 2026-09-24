@@ -316,7 +316,7 @@
 
     <div class="vac-filters">
       <div class="vac-fbox">
-        <label>Asesor</label>
+        <label for="filtro-asesor-button">Asesor</label>
         <div id="filtro-asesor"></div>
       </div>
       <div class="vac-fbox">
@@ -344,8 +344,8 @@
           <option value="31+">31 dias o mas</option>
         </select>
       </div>
-      <div class="vac-fbox">
-        <label>Filtros</label>
+      <div class="vac-fbox" role="group" aria-labelledby="filtros-acciones-label">
+        <label id="filtros-acciones-label">Filtros</label>
         <button class="filtro-btn" type="button" id="clear-filters">Limpiar</button>
         <button class="filtro-btn" type="button" id="download-base">Descargar base</button>
       </div>
@@ -406,6 +406,7 @@
 
   <script src="../js/config.js?v=6e49c7e3"></script>
 <script src="../js/core.js?v=6e49c7e3"></script>
+<script src="../js/dashboard-dialogs.js?v=6e49c7e3"></script>
   <script src="../js/dashboard-5-vacaciones.js?v=6e49c7e3"></script>
 </body>
 </html>

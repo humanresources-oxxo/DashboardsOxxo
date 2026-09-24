@@ -219,6 +219,7 @@
 </style>
 <link rel="stylesheet" href="../css/dashboard-skin.css?v=6e49c7e3"/>
 <link rel="stylesheet" href="../css/floating-filter-layout.css?v=6e49c7e3" />
+  <link rel="stylesheet" href="../css/dashboard-dialogs.css?v=6e49c7e3" />
 <style id="d9-inventory-alignment">
 body{background:radial-gradient(circle at 90% 7%,rgba(128,106,178,.14),transparent 29%),linear-gradient(180deg,#f4f1fa 0%,#fcfbfd 46%,#f0edf7 100%)}
 .d9-hero-meta{display:flex;align-items:center;justify-content:flex-end;gap:9px;flex-wrap:wrap}
@@ -306,17 +307,17 @@ body{background:radial-gradient(circle at 90% 7%,rgba(128,106,178,.14),transpare
 
   <section class="inv-filters" id="d9-filters" aria-label="Filtros de faltantes y sobrantes">
       <div class="vac-fbox">
-        <label>Semana</label>
+        <label for="filtro-semana">Semana</label>
         <select class="filtro-select" id="filtro-semana" onchange="applyDropdownFilters()">
           <option value="">Todas las semanas</option>
         </select>
       </div>
       <div class="vac-fbox">
-        <label>Asesor</label>
+        <label for="filtro-asesor-button">Asesor</label>
         <div id="filtro-asesor"></div>
       </div>
       <div class="vac-fbox">
-        <label>Tipo</label>
+        <label for="filtro-tipo">Tipo</label>
         <select class="filtro-select" id="filtro-tipo" onchange="applyDropdownFilters()">
           <option value="">Faltante y Sobrante</option>
           <option value="Faltante">Solo Faltante</option>
@@ -324,14 +325,14 @@ body{background:radial-gradient(circle at 90% 7%,rgba(128,106,178,.14),transpare
         </select>
       </div>
       <div class="vac-fbox">
-        <label>Tienda</label>
+        <label for="filtro-tienda">Tienda</label>
         <select class="filtro-select" id="filtro-tienda" onchange="applyDropdownFilters()">
           <option value="">Todas las tiendas</option>
         </select>
       </div>
-      <div class="vac-fbox vac-fbox--actions">
-        <label>Filtros</label>
-        <button class="filtro-btn" onclick="limpiarFiltros()">✕ Limpiar</button>
+      <div class="vac-fbox vac-fbox--actions" role="group" aria-labelledby="filtros-acciones-label">
+        <label id="filtros-acciones-label">Filtros</label>
+        <button type="button" class="filtro-btn" onclick="limpiarFiltros()">✕ Limpiar</button>
         <button class="filtro-btn" type="button" onclick="OXXO.handleDownloadButton(this, () => OXXO.downloadSheetTab(TAB, 'dashboard-9-faltantes-sobrantes.csv'))">Descargar base</button>
       </div>
   </section>
@@ -339,7 +340,7 @@ body{background:radial-gradient(circle at 90% 7%,rgba(128,106,178,.14),transpare
   <!-- Filter banner (KPI click filter) -->
   <div class="filter-banner d9-result-line" id="filter-banner">
     <span><svg class="icon-inline" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>KPI activo: <strong id="filter-label">—</strong></span>
-    <button class="filter-banner__clear" id="clear-filter">✕ Quitar</button>
+    <button type="button" class="filter-banner__clear" id="clear-filter">✕ Quitar</button>
   </div>
 
   <!-- Row 1: Stores + Donut -->
@@ -381,7 +382,7 @@ body{background:radial-gradient(circle at 90% 7%,rgba(128,106,178,.14),transpare
     <div class="card-head">
       <div><span class="d9-panel-eyebrow">Base consultable</span><div class="card-title">Detalle por asesor<span class="info-tip" tabindex="0" data-tip="Tabla agregada por Asesor con Faltante, Sobrante y Neto, con los filtros activos aplicados."></span></div></div>
       <div class="detail-toolbar">
-        <select class="table-sort-select" id="tabla-orden" onchange="setTableSort(this.value)">
+        <select class="table-sort-select" id="tabla-orden" aria-label="Ordenar la tabla por" onchange="setTableSort(this.value)">
           <option value="faltante-desc">Mayor Faltante</option>
           <option value="sobrante-desc">Mayor Sobrante</option>
           <option value="neto-desc">Mayor Neto (debe mas)</option>
@@ -405,14 +406,14 @@ body{background:radial-gradient(circle at 90% 7%,rgba(128,106,178,.14),transpare
   </div>
 </main>
 
-<div class="fs-modal-overlay" id="fs-asesor-modal" onclick="if(event.target===this)closeAsesorDetail()">
-  <div class="fs-modal" role="dialog" aria-modal="true" aria-labelledby="fs-modal-title">
+<div class="fs-modal-overlay" id="fs-asesor-modal" aria-hidden="true">
+  <div class="fs-modal" role="dialog" aria-modal="true" aria-labelledby="fs-modal-title" tabindex="-1">
     <div class="fs-modal-head">
       <div>
         <div class="fs-modal-eyebrow">Detalle por asesor</div>
         <div class="fs-modal-title" id="fs-modal-title">Asesor</div>
       </div>
-      <button class="fs-modal-close" type="button" onclick="closeAsesorDetail()" aria-label="Cerrar">x</button>
+      <button class="fs-modal-close" type="button" aria-label="Cerrar">x</button>
     </div>
     <div id="fs-modal-body"></div>
   </div>
@@ -420,6 +421,7 @@ body{background:radial-gradient(circle at 90% 7%,rgba(128,106,178,.14),transpare
 
   <script src="../js/config.js?v=6e49c7e3"></script>
 <script src="../js/core.js?v=6e49c7e3"></script>
+<script src="../js/dashboard-dialogs.js?v=6e49c7e3"></script>
 <script>
 const TAB = OXXO.SHEETS_CONFIG.TABS.s9;
 let C = { asesor:'Asesor', tienda:'Tienda', cr:'CR', importe:'Importe', tipo:'Tipo', concepto:'Concepto', semana:'Semana', fecha:'Fecha' };
@@ -655,8 +657,9 @@ function renderAll() {
   });
 }
 
-function closeAsesorDetail(){ document.getElementById('fs-asesor-modal')?.classList.remove('open'); }
-document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeAsesorDetail(); });
+// Semantica, foco y Escape: js/dashboard-dialogs.js (adaptador conservado).
+const dlgAsesorFS = OXXO_DIALOGS.register({ overlay:'fs-asesor-modal', title:'fs-modal-title', close:'.fs-modal-close' });
+function closeAsesorDetail(){ dlgAsesorFS.close(); }
 
 function openAsesorDetail(asesor){
   const rows = filteredData().filter(r => (r[C.asesor] || 'Sin Asignar') === asesor);
@@ -695,7 +698,7 @@ function openAsesorDetail(asesor){
         </div>
       </div>
     </div>`;
-  document.getElementById('fs-asesor-modal').classList.add('open');
+  dlgAsesorFS.open();
 }
 
 function updateKpiActive(){

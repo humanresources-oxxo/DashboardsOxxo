@@ -177,9 +177,9 @@ body.commercial-dashboard{background:linear-gradient(180deg,#edf7fc 0,#f8fbfd 36
       <span id="hero-download" style="display:none"></span>
     </div>
     <div class="vac-filters">
-      <div class="vac-fbox"><label>Asesor</label><div id="filtro-asesor"></div></div>
+      <div class="vac-fbox"><label for="filtro-asesor-button">Asesor</label><div id="filtro-asesor"></div></div>
       <div class="vac-fbox">
-        <label>Tienda</label>
+        <label for="filtro-tienda">Tienda</label>
         <div class="search-box">
           <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
           <input type="search" id="filtro-tienda" placeholder="Buscar tienda..." oninput="applyFilters()">
@@ -256,6 +256,7 @@ body.commercial-dashboard{background:linear-gradient(180deg,#edf7fc 0,#f8fbfd 36
 
 <script src="../js/config.js?v=6e49c7e3"></script>
 <script src="../js/core.js?v=6e49c7e3"></script>
+<script src="../js/dashboard-dialogs.js?v=6e49c7e3"></script>
 <script>
 const TAB = OXXO.SHEETS_CONFIG.TABS.c14;
 const ALIASES_C14 = {

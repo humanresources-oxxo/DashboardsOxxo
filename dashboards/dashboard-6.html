@@ -150,30 +150,30 @@
     </div>
     <div class="vac-filters">
       <div class="vac-fbox">
-        <label>Asesor</label>
+        <label for="filtro-asesor-button">Asesor</label>
         <div id="filtro-asesor"></div>
       </div>
       <div class="vac-fbox">
-        <label>Semana</label>
+        <label for="filtro-semana">Semana</label>
         <select class="filtro-select" id="filtro-semana" onchange="applyFilters()" aria-label="Filtrar por semana">
           <option value="">Semana más reciente</option>
         </select>
       </div>
       <div class="vac-fbox">
-        <label>Tipo de Ausentismo</label>
+        <label for="filtro-tipo">Tipo de Ausentismo</label>
         <select class="filtro-select" id="filtro-tipo" onchange="applyFilters()">
           <option value="">Todos los tipos</option>
         </select>
       </div>
       <div class="vac-fbox">
-        <label>Función / Puesto</label>
+        <label for="filtro-funcion">Función / Puesto</label>
         <select class="filtro-select" id="filtro-funcion" onchange="applyFilters()">
           <option value="">Todas las funciones</option>
         </select>
       </div>
-      <div class="vac-fbox">
-        <label>Filtros</label>
-        <button class="filtro-btn" onclick="limpiarFiltros()">✕ Limpiar</button>
+      <div class="vac-fbox" role="group" aria-labelledby="filtros-acciones-label">
+        <label id="filtros-acciones-label">Filtros</label>
+        <button type="button" class="filtro-btn" onclick="limpiarFiltros()">✕ Limpiar</button>
         <button class="filtro-btn" type="button" onclick="OXXO.handleDownloadButton(this, () => OXXO.downloadSheetTab(TAB, 'dashboard-6-ausentismos.csv'))">Descargar base</button>
       </div>
     </div>
@@ -248,6 +248,7 @@
 
   <script src="../js/config.js?v=6e49c7e3"></script>
 <script src="../js/core.js?v=6e49c7e3"></script>
+<script src="../js/dashboard-dialogs.js?v=6e49c7e3"></script>
 <script src="../js/metrics-periods.js?v=6e49c7e3"></script>
 <script>
 const TAB = OXXO.SHEETS_CONFIG.TABS.s6;

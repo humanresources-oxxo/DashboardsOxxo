@@ -208,6 +208,7 @@
   <link rel="stylesheet" href="../css/rh-dashboard-refresh.css?v=6e49c7e3" />
   <link rel="stylesheet" href="../css/rh-table-tools.css?v=6e49c7e3" />
   <link rel="stylesheet" href="../css/rh-filter-summary.css?v=6e49c7e3" />
+  <link rel="stylesheet" href="../css/dashboard-dialogs.css?v=6e49c7e3" />
   <script defer src="../js/rh-dashboard-enhancements.js?v=6e49c7e3"></script>
   <script defer src="../js/rh-table-tools.js?v=6e49c7e3"></script>
   <script defer src="../js/rh-filter-summary.js?v=6e49c7e3"></script>
@@ -241,17 +242,17 @@
     </div>
     <div class="vac-filters">
       <div class="vac-fbox">
-        <label>Semana</label>
+        <label for="filtro-semana">Semana</label>
         <select class="filtro-select" id="filtro-semana" onchange="applyDropdownFilters()">
           <option value="">Todas las semanas</option>
         </select>
       </div>
       <div class="vac-fbox">
-        <label>Asesor</label>
+        <label for="filtro-asesor-button">Asesor</label>
         <div id="filtro-asesor"></div>
       </div>
       <div class="vac-fbox">
-        <label>Tipo de TE</label>
+        <label for="filtro-tipo">Tipo de TE</label>
         <select class="filtro-select" id="filtro-tipo" onchange="applyDropdownFilters()">
           <option value="">Todos los tipos</option>
           <option value="doble">Tiempo Extra Doble</option>
@@ -260,14 +261,14 @@
         </select>
       </div>
       <div class="vac-fbox">
-        <label>Tienda</label>
+        <label for="filtro-tienda">Tienda</label>
         <select class="filtro-select" id="filtro-tienda" onchange="applyDropdownFilters()">
           <option value="">Todas las tiendas</option>
         </select>
       </div>
-      <div class="vac-fbox">
-        <label>Filtros</label>
-        <button class="filtro-btn" onclick="limpiarFiltros()">✕ Limpiar</button>
+      <div class="vac-fbox" role="group" aria-labelledby="filtros-acciones-label">
+        <label id="filtros-acciones-label">Filtros</label>
+        <button type="button" class="filtro-btn" onclick="limpiarFiltros()">✕ Limpiar</button>
         <button class="filtro-btn" type="button" onclick="OXXO.handleDownloadButton(this, () => OXXO.downloadSheetTab(TAB, 'dashboard-4-tiempo-extra.csv'))">Descargar base</button>
       </div>
     </div>
@@ -282,7 +283,7 @@
   <!-- Filter banner (KPI click filter) -->
   <div class="filter-banner" id="filter-banner">
     <span><svg class="icon-inline" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>KPI activo: <strong id="filter-label">—</strong></span>
-    <button class="filter-banner__clear" id="clear-filter">✕ Quitar</button>
+    <button type="button" class="filter-banner__clear" id="clear-filter">✕ Quitar</button>
   </div>
 
   <!-- Row 1: Ranking + Donut -->
@@ -329,7 +330,7 @@
     <div class="card-head">
       <div class="card-title"><svg class="icon-inline" viewBox="0 0 24 24" aria-hidden="true"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>Detalle de Gasto en Tiempo Extra por Asesor<span class="info-tip" tabindex="0" data-tip="Tabla agregada por Asesor con horas y gasto desglosado por tipo de TE, con los filtros activos aplicados."></span></div>
       <div class="detail-toolbar">
-        <select class="table-sort-select" id="tabla-orden" onchange="setTableSort(this.value)">
+        <select class="table-sort-select" id="tabla-orden" aria-label="Ordenar la tabla por" onchange="setTableSort(this.value)">
           <option value="gasto-desc">Mayor gasto total</option>
           <option value="horas-desc">Mayor horas total</option>
           <option value="asesor-asc">Asesor A-Z</option>
@@ -354,14 +355,14 @@
   </div>
 </div>
 
-<div class="te-modal-overlay" id="te-asesor-modal" onclick="if(event.target===this)closeAsesorDetail()">
-  <div class="te-modal" role="dialog" aria-modal="true" aria-labelledby="te-modal-title">
+<div class="te-modal-overlay" id="te-asesor-modal" aria-hidden="true">
+  <div class="te-modal" role="dialog" aria-modal="true" aria-labelledby="te-modal-title" tabindex="-1">
     <div class="te-modal-head">
       <div>
         <div class="te-modal-eyebrow">Detalle por asesor</div>
         <div class="te-modal-title" id="te-modal-title">Asesor</div>
       </div>
-      <button class="te-modal-close" type="button" onclick="closeAsesorDetail()" aria-label="Cerrar">x</button>
+      <button class="te-modal-close" type="button" aria-label="Cerrar">x</button>
     </div>
     <div id="te-modal-body"></div>
   </div>
@@ -369,6 +370,7 @@
 
   <script src="../js/config.js?v=6e49c7e3"></script>
 <script src="../js/core.js?v=6e49c7e3"></script>
+<script src="../js/dashboard-dialogs.js?v=6e49c7e3"></script>
 <script src="../js/metrics-periods.js?v=6e49c7e3"></script>
 <script>
 const TAB = OXXO.SHEETS_CONFIG.TABS.s4;
@@ -664,8 +666,9 @@ function renderAll() {
   });
 }
 
-function closeAsesorDetail(){ document.getElementById('te-asesor-modal')?.classList.remove('open'); }
-document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeAsesorDetail(); });
+// Semantica, foco y Escape: js/dashboard-dialogs.js (adaptador conservado).
+const dlgAsesorTE = OXXO_DIALOGS.register({ overlay:'te-asesor-modal', title:'te-modal-title', close:'.te-modal-close' });
+function closeAsesorDetail(){ dlgAsesorTE.close(); }
 
 function openAsesorDetail(asesor){
   const rows = filteredData().filter(r => (r[C.asesor] || 'Sin Asignar') === asesor);
@@ -714,7 +717,7 @@ function openAsesorDetail(asesor){
         </div>
       </div>
     </div>`;
-  document.getElementById('te-asesor-modal').classList.add('open');
+  dlgAsesorTE.open();
 }
 
 function updateKpiActive(){

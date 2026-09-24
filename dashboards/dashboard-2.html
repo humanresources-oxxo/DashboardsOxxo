@@ -534,6 +534,7 @@
   <link rel="stylesheet" href="../css/rh-dashboard-refresh.css?v=6e49c7e3" />
   <link rel="stylesheet" href="../css/rh-table-tools.css?v=6e49c7e3" />
   <link rel="stylesheet" href="../css/rh-filter-summary.css?v=6e49c7e3" />
+  <link rel="stylesheet" href="../css/dashboard-dialogs.css?v=6e49c7e3" />
   <style id="d2-concept-macos">
     /* Prototipo: misma familia visual del Dashboard 1, con prioridad a la
        lectura de bajas y no a superficies rojas pesadas. */
@@ -645,11 +646,11 @@
     <div class="bajas-hero-context" id="bajas-hero-context" aria-live="polite"></div>
   </section>
   <section class="bajas-filters" id="filter-bar">
-      <div class="filter-box"><label class="filter-title">Asesor</label><div class="spinner" style="width:20px;height:20px;margin:4px 0"></div></div>
-      <div class="filter-box"><label class="filter-title">Mes</label></div>
-      <div class="filter-box"><label class="filter-title">Temporalidad</label></div>
-      <div class="filter-box"><label class="filter-title">Rot. Temp.</label></div>
-      <div class="filter-box"><label class="filter-title">Puesto</label></div>
+      <div class="filter-box"><span class="filter-title">Asesor</span><div class="spinner" style="width:20px;height:20px;margin:4px 0"></div></div>
+      <div class="filter-box"><span class="filter-title">Mes</span></div>
+      <div class="filter-box"><span class="filter-title">Temporalidad</span></div>
+      <div class="filter-box"><span class="filter-title">Rot. Temp.</span></div>
+      <div class="filter-box"><span class="filter-title">Puesto</span></div>
   </section>
 
   <section class="bajas-kpis" id="kpi-section">
@@ -716,11 +717,11 @@
   </section>
 
   <!-- Modal: grafica de pastel de motivos -->
-  <div class="baja-overlay" id="motivos-modal" onclick="if(event.target===this)closeMotivosModal()">
-    <div class="baja-modal" style="width:min(560px,100%)">
-      <button class="baja-close" onclick="closeMotivosModal()">✕</button>
+  <div class="baja-overlay" id="motivos-modal" aria-hidden="true">
+    <div class="baja-modal" style="width:min(560px,100%)" role="dialog" aria-modal="true" aria-labelledby="motivos-title" tabindex="-1">
+      <button class="baja-close" type="button" aria-label="Cerrar">✕</button>
       <div class="baja-eyebrow">Detalle completo de bajas · filtros activos</div>
-      <div class="baja-title">Motivos de baja</div>
+      <div class="baja-title" id="motivos-title">Motivos de baja</div>
       <div style="position:relative;height:320px">
         <canvas id="chart-motivos-pastel"></canvas>
       </div>
@@ -744,9 +745,9 @@
 </main>
 
 <!-- Modal detalle de baja -->
-<div class="baja-overlay" id="baja-modal" onclick="if(event.target===this)closeBajaModal()">
-  <div class="baja-modal">
-    <button class="baja-close" onclick="closeBajaModal()" aria-label="Cerrar">✕</button>
+<div class="baja-overlay" id="baja-modal" aria-hidden="true">
+  <div class="baja-modal" role="dialog" aria-modal="true" aria-labelledby="baja-title" tabindex="-1">
+    <button class="baja-close" type="button" aria-label="Cerrar">✕</button>
     <div class="baja-eyebrow">Detalle de la baja</div>
     <h3 class="baja-title" id="baja-title">—</h3>
     <div id="baja-body"></div>
@@ -755,6 +756,7 @@
 
   <script src="../js/config.js?v=6e49c7e3"></script>
 <script src="../js/core.js?v=6e49c7e3"></script>
+<script src="../js/dashboard-dialogs.js?v=6e49c7e3"></script>
 <script>
 const TAB = OXXO.SHEETS_CONFIG.TABS.d2;
 
@@ -996,7 +998,7 @@ function setFilterBar(data, cols){
 
   const asesorBox = `
     <div class="filter-box">
-      <label class="filter-title">Asesor</label>
+      <label for="asesor-button" class="filter-title">Asesor</label>
       <div class="smart-filter" id="asesor-filter">
         <button class="smart-filter__button" type="button" id="asesor-button">
           <span class="smart-filter__label" id="asesor-label">Todos los asesores</span>
@@ -1011,7 +1013,7 @@ function setFilterBar(data, cols){
 
   const tiendaBox = `
     <div class="filter-box">
-      <label class="filter-title">Tienda</label>
+      <label for="tienda-button" class="filter-title">Tienda</label>
       <div class="smart-filter" id="tienda-filter">
         <button class="smart-filter__button" type="button" id="tienda-button">
           <span class="smart-filter__button-main">
@@ -1036,13 +1038,13 @@ function setFilterBar(data, cols){
     }).join('');
     return `
       <div class="filter-box">
-        <label class="filter-title">${title}</label>
-        <select class="filter-select" data-filter="${key}">${options}</select>
+        <label class="filter-title" for="filter-${key}">${title}</label>
+        <select class="filter-select" id="filter-${key}" data-filter="${key}">${options}</select>
       </div>`;
   }).join('');
 
   document.getElementById('filter-bar').innerHTML = asesorBox + tiendaBox + selects +
-    `<div class="filter-box filter-box--actions"><label class="filter-title">Acciones</label><div class="filter-actions filter-actions--contact"><button class="reset-filters filter-action-icon" id="reset-filters" type="button" title="Limpiar filtros" aria-label="Limpiar filtros"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 1-2.34-5.66"/><path d="M20 4v7h-7"/></svg></button><button class="reset-filters download-filter filter-action-icon" type="button" id="download-base" title="Descargar base" aria-label="Descargar base"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg></button><button class="reset-filters download-filter filter-action-icon" type="button" id="download-contact" title="Descargar base con contacto" aria-label="Descargar base con contacto protegida"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 5 6v5c0 5 3 8.5 7 10 4-1.5 7-5 7-10V6l-7-3Z"/><path d="M9 12h6"/><path d="M12 9v6"/></svg></button></div></div>`;
+    `<div class="filter-box filter-box--actions" role="group" aria-labelledby="filtros-acciones-label"><label class="filter-title" id="filtros-acciones-label">Acciones</label><div class="filter-actions filter-actions--contact"><button class="reset-filters filter-action-icon" id="reset-filters" type="button" title="Limpiar filtros" aria-label="Limpiar filtros"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 1-2.34-5.66"/><path d="M20 4v7h-7"/></svg></button><button class="reset-filters download-filter filter-action-icon" type="button" id="download-base" title="Descargar base" aria-label="Descargar base"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg></button><button class="reset-filters download-filter filter-action-icon" type="button" id="download-contact" title="Descargar base con contacto" aria-label="Descargar base con contacto protegida"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 5 6v5c0 5 3 8.5 7 10 4-1.5 7-5 7-10V6l-7-3Z"/><path d="M9 12h6"/><path d="M12 9v6"/></svg></button></div></div>`;
 
   document.querySelectorAll('.filter-select').forEach(select => {
     select.addEventListener('change', () => {
@@ -1565,16 +1567,16 @@ function renderDetailTable(){
       renderDetailTable();
     });
   });
-  document.querySelectorAll('#tbl-detalle-bajas tbody tr.det-row').forEach(tr=>{
-    tr.addEventListener('click', ()=> openBajaModal(Number(tr.dataset.idx)));
-  });
+  OXXO_DIALOGS.bindRows(document.querySelectorAll('#tbl-detalle-bajas tbody tr.det-row'), 'Ver detalle de la baja', tr => openBajaModal(Number(tr.dataset.idx)));
 }
 
 // ── MODAL: GRAFICA DE PASTEL DE MOTIVOS ───────────────────
 let chartMotivosPastel = null;
 const PASTEL_COLORS = ['#D91F2D','#F07B22','#F6B73C','#19AD63','#1F6FD9','#7B1FA2','#00838F','#8A7A72','#C0181F','#3F51B5'];
-function closeMotivosModal(){ document.getElementById('motivos-modal')?.classList.remove('open'); }
-document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeMotivosModal(); });
+// Semantica, foco y Escape: js/dashboard-dialogs.js. Las funciones open/close
+// se conservan como adaptadores.
+const dlgMotivos = OXXO_DIALOGS.register({ overlay:'motivos-modal', title:'motivos-title', close:'.baja-close' });
+function closeMotivosModal(){ dlgMotivos.close(); }
 function openMotivosModal(){
   const cols = DET_COLS;
   const counts = new Map();
@@ -1585,7 +1587,7 @@ function openMotivosModal(){
   const entries = [...counts.entries()].sort((a,b)=>b[1]-a[1]);
   const canvas = document.getElementById('chart-motivos-pastel');
   const emptyBox = document.getElementById('motivos-pastel-empty');
-  document.getElementById('motivos-modal').classList.add('open');
+  dlgMotivos.open();
   if(!entries.length){
     canvas.style.display = 'none'; emptyBox.style.display = 'block';
     if(chartMotivosPastel){ chartMotivosPastel.destroy(); chartMotivosPastel = null; }
@@ -1626,7 +1628,8 @@ function openMotivosModal(){
 }
 
 // ── MODAL DETALLE DE BAJA ─────────────────────────────────
-function closeBajaModal(){ document.getElementById('baja-modal')?.classList.remove('open'); }
+const dlgBaja = OXXO_DIALOGS.register({ overlay:'baja-modal', title:'baja-title', close:'.baja-close' });
+function closeBajaModal(){ dlgBaja.close(); }
 function openBajaModal(idx){
   const r = DET_DATA.find(x=>x.__detIdx===idx);
   if(!r) return;
@@ -1655,9 +1658,8 @@ function openBajaModal(idx){
       ${kv('Fecha', val(r,cols,'fecha'))}
       ${kv('No. Personal', val(r,cols,'personal'))}
     </tbody></table>`;
-  document.getElementById('baja-modal').classList.add('open');
+  dlgBaja.open();
 }
-document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeBajaModal(); });
 const AGE_GROUPS = [
   {label:'18-25', min:18, max:25},
   {label:'26-35', min:26, max:35},

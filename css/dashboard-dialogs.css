@@ -1,0 +1,31 @@
+/* ==========================================================
+   OXXO — Estilos del controlador de dialogos (js/dashboard-dialogs.js)
+
+   Consumido por los tableros con modal de detalle (D1, D2, D3, D4, D7,
+   D8, D9, D12, D13). Se carga AL FINAL de los stylesheets de cada pagina:
+   solo agrega reglas de foco, scroll y ajuste movil, sin reemplazar el
+   diseno propio de cada modal.
+   ========================================================== */
+html.oxxo-dialog-open,
+html.oxxo-dialog-open body { overflow: hidden; }
+
+/* Cada modal ya hace scroll dentro de su fondo; solo se evita que el gesto
+   se propague a la pagina. */
+.oxxo-dialog-overlay { overscroll-behavior: contain; }
+
+/* El foco entra al contenedor por programa; el anillo se reserva a los
+   controles internos. */
+.oxxo-dialog:focus { outline: none; }
+.oxxo-dialog :focus-visible { outline: 2px solid #f71926; outline-offset: 2px; }
+
+/* Boton nativo dentro de la primera celda de una fila accionable: se ve como
+   el texto de la celda. */
+.row-action { display: inline; margin: 0; padding: 0; border: 0; background: none; font: inherit; color: inherit; text-align: inherit; cursor: pointer; }
+.row-action:focus-visible { outline: 2px solid #f71926; outline-offset: 2px; border-radius: 4px; }
+tr[data-row-action]:focus-within { background: rgba(247, 25, 38, .06); }
+
+@media (max-width: 760px) {
+  .oxxo-dialog-overlay { padding: 8px; }
+  .oxxo-dialog { width: 100% !important; }
+  .oxxo-dialog button[aria-label="Cerrar"] { min-width: 44px; min-height: 44px; }
+}

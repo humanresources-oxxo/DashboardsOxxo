@@ -24,11 +24,14 @@ const context = vm.createContext({
   window: {},
   document: {
     addEventListener() {},
+    querySelectorAll() { return []; },
     getElementById(id) {
       assert(elements[id], `Elemento no simulado: ${id}`);
       return elements[id];
     },
   },
+  // Controlador compartido (js/dashboard-dialogs.js): aqui solo importa que la pagina lo invoque.
+  OXXO_DIALOGS: { register() { return { open() {}, close() {} }; }, bindRows() {} },
   OXXO: {
     SHEETS_CONFIG: { TABS: { d8: 'test' } },
     escHtml(value) { return String(value); },

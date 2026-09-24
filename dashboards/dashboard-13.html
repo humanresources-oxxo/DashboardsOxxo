@@ -221,6 +221,7 @@
   <link rel="stylesheet" href="../css/rh-dashboard-refresh.css?v=6e49c7e3" />
   <link rel="stylesheet" href="../css/rh-table-tools.css?v=6e49c7e3" />
   <link rel="stylesheet" href="../css/rh-filter-summary.css?v=6e49c7e3" />
+  <link rel="stylesheet" href="../css/dashboard-dialogs.css?v=6e49c7e3" />
   <script defer src="../js/rh-dashboard-enhancements.js?v=6e49c7e3"></script>
   <script defer src="../js/rh-table-tools.js?v=6e49c7e3"></script>
   <script defer src="../js/rh-filter-summary.js?v=6e49c7e3"></script>
@@ -258,16 +259,16 @@
       <span id="hero-download" style="display:none"></span>
     </div>
     <div class="vac-filters">
-      <div class="vac-fbox"><label>Asesor</label><div id="filtro-asesor"></div></div>
+      <div class="vac-fbox"><label for="filtro-asesor-button">Asesor</label><div id="filtro-asesor"></div></div>
       <div class="vac-fbox">
-        <label>Clasificación</label>
+        <label for="filtro-clas">Clasificación</label>
         <select class="filtro-select" id="filtro-clas" onchange="applyFilters()"><option value="">Todas</option></select>
       </div>
       <div class="vac-fbox">
-        <label>Puesto</label>
+        <label for="filtro-puesto">Puesto</label>
         <select class="filtro-select" id="filtro-puesto" onchange="applyFilters()"><option value="">Todos</option></select>
       </div>
-      <div class="vac-fbox"><label>&nbsp;</label><button class="filtro-btn" onclick="limpiarFiltros()">Limpiar filtros</button></div>
+      <div class="vac-fbox"><label aria-hidden="true">&nbsp;</label><button type="button" class="filtro-btn" onclick="limpiarFiltros()">Limpiar filtros</button></div>
     </div>
   </div>
 
@@ -400,11 +401,11 @@
 </div>
 
 <!-- Modal ficha del colaborador -->
-<div class="am-overlay" id="colab-modal" onclick="if(event.target===this)closeColabModal()">
-  <div class="am-dialog">
+<div class="am-overlay" id="colab-modal" aria-hidden="true">
+  <div class="am-dialog" role="dialog" aria-modal="true" aria-labelledby="cm-title" tabindex="-1">
     <div class="am-head">
       <h3 id="cm-title">Colaborador<small class="am-head__sub"></small></h3>
-      <button class="am-close" onclick="closeColabModal()" aria-label="Cerrar">&times;</button>
+      <button class="am-close" type="button" aria-label="Cerrar">&times;</button>
     </div>
     <div class="am-body">
       <div class="am-kpis" id="cm-kpis"></div>
@@ -422,6 +423,7 @@
 
   <script src="../js/config.js?v=6e49c7e3"></script>
 <script src="../js/core.js?v=6e49c7e3"></script>
+<script src="../js/dashboard-dialogs.js?v=6e49c7e3"></script>
 <script>
 const TAB = OXXO.SHEETS_CONFIG.TABS.a13;
 
@@ -776,7 +778,7 @@ function renderAsesores(data){
     ? '<tr><td colspan="7"><div class="state-box">Sin datos</div></td></tr>'
     : filas.map(x => {
         const sel = x.asesor === DETALLE_ASESOR ? ' is-selected' : '';
-        return `<tr class="${sel.trim()}" data-asesor="${OXXO.escHtml(x.asesor)}" onclick="selectAsesorDetalle('${escapeAttr(x.asesor)}')" title="Clic para filtrar el Detalle por Folio">
+        return `<tr class="${sel.trim()}" data-asesor="${OXXO.escHtml(x.asesor)}" title="Clic para filtrar el Detalle por Folio">
           <td>${OXXO.escHtml(OXXO.truncate(x.asesor,28))}</td>
           <td class="center">${x.folios}</td>
           <td class="center"><b>${x.dias.toLocaleString('es-MX')}</b></td>
@@ -786,6 +788,8 @@ function renderAsesores(data){
           <td class="center">${x.porColab}</td>
         </tr>`;
       }).join('');
+  OXXO_DIALOGS.bindRows(document.querySelectorAll('#tabla-asesor tbody tr[data-asesor]'), 'Filtrar el detalle por asesor',
+    tr => selectAsesorDetalle(tr.dataset.asesor), { pressed: tr => tr.dataset.asesor === DETALLE_ASESOR });
 }
 
 function renderDetalle(data){
@@ -793,7 +797,7 @@ function renderDetalle(data){
     ? data.filter(r => (val(r, C.asesor) || 'Sin Asesor Asignado') === DETALLE_ASESOR)
     : data;
   DETALLE_FILAS = filas;
-  const cuerpo = filas.map((r,i) => `<tr onclick="openColabModal(${i})" title="Ver ficha del colaborador">
+  const cuerpo = filas.map((r,i) => `<tr data-idx="${i}" title="Ver ficha del colaborador">
       <td>${OXXO.escHtml(val(r, C.folio) || '—')}</td>
       <td>${OXXO.escHtml(OXXO.truncate(val(r, C.nombre) || '—', 26))}</td>
       <td style="font-size:10px">${OXXO.escHtml(OXXO.truncate(val(r, C.puesto) || '—', 18))}</td>
@@ -811,6 +815,9 @@ function renderDetalle(data){
       <th>Clasif.</th><th>Tipo</th><th class="center">Inicio</th><th class="center">Término</th><th class="center">Días</th>
     </tr></thead>
     <tbody>${cuerpo || '<tr><td colspan="10"><div class="state-box">Sin datos</div></td></tr>'}</tbody>`;
+  // El boton va en la celda del Colaborador (2.ª columna).
+  OXXO_DIALOGS.bindRows(document.querySelectorAll('#tabla-detalle tbody tr[data-idx]'), 'Ver ficha del colaborador',
+    tr => openColabModal(Number(tr.dataset.idx)), { cell: 1 });
   const dias = filas.reduce((s,r) => s + diasHastaCorte(r), 0);
   const etiqueta = DETALLE_ASESOR
     ? ` · ${OXXO.truncate(DETALLE_ASESOR, 22)}`
@@ -838,7 +845,7 @@ function renderSeguimiento(data){
   const cuerpo=SEGUIMIENTO_FILAS.map((r,i)=>{
     const sem=semaforoTermino(val(r,C.fFin));conteo[sem.grupo]++;
     const edad=OXXO.metricsNum(r[C.edad]);
-    return `<tr onclick="openSeguimientoModal(${i})" title="Ver ficha del colaborador">
+    return `<tr data-idx="${i}" title="Ver ficha del colaborador">
       <td>${OXXO.escHtml(OXXO.truncate(val(r,C.asesor)||'—',24))}</td>
       <td><span class="seg-suc"><b>${OXXO.escHtml(OXXO.truncate(val(r,C.tienda)||'—',24))}</b>${val(r,C.cr)?`<small>CR ${OXXO.escHtml(val(r,C.cr))}</small>`:''}</span></td>
       <td><span class="seg-persona"><b>${OXXO.escHtml(val(r,C.nombre)||'—')}</b>${val(r,C.noEmp)?`<small>N.º ${OXXO.escHtml(val(r,C.noEmp))}</small>`:''}</span></td>
@@ -849,6 +856,9 @@ function renderSeguimiento(data){
     </tr>`;
   }).join('');
   document.getElementById('tabla-seguimiento').querySelector('tbody').innerHTML=cuerpo||'<tr><td colspan="7"><div class="state-box">Sin datos</div></td></tr>';
+  // El boton va en la celda del Colaborador (3.ª columna).
+  OXXO_DIALOGS.bindRows(document.querySelectorAll('#tabla-seguimiento tbody tr[data-idx]'), 'Ver ficha del colaborador',
+    tr => openSeguimientoModal(Number(tr.dataset.idx)), { cell: 2 });
   document.getElementById('seguimiento-resumen').innerHTML=`
     <span class="sem-chip is-pronto"><b>${conteo.pronto}</b><span>Por vencer</span></span>
     <span class="sem-chip is-ok"><b>${conteo.ok}</b><span>Vigentes</span></span>
@@ -1086,6 +1096,7 @@ function clearAsesorDetalle(){
 function syncAsesorSelection(){
   document.querySelectorAll('#tabla-asesor tbody tr[data-asesor]').forEach(tr => {
     tr.classList.toggle('is-selected', tr.dataset.asesor === DETALLE_ASESOR);
+    tr.querySelector('.row-action')?.setAttribute('aria-pressed', String(tr.dataset.asesor === DETALLE_ASESOR));
   });
 }
 
@@ -1151,10 +1162,11 @@ function openColabRecord(r){
       </div>`).join('')}
     </div>` : '';
 
-  document.getElementById('colab-modal').classList.add('open');
+  dlgColab.open();
 }
-function closeColabModal(){ document.getElementById('colab-modal').classList.remove('open'); }
-document.addEventListener('keydown', e => { if(e.key === 'Escape') closeColabModal(); });
+// Semantica, foco y Escape: js/dashboard-dialogs.js (adaptador conservado).
+const dlgColab = OXXO_DIALOGS.register({ overlay:'colab-modal', title:'cm-title', close:'.am-close' });
+function closeColabModal(){ dlgColab.close(); }
 
 function applyFilters(){ DETALLE_ASESOR = null; CELDA_CALOR = null; renderAll(); }
 

@@ -108,5 +108,30 @@ if (!configuredVersion || configuredVersion !== sourceVersion) {
   fail(path.join(root, 'js', 'config.js'), `versión esperada (${configuredVersion || 'vacía'}) distinta de Apps Script (${sourceVersion || 'vacía'})`);
 }
 
+// Assets compartidos de esta fase: cada pagina que los necesita debe cargarlos.
+for (const shared of ['js/dashboard-dialogs.js', 'css/dashboard-dialogs.css', 'js/home.js', 'css/home.css']) {
+  if (!fs.existsSync(path.join(root, shared))) fail(path.join(root, shared), 'asset compartido inexistente');
+}
+const paginas = Object.fromEntries(htmlFiles.map(file => [path.relative(root, file).replace(/\\/g, '/'), fs.readFileSync(file, 'utf8')]));
+for (const n of [1, 2, 3, 4, 7, 8, 9, 12, 13]) {
+  const html = paginas[`dashboards/dashboard-${n}.html`];
+  if (!/js\/dashboard-dialogs\.js/.test(html) || !/css\/dashboard-dialogs\.css/.test(html)) fail(path.join(root, 'dashboards', `dashboard-${n}.html`), 'debe cargar el controlador de dialogos y su css');
+}
+if (!/css\/home\.css/.test(paginas['index.html']) || !/js\/home\.js/.test(paginas['index.html'])) fail(path.join(root, 'index.html'), 'la portada debe cargar home.css y home.js');
+// Orden de carga: config -> core -> modulos de la pagina.
+for (const [rel, html] of Object.entries(paginas)) {
+  const config = html.indexOf('js/config.js');
+  const core = html.indexOf('js/core.js');
+  if (core !== -1 && (config === -1 || config > core)) fail(path.join(root, rel), 'js/config.js debe cargarse antes que js/core.js');
+}
+
+// Apps Script: la lista de escritura conserva todas las pestanas configuradas
+// (Promociones es de edicion directa y NO se publica desde el panel).
+const permitidas = new Set([...appScriptSource.match(/const ALLOWED_SHEETS = \[([\s\S]*?)\];/)[1].matchAll(/'([^']+)'/g)].map(m => m[1]));
+const tabsConfig = Object.values(Function('window', configSource + '; return window.OXXO_CONFIG.TABS;')({}));
+const faltantes = tabsConfig.filter(tab => tab !== 'Promociones' && !permitidas.has(tab));
+if (faltantes.length) fail(path.join(root, 'apps-script', 'admin-upload.gs'), `ALLOWED_SHEETS no incluye: ${faltantes.join(', ')}`);
+if (permitidas.has('Promociones')) fail(path.join(root, 'apps-script', 'admin-upload.gs'), 'Promociones debe seguir siendo de solo lectura desde el panel');
+
 assert.deepStrictEqual(failures, [], failures.join('\n'));
 console.log(`smoke general: ${htmlFiles.length} páginas y ${checkedAssets.size} recursos locales correctos`);

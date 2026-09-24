@@ -285,6 +285,8 @@
     border-radius:22px; box-shadow:0 30px 80px rgba(30,16,12,.35);
     overflow:hidden; animation:amIn .22s ease;
   }
+  /* Elevacion al pasar el raton / enfocar: antes iba en onmouseover/onmouseout. */
+  .plaza-gauge:hover,.plaza-gauge:focus-within{ transform:translateY(-3px); box-shadow:0 8px 20px rgba(59,25,24,.10); }
   @keyframes amIn{ from{ transform:translateY(14px); opacity:0 } to{ transform:none; opacity:1 } }
   .am-head{
     display:flex; align-items:center; justify-content:space-between; gap:16px;
@@ -570,6 +572,7 @@
   <link rel="stylesheet" href="../css/rh-dashboard-refresh.css?v=6e49c7e3" />
   <link rel="stylesheet" href="../css/rh-table-tools.css?v=6e49c7e3" />
   <link rel="stylesheet" href="../css/rh-filter-summary.css?v=6e49c7e3" />
+  <link rel="stylesheet" href="../css/dashboard-dialogs.css?v=6e49c7e3" />
   <script defer src="../js/rh-dashboard-enhancements.js?v=6e49c7e3"></script>
   <script defer src="../js/rh-table-tools.js?v=6e49c7e3"></script>
   <script defer src="../js/rh-filter-summary.js?v=6e49c7e3"></script>
@@ -609,7 +612,7 @@
     </div>
     <div class="vac-filters">
       <div class="vac-fbox">
-        <label>Asesor</label>
+        <label for="asesor-button">Asesor</label>
         <div class="smart-filter" id="asesor-filter">
           <button class="smart-filter__button" type="button" id="asesor-button">
             <span class="smart-filter__label" id="asesor-label">Todos los asesores</span>
@@ -623,7 +626,7 @@
         </div>
       </div>
       <div class="vac-fbox">
-        <label><svg class="icon-inline" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.59 13.41L13.42 20.58a2 2 0 0 1-2.83 0L2.59 12.58a2 2 0 0 1 0-2.83L9.76 2.58A2 2 0 0 1 11.17 2H18a2 2 0 0 1 2 2v6.83a2 2 0 0 1-.59 1.41z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>Estatus</label>
+        <label for="filtro-estatus"><svg class="icon-inline" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.59 13.41L13.42 20.58a2 2 0 0 1-2.83 0L2.59 12.58a2 2 0 0 1 0-2.83L9.76 2.58A2 2 0 0 1 11.17 2H18a2 2 0 0 1 2 2v6.83a2 2 0 0 1-.59 1.41z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>Estatus</label>
         <select class="filtro-select" id="filtro-estatus" onchange="applyFilters()">
           <option value="">Todos los estatus</option>
           <option value="completo">Equipo Completo</option>
@@ -631,10 +634,10 @@
           <option value="critica">Tienda Crítica</option>
         </select>
       </div>
-      <div class="vac-fbox vac-fbox--actions">
-        <label>Acciones</label>
+      <div class="vac-fbox vac-fbox--actions" role="group" aria-labelledby="filtros-acciones-label">
+        <label id="filtros-acciones-label">Acciones</label>
         <div class="vac-actions">
-          <button class="filtro-btn" onclick="limpiarFiltros()">✕ Limpiar filtros</button>
+          <button type="button" class="filtro-btn" onclick="limpiarFiltros()">✕ Limpiar filtros</button>
           <button class="filtro-btn download-filter" type="button" onclick="OXXO.handleDownloadButton(this, () => OXXO.downloadSheetTab(TAB, 'dashboard-3-estructura.csv'))">Descargar base</button>
         </div>
       </div>
@@ -689,7 +692,7 @@
     </div>
     <div class="detalle-search">
       <span class="detalle-search__icon"><svg class="icon-inline" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></span>
-      <input type="text" id="detalle-buscar" placeholder="Buscar tienda…" oninput="onDetalleSearch(this.value)" autocomplete="off">
+      <input type="text" id="detalle-buscar" placeholder="Buscar tienda…" aria-label="Buscar tienda en el detalle" oninput="onDetalleSearch(this.value)" autocomplete="off">
     </div>
     <div id="tabla-detalle">
       <div class="state-box"><div class="spinner"></div></div>
@@ -719,14 +722,14 @@
 </div>
 
 <!-- MODAL DETALLE POR ASESOR -->
-<div class="am-overlay" id="asesor-modal" onclick="if(event.target===this)closeAsesorModal()">
-  <div class="am-dialog" role="dialog" aria-modal="true">
+<div class="am-overlay" id="asesor-modal" aria-hidden="true">
+  <div class="am-dialog" role="dialog" aria-modal="true" aria-labelledby="asesor-modal-title" tabindex="-1">
     <div class="am-head">
       <div class="am-head__title">
         <span class="am-head__eyebrow" id="asesor-modal-eyebrow">Detalle del Asesor</span>
         <h2 id="asesor-modal-title">—</h2>
       </div>
-      <button class="am-close" onclick="closeAsesorModal()" aria-label="Cerrar">✕</button>
+      <button class="am-close" type="button" aria-label="Cerrar">✕</button>
     </div>
     <div class="am-body" id="asesor-modal-body"></div>
   </div>
@@ -734,6 +737,7 @@
 
   <script src="../js/config.js?v=6e49c7e3"></script>
 <script src="../js/core.js?v=6e49c7e3"></script>
+<script src="../js/dashboard-dialogs.js?v=6e49c7e3"></script>
 <script src="../js/home-dates.js?v=6e49c7e3"></script>
 <script>
 const TAB = OXXO.SHEETS_CONFIG.TABS.d3;
@@ -1172,7 +1176,7 @@ function renderPlazaGauges(){
         const m1x=(cx+(r-sw/2-1)*Math.cos(ma)).toFixed(1), m1y=(cy-(r-sw/2-1)*Math.sin(ma)).toFixed(1);
         const m2x=(cx+(r+sw/2+3)*Math.cos(ma)).toFixed(1), m2y=(cy-(r+sw/2+3)*Math.sin(ma)).toFixed(1);
         const gid='pz'+i;
-        return `<div style="flex:0 1 30%;min-width:158px;max-width:240px;display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 8px 12px;border-radius:16px;background:rgba(0,0,0,.02);transition:transform .16s ease,box-shadow .16s ease" title="${escHtml(p.plaza)}: ${p.aprov.toFixed(2)}%" onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 8px 20px rgba(59,25,24,.10)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+        return `<div class="plaza-gauge" style="flex:0 1 30%;min-width:158px;max-width:240px;display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 8px 12px;border-radius:16px;background:rgba(0,0,0,.02);transition:transform .16s ease,box-shadow .16s ease" title="${escHtml(p.plaza)}: ${p.aprov.toFixed(2)}%">
           <svg viewBox="0 0 200 128" style="width:100%;max-width:188px;overflow:visible">
             <defs><linearGradient id="${gid}" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="${c.main}"/><stop offset="1" stop-color="${c.dark}"/></linearGradient></defs>
             <path d="M${cx-r},${cy} A${r},${r} 0 0 1 ${cx+r},${cy}" fill="none" stroke="#F2E6DE" stroke-width="${sw}" stroke-linecap="round"/>
@@ -1426,9 +1430,7 @@ function renderTablaAT(){
     });
   });
 
-  document.querySelectorAll('#tbl-at tbody tr.at-row').forEach(tr=>{
-    tr.addEventListener('click', ()=> openAsesorModal(tr.dataset.at));
-  });
+  OXXO_DIALOGS.bindRows(document.querySelectorAll('#tbl-at tbody tr.at-row'), 'Ver detalle del asesor', tr => openAsesorModal(tr.dataset.at));
 }
 
 // ── MODAL DETALLE POR ASESOR ──────────────────────────────
@@ -1503,12 +1505,14 @@ function amWireSort(){
   });
 }
 let MODAL_CHARTS = [];
-function closeAsesorModal(){
+// Semantica, foco y Escape: js/dashboard-dialogs.js. closeAsesorModal se
+// conserva como adaptador; las graficas se destruyen al cerrar por cualquier via.
+function destroyModalCharts(){
   MODAL_CHARTS.forEach(c=>{ try{c.destroy();}catch(e){} });
   MODAL_CHARTS = [];
-  const ov = document.getElementById('asesor-modal');
-  if(ov) ov.classList.remove('open');
 }
+const dlgAsesor = OXXO_DIALOGS.register({ overlay:'asesor-modal', title:'asesor-modal-title', close:'.am-close', onClose: destroyModalCharts });
+function closeAsesorModal(){ destroyModalCharts(); dlgAsesor.close(); }
 function openAsesorModal(asesorName){
   const at = AT_DATA.find(a=>a.asesor===asesorName);
   if(!at) return;
@@ -1553,13 +1557,13 @@ function openAsesorModal(asesorName){
     <div class="am-table-title">Detalle por Tienda (<span class="am-filter-count">${tiendas.length}</span>)</div>
     <div class="detalle-search" style="max-width:300px;margin:0 0 12px">
       <span class="detalle-search__icon">🔍</span>
-      <input type="text" placeholder="Buscar tienda…" oninput="filterModalRows(this)" autocomplete="off">
+      <input type="text" placeholder="Buscar tienda…" aria-label="Buscar tienda" oninput="filterModalRows(this)" autocomplete="off">
     </div>
     <div class="tbl-wrap" style="max-height:300px;overflow:auto"><table class="tbl" id="am-det-table">${amTableHTML()}</table></div>
     <div class="am-empty-msg" style="display:none;text-align:center;color:var(--color-gray);padding:14px">Sin tiendas que coincidan con la búsqueda.</div>
     </div>`;
 
-  ov.classList.add('open');
+  dlgAsesor.open();
   amWireSort();
 
   // Gráficas
@@ -1801,9 +1805,7 @@ function renderDetalle(asesorSel, estatusSel){
       renderDetalle();
     });
   });
-  document.querySelectorAll('#tbl-detalle tbody tr.det-row').forEach(tr=>{
-    tr.addEventListener('click', ()=> openTiendaModal(tr.dataset.tienda));
-  });
+  OXXO_DIALOGS.bindRows(document.querySelectorAll('#tbl-detalle tbody tr.det-row'), 'Ver detalle de la tienda', tr => openTiendaModal(tr.dataset.tienda));
 }
 
 // ── MODAL DETALLE POR TIENDA ──────────────────────────────
@@ -1894,7 +1896,7 @@ function openTiendaModal(tiendaName){
       </tbody>
     </table></div>`;
 
-  ov.classList.add('open');
+  dlgAsesor.open();
 
   if(window.Chart){
     if(totalVac>0){
@@ -1935,7 +1937,6 @@ function limpiarFiltros(){
   applyFilters();
 }
 
-document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeAsesorModal(); });
 document.addEventListener('DOMContentLoaded', initDashboard);
 
 window.buildExcelSheets = async function(){

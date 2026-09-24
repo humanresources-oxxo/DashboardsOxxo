@@ -1143,6 +1143,7 @@
   <link rel="stylesheet" href="../css/rh-dashboard-refresh.css?v=6e49c7e3" />
   <link rel="stylesheet" href="../css/rh-table-tools.css?v=6e49c7e3" />
   <link rel="stylesheet" href="../css/rh-filter-summary.css?v=6e49c7e3" />
+  <link rel="stylesheet" href="../css/dashboard-dialogs.css?v=6e49c7e3" />
   <style id="d1-liquid-glass-final">
     /* Última capa intencional: estos estilos van después de todos los skins
        para evitar que una hoja compartida opaque el encabezado. */
@@ -1308,7 +1309,7 @@
   <section class="filter-panel" aria-label="Filtros del dashboard">
     <div class="vac-filters">
       <div class="vac-fbox">
-        <label>Asesor</label>
+        <label for="asesor-button">Asesor</label>
         <div class="smart-filter" id="asesor-filter">
           <button class="smart-filter__button" type="button" id="asesor-button">
             <span class="smart-filter__label" id="asesor-label">Todos los asesores</span>
@@ -1322,7 +1323,7 @@
         </div>
       </div>
       <div class="vac-fbox">
-        <label>Puesto</label>
+        <label for="puesto-button">Puesto</label>
         <div class="smart-filter" id="puesto-filter">
           <button class="smart-filter__button" type="button" id="puesto-button">
             <span class="smart-filter__label" id="puesto-label">Todos los puestos</span>
@@ -1334,7 +1335,7 @@
         </div>
       </div>
       <div class="vac-fbox">
-        <label>Antigüedad</label>
+        <label for="dias-button">Antigüedad</label>
         <div class="smart-filter" id="dias-filter">
           <button class="smart-filter__button" type="button" id="dias-button">
             <span class="smart-filter__label" id="dias-label">Todas las antigüedades</span>
@@ -1346,13 +1347,13 @@
         </div>
       </div>
       <div class="vac-fbox">
-        <label>Mes</label>
+        <label for="filtro-mes">Mes</label>
         <select class="filtro-select" id="filtro-mes">
           <option value="">Todos los meses</option>
         </select>
       </div>
       <div class="vac-fbox">
-        <label>Tienda</label>
+        <label for="tienda-button">Tienda</label>
         <div class="smart-filter" id="tienda-filter">
           <button class="smart-filter__button" type="button" id="tienda-button">
             <span class="smart-filter__label" id="tienda-label">Todas las tiendas</span>
@@ -1365,9 +1366,9 @@
           <input type="hidden" id="filtro-tienda" value="">
         </div>
       </div>
-      <div class="vac-fbox">
-        <label>Filtros y acciones</label>
-        <button class="filtro-btn" onclick="limpiarFiltros()">✕ Limpiar</button>
+      <div class="vac-fbox" role="group" aria-labelledby="filtros-acciones-label">
+        <label id="filtros-acciones-label">Filtros y acciones</label>
+        <button type="button" class="filtro-btn" onclick="limpiarFiltros()">✕ Limpiar</button>
         <button class="filtro-btn" type="button" onclick="OXXO.handleDownloadButton(this, () => OXXO.downloadSheetTab(TAB, 'dashboard-1-vacantes.csv'))">Descargar base</button>
       </div>
     </div>
@@ -1429,14 +1430,14 @@
 
 </div>
 
-<div class="am-overlay" id="asesor-dias-modal" onclick="if(event.target===this)closeAsesorDiasModal()">
-  <div class="am-dialog">
+<div class="am-overlay" id="asesor-dias-modal" aria-hidden="true">
+  <div class="am-dialog" role="dialog" aria-modal="true" aria-labelledby="asesor-dias-modal-title" tabindex="-1">
     <div class="am-head">
       <div class="am-head__title">
         <span class="am-head__eyebrow">Detalle del Asesor</span>
         <h2 id="asesor-dias-modal-title">—</h2>
       </div>
-      <button class="am-close" onclick="closeAsesorDiasModal()" aria-label="Cerrar">✕</button>
+      <button class="am-close" type="button" aria-label="Cerrar">✕</button>
     </div>
     <div class="am-body" id="asesor-dias-modal-body"></div>
   </div>
@@ -1444,6 +1445,7 @@
 
   <script src="../js/config.js?v=6e49c7e3"></script>
 <script src="../js/core.js?v=6e49c7e3"></script>
+<script src="../js/dashboard-dialogs.js?v=6e49c7e3"></script>
 <script>
 const TAB = OXXO.SHEETS_CONFIG.TABS.d1;
 
@@ -2300,19 +2302,16 @@ function renderVacantesPorAsesorDias(allData){
     nota.hidden = !total.sinDias;
   }
 
-  el.querySelectorAll('tbody tr[data-asesor]').forEach(tr=>{
-    tr.addEventListener('click', ()=> openAsesorDiasModal(tr.dataset.asesor));
-  });
+  OXXO_DIALOGS.bindRows(el.querySelectorAll('tbody tr[data-asesor]'), 'Ver detalle del asesor', tr => openAsesorDiasModal(tr.dataset.asesor));
 }
 
-function closeAsesorDiasModal(){
-  const ov = document.getElementById('asesor-dias-modal');
-  if(ov) ov.classList.remove('open');
-}
+// Semantica, foco y Escape las resuelve js/dashboard-dialogs.js; estas dos
+// funciones se conservan como adaptadores para quien las llame en linea.
+const dlgAsesorDias = OXXO_DIALOGS.register({ overlay:'asesor-dias-modal', title:'asesor-dias-modal-title', close:'.am-close' });
+function closeAsesorDiasModal(){ dlgAsesorDias.close(); }
 function openAsesorDiasModal(asesorName){
   const v = VA_BY_ASESOR[asesorName];
   if(!v) return;
-  const ov = document.getElementById('asesor-dias-modal');
   const body = document.getElementById('asesor-dias-modal-body');
   document.getElementById('asesor-dias-modal-title').textContent = asesorName;
 
@@ -2342,20 +2341,19 @@ function openAsesorDiasModal(asesorName){
       <tbody>${rowsHTML}</tbody>
     </table></div>`;
 
-  ov.classList.add('open');
+  dlgAsesorDias.open();
 }
 document.addEventListener('keydown', e=>{
   if(e.key!=='Escape') return;
   // Escape cierra primero el desplegable de filtro abierto (antes solo se
   // cerraba con clic afuera) y devuelve el foco a su boton; si no hay
-  // ninguno abierto, cierra el modal de detalle por asesor.
+  // ninguno abierto, el controlador de dialogos cierra el modal de detalle.
   const abierto=document.querySelector('.smart-filter.open');
   if(abierto){
     closeSmartFilters();
     abierto.querySelector('.smart-filter__button')?.focus();
     return;
   }
-  closeAsesorDiasModal();
 });
 
 function refreshDashboard(){

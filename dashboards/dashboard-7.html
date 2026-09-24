@@ -215,6 +215,7 @@
   <link rel="stylesheet" href="../css/rh-dashboard-refresh.css?v=6e49c7e3" />
   <link rel="stylesheet" href="../css/rh-table-tools.css?v=6e49c7e3" />
   <link rel="stylesheet" href="../css/rh-filter-summary.css?v=6e49c7e3" />
+  <link rel="stylesheet" href="../css/dashboard-dialogs.css?v=6e49c7e3" />
   <script defer src="../js/rh-dashboard-enhancements.js?v=6e49c7e3"></script>
   <script defer src="../js/rh-table-tools.js?v=6e49c7e3"></script>
   <script defer src="../js/rh-filter-summary.js?v=6e49c7e3"></script>
@@ -247,15 +248,15 @@
     </div>
     <div class="vac-filters">
       <div class="vac-fbox">
-        <label>Buscar tienda</label>
+        <label for="filtro-buscar">Buscar tienda</label>
         <input class="filtro-input" id="filtro-buscar" type="text" placeholder="Nombre de tienda…" oninput="applyFilters()"/>
       </div>
       <div class="vac-fbox">
-        <label>Asesor / AT</label>
+        <label for="filtro-asesor-button">Asesor / AT</label>
         <div id="filtro-asesor"></div>
       </div>
       <div class="vac-fbox">
-        <label>Movimiento</label>
+        <label for="filtro-mov">Movimiento</label>
         <select class="filtro-select" id="filtro-mov" onchange="applyFilters()">
           <option value="">Todos</option>
           <option value="Alineada">✔ Alineada</option>
@@ -264,7 +265,7 @@
         </select>
       </div>
       <div class="vac-fbox">
-        <label>Antigüedad</label>
+        <label for="filtro-ant">Antigüedad</label>
         <select class="filtro-select" id="filtro-ant" onchange="applyFilters()">
           <option value="">Todas</option>
           <option value="Madura">Madura</option>
@@ -272,9 +273,9 @@
           <option value="Nueva">Nueva</option>
         </select>
       </div>
-      <div class="vac-fbox">
-        <label>Filtros</label>
-        <button class="filtro-btn" onclick="limpiarFiltros()">✕ Limpiar</button>
+      <div class="vac-fbox" role="group" aria-labelledby="filtros-acciones-label">
+        <label id="filtros-acciones-label">Filtros</label>
+        <button type="button" class="filtro-btn" onclick="limpiarFiltros()">✕ Limpiar</button>
         <button class="filtro-btn" type="button" onclick="OXXO.handleDownloadButton(this, () => OXXO.downloadSheetTab(SHEET_TAB, 'dashboard-7-treo.csv'))">Descargar base</button>
       </div>
     </div>
@@ -294,7 +295,7 @@
         <div class="card-title"><svg class="icon-inline" viewBox="0 0 24 24" aria-hidden="true"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>Detalle por Tienda<span class="info-tip" tabindex="0" data-tip="Listado fila por fila de Dashboard_7_Semanal con los filtros activos. Clic en una fila para ver el detalle completo."></span></div>
         <div style="display:flex;align-items:center;gap:10px">
           <span class="card-badge" id="tbl-count">— tiendas</span>
-          <button id="btn-export" onclick="exportCSV()" title="Descargar la tabla filtrada en CSV"
+          <button type="button" id="btn-export" onclick="exportCSV()" title="Descargar la tabla filtrada en CSV"
             style="border:1px solid var(--color-border);background:var(--color-bg);color:var(--color-dark);font-weight:700;font-size:12px;padding:7px 12px;border-radius:10px;cursor:pointer">⬇ Exportar</button>
         </div>
       </div>
@@ -315,9 +316,9 @@
         </table>
       </div>
       <div class="pag">
-        <button id="btn-prev" onclick="changePage(-1)">← Anterior</button>
+        <button type="button" id="btn-prev" onclick="changePage(-1)">← Anterior</button>
         <span class="pag-info" id="pag-info"></span>
-        <button id="btn-next" onclick="changePage(1)">Siguiente →</button>
+        <button type="button" id="btn-next" onclick="changePage(1)">Siguiente →</button>
       </div>
     </div>
 
@@ -402,9 +403,9 @@
 </div><!-- /page -->
 
 <!-- Modal detalle por tienda -->
-<div class="d7-overlay" id="d7-modal" onclick="if(event.target===this)closeD7Modal()">
-  <div class="d7-modal">
-    <button class="d7-close" onclick="closeD7Modal()" aria-label="Cerrar">✕</button>
+<div class="d7-overlay" id="d7-modal" aria-hidden="true">
+  <div class="d7-modal" role="dialog" aria-modal="true" aria-labelledby="d7-title" tabindex="-1">
+    <button class="d7-close" type="button" aria-label="Cerrar">✕</button>
     <div class="d7-eyebrow">Detalle de la tienda</div>
     <h3 class="d7-title" id="d7-title">—</h3>
     <div id="d7-body"></div>
@@ -413,6 +414,7 @@
 
   <script src="../js/config.js?v=6e49c7e3"></script>
 <script src="../js/core.js?v=6e49c7e3"></script>
+<script src="../js/dashboard-dialogs.js?v=6e49c7e3"></script>
 <script>
 const SHEET_KEY = 's7';
 const SHEET_TAB = OXXO.SHEETS_CONFIG.TABS[SHEET_KEY];
@@ -881,9 +883,7 @@ function renderTabla(){
 
   document.getElementById('tbl-body').innerHTML = tbody || `<tr><td colspan="7"><div class="state-box">📭 Sin resultados</div></td></tr>`;
 
-  document.querySelectorAll('#tbl-body tr.d7-row').forEach(tr=>{
-    tr.addEventListener('click', ()=> openTiendaModalD7(tr.dataset.cr, tr.dataset.tienda));
-  });
+  OXXO_DIALOGS.bindRows(document.querySelectorAll('#tbl-body tr.d7-row'), 'Ver detalle de la tienda', tr => openTiendaModalD7(tr.dataset.cr, tr.dataset.tienda));
 
   // Sort headers
   document.querySelectorAll('#main-tbl thead th').forEach(th=>{
@@ -913,7 +913,9 @@ function exportCSV(){
 
 // ─────────────────────────────────────────────────────────
 // Modal detalle por tienda
-function closeD7Modal(){ document.getElementById('d7-modal')?.classList.remove('open'); }
+// Semantica, foco y Escape: js/dashboard-dialogs.js (adaptador conservado).
+const dlgD7 = OXXO_DIALOGS.register({ overlay:'d7-modal', title:'d7-title', close:'.d7-close' });
+function closeD7Modal(){ dlgD7.close(); }
 // Genera recomendaciones accionables según la situación de la tienda.
 function buildRecos(r){
   const sap=Number(r.est_sap)||0, treo=Number(r.est_final)||0, act=Number(r.empleados)||0, vac=Number(r.vacantes)||0;
@@ -1000,9 +1002,8 @@ function openTiendaModalD7(cr, tienda){
         </tbody></table>
       </div>
     </div>`;
-  document.getElementById('d7-modal').classList.add('open');
+  dlgD7.open();
 }
-document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeD7Modal(); });
 
 // ─────────────────────────────────────────────────────────
 // Render All
@@ -1027,13 +1028,17 @@ function renderBrecha(data){
   if(!arr.length){ el.innerHTML=`<div class="state-box" style="padding:20px 0"><div style="font-size:1.5rem">✅</div><div style="font-size:12px;font-weight:600">Sin brechas: Activos = TREO</div></div>`; return; }
   el.innerHTML=arr.map(x=>{
     const falta=x.g<0; const col=falta?'#C0393B':'#B85000';
-    return `<div class="d7-row" data-cr="${esc(x.r.cr||'')}" data-tienda="${esc(x.r.tienda||'')}" style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 6px;border-bottom:1px solid var(--color-border);cursor:pointer">
+    return `<div class="d7-row" role="button" tabindex="0" aria-label="Ver detalle de la tienda: ${esc(x.r.tienda||'')}" data-cr="${esc(x.r.cr||'')}" data-tienda="${esc(x.r.tienda||'')}" style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 6px;border-bottom:1px solid var(--color-border);cursor:pointer">
       <div style="min-width:0"><div style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(trunc(x.r.tienda,26))}</div>
         <div style="font-size:10px;color:var(--color-gray)">Activos ${x.r.empleados||0} · TREO ${x.r.est_final||0}</div></div>
       <div style="font-weight:800;color:${col};white-space:nowrap">${falta?'▼ faltan ':'▲ sobran '}${Math.abs(x.g)}</div>
     </div>`;
   }).join('');
-  el.querySelectorAll('.d7-row').forEach(tr=>tr.addEventListener('click',()=>openTiendaModalD7(tr.dataset.cr,tr.dataset.tienda)));
+  el.querySelectorAll('.d7-row').forEach(row=>{
+    const abrir=()=>openTiendaModalD7(row.dataset.cr,row.dataset.tienda);
+    row.addEventListener('click',abrir);
+    row.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); abrir(); } });
+  });
 }
 
 // ─────────────────────────────────────────────────────────

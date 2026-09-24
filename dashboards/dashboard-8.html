@@ -139,6 +139,7 @@
   <link rel="stylesheet" href="../css/rh-dashboard-refresh.css?v=6e49c7e3" />
   <link rel="stylesheet" href="../css/rh-table-tools.css?v=6e49c7e3" />
   <link rel="stylesheet" href="../css/rh-filter-summary.css?v=6e49c7e3" />
+  <link rel="stylesheet" href="../css/dashboard-dialogs.css?v=6e49c7e3" />
   <script defer src="../js/rh-dashboard-enhancements.js?v=6e49c7e3"></script>
   <script defer src="../js/rh-table-tools.js?v=6e49c7e3"></script>
   <script defer src="../js/rh-filter-summary.js?v=6e49c7e3"></script>
@@ -171,24 +172,24 @@
     </div>
     <div class="vac-filters">
       <div class="vac-fbox">
-        <label>Asesor</label>
+        <label for="filtro-asesor-button">Asesor</label>
         <div id="filtro-asesor"></div>
       </div>
       <div class="vac-fbox">
-        <label>Puesto</label>
+        <label for="filtro-puesto">Puesto</label>
         <select class="filtro-select" id="filtro-puesto" onchange="applyFilters()">
           <option value="">Todos los puestos</option>
         </select>
       </div>
       <div class="vac-fbox">
-        <label>Certificación</label>
+        <label for="filtro-cert">Certificación</label>
         <select class="filtro-select" id="filtro-cert" onchange="applyFilters()">
           <option value="">Todas las certificaciones</option>
         </select>
       </div>
-      <div class="vac-fbox">
-        <label>Filtros</label>
-        <button class="filtro-btn" onclick="limpiarFiltros()">✕ Limpiar</button>
+      <div class="vac-fbox" role="group" aria-labelledby="filtros-acciones-label">
+        <label id="filtros-acciones-label">Filtros</label>
+        <button type="button" class="filtro-btn" onclick="limpiarFiltros()">✕ Limpiar</button>
         <button class="filtro-btn" type="button" onclick="OXXO.handleDownloadButton(this, () => OXXO.downloadSheetTab(TAB, 'dashboard-8-capacidades.csv'))">Descargar base</button>
       </div>
     </div>
@@ -255,11 +256,11 @@
 </div>
 
 <!-- Modal detalle de asesor -->
-<div class="am-overlay" id="asesor-cap-modal" onclick="if(event.target===this)closeAsesorCapModal()">
-  <div class="am-dialog">
+<div class="am-overlay" id="asesor-cap-modal" aria-hidden="true">
+  <div class="am-dialog" role="dialog" aria-modal="true" aria-labelledby="am-title" tabindex="-1">
     <div class="am-head">
       <h3 id="am-title">Asesor</h3>
-      <button class="am-close" onclick="closeAsesorCapModal()">&times;</button>
+      <button class="am-close" type="button" aria-label="Cerrar">&times;</button>
     </div>
     <div class="am-body">
       <div class="am-kpis" id="am-kpis"></div>
@@ -274,11 +275,11 @@
 </div>
 
 <!-- Modal detalle de empleado -->
-<div class="am-overlay" id="empleado-modal" onclick="if(event.target===this)closeEmpleadoModal()">
-  <div class="am-dialog">
+<div class="am-overlay" id="empleado-modal" aria-hidden="true">
+  <div class="am-dialog" role="dialog" aria-modal="true" aria-labelledby="emp-title" tabindex="-1">
     <div class="am-head">
       <h3 id="emp-title">Empleado<small class="am-head__sub"></small></h3>
-      <button class="am-close" onclick="closeEmpleadoModal()" aria-label="Cerrar">&times;</button>
+      <button class="am-close" type="button" aria-label="Cerrar">&times;</button>
     </div>
     <div class="am-body">
       <div class="am-kpis" id="emp-kpis"></div>
@@ -295,6 +296,7 @@
 
   <script src="../js/config.js?v=6e49c7e3"></script>
 <script src="../js/core.js?v=6e49c7e3"></script>
+<script src="../js/dashboard-dialogs.js?v=6e49c7e3"></script>
 <script>
 const TAB = OXXO.SHEETS_CONFIG.TABS.d8;
 
@@ -557,7 +559,7 @@ function renderAll() {
     : asesores.map(a => {
         const color = capColorPct(a.pct);
         const sel = a.asesor === DETALLE_ASESOR ? ' is-selected' : '';
-        return `<tr class="row-${color}${sel}" data-asesor="${OXXO.escHtml(a.asesor)}" onclick="selectAsesorDetalle('${escapeAttr(a.asesor)}')" title="Clic para filtrar el Detalle por Empleado">
+        return `<tr class="row-${color}${sel}" data-asesor="${OXXO.escHtml(a.asesor)}" title="Clic para filtrar el Detalle por Empleado">
           <td>${OXXO.escHtml(OXXO.truncate(a.asesor,26))}</td>
           <td class="center">${a.emps}</td>
           <td class="center">${a.aplic}</td>
@@ -565,6 +567,8 @@ function renderAll() {
           <td class="center"><span class="cap-badge ${color}">${a.pct}%</span><button type="button" class="cap-row-more" title="Ver detalle por certificacion" aria-label="Ver detalle por certificacion" onclick="event.stopPropagation();openAsesorCapModal('${escapeAttr(a.asesor)}')"><svg viewBox="0 0 24 24" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg></button></td>
         </tr>`;
       }).join('');
+  OXXO_DIALOGS.bindRows(document.querySelectorAll('#tabla-asesor tbody tr[data-asesor]'), 'Filtrar el detalle por asesor',
+    tr => selectAsesorDetalle(tr.dataset.asesor), { pressed: tr => tr.dataset.asesor === DETALLE_ASESOR });
 
   // ── Tabla detalle ──
   renderDetalle(data);
@@ -588,7 +592,7 @@ function renderDetalle(data) {
       const txt = v===null?'N/A':(v>=1?'100%':Math.round(v*100)+'%');
       return `<td class="center"><span class="cap-badge ${cls}" style="font-size:9px;min-width:auto;padding:2px 6px">${txt}</span></td>`;
     }).join('');
-    return `<tr onclick="openEmpleadoModal(${i})" title="Ver ficha del empleado">
+    return `<tr data-idx="${i}" title="Ver ficha del empleado">
       <td>${OXXO.escHtml(OXXO.truncate(r[C.asesor]||'—',20))}</td>
       <td>${OXXO.escHtml(OXXO.truncate(r[C.empleado]||'—',24))}</td>
       <td style="font-size:10px">${OXXO.escHtml(OXXO.truncate(r[C.puesto]||'—',16))}</td>
@@ -602,6 +606,8 @@ function renderDetalle(data) {
       ${colsToShow.map(c=>`<th class="center" style="font-size:9px">${c.label}</th>`).join('')}
     </tr></thead>
     <tbody>${rows}</tbody>`;
+  OXXO_DIALOGS.bindRows(document.querySelectorAll('#tabla-detalle tbody tr[data-idx]'), 'Ver ficha del empleado',
+    tr => openEmpleadoModal(Number(tr.dataset.idx)), { cell: 1 });
   const badge = document.getElementById('row-count');
   badge.textContent = DETALLE_ASESOR
     ? `${filas.length} de ${data.length} registros · ${OXXO.truncate(DETALLE_ASESOR,24)}`
@@ -632,11 +638,15 @@ function clearAsesorDetalle(){
 function syncAsesorSelection(){
   document.querySelectorAll('#tabla-asesor tbody tr[data-asesor]').forEach(tr => {
     tr.classList.toggle('is-selected', tr.dataset.asesor === DETALLE_ASESOR);
+    tr.querySelector('.row-action')?.setAttribute('aria-pressed', String(tr.dataset.asesor === DETALLE_ASESOR));
   });
 }
 
 function escapeAttr(s){ return String(s||'').replace(/'/g,"\\'").replace(/"/g,'&quot;'); }
 
+// Semantica, foco y Escape: js/dashboard-dialogs.js (adaptadores conservados).
+const dlgAsesorCap = OXXO_DIALOGS.register({ overlay:'asesor-cap-modal', title:'am-title', close:'.am-close' });
+const dlgEmpleado = OXXO_DIALOGS.register({ overlay:'empleado-modal', title:'emp-title', close:'.am-close' });
 function openAsesorCapModal(asesor){
   const s = ASESOR_STATS[asesor];
   if(!s) return;
@@ -651,9 +661,9 @@ function openAsesorCapModal(asesor){
     const pct = Math.round(st.comp/st.aplic*100);
     return `<tr><td>${c.label}</td><td class="center">${st.aplic}</td><td class="center">${st.comp}</td><td class="center"><span class="cap-badge ${capColorPct(pct)}">${pct}%</span></td></tr>`;
   }).join('');
-  document.getElementById('asesor-cap-modal').classList.add('open');
+  dlgAsesorCap.open();
 }
-function closeAsesorCapModal(){ document.getElementById('asesor-cap-modal').classList.remove('open'); }
+function closeAsesorCapModal(){ dlgAsesorCap.close(); }
 
 // Clic en una fila de "Detalle por Empleado": ficha del empleado con su
 // avance certificacion por certificacion.
@@ -693,15 +703,9 @@ function openEmpleadoModal(idx){
     return `<tr><td>${OXXO.escHtml(c.label)}</td><td class="center">${avance}%</td><td class="center"><span class="cap-badge ${cls}">${txt}</span></td></tr>`;
   }).join('');
 
-  document.getElementById('empleado-modal').classList.add('open');
+  dlgEmpleado.open();
 }
-function closeEmpleadoModal(){ document.getElementById('empleado-modal').classList.remove('open'); }
-
-document.addEventListener('keydown', e => {
-  if(e.key !== 'Escape') return;
-  closeEmpleadoModal();
-  closeAsesorCapModal();
-});
+function closeEmpleadoModal(){ dlgEmpleado.close(); }
 
 function applyFilters(){ renderAll(); }
 
