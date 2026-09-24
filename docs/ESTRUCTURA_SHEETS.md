@@ -80,6 +80,10 @@ Para Inventarios se carga la hoja `Resultado de Inventario` del `.xlsm`; el peri
 
 Cuando se publica `Dashboard_7_Semanal`, Apps Script toma la fotografia regional resultante, elimina Entrenamiento/Operaciones, deduplica por CR y reconstruye `Catalogo_Tiendas`. Si una plaza todavia no tiene TREO, el sistema conserva sus datos sin filtrarlos.
 
+### Hojas de solo lectura
+
+`Promociones` y `PromosD100` se editan directo en Google Sheets. El Apps Script las declara en `READ_ONLY_SHEETS` (fuera de `ALLOWED_SHEETS`): publicar, comprobar, previsualizar y restaurar respaldos las rechaza con "Hoja de solo lectura desde el panel"; su lectura publica sigue siendo por GViz. Lo verifica `tests/apps-script-readonly.test.js`.
+
 ## Recomendacion operativa
 
 Antes de cambiar nombres de pestanas en Google Sheets, actualiza `SHEETS_CONFIG.TABS` (y `ALLOWED_SHEETS` en el Apps Script) y prueba el panel admin con un archivo pequeno.

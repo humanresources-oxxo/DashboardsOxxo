@@ -726,6 +726,7 @@ body.hr-dashboard:has(#main-tbl) .alignment-card .donut-wrap {
     .panel__badge, .align-sum__lbl, .stat-card .sl, .pag button, .scope-exclusive-alert, .d13-kpi__period,
     .rt-title, .leyenda span, .hm-rank-caption__i, .cmp-note, .sem-chip) { font-size: 12px !important; }
   body.hr-dashboard .pag button { min-height: 44px; min-width: 44px; }
+  body.hr-dashboard #detalle-buscar { min-height: 44px; }
   /* D8: el boton "detalle por certificacion" de cada asesor era de 22px fijos. */
   body.hr-dashboard .cap-row-more { width: 44px !important; height: 44px !important; min-width: 44px; min-height: 44px; }
   /* Graficas con altura acotada: nunca mas de la pantalla (la altura propia de

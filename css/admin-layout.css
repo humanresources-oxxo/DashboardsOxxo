@@ -168,6 +168,9 @@ body{background:linear-gradient(135deg,#fff8ef 0%,#fff 48%,#ffeceb 100%);color:#
   #admin-upload-workspace,.admin-overview-summary,.quality-summary{grid-template-columns:minmax(0,1fr)}
   .restore-dialog{width:calc(100% - 16px);max-width:calc(100% - 16px)}
   .admin-upload-actions{position:sticky;bottom:0;z-index:6;padding:12px 0 calc(12px + env(safe-area-inset-bottom));background:linear-gradient(to top,#fff 78%,rgba(255,255,255,0))}
+  .admin-input,.admin-select,.publication-toast__close{min-height:44px}
+  .admin-area strong{text-transform:none;letter-spacing:0;overflow-wrap:normal}
+  .admin-area{padding-inline:2px}
   .admin-label,.admin-area strong,.admin-pill,.admin-pill.runtime{font-size:12px}
 }
 @media(prefers-reduced-motion:reduce){.admin-tabs{scroll-behavior:auto}}
