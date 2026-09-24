@@ -1,3 +1,4 @@
+/* Consumido por: dashboard-1, dashboard-12, dashboard-13, dashboard-2, dashboard-3, dashboard-4, dashboard-5, dashboard-6, dashboard-7, dashboard-8. */
 (function(){
   'use strict';
 
@@ -69,6 +70,9 @@
       th.classList.add('rh-sortable');
       if(th.dataset.rhSortBound)return;
       th.dataset.rhSortBound='1';
+      // Ordenar tambien con teclado: el encabezado es enfocable y Enter/Espacio lo activan.
+      th.tabIndex=0;
+      th.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();th.click();}});
       th.addEventListener('click',()=>{
         if(state.sortIndex===index)state.sortDirection=state.sortDirection==='asc'?'desc':'asc';
         else{state.sortIndex=index;state.sortDirection='asc';}

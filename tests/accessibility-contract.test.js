@@ -147,3 +147,12 @@ test('site-lock: etiqueta real, error anunciado y foco contenido', () => {
   assert.match(js, /aria-live|role="alert"/);
   assert.match(js, /'Tab'/, 'el foco debe quedar contenido en el candado');
 });
+
+
+test('el css compartido define foco visible, sr-only, objetivos tactiles y reduced-motion', () => {
+  const css = leer('css/global.css');
+  assert.match(css, /:focus-visible/);
+  assert.match(css, /\.sr-only/);
+  assert.match(css, /min-height:\s*44px/);
+  assert.match(css, /prefers-reduced-motion:\s*reduce/);
+});

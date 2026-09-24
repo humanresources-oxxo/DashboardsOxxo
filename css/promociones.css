@@ -1,3 +1,4 @@
+/* Consumido por: promociones. */
 :root{--promo-blue:#12608f;--promo-blue-dark:#073f65;--promo-cyan:#1c89b5;--promo-ink:#1f1715;--promo-muted:#76645e;--promo-line:rgba(44,30,27,.12)}
 body{background:radial-gradient(circle at 85% 6%,rgba(18,96,143,.12),transparent 29%),linear-gradient(180deg,#fff9f4 0%,#f7eee8 100%);min-height:100vh}
 .promo-page{max-width:1440px;margin:0 auto;padding:22px 24px 46px}

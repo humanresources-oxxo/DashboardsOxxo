@@ -309,3 +309,12 @@
   // trae ninguna URL default.
   document.addEventListener('DOMContentLoaded',()=>{initDashboardDefinitions();initAdminLock();fillDashboardSelect();const queryUrl=urlFromQuery();const saved=localStorage.getItem(ADMIN_CONFIG_KEY)||'';$('apps-script-url').value=queryUrl||DEFAULT_UPLOAD_URL||saved;if(queryUrl)localStorage.setItem(ADMIN_CONFIG_KEY,queryUrl);updatePublishState();refreshRuntimeVersion();setStatus([{type:'warn',title:'Esperando archivo',text:'Selecciona el dashboard y sube un Excel para iniciar validacion.',badge:'Pendiente'}]);bind();setAdminArea('rh');});
 })();
+
+// El enlace a la hoja se arma con el ID que ya vive en js/config.js, en vez de
+// repetirlo aqui. Asi, rotar el Google Sheets solo obliga a cambiar el ID en
+// config.js y en el Apps Script, no en tres lugares.
+(function(){
+  var id = window.OXXO_CONFIG && window.OXXO_CONFIG.SPREADSHEET_ID;
+  var a = document.getElementById('abrir-sheets');
+  if(a && id) a.href = 'https://docs.google.com/spreadsheets/d/' + encodeURIComponent(id) + '/edit';
+})();

@@ -336,3 +336,12 @@ body[data-area="rh"] .group .card::after{color:var(--red)}
   .group{margin:0 auto 30px}.group__head{align-items:flex-start}.group__count{display:none}.grid{grid-template-columns:1fr;gap:12px}.card{min-height:0}.access__grid{grid-template-columns:1fr}.foot{margin-top:22px}
 }
 @media (max-width:480px){.area-switch__icon{display:none}}
+
+/* Celular (fase 1): texto de 12px como minimo y objetivos tactiles de 44px. */
+.card__stamp{font-size:12px}
+.tile__kicker{font-size:12px}
+@media (max-width:760px){
+  .btn,.btn--sm{min-height:44px}
+  .topbar__actions .btn{padding-inline:16px}
+  .card{cursor:pointer}
+}

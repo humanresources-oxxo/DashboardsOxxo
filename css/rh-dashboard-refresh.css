@@ -1,3 +1,4 @@
+/* Consumido por: dashboard-1, dashboard-11, dashboard-12, dashboard-13, dashboard-2, dashboard-3, dashboard-4, dashboard-5, dashboard-6, dashboard-7, dashboard-8. */
 /* ==========================================================
    RECURSOS HUMANOS — EXECUTIVE REFRESH 2026
    Capa final para los dashboards 1–8. Unifica la identidad de
@@ -669,5 +670,67 @@ body.hr-dashboard:has(#main-tbl) .alignment-card .donut-wrap {
   body.hr-dashboard .bajas-panel,
   body.hr-dashboard .kpi-card {
     transition: none !important;
+  }
+}
+
+/* ==========================================================
+   TABLAS Y GRAFICAS EN CELULAR (fase 1)
+   Consumido por los tableros RH (body.hr-dashboard). El contenedor de cada
+   tabla es quien hace el scroll horizontal, nunca el documento; las
+   cabeceras sticky no se tocan y el texto de tabla no baja de 12px.
+   ========================================================== */
+@media (max-width: 760px) {
+  body.hr-dashboard .tbl-wrap,
+  body.hr-dashboard .table-wrap,
+  body.hr-dashboard .table-wrapper {
+    max-width: 100% !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+  /* D7 fijaba su tabla con overflow-x:hidden y min-width:0 (!important) y la recortaba
+     con elipsis: se le devuelve un ancho legible y scroll propio. */
+  body.hr-dashboard:has(#main-tbl) .detail-card .tbl-wrap { overflow-x: auto !important; }
+  body.hr-dashboard:has(#main-tbl) .detail-card .tbl { min-width: 560px !important; }
+  body.hr-dashboard .tbl-wrap > table,
+  body.hr-dashboard .table-wrap > table,
+  body.hr-dashboard .table-wrapper > table {
+    min-width: 520px;
+  }
+  body.hr-dashboard table th { font-size: 12px !important; }
+  body.hr-dashboard table td { font-size: max(12px, 1em); }
+  /* Chips, badges y textos secundarios dentro de las celdas: nunca bajo 12px. */
+  body.hr-dashboard table td *,
+  body.hr-dashboard table th * { font-size: max(12px, 1em) !important; }
+  body.hr-dashboard .dash-footer,
+  body.hr-dashboard .dash-footer *,
+  body.hr-dashboard .foot,
+  body.hr-dashboard .foot *,
+  body.hr-dashboard .connection-banner small,
+  body.hr-dashboard .connection-banner button,
+  body.hr-dashboard .ranking-chart__label,
+  body.hr-dashboard .kpi-card__delta { font-size: 12px !important; }
+  body.hr-dashboard .hero-context span,
+  body.hr-dashboard .hr-insights__eyebrow,
+  body.hr-dashboard .hr-insights__freshness,
+  body.hr-dashboard .hr-insights p,
+  body.hr-dashboard .rh-filter-summary-badge { font-size: 12px !important; }
+  body.hr-dashboard .kpi-card__label,
+  body.hr-dashboard .card-badge,
+  body.hr-dashboard .hero-badge,
+  body.hr-dashboard .bajas-header__badge {
+    font-size: 12px !important;
+  }
+  /* Rotulos y leyendas propios de cada tablero que quedaban entre 8 y 11px. */
+  body.hr-dashboard :is(.ranking-empate, .pz-lead, .pz-lead *, .plazas-chart__item, .plazas-chart__item *,
+    .bajas-hero-context span, .plazas-scope-toggle, .plaza-rank-top, .heatmap-axes-label, .heatmap-legend__title,
+    .panel__badge, .align-sum__lbl, .stat-card .sl, .pag button, .scope-exclusive-alert, .d13-kpi__period,
+    .rt-title, .leyenda span, .hm-rank-caption__i, .cmp-note, .sem-chip) { font-size: 12px !important; }
+  body.hr-dashboard .pag button { min-height: 44px; min-width: 44px; }
+  /* Graficas con altura acotada: nunca mas de la pantalla (la altura propia de
+     cada grafica se conserva; Chart.js sigue midiendo su contenedor). */
+  body.hr-dashboard .chart-wrap,
+  body.hr-dashboard .chart-container,
+  body.hr-dashboard .bar-chart-area {
+    max-height: min(360px, 60vh);
   }
 }

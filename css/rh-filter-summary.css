@@ -1,5 +1,6 @@
+/* Consumido por: dashboard-1, dashboard-12, dashboard-13, dashboard-2, dashboard-3, dashboard-4, dashboard-5, dashboard-6, dashboard-7, dashboard-8. */
 .rh-filter-summary-badge{display:inline-flex;align-items:center;gap:5px;margin-left:auto;padding:3px 7px;border:1px solid rgba(123,92,83,.14);border-radius:999px;background:rgba(255,255,255,.78);color:#806861;font-size:8px;font-weight:900;letter-spacing:.04em;text-transform:none;white-space:nowrap;box-shadow:0 3px 9px rgba(80,34,20,.05)}
 .rh-filter-summary-badge::before{content:'';width:6px;height:6px;border-radius:50%;background:#a99994;box-shadow:0 0 0 3px rgba(169,153,148,.12)}
 .rh-filter-summary-badge.has-active{border-color:rgba(217,31,45,.20);background:rgba(255,243,244,.92);color:#c51625}
 .rh-filter-summary-badge.has-active::before{background:#e31e2f;box-shadow:0 0 0 3px rgba(227,30,47,.12)}
-@media(max-width:640px){.rh-filter-summary-badge{font-size:7.5px;padding:3px 6px}}
+@media(max-width:640px){.rh-filter-summary-badge{font-size:12px;padding:3px 8px}}

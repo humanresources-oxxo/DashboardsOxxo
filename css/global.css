@@ -1,3 +1,4 @@
+/* Consumido por: 20 paginas (index, admin y dashboards). */
 /* ==========================================================
    OXXO DASHBOARDS — SISTEMA GLOBAL DE ESTILOS
    Paleta: Blanco/Crema · Amarillo · Naranja · Rojo · Verde · Oscuro
@@ -612,7 +613,7 @@ body {
 .connection-banner button { border: 0; border-radius: 999px; padding: 8px 11px; background: #9a6500; color: #fff; font: 850 10px var(--font-body); cursor: pointer; white-space: nowrap; }
 .connection-banner.is-offline button { background: #c91822; }
 .connection-banner button:disabled { opacity: .65; cursor: wait; }
-@media (max-width: 620px) { .connection-banner { top: auto; right: 10px; bottom: 10px; width: calc(100vw - 20px); grid-template-columns: auto 1fr; }.connection-banner button { grid-column: 1 / -1; width: 100%; } }
+@media (max-width: 620px) { .connection-banner { top: auto; right: 10px; bottom: 10px; width: calc(100% - 20px); grid-template-columns: auto 1fr; }.connection-banner button { grid-column: 1 / -1; width: 100%; } }
 
 /* Spinner */
 .spinner {
@@ -1023,3 +1024,69 @@ body {
 .smart-filter__option.is-active .smart-filter__check { background: #d91f2d; border-color: #d91f2d; }
 .smart-filter__option.is-active .smart-filter__check::before { content: "✓"; }
 .smart-filter__empty { padding: 16px; color: #8b6a5f; font-size: 12px; font-weight: 800; text-align: center; }
+
+/* ==========================================================
+   ACCESIBILIDAD Y TACTO COMPARTIDOS
+   Los consume toda pagina que cargue global.css (dashboards, portada de
+   pruebas, panel admin). Se escriben con :where() para no subir la
+   especificidad: las reglas propias de cada pagina siguen mandando donde
+   ya fijan altura o foco.
+   ========================================================== */
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--color-red, #F71926);
+  outline-offset: 2px;
+}
+
+/* Texto solo para lectores de pantalla (etiquetas visualmente ocultas). */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Objetivo tactil minimo de 44px en celular. Quedan fuera los controles en
+   linea que viven dentro de una fila de tabla o de un menu compacto. */
+@media (max-width: 760px) {
+  :where(button, select, [role="button"], input[type="button"], input[type="submit"]):where(:not(.row-action, .info-tip, .sf-only, .cap-row-more, .rh-table-page-button)) {
+    min-height: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Selector de plaza / estado de tienda (lo inyecta core.js en todos los
+   tableros): en celular, tacto de 44px y texto de 12px. */
+@media (max-width: 760px) {
+  .oxxo-scope-switch__opt,
+  .oxxo-store-status__opt { min-height: 44px; font-size: 12px !important; }
+  .oxxo-scope-selector__label strong,
+  .oxxo-scope-selector__label small,
+  .oxxo-store-status__label { font-size: 12px !important; }
+}
+
+/* Aviso de conexion: texto legible y tacto de 44px en celular. */
+@media (max-width: 760px) {
+  .connection-banner small { font-size: 12px; }
+  .connection-banner button { font-size: 12px; min-height: 44px; }
+}
+
+/* Selector de plaza en linea (lo inyecta core.js en el hero): en tablet no debe
+   ensanchar la pagina; envuelve y sus opciones hacen scroll dentro de su caja. */
+@media (max-width: 979px) {
+  .oxxo-scope-selector--inline { max-width: 100%; flex-wrap: wrap; }
+  .oxxo-scope-selector--inline .oxxo-scope-switch { min-width: 0; flex: 1 1 220px; }
+  .oxxo-scope-selector--inline .oxxo-store-status { flex: 0 1 auto; }
+}
