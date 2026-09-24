@@ -1,3 +1,4 @@
+/* Consumido por: dashboard-3, index. */
 /* ==========================================================
    OXXO — Formato de fechas de actualizacion
 

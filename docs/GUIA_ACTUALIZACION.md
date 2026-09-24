@@ -1,25 +1,39 @@
 # Guia de actualizacion de bases
 
-Esta guia explica como actualizar los dashboards sin tocar codigo.
+Esta guia explica como actualizar los dashboards sin tocar codigo. Las bases pueden traer una o varias plazas de la Region TABASCO (Oaxaca, Costa Istmo, Tuxtla, Villahermosa, Chontalpa).
 
 ## Pasos generales
 
 1. Abre `admin.html`.
-2. Ingresa la contrasena del panel.
-3. Selecciona el dashboard destino.
+2. Ingresa la contrasena del panel (se verifica en el servidor al publicar).
+3. Elige el area (Recursos Humanos, Comercial o Administrativo) y selecciona el dashboard destino.
 4. Selecciona la hoja correcta del Excel si el archivo trae varias hojas.
 5. Sube el Excel.
 6. Revisa la validacion:
    - Archivo leido.
    - Columnas obligatorias.
-   - Filtro Oaxaca.
+   - Plaza(s) detectadas y filas por plaza.
+   - Periodo y modo de publicacion.
    - Regla aplicada.
-7. Si todo esta en verde, publica en Sheets.
-8. Abre el dashboard y usa `Ctrl + F5` si el navegador conserva cache.
+7. Si todo esta en verde, revisa la vista previa y el resumen de impacto, y publica en Sheets. Si algo no cuadra, cancela: no se modifica nada hasta publicar.
+8. Abre el dashboard. Los tableros guardan una copia local de 2 a 10 minutos; presiona "Actualizar ahora" si aparece el aviso amarillo, o `Ctrl + F5`.
+
+## Areas del panel admin
+
+| Area | Bases |
+|---|---|
+| Recursos Humanos | Dashboards 1 a 8, 10, 11, 12 y 13 (vacantes, bajas, estructura, tiempo extra, vacaciones, ausentismos, TREO, capacidades, FLEX, marcajes, enfoque del lider y control de ausentismo), catalogos y herramientas de seguimiento |
+| Comercial | Dashboard 14 (Avance comercial). PromosD100 / `Promociones` es de edicion directa en Sheets |
+| Administrativo | Dashboard 9 (Faltantes y sobrantes) y Resultados de Inventario |
+
+Ademas: calidad de datos, bitacora y restauracion de respaldos, avisos del sistema, directorio de contactos y reasignaciones.
 
 ## Reglas generales
 
-- Todos los dashboards trabajan con Plaza Oaxaca.
+- Los dashboards trabajan por **alcance**: Region TABASCO o una plaza. El panel acepta cualquier plaza reconocida del catalogo y no descarta las demas; cada plaza del archivo reemplaza solo sus propias filas (`replaceScope`/`replacePeriod`) y conserva las de las otras plazas.
+- **Excepcion:** Dashboard 13 (Control de Ausentismo) es de alcance fijo Plaza Oaxaca.
+- Las fuentes historicas sin columna Plaza (Dashboard 9, Dashboard 14, Promociones) se leen como Oaxaca hasta que se reemplacen desde el panel regional.
+- **Promociones** no se publica desde el panel: se edita directo en la pestana `Promociones`.
 - El panel ignora columnas extra cuando no son necesarias.
 - El catalogo de asesores corrige el asesor por CR/Tienda cuando existe coincidencia.
 - Si una columna cambia de nombre, primero intenta cargar el archivo: el panel tiene alias comunes.
@@ -54,7 +68,7 @@ Columnas clave:
 
 Reglas:
 
-- Solo toma registros de Plaza Oaxaca.
+- Toma las plazas del archivo (cada una reemplaza sus propias filas).
 - Solo toma posiciones vacantes/no ocupadas.
 - El mes se toma del nombre del archivo cuando el archivo trae fecha en el titulo.
 - Si no existe Dias Vacantes, lo intenta derivar del texto de status ocupacion.
@@ -85,7 +99,7 @@ Columnas clave de bajas:
 
 Reglas:
 
-- Solo toma Plaza Oaxaca para la base principal.
+- Toma las plazas del archivo para la base principal.
 - El mes puede derivarse del titulo del archivo si viene con fecha, por ejemplo `ABC 10.07.2026`.
 - El ranking de otras plazas se puede capturar manualmente desde el panel.
 
@@ -106,7 +120,7 @@ Columnas clave:
 
 Reglas:
 
-- Solo toma Plaza Oaxaca.
+- Toma las plazas del archivo.
 - Aprovechamiento Estructura menor a 95% cuenta como 0%.
 - Aprovechamiento Estructura mayor o igual a 95% cuenta como 100%.
 - El catalogo de asesores corrige responsables por CR/Tienda.
@@ -214,7 +228,7 @@ Reglas:
   alimenta las dos graficas de tendencia, asi que no se debe borrar la
   pestana a mano.
 - Sube el archivo completo tal como sale del reporte; el panel se queda con
-  Plaza Oaxaca y normaliza las columnas.
+  las plazas reconocidas y normaliza las columnas.
 - El Excel de origen trae `MEP P.P.` y `EVALUACION OPERATIVA` repetidas dos
   veces cada una (primero el valor numerico, despues su OK / NO OK). El panel
   ya resuelve la segunda por posicion; no hay que renombrar nada en el Excel.
@@ -224,6 +238,10 @@ Reglas:
   el lider ya la habia cerrado, asi que en algunos renglones la etapa no
   coincide al pie de la letra con los tres semaforos. Es el comportamiento
   esperado, no un error de carga.
+
+## Diagnostico despues de publicar
+
+Si un tablero no refleja lo publicado: revisa el aviso amarillo/rojo (ver `docs/SOPORTE.md`, "Avisos de conexion") y ejecuta `npm run test:live` (cada diagnostico tiene tope de 120 s y termina con una tabla PASS/FAIL/TIMEOUT). Son informativos: no cambian datos.
 
 ## Redesplegar el Apps Script sin romper la URL
 

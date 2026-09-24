@@ -1,74 +1,90 @@
 # Onboarding de un cliente nuevo
 
-Este repo hoy es **mono-cliente**: sirve a OXXO Plaza Oaxaca. Este documento
+Este repo hoy es **mono-cliente** (OXXO) pero ya es **multi-plaza dentro de la
+Región TABASCO**: Plaza Oaxaca, Costa Istmo, Tuxtla, Villahermosa y Chontalpa
+se eligen con el selector de alcance sin duplicar pantallas. Este documento
 es el inventario honesto de qué se puede reconfigurar sin tocar código y
-qué está cableado en la lógica y requeriría cambios de código reales para
-atender a un cliente/plaza distinta. No implementa nada — es la base para
+qué sigue cableado a esta marca/región y requeriría cambios reales para
+atender a un cliente distinto. No implementa nada — es la base para
 decidir cuánto se invierte antes de vender el sistema a alguien más.
 
 ## 1. Lo que ya es configuración (no requiere tocar código)
 
 Todo vive en `js/config.js` (`window.OXXO_CONFIG`), cargado antes que
-`js/core.js` en las 15 páginas del sitio:
+`js/core.js` en las 21 páginas del sitio (`core.js` no tiene configuración
+de respaldo: sin `config.js` se detiene):
 
 - `SPREADSHEET_ID` — el Google Sheet que alimenta todos los dashboards.
 - `CONFIG_SHEET`, `CATALOG_SHEET`, `REASIGNACIONES_SHEET` — nombres de pestañas.
 - `ADMIN_UPLOAD_URL` — el Web App de Apps Script que usa el panel admin para
   publicar y para leer el catálogo directo (`action=readSheet`, ver más abajo).
 - `TABS` — nombres exactos de las 20 pestañas de datos (`Dashboard_1_Diario`, etc).
+- `DATA_CONTEXT` — región, plaza inicial (Oaxaca), subtítulo de marca y alias.
+- `SCOPE_MODEL` — catálogo territorial: región TABASCO y sus cinco plazas con
+  alias, parámetro de URL (`scope`) y llave de almacenamiento del alcance activo.
+- `SCOPED_GVIZ_COLUMNS` — columna de Plaza de cada pestaña para pedir solo la
+  plaza activa; `LEGACY_DEFAULT_PLAZA_TABS` — pestañas históricas sin Plaza
+  (se leen como la plaza por defecto).
 
-Para un cliente nuevo, técnicamente bastaría con: crear su propio Google
-Sheet con esas mismas pestañas y columnas (tabla en la sección 3), desplegar
-su propio Apps Script, y actualizar estos valores. **Pero eso no alcanza**
-porque el nombre "Oaxaca" está además cableado en la lógica, no solo en el
-Sheet — ver sección 2.
+Para **otra plaza de la misma región** basta con agregarla a `SCOPE_MODEL`
+(con sus alias) y publicar su base: el panel la reconoce, los tableros la
+ofrecen en el selector y cada plaza reemplaza solo sus filas
+(`replaceScope`). Para un **cliente nuevo**, técnicamente bastaría con crear
+su propio Google Sheet con esas pestañas y columnas (sección 3), desplegar su
+propio Apps Script y actualizar estos valores. **Pero eso no alcanza** porque
+quedan supuestos de marca y de operación cableados — ver sección 2.
 
-## 2. Lo que está cableado en el código (requeriría cambios reales)
+## 2. Lo que sigue cableado en el código (requeriría cambios reales)
 
-### a) Filtro de ingesta en el panel admin — decide qué filas se publican
+Ya **no** está cableado a una sola plaza:
 
-- `js/admin.js:4` — `const PLAZA_TARGET='OAXACA';` (solo para textos de
-  estado en pantalla, pero documenta la intención del filtro).
-- `js/admin/normalizers.js:11` — `containsOaxaca(value)` compara contra el
-  literal `'oaxaca'`. Se usa como filtro (`filter:`) en **8 de los 9**
-  dashboards definidos en `js/admin/dashboard-definitions.js` (d1, d2,
-  d2denom, d3, s4, s5, s6, s7, d8). Sin cambiar esto, el admin **descarta
-  toda fila que no diga Oaxaca en la columna Plaza**, sin importar qué
-  Sheet de destino se configure.
-- `js/admin/dashboard-definitions.js:28,36` — `PEER_PLAZAS_D2OTRAS` y
-  `PEER_PLAZAS_D3`: listas fijas de plazas comparativas (Chontalpa,
-  Villahermosa, Costa Istmo, Tuxtla / Tuxtla, Istmo, Villahermosa,
-  Chontalpa) para los rankings de Dashboard 2 y 3. Específicas del negocio
-  de esta plaza, no de un cliente genérico.
+- **Ingesta del panel admin** (`js/admin/normalizers.js`): `containsOaxaca()`
+  conserva su nombre por compatibilidad, pero acepta cualquier plaza reconocida
+  del catálogo (`OXXO.matchesAnyKnownPlaza`). Las filas de otras plazas ya no se
+  descartan y cada plaza reemplaza solo las suyas en Google Sheets
+  (`scopeColumns` -> `replaceScope` en `admin-upload.gs`).
+- **Lectura en los tableros**: el alcance activo (`getActiveDataScope()`) filtra
+  por plaza o región; no hay un literal `'OAXACA'` en el filtro de filas.
+- **Alcance fijo por diseño**: Dashboard 13 (Control de Ausentismo) es exclusivo
+  de Plaza Oaxaca (`data-oxxo-fixed-*` en su `<html>`).
 
-### b) Resolución de tiendas/asesores en los dashboards
+Sigue cableado (supuestos honestos que quedan):
 
-- `js/core.js:1723` — filtra filas de Dashboard 2 comparando la columna
-  Plaza contra `'OAXACA'` literal.
-- `js/core.js:1735-1736` — dos regex que reconocen nombres de estructura
-  tipo `ENTRENAMIENTO OAXACA...` / `OPERACIONES N OAXACA` para excluirlas
-  del conteo de tiendas reales.
+### a) Estructura comparativa y de tiendas propia de esta región
 
-### c) Textos de marca en la UI
+- `js/admin/dashboard-definitions.js` — `PEER_PLAZAS_D2OTRAS` y `PEER_PLAZAS_D3`:
+  listas fijas de plazas comparativas (Chontalpa, Villahermosa, Costa Istmo,
+  Tuxtla) para los rankings de Dashboard 2 y 3; asumen exactamente cuatro plazas
+  vecinas.
+- `js/core.js` — dos regex que reconocen estructuras `ENTRENAMIENTO OAXACA…` y
+  `OPERACIONES N OAXACA` para excluirlas del conteo de tiendas reales, y la lista
+  corta de preaperturas por nombre (`PREOPENING_STORE_KEYS`).
+- `Catalogo_Tiendas` se reconstruye desde TREO (`Dashboard_7_Semanal`); una tienda
+  ausente de TREO se muestra igual y solo se oculta con `ACTIVA = NO`.
 
-- `js/mi-dashboard.js:655` y `js/mi-tienda.js:651` — badge fijo
-  `"⟳ Datos en vivo · Plaza Oaxaca"`.
-- Títulos y textos "Plaza Oaxaca" repartidos en las 12 páginas de
-  `dashboards/*.html` e `index.html` (solo texto, sin lógica detrás).
+### b) Marca y textos
 
-### d) Generadores de PPTX (exportar presentación desde el admin)
+- Subtítulo de marca (`DATA_CONTEXT.BRAND_SUBTITLE`, "Plaza Oaxaca-ByPamsb"), logos
+  y textos "OXXO / Plaza Oaxaca" en la portada, encabezados y pies de página.
+- Dashboard 13 y algunos encabezados de tablero llevan "Plaza Oaxaca" como texto.
+
+### c) Generadores de PPTX (exportar presentación desde el admin)
 
 - `js/admin-pptx.js`, `js/admin-pptx-asesor.js`, `js/admin-pptx-rae.js` —
-  decenas de literales `'Plaza Oaxaca'` / `'OAXACA'` en labels de slides,
-  nombre de archivo exportado (`Presentacion-RAE-Oaxaca-...pptx`), y un
-  ranking que asume una sola plaza propia + 4 comparativas fijas.
+  literales de `Plaza Oaxaca` / `OAXACA` en slides y nombre de archivo exportado
+  (`Presentacion-RAE-Oaxaca-...pptx`), y un ranking que asume una plaza propia + 4
+  comparativas fijas.
 
-**Resumen**: parametrizar esto de verdad significa introducir algo como
-`CONFIG.PLAZA_NAME` y `CONFIG.PEER_PLAZAS` en `js/config.js`, y reemplazar
-cada uno de los puntos de arriba por una referencia a esa config, además de
-revisar cómo cada dashboard calcula sus rankings comparativos (hoy asumen
-exactamente 4 plazas vecinas fijas). Es un cambio transversal a ~10
-archivos, no una tarea de una sola sesión corta.
+### d) Seguridad
+
+- El candado del sitio es disuasión del lado del cliente; las hojas públicas de
+  Google y el Apps Script de lectura no están protegidos. Un cliente real con
+  datos sensibles necesita autenticación y hojas privadas antes de publicarse.
+
+**Resumen**: parametrizar para un cliente distinto significa introducir algo como
+`CONFIG.BRAND` y `CONFIG.PEER_PLAZAS`, reemplazar los puntos de arriba y revisar
+cómo cada tablero calcula sus comparativos (hoy asumen cuatro plazas vecinas).
+Es un cambio transversal, no una tarea corta.
 
 ## 3. Estructura de Google Sheet requerida por dashboard
 
@@ -126,13 +142,11 @@ al proyecto de Apps Script de su propio Sheet, ajustar `SPREADSHEET_ID` /
 3. Actualizar `js/config.js` con el `SPREADSHEET_ID` y `ADMIN_UPLOAD_URL`
    nuevos (probablemente en un fork o rama separada del repo, ya que hoy es
    mono-cliente).
-4. Aplicar a mano todos los cambios de la sección 2 (nombre de plaza y
-   plazas comparativas) en los ~10 archivos listados, con el nombre real
-   del cliente.
-5. Revisar y ajustar los textos de marca (sección 2c) y los generadores de
-   PPTX (sección 2d).
+4. Registrar las plazas del cliente en `SCOPE_MODEL` (con alias) y ajustar las
+   plazas comparativas (`PEER_PLAZAS_*`) según la sección 2a.
+5. Revisar y ajustar los textos de marca (sección 2b) y los generadores de
+   PPTX (sección 2c).
 
-Los pasos 1-3 son mecánicos. El paso 4 es el verdadero costo de vender el
-sistema a alguien más — vale la pena parametrizarlo (`PLAZA_NAME` +
-`PEER_PLAZAS` en config) el día que haya un cliente real en la mira, en vez
-de mantenerlo como checklist manual permanente.
+Los pasos 1-3 son mecánicos. Los pasos 4-5 (comparativos y marca) son el costo real
+de vender el sistema a alguien más — vale la pena parametrizarlos el día que haya
+un cliente real en la mira, en vez de mantenerlos como checklist manual.

@@ -1,8 +1,9 @@
 # Modelo de datos preparado para crecimiento
 
-El sistema opera actualmente solo para **Plaza Oaxaca**, pero la identidad
-geografica se mantiene centralizada en `js/config.js`, dentro de
-`DATA_CONTEXT`. Los dashboards no deben crear valores de plaza propios.
+El sistema opera para la **Region TABASCO** (Plaza Oaxaca, Costa Istmo, Tuxtla,
+Villahermosa y Chontalpa; Oaxaca es la plaza inicial y Dashboard 13 es de alcance
+fijo Oaxaca). La identidad geografica se mantiene centralizada en `js/config.js`,
+dentro de `DATA_CONTEXT` y `SCOPE_MODEL`. Los dashboards no deben crear valores de plaza propios.
 
 ## Llave de tienda
 

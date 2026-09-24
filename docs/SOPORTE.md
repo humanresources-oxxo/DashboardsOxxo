@@ -33,6 +33,35 @@ Revisa:
 - Que la pestana este publicada/accesible como CSV.
 - Que `SHEETS_CONFIG.TABS` apunte al nombre exacto.
 - Que el navegador no este mostrando cache viejo.
+- Si aparece un aviso amarillo o rojo, ver la siguiente seccion.
+
+## Avisos de conexion (banner amarillo / rojo)
+
+Los tableros guardan cada lectura de Sheets en Cache Storage (llave = pestana + alcance/consulta):
+
+| Antiguedad de la lectura | Que hace el tablero |
+|---|---|
+| menos de 2 min | Usa la copia guardada, sin red. |
+| 2 a 10 min | Muestra la copia **al instante** con el aviso amarillo "Mostrando datos recientes guardados" y refresca una vez en segundo plano. Al terminar, el aviso ofrece "Actualizar ahora"; la pantalla **no se repinta sola**. |
+| mas de 10 min o sin copia | Espera a la red (un solo intento de 18 s). Si falla, aviso rojo "No pudimos conectar con Google Sheets". |
+
+"Actualizar ahora" / "Reintentar" limpia la cache y pide todo de nuevo (`fresh`). Si el aviso rojo persiste: revisa la conexion, que la pestana siga publicada y ejecuta los diagnosticos en vivo (abajo).
+
+## Diagnosticos en vivo
+
+```bash
+npm run test:live                          # todos, cada uno con tope de 120 s
+node scripts/run-live-tests.mjs plazas     # solo los que contengan "plazas"
+```
+
+Imprimen una tabla final PASS/FAIL/TIMEOUT. Son informativos (dependen de produccion y de la red) y no bloquean un merge:
+
+- `live-period-formats`: los periodos de cada hoja se interpretan.
+- `live-scoped-queries`: las lecturas por plaza de GViz (pueden tardar 6-15 s).
+- `live-plazas-aggregate`: el comparativo por plaza agregado coincide con la lectura completa.
+- `live-store-catalog`: exclusiones del catalogo (ACTIVA=NO, preaperturas); las tiendas ausentes de TREO solo se reportan.
+- `live-vacancies-regional`: vacantes regionales sin mezclar plazas.
+- `live-sheets-smoke`: recorre las ~22 fuentes (puede tardar mas de 2 min; imprime cada hoja al leerla para identificar la lenta). Un `HTTP 404` en una hoja indica que el Apps Script no la encuentra.
 
 ## El panel marca columnas faltantes
 
@@ -60,7 +89,7 @@ Acciones:
 
 - Espera de 1 a 5 minutos.
 - Usa `Ctrl + F5`.
-- Verifica que `admin.html` o el dashboard tenga version nueva en los scripts, por ejemplo `core.js?v=...`.
+- Verifica que `admin.html` o el dashboard tenga version nueva en los scripts, por ejemplo `core.js?v=...`. El workflow `versionar-assets.yml` la pone sola en cada push a `main`; `npm run assets:check` confirma que todas las referencias comparten la misma version.
 
 ## Recomendacion antes de cambios grandes
 
@@ -71,3 +100,11 @@ Antes de una refactorizacion grande:
 3. Haz cambios en partes pequenas.
 4. Prueba panel admin y dashboards clave.
 5. Sube solo cuando el flujo principal siga funcionando.
+
+## El candado del sitio
+
+`js/site-lock.js` pide una contrasena compartida al abrir el sitio. Es una **disuasion del lado del cliente**: no protege las hojas publicas de Google ni el Apps Script de lectura. Lo que si esta autorizado en el servidor es toda escritura desde el panel admin (contrasena en Script Properties, lista de pestanas permitidas, bitacora y respaldos). Si se necesita confidencialidad real hay que agregar autenticacion y hojas privadas (decision de arquitectura pendiente).
+
+## Redesplegar el Apps Script
+
+Solo cuando cambie `apps-script/admin-upload.gs`. Se pega el `.gs` en el editor y se publica con `Administrar implementaciones` > lapiz > `Nueva version` para conservar la URL `/exec` (ver `docs/GUIA_ACTUALIZACION.md`). Despues verifica que `VERIFIED_ADMIN_RUNTIME_VERSION` de `js/config.js` coincida con `APP_VERSION` del `.gs` (lo comprueba `npm test`).

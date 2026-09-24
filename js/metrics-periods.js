@@ -1,3 +1,4 @@
+/* Consumido por: admin, dashboard-4, dashboard-6, mi-dashboard, mi-tienda. */
 /* Cortes compartidos: una semana siempre pertenece a un mes y un año. */
 (function () {
   'use strict';

@@ -1,3 +1,4 @@
+/* Consumido por: mi-dashboard, mi-tienda. */
 /* ==========================================================
    FICHA UI — piezas visuales compartidas por "Mi Tienda" y
    "Mi Dashboard". Las dos paginas arman la misma ficha (cabecera

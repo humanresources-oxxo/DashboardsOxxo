@@ -1,3 +1,4 @@
+/* Consumido por: 21 paginas (index, admin y dashboards). */
 /* ==========================================================
    OXXO DASHBOARDS - CONFIGURACION CENTRAL
    Edita aqui conexiones, pestanas y nombres compartidos.

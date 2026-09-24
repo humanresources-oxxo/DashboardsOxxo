@@ -1,3 +1,4 @@
+/* Consumido por: 20 paginas (index, admin y dashboards). */
 /* ==========================================================
    OXXO SITE LOCK — candado de acceso para todo el sitio publico
    (index + los 8 dashboards + Mi Dashboard + Mi Tienda; admin.html
