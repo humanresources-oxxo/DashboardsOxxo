@@ -1053,7 +1053,7 @@ body {
 /* Objetivo tactil minimo de 44px en celular. Quedan fuera los controles en
    linea que viven dentro de una fila de tabla o de un menu compacto. */
 @media (max-width: 760px) {
-  :where(button, select, [role="button"], input[type="button"], input[type="submit"]):where(:not(.row-action, .info-tip, .sf-only, .cap-row-more, .rh-table-page-button)) {
+  :where(button, select, [role="button"], input[type="button"], input[type="submit"]):where(:not(.row-action, .info-tip, .sf-only, .rh-table-page-button)) {
     min-height: 44px;
   }
 }

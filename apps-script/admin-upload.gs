@@ -98,6 +98,16 @@ const ALLOWED_SHEETS = [
   'Reasignaciones'
 ];
 
+// Politica de hojas. ALLOWED_SHEETS son las hojas que el panel PUEDE mutar
+// (publicar, restaurar respaldos) y leer por action=readSheet. Las de
+// READ_ONLY_SHEETS se editan directo en Google Sheets: el panel nunca las
+// escribe ni las restaura; su lectura publica sigue siendo por GViz.
+const READ_ONLY_SHEETS = ['Promociones', 'PromosD100'];
+function assertWritableSheet_(targetSheet) {
+  if (READ_ONLY_SHEETS.indexOf(targetSheet) !== -1) throw new Error('Hoja de solo lectura desde el panel: ' + targetSheet);
+  if (ALLOWED_SHEETS.indexOf(targetSheet) === -1) throw new Error('targetSheet no permitido: ' + targetSheet);
+}
+
 // Registro unico para la portada. Las claves coinciden con home-navigation.js
 // y no con el nombre tecnico de las pestañas. Mantenerlo aqui permite que una
 // publicacion nueva agregue su fila de Configuracion automaticamente y que la
@@ -627,7 +637,7 @@ function homeSheetLabel_(sheetName) {
 
 function validatePublicationRequest(targetSheet, rows, updateMode, periodColumn, periodValues, requiredHeaders, scopeColumns) {
   if (!targetSheet) throw new Error('targetSheet requerido');
-  if (ALLOWED_SHEETS.indexOf(targetSheet) === -1) throw new Error('targetSheet no permitido: ' + targetSheet);
+  assertWritableSheet_(targetSheet);
   if (updateMode !== 'replaceAll' && updateMode !== 'replacePeriod') throw new Error('Modo de publicación no permitido: ' + updateMode);
   if (!Array.isArray(rows) || !rows.length) throw new Error('El archivo no contiene filas para publicar');
   if (rows.length > MAX_UPLOAD_ROWS) throw new Error('El archivo supera el máximo de ' + MAX_UPLOAD_ROWS + ' filas');
@@ -902,7 +912,7 @@ function getBackupPreview(payload) {
   const targetSheet = String(payload.targetSheet || '').trim();
   const requestedBackup = String(payload.backupSheet || '').trim();
   if (!targetSheet) throw new Error('targetSheet requerido');
-  if (ALLOWED_SHEETS.indexOf(targetSheet) === -1) throw new Error('targetSheet no permitido: ' + targetSheet);
+  assertWritableSheet_(targetSheet);
   const ss = SPREADSHEET_ID ? SpreadsheetApp.openById(SPREADSHEET_ID) : SpreadsheetApp.getActiveSpreadsheet();
   const target = ss.getSheetByName(targetSheet);
   if (!target) throw new Error('Hoja destino no encontrada: ' + targetSheet);
@@ -949,7 +959,7 @@ function restoreLatestBackup(payload) {
   const targetSheet = String(payload.targetSheet || '').trim();
   const requestedBackup = String(payload.backupSheet || '').trim();
   if (!targetSheet) throw new Error('targetSheet requerido');
-  if (ALLOWED_SHEETS.indexOf(targetSheet) === -1) throw new Error('targetSheet no permitido: ' + targetSheet);
+  assertWritableSheet_(targetSheet);
   const ss = SPREADSHEET_ID ? SpreadsheetApp.openById(SPREADSHEET_ID) : SpreadsheetApp.getActiveSpreadsheet();
   const target = ss.getSheetByName(targetSheet);
   if (!target) throw new Error('Hoja destino no encontrada: ' + targetSheet);

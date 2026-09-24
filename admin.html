@@ -15,19 +15,20 @@
 <link rel="stylesheet" href="css/admin-layout.css?v=05ad64de">
 </head>
 <body>
-  <div class="admin-lock" id="admin-lock" aria-modal="true" role="dialog">
+  <div class="admin-lock" id="admin-lock" aria-modal="true" role="dialog" aria-labelledby="admin-lock-title" aria-describedby="admin-lock-text">
     <div class="admin-lock__card">
       <div class="admin-lock__brand">
         <div class="admin-lock__logo"><img src="assets/oxxo-logo-original.png" alt="OXXO"></div>
         <div>
           <div class="admin-lock__eyebrow">Acceso restringido</div>
-          <div class="admin-lock__title">Panel Admin</div>
+          <h1 class="admin-lock__title" id="admin-lock-title">Panel Admin</h1>
         </div>
       </div>
-      <p class="admin-lock__text">Ingresa la contrasena para cargar y publicar bases.</p>
+      <p class="admin-lock__text" id="admin-lock-text">Ingresa la contrasena para cargar y publicar bases.</p>
       <form class="admin-lock__form" id="admin-lock-form">
-        <input class="admin-input" id="admin-password" type="password" autocomplete="current-password" placeholder="Contrasena" />
-        <div class="admin-lock__error" id="admin-lock-error"></div>
+        <label class="sr-only" for="admin-password">Contrasena del panel</label>
+        <input class="admin-input" id="admin-password" type="password" autocomplete="current-password" placeholder="Contrasena" aria-describedby="admin-lock-error" />
+        <div class="admin-lock__error" id="admin-lock-error" role="alert" aria-live="assertive"></div>
         <button class="admin-lock__button" type="submit">Entrar</button>
       </form>
     </div>

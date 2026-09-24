@@ -60,7 +60,19 @@ operational.forEach(row => {
 const storeCatalog = catalog;
 const valid = (tienda, cr = '') => sandbox.OXXO.isTiendaValid({ storeCatalog }, tienda, cr);
 
+// La regla ACTIVA=NO se prueba SIEMPRE con un catalogo sintetico (nunca vacio);
+// lo que sigue con datos reales solo es un diagnostico adicional y avisa cuando
+// produccion no trae ninguna fila inactiva. Cobertura deterministica completa en
+// tests/store-catalog-rules.test.js.
+const sintetico = sandbox.OXXO.buildTiendaCatalog([
+  { CR: '50Z01', Tienda: 'OXXO Sintetica Cerrada', Plaza: 'Plaza Oaxaca', Region: 'TABASCO', ACTIVA: 'NO' },
+  { CR: '50Z02', Tienda: 'OXXO Sintetica Activa', Plaza: 'Plaza Oaxaca', Region: 'TABASCO', ACTIVA: 'SI' }
+], { source: 'sintetico' });
+assert.equal(sandbox.OXXO.isTiendaValid({ storeCatalog: sintetico }, 'OXXO Sintetica Cerrada', '50Z01'), false, 'ACTIVA=NO debe rechazarse');
+assert.equal(sandbox.OXXO.isTiendaValid({ storeCatalog: sintetico }, 'OXXO Sintetica Activa', '50Z02'), true);
+
 const inactivas = catalog.rows.filter(row => row.activa === false);
+if (!inactivas.length) console.warn('[diagnostico] el catalogo vivo no trae filas ACTIVA=NO: no hay caso real que ejercitar (la regla queda cubierta por el fixture)');
 inactivas.forEach(row => assert.equal(valid(row.tienda, row.cr), false, `ACTIVA=NO debe rechazarse: ${row.tienda}`));
 
 const preaperturas = ['Parador Boca del Monte VSA', 'Papaya VSA', 'Small Beach OAX VSA', 'Piedra Parada VSA', 'Gas Nopala VSA', '5 de Septiembre VSA', 'Union y Progreso VSA'];

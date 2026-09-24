@@ -206,6 +206,9 @@
 
   // ── Tarjetas KPI que filtran ─────────────────────────────
   const KPI = '.kpi-card[data-kpi], .kpi-card[role="button"]';
+  // Cada tablero marca su filtro activo a su manera: "active" (D1-D3, D7) o
+  // "kpi-active", "kpi-active-red/-blue/-green" (D4, D9).
+  const kpiActive = (card) => [...card.classList].some((name) => name === 'active' || name.startsWith('kpi-active'));
   function syncKpis() {
     document.querySelectorAll(KPI).forEach((card) => {
       if (!card.hasAttribute('role')) {
@@ -213,7 +216,7 @@
         card.setAttribute('tabindex', '0');
         card.dataset.kpiKeys = '1';      // el teclado lo atiende el listener de abajo
       }
-      const active = String(card.classList.contains('active'));
+      const active = String(kpiActive(card));
       if (card.getAttribute('aria-pressed') !== active) card.setAttribute('aria-pressed', active);
     });
   }

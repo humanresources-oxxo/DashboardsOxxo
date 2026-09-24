@@ -73,6 +73,21 @@
     const lock=$('admin-lock'),form=$('admin-lock-form'),input=$('admin-password'),error=$('admin-lock-error');
     if(!lock||!form||!input)return;
     lock.classList.remove('hidden');
+    // Mientras el candado esta visible la pagina de atras queda inert (sin foco ni
+    // lector de pantalla) y Tab solo alterna entre el campo y el boton.
+    const behind=[...document.body.children].filter(el=>el!==lock&&!['SCRIPT','STYLE'].includes(el.tagName));
+    behind.forEach(el=>el.setAttribute('inert',''));
+    const submit=form.querySelector('button[type="submit"]');
+    lock.addEventListener('keydown',event=>{
+      if(event.key!=='Tab')return;
+      if(event.shiftKey&&document.activeElement===input){event.preventDefault();submit.focus();}
+      else if(!event.shiftKey&&document.activeElement===submit){event.preventDefault();input.focus();}
+    });
+    const releaseLock=()=>{
+      behind.forEach(el=>el.removeAttribute('inert'));
+      // El foco pasa al area activa del panel en lugar de perderse en <body>.
+      (document.querySelector('.admin-area.active')||document.getElementById('admin-area-title')||document.body).focus?.();
+    };
     setTimeout(()=>input.focus(),80);
     form.addEventListener('submit',async event=>{
       event.preventDefault();
@@ -86,6 +101,7 @@
         input.value='';
         if(error)error.textContent='';
         lock.classList.add('hidden');
+        releaseLock();
         const warmup=()=>window.OXXO_ADMIN_ASSETS?.warmup().catch(error=>console.warn('[OXXO] Recursos avanzados pendientes.',error));
         if('requestIdleCallback' in window)window.requestIdleCallback(warmup,{timeout:4000});
         else setTimeout(warmup,1500);

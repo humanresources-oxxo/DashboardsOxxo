@@ -339,6 +339,12 @@ const SHEET_REQUEST_TIMEOUT_MS = 18000;
 const SHEET_PERSISTENT_CACHE = 'oxxo-sheet-data-v1';
 const sheetDataCache = new Map();
 const sheetDataInflight = new Map();
+// Generacion de invalidacion: clearSheetDataCache() la incrementa (global o por
+// pestana). Una solicitud que empezo ANTES de la invalidacion no puede volver a
+// poblar la cache (memoria ni Cache Storage) con datos anteriores a la publicacion.
+let sheetCacheEpoch = 0;
+const sheetTabEpoch = new Map();
+const sheetGeneration = (tabName) => `${sheetCacheEpoch}:${sheetTabEpoch.get(String(tabName)) || 0}`;
 const sheetDataStatus = new Map();
 const sheetConnectionIssues = new Map();
 let dashboardRetryHandler = null;
@@ -445,6 +451,7 @@ function clearSheetDataCache(tabName) {
       .forEach((cacheKey) => sheetDataCache.delete(cacheKey));
     [...sheetDataInflight.keys()].filter((cacheKey) => cacheKey === key || cacheKey.startsWith(`${key}|`))
       .forEach((cacheKey) => sheetDataInflight.delete(cacheKey));
+    sheetTabEpoch.set(key, (sheetTabEpoch.get(key) || 0) + 1);
     // Cache Storage no expone búsqueda por prefijo de forma barata. Publicar
     // es poco frecuente, así que se invalida el libro local completo para que
     // ninguna vista conserve una variante regional anterior.
@@ -461,6 +468,8 @@ function clearSheetDataCache(tabName) {
     }
   } else {
     sheetDataCache.clear();
+    sheetDataInflight.clear();
+    sheetCacheEpoch += 1;
     void deletePersistentRows();
     systemConfigPromise = null;
     asesorCatalogPromise = null;
@@ -530,6 +539,7 @@ function requestSheetRows(key, tabName, options = {}) {
   let request = sheetDataInflight.get(key);
   if (request) return request;
   const url = buildSheetURL(tabName, options);
+  const generation = sheetGeneration(tabName);
   request = (async () => {
     try {
       // Permite validacion HTTP del navegador; la vigencia funcional se
@@ -537,15 +547,22 @@ function requestSheetRows(key, tabName, options = {}) {
       const response = await fetchWithTimeout(url, { cache: 'default' }, SHEET_REQUEST_TIMEOUT_MS);
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const rows = parseCSV(await response.text());
-      const entry = { rows, savedAt: Date.now() };
-      sheetDataCache.set(key, entry);
-      void writePersistentRows(`sheet:${key}`, rows, entry.savedAt);
+      // Si la cache se invalido mientras esta solicitud volaba (publicacion,
+      // Reintentar), las filas siguen sirviendo a quien las esperaba pero NO se
+      // guardan: podrian ser anteriores a lo recien publicado.
+      if (generation === sheetGeneration(tabName)) {
+        const entry = { rows, savedAt: Date.now() };
+        sheetDataCache.set(key, entry);
+        void writePersistentRows(`sheet:${key}`, rows, entry.savedAt);
+      }
       return rows;
     } catch (error) {
       console.error(`Error cargando pestaña "${tabName}":`, error);
       return null;
     } finally {
-      sheetDataInflight.delete(key);
+      // Solo se libera la propia entrada: tras una invalidacion la llave puede
+      // pertenecer ya a una solicitud nueva.
+      if (sheetDataInflight.get(key) === request) sheetDataInflight.delete(key);
     }
   })();
   sheetDataInflight.set(key, request);
@@ -595,7 +612,7 @@ async function fetchSheetData(tabName, options = {}) {
     void requestSheetRows(key, tabName, options).then((rows) => {
       // Refresco ok: los datos nuevos quedan en cache para la siguiente lectura;
       // el aviso pasa a ofrecer "Actualizar ahora". Si fallo, se conserva el aviso.
-      if (rows) updateConnectionStatus(tabKey, 'stale', { ageMs: now - savedAt, refreshed: true });
+      if (rows && sheetDataCache.get(key)?.rows === rows) updateConnectionStatus(tabKey, 'stale', { ageMs: now - savedAt, refreshed: true });
     });
     return prepareRows(cached.rows);
   }

@@ -564,7 +564,7 @@ function renderAll() {
           <td class="center">${a.emps}</td>
           <td class="center">${a.aplic}</td>
           <td class="center">${a.comp}</td>
-          <td class="center"><span class="cap-badge ${color}">${a.pct}%</span><button type="button" class="cap-row-more" title="Ver detalle por certificacion" aria-label="Ver detalle por certificacion" onclick="event.stopPropagation();openAsesorCapModal('${escapeAttr(a.asesor)}')"><svg viewBox="0 0 24 24" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg></button></td>
+          <td class="center"><span class="cap-badge ${color}">${a.pct}%</span><button type="button" class="cap-row-more" title="Ver detalle por certificacion de ${OXXO.escHtml(a.asesor)}" aria-label="Ver detalle por certificacion de ${OXXO.escHtml(a.asesor)}" onclick="event.stopPropagation();openAsesorCapModal('${escapeAttr(a.asesor)}')"><svg viewBox="0 0 24 24" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg></button></td>
         </tr>`;
       }).join('');
   OXXO_DIALOGS.bindRows(document.querySelectorAll('#tabla-asesor tbody tr[data-asesor]'), 'Filtrar el detalle por asesor',

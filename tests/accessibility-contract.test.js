@@ -137,7 +137,7 @@ test('los filtros desplegables exponen su estado desde el controlador compartido
 test('las tarjetas KPI que filtran exponen aria-pressed', () => {
   const js = leer('js/dashboard-dialogs.js');
   assert.match(js, /aria-pressed/);
-  assert.match(js, /classList\.contains\('active'\)/);
+  assert.match(js, /kpi-active/, 'D4/D9 marcan el filtro activo con kpi-active*');
 });
 
 test('site-lock: etiqueta real, error anunciado y foco contenido', () => {
@@ -155,4 +155,44 @@ test('el css compartido define foco visible, sr-only, objetivos tactiles y reduc
   assert.match(css, /\.sr-only/);
   assert.match(css, /min-height:\s*44px/);
   assert.match(css, /prefers-reduced-motion:\s*reduce/);
+});
+
+test('D8: el boton de detalle por certificacion mide 44x44 en celular y nombra al asesor', () => {
+  const d8 = leer('dashboards/dashboard-8.html');
+  const boton = d8.match(/<button type="button" class="cap-row-more"[^>]*>/)[0];
+  assert.match(boton, /aria-label="Ver detalle por certificacion de \$\{OXXO\.escHtml\(a\.asesor\)\}"/);
+  const refresh = leer('css/rh-dashboard-refresh.css');
+  const movil = refresh.slice(refresh.lastIndexOf('@media (max-width: 760px)'));
+  assert.match(movil, /\.cap-row-more\s*\{[^}]*width:\s*44px\s*!important[^}]*height:\s*44px\s*!important/);
+  assert.doesNotMatch(leer('css/global.css'), /:not\([^)]*\.cap-row-more/, 'ya no queda exento de la regla de 44px');
+});
+
+test('css responsive compartido: filtros 2/1 columnas, tabla con scroll propio y admin con tabs desplazables', () => {
+  const filtros = leer('css/floating-filter-layout.css');
+  assert.match(filtros, /max-width:\s*979px[\s\S]*?repeat\(2,\s*minmax\(0,\s*1fr\)\)/);
+  assert.match(filtros, /max-width:\s*639px[\s\S]*?grid-template-columns:\s*minmax\(0,\s*1fr\)\s*!important/);
+  const refresh = leer('css/rh-dashboard-refresh.css');
+  assert.match(refresh, /\.tbl-wrap[\s\S]*?overflow-x:\s*auto\s*!important/);
+  const admin = leer('css/admin-layout.css');
+  assert.match(admin, /\.admin-tabs\{[^}]*overflow-x:auto/);
+  assert.match(admin, /\.restore-dialog\{[^}]*max-height:91vh/);
+  assert.equal((leer('admin.html').match(/<style/g) || []).length, 0, 'el css de presentacion vive en admin-layout.css');
+});
+
+test('admin: el candado es un dialogo con nombre, campo etiquetado, error descrito y foco contenido', () => {
+  const html = leer('admin.html');
+  const dialogo = html.match(/<div class="admin-lock"[^>]*>/)[0];
+  assert.match(dialogo, /role="dialog"/);
+  assert.match(dialogo, /aria-modal="true"/);
+  assert.match(dialogo, /aria-labelledby="admin-lock-title"/);
+  assert.match(html, /id="admin-lock-title"/);
+  assert.match(html, /<label[^>]*for="admin-password"[^>]*>[^<]+<\/label>/, 'etiqueta real del campo');
+  assert.match(html.match(/<input[^>]*id="admin-password"[^>]*>/)[0], /aria-describedby="admin-lock-error"/);
+  assert.match(html.match(/<div[^>]*id="admin-lock-error"[^>]*>/)[0], /role="alert"|aria-live=/);
+  const admin = leer('js/admin.js');
+  const cuerpo = admin.slice(admin.indexOf('function initAdminLock'), admin.indexOf('const {\n    getHeaders') > 0 ? admin.indexOf('const {\n    getHeaders') : undefined);
+  assert.match(cuerpo, /setAttribute\('inert'/, 'la pagina de atras queda inert');
+  assert.match(cuerpo, /key!=='Tab'/, 'Tab queda contenido en el candado');
+  assert.match(cuerpo, /removeAttribute\('inert'\)/);
+  assert.match(cuerpo, /\.focus\?\.\(\)/, 'al desbloquear el foco pasa al panel');
 });

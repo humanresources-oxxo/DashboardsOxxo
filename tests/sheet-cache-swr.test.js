@@ -193,3 +193,50 @@ test('fresh:true se salta la cache y Reintentar limpia y vuelve a pedir', async 
   await reintento;
   assert.equal(reinicios, 1);
 });
+
+for (const [nombre, limpiar] of [
+  ['por pestana', (o) => o.clearSheetDataCache(TAB)],
+  ['global', (o) => o.clearSheetDataCache()]
+]) {
+  test(`invalidacion ${nombre}: una respuesta vieja no repuebla la cache ni libera la solicitud nueva`, async () => {
+    const e = crearEntorno();
+    const vieja = e.OXXO.fetchSheetData(TAB, { scoped: false });
+    await e.settle();
+    assert.equal(e.llamadas.length, 1);
+
+    limpiar(e.OXXO);                                             // p. ej. se publico la pestana
+    const nueva = e.OXXO.fetchSheetData(TAB, { scoped: false });
+    await e.settle();
+    assert.equal(e.llamadas.length, 2, 'tras invalidar se pide de nuevo');
+
+    e.responder(e.llamadas[0], CSV_V1);                          // la vieja llega tarde
+    assert.equal((await vieja)[0].Valor, 'uno', 'quien la esperaba recibe sus filas');
+    await e.settle();
+    const compartida = e.OXXO.fetchSheetData(TAB, { scoped: false });
+    await e.settle();
+    assert.equal(e.llamadas.length, 2, 'la solicitud nueva sigue en vuelo y se comparte');
+
+    e.responder(e.llamadas[1], CSV_V2);
+    assert.equal((await nueva)[0].Valor, 'dos');
+    assert.equal((await compartida)[0].Valor, 'dos');
+    const leida = await e.OXXO.fetchSheetData(TAB, { scoped: false });
+    assert.equal(leida[0].Valor, 'dos', 'la cache conserva lo nuevo, no lo viejo');
+    assert.equal(e.llamadas.length, 2);
+  });
+}
+
+test('invalidacion: la vieja que llega DESPUES de la nueva tampoco pisa la cache', async () => {
+  const e = crearEntorno();
+  const vieja = e.OXXO.fetchSheetData(TAB, { scoped: false });
+  await e.settle();
+  e.OXXO.clearSheetDataCache(TAB);
+  const nueva = e.OXXO.fetchSheetData(TAB, { scoped: false });
+  await e.settle();
+  e.responder(e.llamadas[1], CSV_V2);
+  await nueva;
+  e.responder(e.llamadas[0], CSV_V1);
+  await vieja;
+  await e.settle();
+  assert.equal((await e.OXXO.fetchSheetData(TAB, { scoped: false }))[0].Valor, 'dos');
+  assert.equal(e.llamadas.length, 2);
+});
