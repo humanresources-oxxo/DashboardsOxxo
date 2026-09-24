@@ -1,3 +1,7 @@
+/* Carga diferida de librerias del panel admin (CDN jsDelivr, 20 s de tope).
+   Solo admin.html la consume. Tras desbloquear el panel se precalienta UNICAMENTE
+   XLSX (lo necesita cualquier carga de Excel); JSZip y PptxGenJS (~500 KB) se
+   piden solo cuando alguien exporta, con ensure('pptx') / ensure('jszip'). */
 (function(){
   const assets={
     xlsx:{src:'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js',ready:()=>Boolean(window.XLSX)},
@@ -43,6 +47,6 @@
   }
 
   function ensure(...names){return Promise.all(names.flat().map(load));}
-  function warmup(){return Promise.all([load('xlsx'),load('pptx')]);}
+  function warmup(){return load('xlsx');}
   window.OXXO_ADMIN_ASSETS={ensure,warmup};
 })();

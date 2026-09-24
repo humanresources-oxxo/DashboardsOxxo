@@ -1,3 +1,4 @@
+/* Consumido por: 21 paginas (index, admin y dashboards). */
 /* ==========================================================
    OXXO DASHBOARDS — MÓDULO CORE
    Conexión a Google Sheets · Utilidades compartidas
@@ -334,6 +335,7 @@ function siteBasePath() {
 // ─────────────────────────────────────────────────────────────
 const SHEET_CACHE_TTL_MS = 2 * 60 * 1000;
 const SHEET_STALE_LIMIT_MS = 10 * 60 * 1000;
+const SHEET_REQUEST_TIMEOUT_MS = 18000;
 const SHEET_PERSISTENT_CACHE = 'oxxo-sheet-data-v1';
 const sheetDataCache = new Map();
 const sheetDataInflight = new Map();
@@ -491,7 +493,7 @@ function renderConnectionBanner() {
     document.body.appendChild(banner);
   }
   banner.className = `connection-banner ${offline ? 'is-offline' : 'is-stale'}`;
-  banner.innerHTML = `<span class="connection-banner__icon" aria-hidden="true">${offline ? '!' : '↻'}</span><div><strong>${offline ? 'No pudimos conectar con Google Sheets' : 'Mostrando datos recientes guardados'}</strong><small>${offline ? 'La información no fue modificada. Revisa tu conexión e inténtalo nuevamente.' : `La última respuesta disponible tiene aproximadamente ${connectionAgeLabel(stale.ageMs)}.`}</small></div><button type="button" data-oxxo-retry>${offline ? 'Reintentar' : 'Actualizar ahora'}</button>`;
+  banner.innerHTML = `<span class="connection-banner__icon" aria-hidden="true">${offline ? '!' : '↻'}</span><div><strong>${offline ? 'No pudimos conectar con Google Sheets' : 'Mostrando datos recientes guardados'}</strong><small>${offline ? 'La información no fue modificada. Revisa tu conexión e inténtalo nuevamente.' : stale.refreshed ? 'Ya hay datos más recientes disponibles. Actualiza para verlos.' : `La última respuesta disponible tiene aproximadamente ${connectionAgeLabel(stale.ageMs)}.`}</small></div><button type="button" data-oxxo-retry>${offline ? 'Reintentar' : 'Actualizar ahora'}</button>`;
 }
 function updateConnectionStatus(tabName, status, detail = {}) {
   const key = String(tabName || '');
@@ -519,6 +521,47 @@ document.addEventListener('click', (event) => {
   const button = event.target.closest?.('[data-oxxo-retry]');
   if (button) retryDashboardData(button);
 });
+// Una sola solicitud por llave (pestaña + consulta/alcance): las llamadas
+// concurrentes comparten la misma promesa. Un unico intento de 18 s en vez de
+// dos intentos seriados (12 s + pausa + 18 s): si Google no responde, el
+// usuario ve el aviso de conexion a los 18 s, no a los 30. Devuelve las filas
+// o null; nunca lanza. "Reintentar" limpia la cache y vuelve a pedir.
+function requestSheetRows(key, tabName, options = {}) {
+  let request = sheetDataInflight.get(key);
+  if (request) return request;
+  const url = buildSheetURL(tabName, options);
+  request = (async () => {
+    try {
+      // Permite validacion HTTP del navegador; la vigencia funcional se
+      // controla con savedAt y las constantes de arriba.
+      const response = await fetchWithTimeout(url, { cache: 'default' }, SHEET_REQUEST_TIMEOUT_MS);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const rows = parseCSV(await response.text());
+      const entry = { rows, savedAt: Date.now() };
+      sheetDataCache.set(key, entry);
+      void writePersistentRows(`sheet:${key}`, rows, entry.savedAt);
+      return rows;
+    } catch (error) {
+      console.error(`Error cargando pestaña "${tabName}":`, error);
+      return null;
+    } finally {
+      sheetDataInflight.delete(key);
+    }
+  })();
+  sheetDataInflight.set(key, request);
+  return request;
+}
+
+// Reglas de vigencia (los mismos valores de antes, ahora con stale-while-revalidate):
+//   < 2 min         cache fresca: se devuelve sin tocar la red.
+//   2 min - 10 min  cache rancia: se devuelve AL INSTANTE con el aviso "datos
+//                   recientes guardados" y se refresca UNA vez en segundo plano
+//                   (misma llave). El refresco solo actualiza cache y estado;
+//                   nunca vuelve a pintar la pantalla por su cuenta.
+//   > 10 min o sin cache  se espera a la red; si falla, aviso "sin conexion".
+// fresh:true se salta la cache (publicaciones y "Reintentar"). La llave incluye
+// pestaña + consulta/alcance, asi que plaza, region y consultas propias nunca
+// se mezclan, y las filas siempre se clonan antes de filtrarlas.
 async function fetchSheetData(tabName, options = {}) {
   const tabKey = String(tabName || '');
   const key = sheetRequestCacheKey(tabKey, options);
@@ -529,7 +572,12 @@ async function fetchSheetData(tabName, options = {}) {
   const prepareRows = (rows) => options.scoped === false
     ? cloneSheetRows(rows)
     : filterRowsByDataScope(cloneSheetRows(rows), getActiveDataScope(), { legacyPlaza });
-  if (!options.fresh && cached && now - cached.savedAt < SHEET_CACHE_TTL_MS) return prepareRows(cached.rows);
+  if (!options.fresh && cached && now - cached.savedAt < SHEET_CACHE_TTL_MS) {
+    // Si un refresco en segundo plano ya dejo datos nuevos en cache y esta
+    // llamada los va a leer, el aviso de "datos guardados" ya no aplica.
+    if (sheetDataStatus.get(tabKey)?.status === 'stale') updateConnectionStatus(tabKey, 'online', { source: 'cache' });
+    return prepareRows(cached.rows);
+  }
   if (!options.fresh && !cached) {
     const persistent = await readPersistentRows(`sheet:${key}`);
     if (persistent) {
@@ -541,37 +589,17 @@ async function fetchSheetData(tabName, options = {}) {
       }
     }
   }
-  let request = sheetDataInflight.get(key);
-  if (!request) {
-    const url = buildSheetURL(tabName, options);
-    request = (async () => {
-      let lastError = null;
-      try {
-        for (let attempt = 0; attempt < 2; attempt += 1) {
-          try {
-            // Permite validacion HTTP del navegador; la vigencia funcional se
-            // sigue controlando con savedAt y las constantes de arriba.
-            const response = await fetchWithTimeout(url, { cache: 'default' }, attempt === 0 ? 12000 : 18000);
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            const rows = parseCSV(await response.text());
-            const entry = { rows, savedAt: Date.now() };
-            sheetDataCache.set(key, entry);
-            void writePersistentRows(`sheet:${key}`, rows, entry.savedAt);
-            return rows;
-          } catch (error) {
-            lastError = error;
-            if (attempt === 0) await new Promise((resolve) => setTimeout(resolve, 650));
-          }
-        }
-        console.error(`Error cargando pestaña "${tabName}":`, lastError);
-        return null;
-      } finally {
-        sheetDataInflight.delete(key);
-      }
-    })();
-    sheetDataInflight.set(key, request);
+  if (!options.fresh && options.allowStale !== false && cached && now - cached.savedAt < SHEET_STALE_LIMIT_MS) {
+    const savedAt = cached.savedAt;
+    updateConnectionStatus(tabKey, 'stale', { ageMs: now - savedAt });
+    void requestSheetRows(key, tabName, options).then((rows) => {
+      // Refresco ok: los datos nuevos quedan en cache para la siguiente lectura;
+      // el aviso pasa a ofrecer "Actualizar ahora". Si fallo, se conserva el aviso.
+      if (rows) updateConnectionStatus(tabKey, 'stale', { ageMs: now - savedAt, refreshed: true });
+    });
+    return prepareRows(cached.rows);
   }
-  const rows = await request;
+  const rows = await requestSheetRows(key, tabName, options);
   if (rows) {
     updateConnectionStatus(tabKey, 'online');
     return prepareRows(rows);
@@ -2985,6 +3013,7 @@ window.OXXO = {
   fetchWithTimeout,
   fetchSheetData,
   clearSheetDataCache,
+  retryDashboardData,
   setRetryHandler,
   restoreDashboardPeriod,
   persistDashboardPeriod,
