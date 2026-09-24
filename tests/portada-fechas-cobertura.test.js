@@ -7,7 +7,11 @@ const assert = require('node:assert/strict');
 // tarjeta se queda en "Sin fecha registrada" para siempre, aunque la pestaña
 // Configuracion si traiga la fila. Asi se quedaron m12, promos e inventories.
 const raiz = path.resolve(__dirname, '..');
-const html = fs.readFileSync(path.join(raiz, 'index.html'), 'utf8');
+const pagina = fs.readFileSync(path.join(raiz, 'index.html'), 'utf8');
+// El markup de la portada vive en index.html; el mapa de rutas y las tarjetas de
+// Comercial/Administrativo, en js/home.js.
+const script = fs.readFileSync(path.join(raiz, 'js', 'home.js'), 'utf8');
+const html = pagina + '\n' + script;
 
 // 1) Rutas declaradas en el mapa.
 const bloque = html.match(/const rutasConfiguracion = \{([\s\S]*?)\};/);
@@ -26,7 +30,11 @@ for (const m of html.matchAll(/\[\s*'[^']*'\s*,\s*'[^']*'\s*,\s*'(dashboards\/[^
   rutasTarjetas.add(m[1]);
 }
 
-assert.ok(rutasTarjetas.size >= 12, `Se esperaban al menos 12 tarjetas, se encontraron ${rutasTarjetas.size}`);
+assert.equal(rutasTarjetas.size, 15, `La portada debe tener 15 tarjetas, se encontraron ${rutasTarjetas.size}`);
+const estaticas = [...pagina.matchAll(/class="card__title" href="([^"]+\.html)"/g)].length;
+assert.equal(estaticas, 11, 'Recursos Humanos debe conservar 11 tarjetas');
+const conteos = [...pagina.matchAll(/class="stat__n">(\d+)</g)].map(m => Number(m[1]));
+assert.deepEqual(conteos, [11, 2, 2], 'Los contadores por area deben ser RH 11, Comercial 2, Administrativo 2');
 
 // Toda tarjeta debe poder resolver su fecha.
 const sinClave = [...rutasTarjetas].filter(r => !rutasMapeadas.has(r)).sort();
@@ -46,5 +54,15 @@ const idsValidos = new Set([...tabs[1].matchAll(/([A-Za-z0-9_]+)\s*:/g)].map(m =
 const desconocidas = claves.filter(k => !idsValidos.has(k)).sort();
 assert.deepEqual(desconocidas, [],
   `rutasConfiguracion usa claves que no son pestañas declaradas: ${desconocidas.join(', ')}`);
+
+// La portada no inventa indicadores: sin valores, deltas ni sparklines fijos;
+// solo el estado de cada fuente (fecha / sin fecha) que sale de Configuracion.
+assert.doesNotMatch(pagina, /class="(?:metric|delta|spark)|metric__value|tone-(?:good|bad|flat)/, 'la portada no debe traer metricas ni tendencias fijas');
+const marcado = pagina.replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>|<svg[\s\S]*?<\/svg>/g, '');
+assert.doesNotMatch(marcado, /\b\d+(?:[.,]\d+)?\s*(?:%|pt\b|vacantes|bajas|tiendas|d[ií]as)/i, 'no debe haber cifras de KPI fijas en la portada');
+assert.equal((marcado.match(/class="card__state"/g) || []).length, 11, 'cada tarjeta estatica declara su estado de fuente');
+assert.match(marcado, /id="home-summary"[^>]*aria-live="polite"/, 'debe existir un resumen aria-live');
+assert.match(script, /Datos disponibles/);
+assert.match(script, /Sin fecha registrada/);
 
 console.log(`portada-fechas-cobertura.test.js: ${rutasTarjetas.size} tarjetas, todas con fecha resoluble OK`);
