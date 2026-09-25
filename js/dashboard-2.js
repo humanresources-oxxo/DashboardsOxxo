@@ -979,6 +979,10 @@ function bindHeatmapEvents(container){
   if(container.dataset.d2Bound) return;
   container.dataset.d2Bound = '1';
   container.addEventListener('click', event => {
+    if(event.target.closest('#heatmap-clear')){
+      toggleHeatmapCell(FILTER_STATE.edadRange, FILTER_STATE.antiguedadRange, 0);
+      return;
+    }
     const cell = event.target.closest('.heatmap-cell');
     if(!cell) return;
     HEAT.row = Number(cell.dataset.r); HEAT.col = Number(cell.dataset.c);
@@ -1050,7 +1054,7 @@ function renderHeatmapBajas(data, cols){
       const isActive = activeEdad === a.label && activeAnt === t.label;
       const ratio = maxVal > 0 ? v / maxVal : 0;
       const fill = v === 0 ? '' : ` style="--heat-bg:${heatColor(ratio)};--heat-fg:${heatTextColor(ratio)}"`;
-      const name = `Edad ${heatSpeak(a.label)}, antigüedad ${heatSpeak(t.label)}, ${v} ${v === 1 ? 'baja' : 'bajas'}, activar filtro`;
+      const name = `Edad ${heatSpeak(a.label)}, antigüedad ${heatSpeak(t.label)}, ${v} ${v === 1 ? 'baja' : 'bajas'}, ${isActive ? 'quitar filtro' : 'activar filtro'}`;
       return `<td><button type="button" class="heatmap-cell${v === 0 ? ' is-empty' : ''}${isActive ? ' is-active' : ''}" data-edad="${a.label}" data-ant="${t.label}" data-r="${r}" data-c="${c}" data-count="${v}" tabindex="${r === HEAT.row && c === HEAT.col ? 0 : -1}" aria-pressed="${isActive}" aria-label="${name}" title="Edad: ${a.label} · Antigüedad: ${t.label} · Bajas: ${v}"${fill}>${v === 0 ? '—' : v}</button></td>`;
     }).join('');
     return `<tr><th scope="row">${a.label}</th>${cells}</tr>`;
@@ -1100,7 +1104,14 @@ function renderBajasDashboard(data, cols){
       if(c && c._chartInstance) c._chartInstance.destroy();
     });
     const heatmapEl = document.getElementById('heatmap-bajas');
-    if(heatmapEl) heatmapEl.innerHTML = `<div class="heatmap-empty-msg">Sin datos suficientes para el mapa de calor con los filtros activos.</div>`;
+    if(heatmapEl){
+      // Un cruce sin bajas deja el mapa vacio: se ofrece el camino de regreso y el foco no cae al body.
+      const hadFocus = heatmapEl.contains(document.activeElement);
+      const hasHeatFilter = Boolean(FILTER_STATE.edadRange && FILTER_STATE.antiguedadRange);
+      bindHeatmapEvents(heatmapEl);
+      heatmapEl.innerHTML = `<div class="heatmap-empty-msg">Sin datos suficientes para el mapa de calor con los filtros activos.${hasHeatFilter ? ' <button type="button" class="d2-btn d2-btn--red" id="heatmap-clear">Quitar filtro del mapa</button>' : ''}</div>`;
+      if(hadFocus) heatmapEl.querySelector('#heatmap-clear')?.focus({ preventScroll: true });
+    }
     announceHeatmap();
     renderPlazas(BASE_BAJAS_DATA, cols);
     syncD2UI();

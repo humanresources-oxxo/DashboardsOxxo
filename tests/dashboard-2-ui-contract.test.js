@@ -108,6 +108,8 @@ test('mapa de calor: botones nativos con nombre, aria-pressed, tabindex itineran
   ok(js, /aria-pressed="\$\{isActive\}"/);
   ok(js, /aria-label="\$\{name\}"/);
   ok(js, /activar filtro/);
+  ok(js, /quitar filtro/, 'la celda activa se nombra como quitar filtro');
+  ok(js, /id="heatmap-clear"/, 'un cruce vacio ofrece el camino de regreso');
   ok(js, /scope="col"/);
   ok(js, /scope="row"/);
   ok(js, /<caption class="d2-sr">/);
