@@ -34,7 +34,7 @@ Vacantes por asesor, tienda, puesto, antiguedad y mes; KPIs accionables, compara
 
 ## Dashboard 2 - Bajas diarias
 
-`dashboards/dashboard-2.html`, `dashboards/dashboard-2-analisis.html` · mismos scripts RH + `dashboard-dialogs.js` (el analisis solo `core.js`)
+`dashboards/dashboard-2.html`, `dashboards/dashboard-2-analisis.html` · mismos scripts RH + `dashboard-dialogs.js` (el analisis solo `core.js`). La logica vive en `js/dashboard-2.js` y todo el CSS propio en `css/dashboard-2.css` (se carga al final y va bajo `body.dashboard-2-page`); el riel generico de insights se apaga con `data-rh-insights="false"`. La hoja "KPIs" del Excel de D2 ahora trae una columna "Detalle" (asesor/tienda completos, porcentaje o mes) y el "Valor" de la tienda es su conteo; la tarjeta KPI activa persiste y un segundo clic quita el filtro. `rh-filter-summary.js` se sigue cargando pero no monta su badge en D2 (`#filter-bar` no lleva `.bajas-filters`): el conteo de filtros activos lo dan `#d2-filter-summary` y `#d2-active-context`
 
 Bajas por mes, asesor, puesto, temporalidad y rotacion temprana; comparativo de plazas, movimientos ABC (denominaciones), compromiso de bajas por asesor y plan de accion. Modales: motivos de baja y detalle de la baja.
 

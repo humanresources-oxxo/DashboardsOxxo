@@ -192,6 +192,9 @@
   function createInsights() {
     const section = document.getElementById('kpi-section');
     if (!section || document.querySelector('.hr-insights')) return null;
+    // Un tablero que ya resume sus KPI puede desactivar el riel con
+    // <body data-rh-insights="false"> (Dashboard 2). La navegacion no depende de esto.
+    if (document.body?.dataset.rhInsights === 'false') return null;
     const rail = document.createElement('section');
     rail.className = 'hr-insights';
     rail.setAttribute('aria-label', 'Lectura rápida de indicadores');
