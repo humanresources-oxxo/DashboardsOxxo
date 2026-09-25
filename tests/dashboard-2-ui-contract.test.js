@@ -148,6 +148,15 @@ test('filtros y vistas hermanas: disclosure real, pestañas con roving focus y s
   no(cuerpo, /tabindex="[1-9]/);
 });
 
+test('rh-filter-summary: decision explicita, no se monta el badge en D2', () => {
+  // Se conserva la carga del script/css compartido, pero #filter-bar no lleva .vac-filters/.bajas-filters:
+  // el resumen de filtros activos lo dan #d2-filter-summary y #d2-active-context (sin badge duplicado).
+  ok(cuerpo, /id="filter-bar"/);
+  no(cuerpo, /class="[^"]*(?:vac-filters|bajas-filters)[^"]*"/);
+  ok(cuerpo, /rh-filter-summary\.js/);
+  ok(css, /\.rh-filter-summary-badge\s*\{\s*display: none;/);
+});
+
 test('alcance: se reutiliza el selector de core.js y solo se agrega el resumen plegable', () => {
   ok(html, /<div class="d2-scope" id="d2-scope" data-oxxo-scope-mount>/);
   ok(js, /function enhanceD2ScopeSelector\(\)/);
