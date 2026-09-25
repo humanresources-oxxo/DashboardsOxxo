@@ -8,6 +8,12 @@ const path = require('node:path');
 
 const raiz = path.resolve(__dirname, '..');
 const leer = rel => fs.readFileSync(path.join(raiz, rel), 'utf8');
+// Paginas que sacaron su logica a js/dashboard-N.js (D2): el HTML mas su script propio.
+const leerConScriptPropio = pagina => {
+  const html = leer(pagina);
+  const propio = html.match(/<script src="\.\.\/(js\/dashboard-\d+\.js)\?v=/);
+  return propio ? `${html}\n${leer(propio[1])}` : html;
+};
 const dashboards = fs.readdirSync(path.join(raiz, 'dashboards')).filter(n => n.endsWith('.html')).map(n => `dashboards/${n}`);
 // Paginas con ventana de detalle que usan el controlador compartido.
 const CON_DIALOGOS = [1, 2, 3, 4, 7, 8, 9, 12, 13].map(n => `dashboards/dashboard-${n}.html`);
@@ -20,7 +26,10 @@ test('las paginas con detalle cargan el controlador compartido y su css al final
     const html = leer(pagina);
     assert.match(html, /<script src="\.\.\/js\/dashboard-dialogs\.js\?v=/, `${pagina} debe cargar dashboard-dialogs.js`);
     const enlaces = [...html.matchAll(/<link[^>]+rel="stylesheet"[^>]+href="([^"?]+)/g)].map(m => m[1]);
-    assert.equal(enlaces[enlaces.length - 1], '../css/dashboard-dialogs.css', `${pagina}: dashboard-dialogs.css va al final`);
+    // D2 agrega su propia hoja DESPUES de la de dialogos (regla de css/dashboard-2.css).
+    const propio = pagina === 'dashboards/dashboard-2.html';
+    assert.equal(enlaces[enlaces.length - 1], propio ? '../css/dashboard-2.css' : '../css/dashboard-dialogs.css', `${pagina}: la hoja de dialogos va al final`);
+    if (propio) assert.equal(enlaces[enlaces.length - 2], '../css/dashboard-dialogs.css', `${pagina}: dashboard-dialogs.css va justo antes de dashboard-2.css`);
   }
   for (const pagina of ['dashboards/dashboard-5.html', 'dashboards/dashboard-6.html', 'dashboards/dashboard-14.html']) {
     assert.match(leer(pagina), /dashboard-dialogs\.js/, `${pagina} usa filtros desplegables`);
@@ -47,7 +56,7 @@ test('cada modal declara dialogo accesible: role, aria-modal, titulo real y cier
       assert.ok(atributo(cerrar, 'aria-label'), `${pagina}: el boton de cerrar necesita aria-label`);
       assert.doesNotMatch(cerrar, /onclick=/);
     }
-    const registrados = (leer(pagina).match(/OXXO_DIALOGS\.register\(/g) || []).length;
+    const registrados = (leerConScriptPropio(pagina).match(/OXXO_DIALOGS\.register\(/g) || []).length;
     assert.equal(registrados, fondos.length, `${pagina}: cada modal se registra en el controlador`);
   }
 });
@@ -195,4 +204,15 @@ test('admin: el candado es un dialogo con nombre, campo etiquetado, error descri
   assert.match(cuerpo, /key!=='Tab'/, 'Tab queda contenido en el candado');
   assert.match(cuerpo, /removeAttribute\('inert'\)/);
   assert.match(cuerpo, /\.focus\?\.\(\)/, 'al desbloquear el foco pasa al panel');
+});
+
+test('D2: celdas del mapa de calor y encabezados del detalle se operan con teclado', () => {
+  const d2 = leer('js/dashboard-2.js');
+  // Cada celda es un <button> nativo con nombre, estado y tabindex itinerante (una sola en la secuencia de Tab).
+  assert.match(d2, /<button type="button" class="heatmap-cell[^`]*aria-pressed="\$\{isActive\}"[^`]*aria-label="\$\{name\}"/);
+  assert.match(d2, /tabindex="\$\{r === HEAT\.row && c === HEAT\.col \? 0 : -1\}"/);
+  assert.match(d2, /'ArrowRight'[\s\S]*'Home'[\s\S]*'End'/);
+  // El orden del detalle usa un boton dentro del <th> con aria-sort y no cambia DET_SORT.
+  assert.match(d2, /<th scope="col" data-col="\$\{k\}" aria-sort="\$\{ariaSort\(k\)\}"><button type="button" class="d2-sort"/);
+  assert.doesNotMatch(d2, /th\.addEventListener\('click'/, 'el th ya no es un elemento solo-raton');
 });
