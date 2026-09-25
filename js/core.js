@@ -339,6 +339,10 @@ const SHEET_REQUEST_TIMEOUT_MS = 18000;
 const SHEET_PERSISTENT_CACHE = 'oxxo-sheet-data-v1';
 const sheetDataCache = new Map();
 const sheetDataInflight = new Map();
+// Cache Storage no ofrece transacciones entre delete() y put(). Serializar sus
+// mutaciones evita que una limpieza asincrona borre una respuesta nueva o que
+// una escritura ociosa anterior vuelva a crear datos que ya se invalidaron.
+let persistentCacheMutation = Promise.resolve();
 // Generacion de invalidacion: clearSheetDataCache() la incrementa (global o por
 // pestana). Una solicitud que empezo ANTES de la invalidacion no puede volver a
 // poblar la cache (memoria ni Cache Storage) con datos anteriores a la publicacion.
@@ -415,24 +419,35 @@ function cuandoEsteDesocupado(tarea) {
   if (typeof window.requestIdleCallback === 'function') window.requestIdleCallback(tarea, { timeout: 4000 });
   else setTimeout(tarea, 0);
 }
-async function writePersistentRows(cacheKey, rows, savedAt = Date.now()) {
+function enqueuePersistentCacheMutation(task) {
+  const operation = persistentCacheMutation.catch(() => {}).then(task);
+  // La cola debe continuar aunque Cache Storage falle por cuota o permisos.
+  persistentCacheMutation = operation.catch(() => {});
+  return operation;
+}
+function writePersistentRows(cacheKey, rows, savedAt = Date.now(), isCurrent = () => true) {
   const request = persistentCacheRequest(cacheKey);
   if (!request || !Array.isArray(rows)) return;
-  cuandoEsteDesocupado(async () => {
-    try {
+  cuandoEsteDesocupado(() => {
+    if (!isCurrent()) return;
+    void enqueuePersistentCacheMutation(async () => {
+      // La generacion puede cambiar mientras la tarea espera el tiempo ocioso
+      // o su turno detras de una eliminacion de Cache Storage.
+      if (!isCurrent()) return;
       const cache = await caches.open(SHEET_PERSISTENT_CACHE);
+      if (!isCurrent()) return;
       await cache.put(request, new Response(JSON.stringify({ rows, savedAt }), {
         headers: { 'Content-Type': 'application/json; charset=utf-8' }
       }));
-    } catch (error) {
+    }).catch((error) => {
       // La cache es una optimizacion: una cuota llena nunca debe impedir cargar.
       console.warn('[OXXO] No se pudo guardar la cache local:', error);
-    }
+    });
   });
 }
-async function deletePersistentRows(cacheKey) {
+function deletePersistentRows(cacheKey) {
   if (!('caches' in window)) return;
-  try {
+  return enqueuePersistentCacheMutation(async () => {
     if (!cacheKey) {
       await caches.delete(SHEET_PERSISTENT_CACHE);
       return;
@@ -440,9 +455,9 @@ async function deletePersistentRows(cacheKey) {
     const cache = await caches.open(SHEET_PERSISTENT_CACHE);
     const request = persistentCacheRequest(cacheKey);
     if (request) await cache.delete(request);
-  } catch (error) {
+  }).catch((error) => {
     console.warn('[OXXO] No se pudo limpiar la cache local:', error);
-  }
+  });
 }
 function clearSheetDataCache(tabName) {
   if (tabName) {
@@ -553,7 +568,12 @@ function requestSheetRows(key, tabName, options = {}) {
       if (generation === sheetGeneration(tabName)) {
         const entry = { rows, savedAt: Date.now() };
         sheetDataCache.set(key, entry);
-        void writePersistentRows(`sheet:${key}`, rows, entry.savedAt);
+        void writePersistentRows(
+          `sheet:${key}`,
+          rows,
+          entry.savedAt,
+          () => generation === sheetGeneration(tabName)
+        );
       }
       return rows;
     } catch (error) {
@@ -1739,6 +1759,7 @@ async function fetchCatalogRowsDirect() {
 async function loadAsesorCatalogRows() {
   const catalogName = SHEETS_CONFIG.CATALOG_SHEET || 'Catalogo_Asesores';
   const catalogCacheKey = `catalog:${catalogName}`;
+  const catalogGeneration = sheetGeneration(catalogName);
   const cached = await readPersistentRows(catalogCacheKey);
   const cachedIsFresh = Boolean(cached && Date.now() - cached.savedAt < 5 * 60 * 1000);
   // La fuente viva y el respaldo versionado arrancan al mismo tiempo. Antes
@@ -1749,7 +1770,12 @@ async function loadAsesorCatalogRows() {
     try {
       const rows = await fetchCatalogRowsDirect();
       if (rows && rows.length) {
-        void writePersistentRows(catalogCacheKey, rows);
+        void writePersistentRows(
+          catalogCacheKey,
+          rows,
+          Date.now(),
+          () => catalogGeneration === sheetGeneration(catalogName)
+        );
         return rows;
       }
       if (rows) console.warn('[OXXO] Lectura directa de Catalogo_Asesores vino vacia, usando respaldo.');

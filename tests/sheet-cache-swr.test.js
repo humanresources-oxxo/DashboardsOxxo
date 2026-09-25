@@ -10,7 +10,7 @@ const vm = require('node:vm');
 const root = path.resolve(__dirname, '..');
 const MIN = 60 * 1000;
 
-function crearEntorno() {
+function crearEntorno({ persistentCache = false, deferCacheDelete = false } = {}) {
   let ahora = Date.UTC(2026, 8, 24, 12, 0, 0);
   class RelojFalso extends Date {
     constructor(...args) { super(...(args.length ? args : [ahora])); }
@@ -18,6 +18,9 @@ function crearEntorno() {
   }
   const eventos = [];
   const llamadas = [];               // solicitudes de red pendientes/hechas
+  const tareasOciosas = [];
+  const eliminacionesPendientes = [];
+  const filasPersistidas = new Map();
   const documentStub = {
     readyState: 'loading', body: null, head: { appendChild() {} },
     addEventListener() {}, removeEventListener() {},
@@ -39,6 +42,30 @@ function crearEntorno() {
     setTimeout, clearTimeout, setInterval, clearInterval, Map, Set, Promise, Date: RelojFalso
   };
   sandbox.window = sandbox;
+  if (persistentCache) {
+    const cache = {
+      async match(request) {
+        const response = filasPersistidas.get(request.url);
+        return response ? response.clone() : undefined;
+      },
+      async put(request, response) { filasPersistidas.set(request.url, response.clone()); },
+      async delete(request) { return filasPersistidas.delete(request.url); }
+    };
+    sandbox.requestIdleCallback = (callback) => {
+      tareasOciosas.push(callback);
+      return tareasOciosas.length;
+    };
+    sandbox.caches = {
+      async open() { return cache; },
+      async delete() {
+        if (deferCacheDelete) {
+          await new Promise((resolve) => eliminacionesPendientes.push(resolve));
+        }
+        filasPersistidas.clear();
+        return true;
+      }
+    };
+  }
   // Solo se controlan las lecturas de la pestaña bajo prueba; cualquier otra
   // solicitud que core.js haga al cargar (avisos, configuracion) falla al instante.
   sandbox.fetch = (url) => (String(url).includes('gviz/tq') && String(url).includes('sheet=Dashboard_4_Semanal')
@@ -50,7 +77,22 @@ function crearEntorno() {
   const responder = (llamada, csv) => llamada.resolve(new Response(csv, { status: 200 }));
   const avanzar = (ms) => { ahora += ms; };
   const settle = () => new Promise((resolve) => setTimeout(resolve, 5));
-  return { OXXO: sandbox.OXXO, sandbox, eventos, llamadas, responder, avanzar, settle };
+  const ejecutarTareasOciosas = async () => {
+    while (tareasOciosas.length) tareasOciosas.shift()({ didTimeout: false, timeRemaining: () => 50 });
+    await settle();
+  };
+  const liberarEliminacion = () => eliminacionesPendientes.shift()?.();
+  const leerPersistida = async () => {
+    const response = filasPersistidas.values().next().value;
+    return response ? response.clone().json() : null;
+  };
+  return {
+    OXXO: sandbox.OXXO, sandbox, eventos, llamadas, responder, avanzar, settle,
+    ejecutarTareasOciosas, liberarEliminacion, leerPersistida,
+    get tareasOciosas() { return tareasOciosas.length; },
+    get eliminacionesPendientes() { return eliminacionesPendientes.length; },
+    get entradasPersistidas() { return filasPersistidas.size; }
+  };
 }
 const CSV_V1 = 'Plaza,Valor\nPlaza Oaxaca,uno\n';
 const CSV_V2 = 'Plaza,Valor\nPlaza Oaxaca,dos\n';
@@ -239,4 +281,39 @@ test('invalidacion: la vieja que llega DESPUES de la nueva tampoco pisa la cache
   await e.settle();
   assert.equal((await e.OXXO.fetchSheetData(TAB, { scoped: false }))[0].Valor, 'dos');
   assert.equal(e.llamadas.length, 2);
+});
+
+test('invalidacion persistente: una escritura ociosa anterior no recrea datos borrados', async () => {
+  const e = crearEntorno({ persistentCache: true });
+  const anterior = e.OXXO.fetchSheetData(TAB, { scoped: false });
+  await e.settle();
+  e.responder(e.llamadas[0], CSV_V1);
+  await anterior;
+  assert.equal(e.tareasOciosas, 1, 'la respuesta dejo su persistencia en espera');
+
+  e.OXXO.clearSheetDataCache(TAB);
+  await e.settle();
+  await e.ejecutarTareasOciosas();
+
+  assert.equal(e.entradasPersistidas, 0, 'la tarea vieja se descarta despues de invalidar');
+  assert.equal(await e.leerPersistida(), null);
+});
+
+test('invalidacion persistente: una respuesta nueva espera la eliminacion pendiente y sobrevive', async () => {
+  const e = crearEntorno({ persistentCache: true, deferCacheDelete: true });
+  e.OXXO.clearSheetDataCache(TAB);
+  await e.settle();
+  assert.equal(e.eliminacionesPendientes, 1, 'la limpieza de Cache Storage sigue en curso');
+
+  const nueva = e.OXXO.fetchSheetData(TAB, { scoped: false });
+  await e.settle();
+  e.responder(e.llamadas[0], CSV_V2);
+  assert.equal((await nueva)[0].Valor, 'dos');
+  await e.ejecutarTareasOciosas();
+  assert.equal(e.entradasPersistidas, 0, 'la escritura nueva espera detras de la limpieza');
+
+  e.liberarEliminacion();
+  await e.settle();
+  const persistida = await e.leerPersistida();
+  assert.equal(persistida.rows[0].Valor, 'dos', 'la limpieza no borra la respuesta posterior');
 });
