@@ -435,6 +435,10 @@ body.dashboard-2-page .d2-analysis { margin: 0 0 12px; }
 body.dashboard-2-page .d2-plazas__col { min-width: 0; }
 @media (min-width: 1024px) {
   body.dashboard-2-page .d2-grid--analysis { grid-template-columns: minmax(340px, 36fr) minmax(0, 64fr); align-items: stretch; }
+  /* Lado a lado la tabla fija el alto de la fila: la grafica rellena el resto (minimo = altura base). */
+  body.dashboard-2-page .d2-panel--asesores { display: flex; flex-direction: column; }
+  body.dashboard-2-page .d2-panel--asesores .d2-chart { flex: 1 1 auto; height: auto; min-height: var(--d2-chart-h); }
+  body.dashboard-2-page .d2-panel--asesores .d2-chart canvas { position: absolute; inset: 0; }
   body.dashboard-2-page .d2-grid--plazas { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
 }
 
