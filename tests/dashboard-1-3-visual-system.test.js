@@ -6,9 +6,10 @@ const read = file => fs.readFileSync(file, 'utf8');
 const pages = [
   ['dashboards/dashboard-1.html', 'dashboard-1-page', 'dashboard-1.css'],
   ['dashboards/dashboard-3.html', 'dashboard-3-page', 'dashboard-3.css'],
+  ['dashboards/dashboard-8.html', 'dashboard-8-page', 'dashboard-8.css'],
 ];
 
-test('D1 y D3 usan una sola cascada visual consolidada, con dialogos al final', () => {
+test('D1, D3 y D8 usan una sola cascada visual consolidada, con dialogos al final', () => {
   for (const [file, bodyClass, pageCss] of pages) {
     const html = read(file);
     const head = html.slice(0, html.indexOf('</head>'));
@@ -42,10 +43,11 @@ test('la base unificada conserva los tokens y estados visuales efectivos de D2',
 });
 
 test('las hojas nuevas estan aisladas y no reintroducen vidrio o sombras multicapa', () => {
-  for (const file of ['css/dashboard-1.css', 'css/dashboard-3.css']) {
+  for (const file of ['css/dashboard-1.css', 'css/dashboard-3.css', 'css/dashboard-8.css']) {
     const css = read(file);
-    const page = file.includes('dashboard-1') ? 'dashboard-1-page' : 'dashboard-3-page';
-    const scopedRules = css.match(new RegExp(`body\\.${page}`, 'g')) || [];
+    const page = file.match(/dashboard-(\d+)\.css/)[1];
+    const pageClass = `dashboard-${page}-page`;
+    const scopedRules = css.match(new RegExp(`body\\.${pageClass}`, 'g')) || [];
     assert.ok(scopedRules.length > 20, `${file}: cobertura de componentes`);
     assert.doesNotMatch(css, /^\s*(?:html|:root|body(?!\.dashboard)|[.#][a-z_-])[^{]*\{/im, `${file}: sin selectores globales`);
     assert.doesNotMatch(css, /backdrop-filter|\bglass\b|box-shadow\s*:[^;]*,[^;]*,/i, `${file}: sin vidrio ni sombras apiladas`);

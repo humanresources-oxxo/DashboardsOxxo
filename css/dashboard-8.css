@@ -1,0 +1,103 @@
+/* Dashboard 8 (Capacidades): componentes propios sobre dashboard-rh-unified.css.
+   Solo lo que el sistema unificado no cubre: rejillas de graficas, badges de
+   capacidad, colores de fila, y los extras del modal (h3, chips, sub). */
+
+body.dashboard-8-page .hero-download-link { text-decoration: none; cursor: pointer; }
+body.dashboard-8-page #hero-download:empty { display: none; }
+body.dashboard-8-page .icon-inline { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; vertical-align: -4px; }
+
+/* Filtros del hero: la caja "Filtros" trae 2 botones (Limpiar + Descargar).
+   En 2 columnas iguala su altura al resto y evita el hueco de align-items:end. */
+body.dashboard-8-page .vac-fbox:has(.filtro-btn + .filtro-btn) { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 6px 10px; }
+body.dashboard-8-page .vac-fbox:has(.filtro-btn + .filtro-btn) > label { grid-column: 1 / -1; }
+
+/* KPIs: 4 tarjetas -> 2x2 en tablet, 4 en linea en escritorio. */
+body.dashboard-8-page .kpi-card.azul { --du-accent: var(--du-focus); }
+body.dashboard-8-page .kpi-card__delta.neu { color: var(--du-muted); }
+body.dashboard-8-page .kpi-card__delta.neg { color: var(--du-red-dark); }
+body.dashboard-8-page .kpi-card__delta.pos { color: var(--du-green); }
+/* La tarjeta "mas critica" muestra un nombre (texto), no un numero: menos cuerpo. */
+body.dashboard-8-page .kpi-card--critical .kpi-card__value { font-size: 1.35rem; line-height: 1.15; }
+
+/* Rejillas de graficas propias de D8. */
+body.dashboard-8-page .row2, body.dashboard-8-page .row2-wide { display: grid; grid-template-columns: minmax(0,1fr); gap: 12px; margin-bottom: 12px; }
+body.dashboard-8-page .chart-wrap { position: relative; width: 100%; }
+body.dashboard-8-page .chart-wrap canvas { width: 100% !important; height: 100% !important; }
+body.dashboard-8-page .chart-md { height: 260px; }
+body.dashboard-8-page .chart-lg { height: 320px; }
+
+/* Tablas de D8: alto con scroll y ancho minimo para columnas de certificacion.
+   El id vive en el <table>, y .tbl-wrap es su PADRE: se selecciona con :has(). */
+body.dashboard-8-page .tbl-wrap:has(> #tabla-asesor) { max-height: 520px; }
+body.dashboard-8-page .tbl-wrap:has(> #tabla-detalle) { max-height: 560px; }
+body.dashboard-8-page #tabla-detalle { min-width: 860px; }
+body.dashboard-8-page .tbl td.center, body.dashboard-8-page .tbl th.center { text-align: center; }
+
+/* Semaforo por fila en "Cumplimiento por Asesor" + fila seleccionada. */
+body.dashboard-8-page #tabla-asesor tbody tr.row-verde td { background: #f4fbf7; }
+body.dashboard-8-page #tabla-asesor tbody tr.row-amarillo td { background: #fffbef; }
+body.dashboard-8-page #tabla-asesor tbody tr.row-rojo td { background: #fff6f6; }
+body.dashboard-8-page #tabla-asesor tbody tr.row-verde td:first-child { box-shadow: inset 4px 0 0 var(--du-green); }
+body.dashboard-8-page #tabla-asesor tbody tr.row-amarillo td:first-child { box-shadow: inset 4px 0 0 var(--du-gold); }
+body.dashboard-8-page #tabla-asesor tbody tr.row-rojo td:first-child { box-shadow: inset 4px 0 0 var(--du-red); }
+body.dashboard-8-page #tabla-asesor tbody tr.is-selected td { background: #fdecee; font-weight: 800; }
+body.dashboard-8-page #tabla-asesor tbody tr.is-selected td:first-child { box-shadow: inset 4px 0 0 var(--du-red); }
+body.dashboard-8-page #tabla-asesor tbody tr[data-asesor] { cursor: pointer; }
+
+/* Badge de % de capacidad (tablas y modales). */
+body.dashboard-8-page .cap-badge { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; padding: 3px 8px; border-radius: 999px; font-family: var(--font-display); font-size: 11px; font-weight: 800; }
+body.dashboard-8-page .cap-badge.verde { background: #e6f5ec; color: #0f6a3c; }
+body.dashboard-8-page .cap-badge.amarillo { background: #fff3d6; color: #765500; }
+body.dashboard-8-page .cap-badge.rojo { background: #fbe9ea; color: #a91f26; }
+body.dashboard-8-page .cap-badge.na { background: #f0ece8; color: var(--du-muted); }
+
+/* Leyenda del semaforo. */
+body.dashboard-8-page .cap-legend { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-top: 10px; color: var(--du-muted); font-size: 12px; font-weight: 600; }
+body.dashboard-8-page .cap-legend span { display: inline-flex; align-items: center; gap: 6px; }
+body.dashboard-8-page .cap-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; }
+
+/* Boton "ver detalle por certificacion" en la fila + boton "quitar filtro". */
+body.dashboard-8-page .detalle-head-tools { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+body.dashboard-8-page .cap-row-more { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; margin-left: 6px; padding: 0; border: 1px solid var(--du-border); border-radius: 8px; background: #fff; color: var(--du-muted); cursor: pointer; vertical-align: middle; }
+body.dashboard-8-page .cap-row-more:hover { color: var(--du-red); border-color: var(--du-red); }
+body.dashboard-8-page .cap-row-more svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+body.dashboard-8-page .cap-clear { display: none; align-items: center; gap: 6px; min-height: 32px; padding: 3px 12px; border: 1px solid var(--du-red); border-radius: 999px; background: #fff; color: var(--du-red-dark); font-family: var(--font-display); font-size: 11px; font-weight: 800; cursor: pointer; }
+body.dashboard-8-page .cap-clear.show { display: inline-flex; }
+body.dashboard-8-page .cap-clear:hover { background: var(--du-red); color: #fff; }
+body.dashboard-8-page .cap-clear svg { width: 11px; height: 11px; fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; }
+
+/* Aviso de certificaciones pendientes (oculto por JS, estilo por si se muestra). */
+body.dashboard-8-page .certs-pendientes { margin: 10px 0 0; padding: 9px 12px; border: 1px solid var(--du-border); border-radius: 12px; background: var(--du-soft); color: var(--du-muted); font-size: 12px; font-weight: 700; line-height: 1.5; }
+body.dashboard-8-page .certs-pendientes b { color: var(--du-text); font-weight: 900; }
+body.dashboard-8-page .certs-pendientes[hidden] { display: none; }
+
+/* Extras del modal que el sistema unificado no trae (usa h3, b/span, chips, sub). */
+body.dashboard-8-page .am-head h3 { margin: 0; color: var(--du-text); font-family: var(--font-display); font-size: 1.4rem; line-height: 1.1; }
+body.dashboard-8-page .am-head__sub { display: block; margin-top: 3px; color: var(--du-muted); font-size: 12px; font-weight: 600; letter-spacing: 0; text-transform: none; }
+body.dashboard-8-page .am-kpi b { display: block; color: var(--du-text); font-family: var(--font-display); font-size: 1.7rem; font-weight: 800; }
+body.dashboard-8-page .am-kpi span { display: block; margin-top: 4px; color: var(--du-muted); font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
+body.dashboard-8-page .am-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+body.dashboard-8-page .am-chip { display: inline-flex; flex-direction: column; gap: 2px; min-width: 0; padding: 8px 12px; border: 1px solid var(--du-border); border-radius: 10px; background: var(--du-soft); }
+body.dashboard-8-page .am-chip span { color: var(--du-muted); font-family: var(--font-display); font-size: 9px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+body.dashboard-8-page .am-chip b { color: var(--du-text); font-size: 13px; font-weight: 700; word-break: break-word; }
+
+@media (min-width: 768px) {
+  body.dashboard-8-page .kpis { grid-template-columns: repeat(2, minmax(0,1fr)); }
+}
+@media (min-width: 900px) {
+  body.dashboard-8-page .row2 { grid-template-columns: 1fr 1fr; }
+  body.dashboard-8-page .row2-wide { grid-template-columns: 1.2fr 0.8fr; }
+}
+@media (min-width: 1024px) {
+  body.dashboard-8-page .kpis { grid-template-columns: repeat(4, minmax(0,1fr)); }
+  body.dashboard-8-page .vac-filters { grid-template-columns: repeat(4, minmax(0,1fr)); }
+}
+@media (max-width: 600px) {
+  body.dashboard-8-page .chart-md { height: 200px; }
+  body.dashboard-8-page .chart-lg { height: 240px; }
+}
+/* Objetivo tactil en celular: el boton "ver detalle por certificacion" mide
+   44x44 (antes lo daba rh-dashboard-refresh.css, que D8 ya no carga). */
+@media (max-width: 760px) {
+  body.dashboard-8-page .cap-row-more { width: 44px; height: 44px; }
+}

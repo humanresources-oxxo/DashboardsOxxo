@@ -170,9 +170,10 @@ test('D8: el boton de detalle por certificacion mide 44x44 en celular y nombra a
   const d8 = leer('dashboards/dashboard-8.html');
   const boton = d8.match(/<button type="button" class="cap-row-more"[^>]*>/)[0];
   assert.match(boton, /aria-label="Ver detalle por certificacion de \$\{OXXO\.escHtml\(a\.asesor\)\}"/);
-  const refresh = leer('css/rh-dashboard-refresh.css');
-  const movil = refresh.slice(refresh.lastIndexOf('@media (max-width: 760px)'));
-  assert.match(movil, /\.cap-row-more\s*\{[^}]*width:\s*44px\s*!important[^}]*height:\s*44px\s*!important/);
+  // D8 migro a la cascada unificada: el objetivo tactil movil vive en su hoja propia.
+  const d8css = leer('css/dashboard-8.css');
+  const movil = d8css.slice(d8css.lastIndexOf('@media (max-width: 760px)'));
+  assert.match(movil, /\.cap-row-more\s*\{[^}]*width:\s*44px[^}]*height:\s*44px/, 'D8: 44x44 tactil en celular');
   assert.doesNotMatch(leer('css/global.css'), /:not\([^)]*\.cap-row-more/, 'ya no queda exento de la regla de 44px');
 });
 
