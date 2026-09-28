@@ -29,6 +29,18 @@ body.dashboard-1-page .hero .oxxo-scope-switch__dot { display: none; }
 body.dashboard-1-page .filter-panel .vac-filters { grid-template-columns: minmax(0,1fr); }
 body.dashboard-1-page .filter-panel .rh-filter-summary-badge { align-self: end; }
 
+/* La caja "Filtros y acciones" trae 2 botones apilados (vs. 1 control en las
+   demas), lo que la hace mas alta y, con align-items:end en .vac-filters,
+   deja un hueco vacio arriba de las demas cajas. Mismo patron que Dashboard 2
+   (floating-filter-layout.css): los botones van en 2 columnas para igualar
+   la altura de la caja al resto. */
+body.dashboard-1-page .filter-panel .vac-fbox:has(.filtro-btn + .filtro-btn) {
+  display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 6px 10px;
+}
+body.dashboard-1-page .filter-panel .vac-fbox:has(.filtro-btn + .filtro-btn) > label {
+  grid-column: 1 / -1;
+}
+
 body.dashboard-1-page .row-main { display: grid; grid-template-columns: minmax(0,1fr); gap: 12px; align-items: stretch; margin-bottom: 12px; }
 body.dashboard-1-page .row-main > .card,
 body.dashboard-1-page .row-main__side > .card { display: flex; flex-direction: column; margin: 0; }
