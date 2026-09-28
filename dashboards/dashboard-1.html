@@ -607,40 +607,6 @@ function setSmartFilterOpen(box, open){
   box.querySelector('.smart-filter__button')?.setAttribute('aria-expanded', String(open));
 }
 
-function forceKpiLayout(){
-  const section = document.getElementById('kpi-section');
-  if(!section) return;
-  const hero = document.querySelector('.hero');
-  const page = document.querySelector('.page');
-  const parent = section.parentElement;
-  const heroWidth = hero ? Math.round(hero.getBoundingClientRect().width) : 0;
-  const pageWidth = page ? Math.round(page.getBoundingClientRect().width) : 0;
-  const parentWidth = parent ? Math.round(parent.getBoundingClientRect().width) : 0;
-  const availableWidth = page ? Math.round(window.innerWidth - (page.getBoundingClientRect().left * 2)) : 0;
-  const targetWidth = Math.max(heroWidth, pageWidth, parentWidth, availableWidth);
-  section.style.display = 'grid';
-  section.style.boxSizing = 'border-box';
-  section.style.width = targetWidth > 0 ? `${targetWidth}px` : '100%';
-  section.style.minWidth = targetWidth > 0 ? `${targetWidth}px` : '100%';
-  section.style.maxWidth = targetWidth > 0 ? `${targetWidth}px` : 'none';
-  section.style.gridColumn = '1 / -1';
-  section.style.justifySelf = 'stretch';
-  section.style.marginLeft = '0';
-  section.style.marginRight = '0';
-  section.style.justifyContent = 'stretch';
-  section.style.justifyItems = 'stretch';
-  section.style.alignItems = 'stretch';
-  section.style.gridTemplateColumns = window.innerWidth <= 620
-    ? 'repeat(2, minmax(0, 1fr))'
-    : 'repeat(5, minmax(0, 1fr))';
-  section.querySelectorAll('.kpi-card').forEach(card => {
-    card.style.width = '100%';
-    card.style.maxWidth = 'none';
-    card.style.minWidth = '0';
-    card.style.justifySelf = 'stretch';
-  });
-}
-
 // Obtener filtros actuales
 function getFiltros(){
   return{
@@ -1402,7 +1368,6 @@ function renderOverview(allData){
       <div class="kpi-card__delta ${maxDias>=15?'neg':'neu'}">${maxDias?'días · '+OXXO.escHtml(OXXO.truncate(tiendaAntigua,18)):'Sin fecha'}</div>
       <div class="kpi-card__icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg></div>
     </div>`;
-  forceKpiLayout();
 
   // Eventos click en KPIs
   document.querySelectorAll('.kpi-card[data-kpi]').forEach(card => {
@@ -1496,7 +1461,6 @@ function renderOverview(allData){
 document.addEventListener('DOMContentLoaded', () => {
   initDashboard();
 });
-window.addEventListener('resize', forceKpiLayout);
 
 window.buildExcelSheets = async function(){
   return [
