@@ -115,8 +115,12 @@ body.dashboard-1-page .ranking-chart__track i { display: block; height: 100%; bo
 body.dashboard-1-page .ranking-chart__row strong { grid-area: value; justify-self: end; color: var(--du-text); font-family: var(--font-display); font-size: 1.35rem; }
 body.dashboard-1-page .ranking-empate { color: var(--du-muted); font-size: 12px; }
 
-body.dashboard-1-page .plazas-chart { display: grid; grid-template-columns: repeat(5,minmax(70px,1fr)); gap: 8px; min-height: 230px; overflow-x: auto; padding-top: 8px; }
-body.dashboard-1-page .plazas-chart__item { display: grid; grid-template-rows: auto minmax(140px,1fr) auto auto; justify-items: center; gap: 5px; min-width: 70px; text-align: center; }
+/* Las 5 plazas siempre reparten el ancho de la tarjeta: minmax(0,1fr) deja
+   que las columnas se encojan en lugar de forzar un minimo (70px) que en la
+   columna estrecha del escritorio (1180-1450px) y en movil desbordaba y sacaba
+   una barra de scroll horizontal dentro de la tarjeta. */
+body.dashboard-1-page .plazas-chart { display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); gap: 8px; min-height: 230px; padding-top: 8px; }
+body.dashboard-1-page .plazas-chart__item { display: grid; grid-template-rows: auto minmax(140px,1fr) auto auto; justify-items: center; gap: 5px; min-width: 0; text-align: center; }
 body.dashboard-1-page .plazas-chart__item > strong { color: var(--du-text); font-family: var(--font-display); font-size: 1.25rem; }
 body.dashboard-1-page .plazas-chart__plot { display: flex; align-items: flex-end; width: 100%; height: 100%; padding: 0 8px; border-radius: 10px 10px 4px 4px; background: #f5efea; }
 body.dashboard-1-page .plazas-chart__plot i { display: block; width: 100%; min-height: 8px; border-radius: 7px 7px 3px 3px; background: var(--du-red); }
@@ -146,6 +150,8 @@ body.dashboard-1-page .am-body .tbl-wrap { max-height: 420px; }
   body.dashboard-1-page .row-main { grid-template-columns: minmax(0,2.05fr) minmax(320px,.95fr); }
 }
 @media (max-width: 560px) {
-  body.dashboard-1-page .plazas-chart { grid-template-columns: repeat(5,minmax(62px,1fr)); }
+  /* Solo se afina el respiro interno de la barra; el reparto en 5 columnas
+     1fr (regla base) ya evita el desbordamiento sin fijar un ancho minimo. */
+  body.dashboard-1-page .plazas-chart { gap: 6px; }
   body.dashboard-1-page .plazas-chart__plot { padding-inline: 5px; }
 }
