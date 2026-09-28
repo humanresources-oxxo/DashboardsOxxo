@@ -44,7 +44,14 @@ body.dashboard-1-page .filter-panel .vac-fbox:has(.filtro-btn + .filtro-btn) > l
 body.dashboard-1-page .row-main { display: grid; grid-template-columns: minmax(0,1fr); gap: 12px; align-items: stretch; margin-bottom: 12px; }
 body.dashboard-1-page .row-main > .card,
 body.dashboard-1-page .row-main__side > .card { display: flex; flex-direction: column; margin: 0; }
-body.dashboard-1-page .row-main__side { display: grid; gap: 12px; min-width: 0; }
+/* Cuando .row-main es de 2 columnas (>=1180px) la columna lateral se estira
+   para igualar la altura de la tabla de asesores. Con filas auto/auto el alto
+   sobrante se repartia por igual y dejaba un hueco muerto DEBAJO del contenido
+   de cada tarjeta. Con "auto 1fr" el ranking (Top 3) queda a su alto natural y
+   ese sobrante se lo lleva la tarjeta de plazas, cuya barra crece para usarlo
+   (ver .plazas-chart flex mas abajo). Apilado (1 columna) no hay alto sobrante,
+   asi que 1fr equivale a auto: las tarjetas quedan compactas. */
+body.dashboard-1-page .row-main__side { display: grid; grid-template-rows: auto 1fr; gap: 12px; min-width: 0; }
 body.dashboard-1-page .row-main__side > .card:last-child { min-height: 0; }
 body.dashboard-1-page .row-main__side > .card:last-child #plazas-panel { display: flex; flex: 1 1 auto; flex-direction: column; }
 body.dashboard-1-page .tabla-card { overflow: hidden; }
@@ -119,7 +126,10 @@ body.dashboard-1-page .ranking-empate { color: var(--du-muted); font-size: 12px;
    que las columnas se encojan en lugar de forzar un minimo (70px) que en la
    columna estrecha del escritorio (1180-1450px) y en movil desbordaba y sacaba
    una barra de scroll horizontal dentro de la tarjeta. */
-body.dashboard-1-page .plazas-chart { display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); gap: 8px; min-height: 230px; padding-top: 8px; }
+/* flex:1 deja que la grafica llene el alto que le cede #plazas-panel cuando la
+   tarjeta se estira en escritorio: las barras crecen en lugar de dejar hueco.
+   min-height sigue siendo el piso apilado; no fija un alto arbitrario. */
+body.dashboard-1-page .plazas-chart { display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); flex: 1 1 auto; gap: 8px; min-height: 230px; padding-top: 8px; }
 body.dashboard-1-page .plazas-chart__item { display: grid; grid-template-rows: auto minmax(140px,1fr) auto auto; justify-items: center; gap: 5px; min-width: 0; text-align: center; }
 body.dashboard-1-page .plazas-chart__item > strong { color: var(--du-text); font-family: var(--font-display); font-size: 1.25rem; }
 body.dashboard-1-page .plazas-chart__plot { display: flex; align-items: flex-end; width: 100%; height: 100%; padding: 0 8px; border-radius: 10px 10px 4px 4px; background: #f5efea; }
