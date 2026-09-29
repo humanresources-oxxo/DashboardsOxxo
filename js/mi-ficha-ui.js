@@ -371,7 +371,9 @@
     const table = modalBodyEl.querySelector('.tbl');
     const columns = table ? table.querySelectorAll('thead th').length : 0;
     const bodyRows = table ? [...table.querySelectorAll('tbody tr')] : [];
-    const recordCount = bodyRows.filter(row => !row.querySelector('.mi-empty-mini')).length;
+    // Las filas marcadas con data-meta-skip son separadores de grupo, no
+    // registros: contarlas hacia que el pie dijera 22 donde hay 20 tiendas.
+    const recordCount = bodyRows.filter(row => !row.querySelector('.mi-empty-mini') && !row.hasAttribute('data-meta-skip')).length;
     modalMetaEl.textContent = `${plural(recordCount, 'registro', 'registros')} · ${plural(columns, 'columna', 'columnas')}`;
     modalDialog.classList.toggle('is-wide', columns > 5);
     modalLastTrigger = document.activeElement;
