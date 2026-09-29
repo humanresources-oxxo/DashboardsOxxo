@@ -43,7 +43,7 @@ vm.runInContext(fs.readFileSync(path.join(root, 'js/config.js'), 'utf8'), sandbo
 vm.runInContext(fs.readFileSync(path.join(root, 'js/core.js'), 'utf8'), sandbox);
 
 vm.runInContext(fs.readFileSync(path.join(root,'js/metrics-periods.js'),'utf8'),sandbox);
-for(const [file,api,names] of [['admin-pptx.js','general','kpiD1,kpiD2,kpiD4,kpiD6'],['admin-pptx-rae.js','rae','dataD1,dataD2,dataD3,dataD8,dataFocusKpis,buildD1,buildD2Analysis,buildFocusKpis,buildD3StoreListSlides,buildD3ZeroAprovechamiento,buildD3RescateEc,buildD8Capability'],['admin-pptx-asesor.js','advisor','datosAsesorD1,datosAsesorD2']]){
+for(const [file,api,names] of [['admin-pptx.js','general','kpiD1,kpiD2,kpiD4,kpiD6'],['admin-pptx-rae.js','rae','dataD1,dataD2,dataD3,dataD7,dataD8,dataFocusKpis,raeMonthOption,buildD1,buildD2,buildD2Analysis,buildD3,buildFocusKpis,buildD3StoreListSlides,buildD3ZeroAprovechamiento,buildD3RescateEc,buildD8Capability'],['admin-pptx-asesor.js','advisor','datosAsesorD1,datosAsesorD2']]){
  const code=fs.readFileSync(path.join(root,'js',file),'utf8').replace(/\}\)\(\);\s*$/, 'window.'+api+'={'+names+'};})();');vm.runInContext(code,sandbox);
 }
 let fixture=[], fixtureByTab=null;
@@ -79,12 +79,22 @@ sandbox.loadAsesorCatalog=async()=>null;sandbox.OXXO.loadAsesorCatalog=sandbox.l
  fixture=[{Mes:'2026-09',Tienda:'ENTRENAMIENTO OAXACA',Asesor:'Sin Asesor Asignado',Puesto:'AYUDANTE TIENDA',Medida:'BAJA',Motivo:'Renuncia',Edad:24,Temporalidad:'0 - 45 días'},
  {Mes:'2026-09',Tienda:'OPERACIONES 11 OAXACA',Asesor:'Sin Asesor Asignado',Puesto:'AYUDANTE TIENDA',Medida:'BAJA',Motivo:'Renuncia',Edad:24,Temporalidad:'0 - 45 días'},
  {Mes:'2026-09',Tienda:'OXXO A',Asesor:'Timoteo Antonio Perez',Puesto:'AYUDANTE TIENDA',Medida:'BAJA',Motivo:'Baja con causal',Edad:34,Temporalidad:'46 - 90 días'}];
+ // La presentacion general (admin-pptx.js) sigue EXCLUYENDO Entrenamiento/
+ // Operaciones: metricsD2Rows() sin includeAdminUnits. Solo cuenta OXXO A.
  assert.equal((await sandbox.general.kpiD2()).value,'1');
  const bajasRae = await sandbox.rae.dataD2();
- assert.equal(bajasRae.total,1);
- assert.equal(bajasRae.motivos[0].label,'BAJA CON CAUSAL');
+ // RAE ahora INCLUYE Entrenamiento/Operaciones en el TOTAL (como el KPI
+ // "Total Bajas" de dashboard-2.html): 2 bajas admin + 1 real = 3.
+ assert.equal(bajasRae.total,3);
+ // Motivos y mapa de calor tambien incluyen las bajas admin (2 renuncias).
+ assert.equal(bajasRae.motivos[0].label,'RENUNCIA');
+ assert.equal(bajasRae.motivos[0].total,2);
+ // El ranking de tiendas SI excluye Entrenamiento/Operaciones: solo OXXO A.
  assert.equal(bajasRae.tiendas.length,1);
- assert.equal(bajasRae.heatmap.values[0].values[0],0);
+ assert.equal(bajasRae.tiendas[0].label,'OXXO A');
+ // asesores (atribucion a personas reales) excluye "Sin asesor asignado".
+ assert.ok(!bajasRae.asesores.some(a => /sin asesor/i.test(a.name)));
+ assert.equal(bajasRae.heatmap.values[0].values[0],2);
  assert.equal(bajasRae.heatmap.values[1].values[1],1);
  const drawn = [];
  const fakeSlide = { background: {}, addText(...args) { drawn.push(['text', ...args]); }, addShape(...args) { drawn.push(['shape', ...args]); }, addChart(...args) { drawn.push(['chart', ...args]); } };
@@ -167,6 +177,104 @@ sandbox.loadAsesorCatalog=async()=>null;sandbox.OXXO.loadAsesorCatalog=sandbox.l
  };
  assert.equal((await sandbox.OXXO.metricsD7Rows()).rows.length,1);
  fixtureByTab=null;
+
+ // ── Regresion RAE: sincronizacion con Dashboard 2 y Dashboard 3 ──────────
+ // (1) Selector de mes canonico: value === canon === YYYY-MM y etiqueta amigable.
+ const chkMonth=(input,value,label)=>{const o=sandbox.rae.raeMonthOption(input);assert.equal(o.value,value);assert.equal(o.canon,value);assert.equal(o.label,label);};
+ chkMonth('2026-08','2026-08','Agosto 2026');
+ chkMonth('sep-26','2026-09','Septiembre 2026');
+ chkMonth('01/09/2026','2026-09','Septiembre 2026');
+
+ // (2) Entrenamiento/Operaciones: la RAE (includeAdminUnits) los cuenta en el
+ // TOTAL como dashboard-2.html; el default (general/asesor) los sigue excluyendo.
+ fixtureByTab={[sandbox.OXXO.SHEETS_CONFIG.TABS.d2]:[
+  {Mes:'2026-09',Tienda:'ENTRENAMIENTO OAXACA',Asesor:'Sin Asesor Asignado',Puesto:'AYUDANTE TIENDA',Medida:'BAJA',Motivo:'Renuncia',Edad:24,Temporalidad:'0 - 45 días'},
+  {Mes:'2026-09',Tienda:'OPERACIONES 5 OAXACA',Asesor:'Sin Asesor Asignado',Puesto:'AYUDANTE TIENDA',Medida:'BAJA',Motivo:'Renuncia',Edad:24,Temporalidad:'0 - 45 días'},
+  {Mes:'2026-09',Tienda:'OXXO A',Asesor:'Ana',Puesto:'AYUDANTE TIENDA',Medida:'BAJA',Motivo:'Renuncia',Edad:30,Temporalidad:'0 - 45 días'}]};
+ assert.equal((await sandbox.OXXO.metricsD2Rows()).rows.length,1);
+ assert.equal((await sandbox.OXXO.metricsD2Rows('',{includeAdminUnits:true})).rows.length,3);
+ const bajasAll=await sandbox.rae.dataD2();
+ assert.equal(bajasAll.total,3);              // TOTAL incluye admin units
+ assert.equal(bajasAll.tiendas.length,1);     // ranking de tiendas los excluye
+ assert.equal(bajasAll.tiendas[0].label,'OXXO A');
+
+ // (3) Escenario Region: con una sesion ACTIVA regional (sessionStorage), la RAE
+ // sigue forzando Plaza Oaxaca en cada lectura de datos, sin tocar el alcance
+ // global del panel (no cambia getActiveDataScope ni sessionStorage).
+ const getItemPrev=sandbox.sessionStorage.getItem;
+ sandbox.sessionStorage.getItem=(k)=>k===sandbox.OXXO.SHEETS_CONFIG.SCOPE_MODEL.STORAGE_KEY?JSON.stringify({level:'region',region:'TABASCO'}):null;
+ assert.equal(sandbox.OXXO.getActiveDataScope().level,'region'); // control: la sesion es regional
+ const capturado=[]; const baseFetch=sandbox.fetchSheetData;
+ sandbox.fetchSheetData=async(tab,opts={})=>{capturado.push({tab,scope:opts&&opts.scope});return baseFetch(tab);};
+ sandbox.OXXO.fetchSheetData=sandbox.fetchSheetData;
+ fixtureByTab={
+  [sandbox.OXXO.SHEETS_CONFIG.TABS.d1]:[{Mes:'2026-09',Tienda:'OXXO A',Asesor:'Ana',Puesto:'AYUDANTE TIENDA','Status ocupacion':'Vacante',Empleados:'','Dias Vacantes':3},
+   {Mes:'2026-08',Tienda:'OXXO B',Asesor:'Ana',Puesto:'AYUDANTE TIENDA','Status ocupacion':'Vacante',Empleados:'','Dias Vacantes':4}],
+  [sandbox.OXXO.SHEETS_CONFIG.TABS.d2]:[{Mes:'2026-09',Tienda:'OXXO A',Asesor:'Ana',Puesto:'AYUDANTE TIENDA',Medida:'BAJA'},
+   {Mes:'2026-08',Tienda:'OXXO A',Asesor:'Ana',Puesto:'AYUDANTE TIENDA',Medida:'BAJA'},
+   {Mes:'2026-08',Tienda:'OXXO B',Asesor:'Ana',Puesto:'AYUDANTE TIENDA',Medida:'BAJA'}]};
+ await sandbox.rae.dataD2();
+ await sandbox.rae.dataD1('2026-09');
+ const fD2=capturado.find(c=>c.tab===sandbox.OXXO.SHEETS_CONFIG.TABS.d2);
+ const fD1=capturado.find(c=>c.tab===sandbox.OXXO.SHEETS_CONFIG.TABS.d1);
+ assert.ok(fD2&&fD2.scope&&/oaxaca/i.test(fD2.scope.plaza),'dataD2 fuerza Plaza Oaxaca');
+ assert.ok(fD1&&fD1.scope&&/oaxaca/i.test(fD1.scope.plaza),'dataD1 fuerza Plaza Oaxaca');
+ // control inverso: sin scope explicito la misma sesion sigue en Region.
+ assert.equal(sandbox.OXXO.getActiveDataScope().level,'region');
+ sandbox.sessionStorage.getItem=getItemPrev;
+
+ // (4) Mes anterior: value y canon envian el MISMO periodo a Vacantes y Bajas.
+ const opt=sandbox.rae.raeMonthOption('2026-08');
+ const bajasAgo=await sandbox.rae.dataD2(opt.canon);
+ const vacAgo=await sandbox.rae.dataD1(opt.value);
+ assert.equal(bajasAgo.total,2);              // 2 bajas de agosto
+ assert.equal(bajasAgo.sub,'Mes 2026-08');
+ assert.equal(vacAgo.total,1);                // 1 vacante de agosto (OXXO B)
+ assert.equal(vacAgo.sub,'Mes 2026-08');
+ sandbox.fetchSheetData=baseFetch; sandbox.OXXO.fetchSheetData=baseFetch;
+
+ // (5) Aprovechamiento D3: sin filtro de catalogo (cuenta preaperturas, igual
+ // que dashboard-3.html) y comparativo por plaza calculado del propio D3, con
+ // la hoja manual solo como respaldo.
+ fixtureByTab={
+  [sandbox.OXXO.SHEETS_CONFIG.TABS.d3]:[
+   {Plaza:'Oaxaca',Tienda:'OXXO A',FECHA:'2026-09-22','Estatus Con impacto Ausentismo':'Equipo Completo','Aprovechamiento Estructura':95},
+   {Plaza:'Oaxaca',Tienda:'Small Beach OAX VSA',FECHA:'2026-09-22','Estatus Con impacto Ausentismo':'Tienda Crítica','Aprovechamiento Estructura':0},
+   {Plaza:'Tuxtla',Tienda:'OXXO T1',FECHA:'2026-09-22','Estatus Con impacto Ausentismo':'Equipo Completo','Aprovechamiento Estructura':100},
+   {Plaza:'Tuxtla',Tienda:'OXXO T2',FECHA:'2026-09-22','Estatus Con impacto Ausentismo':'Equipo Completo','Aprovechamiento Estructura':100}],
+  // Respaldo manual: Tuxtla con valor ERRONEO (debe ignorarse porque D3 lo trae)
+  // y Villahermosa que solo existe aqui (debe usarse como respaldo).
+  [sandbox.OXXO.SHEETS_CONFIG.TABS.d3plazas]:[
+   {PLAZAS:'Tuxtla','Aprovechamiento de estructura a hoy':10},
+   {PLAZAS:'Villahermosa','Aprovechamiento de estructura a hoy':88}]};
+ const aprov=await sandbox.rae.dataD3(new Date(2026,8,22));
+ // 2 tiendas Oaxaca contadas (la preapertura Small Beach ya NO se excluye).
+ assert.equal(aprov.completas,1);
+ assert.equal(aprov.criticas,1);              // preapertura critica incluida
+ assert.equal(Number(aprov.pct.toFixed(1)),50.0);
+ const pOax=aprov.plazas.find(p=>/oaxaca/i.test(p.name));
+ const pTux=aprov.plazas.find(p=>/tuxtla/i.test(p.name));
+ const pVilla=aprov.plazas.find(p=>/villahermosa/i.test(p.name));
+ assert.equal(Number(pOax.value.toFixed(1)),50.0);
+ assert.equal(Number(pTux.value.toFixed(1)),100.0); // del D3, NO el 10 manual
+ assert.equal(Number(pVilla.value.toFixed(1)),88.0); // respaldo manual
+
+ // (6) Multi-corte: paridad con el gauge del Dashboard 3. El comparativo por
+ // plaza usa TODAS las fechas (computePlazaStatsFromRows), mientras el KPI
+ // principal (pct) usa solo el corte mas reciente. Oaxaca: corte reciente 1/2
+ // = 50%, pero todas las fechas 3/4 = 75% -> el gauge debe mostrar 75%.
+ fixtureByTab={[sandbox.OXXO.SHEETS_CONFIG.TABS.d3]:[
+  {Plaza:'Oaxaca',Tienda:'OXXO A',FECHA:'2026-09-28','Estatus Con impacto Ausentismo':'Equipo Completo','Aprovechamiento Estructura':95},
+  {Plaza:'Oaxaca',Tienda:'OXXO B',FECHA:'2026-09-28','Estatus Con impacto Ausentismo':'Tienda Crítica','Aprovechamiento Estructura':0},
+  {Plaza:'Oaxaca',Tienda:'OXXO A',FECHA:'2026-09-21','Estatus Con impacto Ausentismo':'Equipo Completo','Aprovechamiento Estructura':95},
+  {Plaza:'Oaxaca',Tienda:'OXXO B',FECHA:'2026-09-21','Estatus Con impacto Ausentismo':'Equipo Completo','Aprovechamiento Estructura':95}]};
+ const multi=await sandbox.rae.dataD3(new Date(2026,8,28));
+ assert.equal(Number(multi.pct.toFixed(1)),50.0);   // KPI principal = corte reciente
+ const mOax=multi.plazas.find(p=>/oaxaca/i.test(p.name));
+ assert.equal(Number(mOax.value.toFixed(1)),75.0);  // gauge por plaza = todas las fechas
+ fixtureByTab=null;
+
  fixture=[];assert.equal(await sandbox.general.kpiD1(),null);assert.equal(await sandbox.general.kpiD2(),null);
  console.log('PPTX: occupied positions, zero current vacancies, exact month, week/year, unassigned departures and chart totals OK');
+ console.log('RAE sync: total con admin units, mes canonico, scope Oaxaca forzado, D3 sin catalogo y plazas vigentes OK');
 })().catch(e=>{console.error(e);process.exitCode=1});

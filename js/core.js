@@ -606,9 +606,14 @@ async function fetchSheetData(tabName, options = {}) {
   let cached = sheetDataCache.get(key);
   const legacyTabs = SHEETS_CONFIG.SCOPE_MODEL?.LEGACY_DEFAULT_PLAZA_TABS || [];
   const legacyPlaza = legacyTabs.includes(tabKey) ? getDataContext().plaza : '';
+  // options.scope fuerza un alcance explicito (p.ej. la RAE, que siempre es
+  // Plaza Oaxaca) tanto en la consulta a gviz (activeScopeQuery, via la llave
+  // de cache) como en el filtrado del lado del cliente. Sin pasar scope se
+  // conserva el comportamiento de siempre: el alcance activo de la sesion.
+  const requestScope = options.scope ? normalizeDataScope(options.scope) : getActiveDataScope();
   const prepareRows = (rows) => options.scoped === false
     ? cloneSheetRows(rows)
-    : filterRowsByDataScope(cloneSheetRows(rows), getActiveDataScope(), { legacyPlaza });
+    : filterRowsByDataScope(cloneSheetRows(rows), requestScope, { legacyPlaza });
   if (!options.fresh && cached && now - cached.savedAt < SHEET_CACHE_TTL_MS) {
     // Si un refresco en segundo plano ya dejo datos nuevos en cache y esta
     // llamada los va a leer, el aviso de "datos guardados" ya no aplica.
@@ -2317,6 +2322,51 @@ function metricsClasificaAprovechamiento(estatus) {
   if (s.includes('COMPLETO')) return 'completas';
   return null;
 }
+// canonicalPlazaLabel() de dashboard-3.html: lleva cualquier variante del
+// nombre de una plaza ("ISTMO", "Costa Istmo", "OXXO COSTA ISTMO") al nombre
+// canonico del catalogo regional (js/config.js), para que dos fuentes que la
+// nombran distinto no aparezcan como dos plazas.
+function metricsCanonicalPlazaLabel(raw) {
+  const s = String(raw || '').trim();
+  if (!s) return s;
+  const target = normalizeScopeToken(s);
+  for (const region of getScopeCatalog()) {
+    for (const plaza of region.plazas) {
+      const candidates = [plaza.name, plaza.shortName, ...(plaza.aliases || [])];
+      if (candidates.some(c => { const t = normalizeScopeToken(c); return t && (target === t || target.includes(t) || t.includes(target)); })) {
+        return plaza.shortName || plaza.name;
+      }
+    }
+  }
+  return s;
+}
+// EC% (Equipo Completo / Total) por plaza calculado directo de
+// Dashboard_3_Diario (mismo metodo que computePlazaStatsFromRows() de
+// dashboard-3.html), agrupando por la columna Plaza sobre las filas SIN
+// alcance. Es la fuente vigente del comparativo "Aprovechamiento por plaza";
+// la hoja manual Dashboard_3_Otras_Plazas queda solo como respaldo.
+// Devuelve { [PLAZA_MAYUS]: { plaza, aprov, total, completas } }.
+function metricsPlazaStatsD3(rows) {
+  if (!Array.isArray(rows) || !rows.length) return {};
+  const sample = rows[0] || {};
+  const plazaKey = metricsFindKey(sample, ['Plaza']);
+  const estatusKey = metricsFindKey(sample, ['Clas Aprov', 'Estatus Con impacto Ausentismo', 'Estatus']);
+  const byPlaza = {};
+  rows.forEach(r => {
+    const plazaRaw = String(metricsVal(r, plazaKey) || '').trim();
+    if (!plazaRaw) return;
+    const plaza = metricsCanonicalPlazaLabel(plazaRaw);
+    const key = plaza.toUpperCase();
+    if (!byPlaza[key]) byPlaza[key] = { plaza, total: 0, completas: 0 };
+    byPlaza[key].total++;
+    if (metricsClasificaAprovechamiento(metricsVal(r, estatusKey)) === 'completas') byPlaza[key].completas++;
+  });
+  const stats = {};
+  Object.values(byPlaza).forEach(v => {
+    if (v.total > 0) stats[v.plaza.toUpperCase()] = { plaza: v.plaza, aprov: v.completas / v.total * 100, total: v.total, completas: v.completas };
+  });
+  return stats;
+}
 // hasTreoHeaderValues()/coerceTreoRows() de dashboard-7.html: la hoja
 // Dashboard_7_Semanal tiene un problema de exportación de Google donde el
 // encabezado real termina pegado como texto dentro de las celdas de la
@@ -2365,8 +2415,8 @@ function metricsCoerceTreoRows(rows) {
 function metricsNormTiendaD7(value) {
   return metricsCleanKey(String(value || '').replace(/^OXXO\s+/i, '').trim());
 }
-async function metricsBuildEstructuraDiariaD1() {
-  const rows = await fetchSheetData(SHEETS_CONFIG.TABS.d1);
+async function metricsBuildEstructuraDiariaD1(options = {}) {
+  const rows = await fetchSheetData(SHEETS_CONFIG.TABS.d1, options.scope ? { scope: options.scope } : {});
   const out = { byCr: new Map(), byTienda: new Map(), periodo: '', total: 0, ready: false };
   if (!rows || !rows.length) return out;
   const mesKey = metricsFindKey(rows[0], ['Mes']);
@@ -2461,8 +2511,8 @@ function metricsMatchShortName(shortName, fullNames) {
 // filtro y regresa TODOS los meses cargados (usado por Mi Tienda para el
 // desglose historico por mes; el resto de los llamadores no lo pasan y
 // siguen viendo solo el mes vigente, sin cambios).
-async function metricsD1Rows(allMonths = false) {
-  const raw = await fetchSheetData(SHEETS_CONFIG.TABS.d1);
+async function metricsD1Rows(allMonths = false, options = {}) {
+  const raw = await fetchSheetData(SHEETS_CONFIG.TABS.d1, options.scope ? { scope: options.scope } : {});
   if (!raw || !raw.length) return null;
   const mesKey = metricsFindKey(raw[0], ['Mes']);
   const puestoKey = metricsFindKey(raw[0], ['Descripcion de Posicion', 'Puesto']);
@@ -2551,8 +2601,8 @@ async function metricsAprovechamientoPorAT() {
 
 // Bajas: mismos filtros predeterminados de dashboard-2, con todos los asesores.
 // Un mes solicitado sin registros nunca se sustituye por otro.
-async function metricsD2Rows(targetMes = '') {
-  const raw = await fetchSheetData(SHEETS_CONFIG.TABS.d2);
+async function metricsD2Rows(targetMes = '', options = {}) {
+  const raw = await fetchSheetData(SHEETS_CONFIG.TABS.d2, options.scope ? { scope: options.scope } : {});
   if (!raw || !raw.length) return null;
   const mesKey = metricsFindKey(raw[0], ['Mes']);
   const asesorKey = metricsFindKey(raw[0], ['Asesor']);
@@ -2567,9 +2617,16 @@ async function metricsD2Rows(targetMes = '') {
     const operativos = base.filter(r => /AYUDANTE|ENCARGADO|LIDER/.test(metricsNormText(metricsVal(r, puestoKey))));
     if (operativos.length) base = operativos;
   }
-  // Igual que la vista operativa del dashboard: estas unidades no representan
-  // una tienda y no deben modificar total, ranking ni presentación RAE.
-  base = base.filter(r => !metricsIsTiendaEntrenamientoOperacionesD2(metricsVal(r, tiendaKey)));
+  // Entrenamiento/Operaciones no son tiendas operativas. Por defecto se excluyen
+  // (comportamiento de la presentacion general y de asesor). La RAE pasa
+  // includeAdminUnits:true para que su TOTAL de bajas coincida con el KPI
+  // "Total Bajas" de dashboard-2.html, que SI las conserva (ver filterData()
+  // y defaultAsesorSelection() en js/dashboard-2.js: cuentan como "Sin asesor
+  // asignado"). El ranking de tiendas las sigue excluyendo del lado de quien
+  // consume estas filas, igual que dashboard-2.html.
+  if (!options.includeAdminUnits) {
+    base = base.filter(r => !metricsIsTiendaEntrenamientoOperacionesD2(metricsVal(r, tiendaKey)));
+  }
   const monthOf = r => metricsRowMonthKeyD2(r, mesKey, fechaKey);
   const months = [...new Set(base.map(monthOf).filter(Boolean))].sort();
   if (targetMes && !months.includes(targetMes)) return null;
@@ -3120,6 +3177,8 @@ window.OXXO = {
   metricsFilterBajasD2,
   metricsIsTiendaEntrenamientoOperacionesD2,
   metricsClasificaAprovechamiento,
+  metricsCanonicalPlazaLabel,
+  metricsPlazaStatsD3,
   metricsCoerceTreoRows,
   metricsBuildEstructuraDiariaD1,
   metricsBuildActivosPorCR,

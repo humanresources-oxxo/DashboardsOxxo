@@ -20,6 +20,13 @@
   const tipoPuesto = OXXO.metricsTipoPuesto;
   const coerceTreoRowsD7 = OXXO.metricsCoerceTreoRows;
   const parseFecha = OXXO.metricsParseFecha;
+  // La RAE es SIEMPRE una presentacion de Plaza Oaxaca. El panel admin no fija
+  // un alcance de pagina (no debe: otras herramientas del panel operan en
+  // Region), asi que sessionStorage/URL pueden dejar el alcance activo en
+  // Region. Este scope explicito se pasa a cada lectura de datos de la RAE
+  // (D1/D2/D7 via las funciones metrics*, D3/D8 ya filtran Oaxaca a mano) para
+  // que TODAS las laminas usen Oaxaca sin tocar el alcance global del panel.
+  const OAXACA_SCOPE = OXXO.normalizeDataScope({ level: 'plaza', region: 'TABASCO', plaza: 'Plaza Oaxaca' });
   // Misma regla que normalizePct() en dashboard-3.html: solo se divide entre
   // 100 cuando el valor viene claramente duplicado por el formato Porcentaje
   // de Sheets (>150). Un aprovechamiento real de 100-150% (tienda con mas
@@ -106,7 +113,7 @@
     return [...sums.entries()].map(([name, sum]) => ({ name, value: sum / counts.get(name) })).sort((a,b) => b.value - a.value).slice(0, limit);
   }
   async function dataD1(targetMes = ''){
-    const source = await OXXO.metricsD1Rows(true);
+    const source = await OXXO.metricsD1Rows(true, { scope: OAXACA_SCOPE });
     if (!source || (targetMes && !source.months.includes(targetMes))) return null;
     const { puestoKey, asesorKey } = source;
     const mes = targetMes || source.currentMonth;
@@ -158,7 +165,10 @@
   }
 
   async function dataD2(targetMes = ''){
-    const source = await OXXO.metricsD2Rows(targetMes);
+    // includeAdminUnits: el TOTAL de bajas de la RAE debe coincidir con el KPI
+    // "Total Bajas" de dashboard-2.html, que conserva Entrenamiento/Operaciones
+    // (cuentan como "Sin asesor asignado"). scope: Plaza Oaxaca explicita.
+    const source = await OXXO.metricsD2Rows(targetMes, { scope: OAXACA_SCOPE, includeAdminUnits: true });
     if (!source) return null;
     const { rows, mes, puestoKey, asesorKey } = source;
     const byPuesto = { Lider: 0, Encargado: 0, Ayudante: 0, Otro: 0 };
@@ -179,15 +189,19 @@
       if(clean.includes('ABANDONO')) return 'ABANDONO';
       return String(raw || '').trim();
     };
-    const rankBy = (key, normalize = value => String(value || '').trim() || 'Sin dato', limit = 10) => {
+    const rankBy = (key, normalize = value => String(value || '').trim() || 'Sin dato', limit = 10, source = rows) => {
       const counts = new Map();
-      rows.forEach(row => {
+      source.forEach(row => {
         const label = normalize(val(row, key), row);
         counts.set(label, (counts.get(label) || 0) + 1);
       });
       return [...counts.entries()].map(([label,total]) => ({ label, total }))
         .sort((a,b) => b.total - a.total || a.label.localeCompare(b.label, 'es')).slice(0, limit);
     };
+    // El ranking de tiendas excluye Entrenamiento/Operaciones igual que
+    // dashboard-2.html (no son tiendas operativas), aunque el TOTAL sí las
+    // incluye. El resto de paneles (motivos, mapa de calor, puesto) las conserva.
+    const tiendaRows = rows.filter(r => !OXXO.metricsIsTiendaEntrenamientoOperacionesD2(val(r, tiendaKey)));
     const edades = [
       { label:'18-25', min:18, max:25 }, { label:'26-35', min:26, max:35 },
       { label:'36-45', min:36, max:45 }, { label:'46-55', min:46, max:55 },
@@ -213,7 +227,7 @@
       // conserva todos los motivos y sólo agrupa cuando la fuente no trae
       // ese nivel de detalle.
       motivos: rankBy(motivoKey, (motivo, row) => String(detalleBajaKey ? val(row, detalleBajaKey) : '').trim() || normalizeMotivo(motivo), Infinity),
-      tiendas: rankBy(tiendaKey, undefined, 10),
+      tiendas: rankBy(tiendaKey, undefined, 10, tiendaRows),
       heatmap: { edades: edades.map(group => group.label), antiguedades, values: mapaCalor },
     };
   }
@@ -243,7 +257,11 @@
     const ausentismosKey = findKey(scoped[0], ['Ausentismos','AUSENTISMOS','aus no justificado']);
     const vacantesKey = findKey(scoped[0], ['Vacante','Vacantes','% Vacantes']);
     const asesorCatalog = await OXXO.loadAsesorCatalog();
-    const visible = scoped.filter(r => OXXO.isTiendaValid(asesorCatalog, val(r, tiendaKey), val(r, crKey)));
+    // Sin filtro de catalogo: dashboard-3.html lo desactivo a peticion
+    // (muestra todas las tiendas del Excel de Estructura, ver initDashboard),
+    // asi que la RAE cuenta exactamente las mismas tiendas y EC% que el tablero
+    // en Plaza Oaxaca. asesorCatalog se conserva solo para resolver el AT.
+    const visible = scoped;
     if(!visible.length) return null;
     // Igual que Dashboard 3: aunque cada carga deberia reemplazar toda la
     // pestana (foto diaria), si llegaran a quedar varias fechas mezcladas se
@@ -269,23 +287,36 @@
     // por tienda separada) — no es un promedio del aprovechamiento crudo.
     const oaxacaAvg = pct;
 
-    let plazas = [];
+    // "Aprovechamiento por Plaza": fuente vigente = EC% por plaza calculado
+    // directo de Dashboard_3_Diario (todas las plazas, sin alcance), igual que
+    // computePlazaStatsFromRows() del Dashboard 3. Se calcula sobre `raw` (todas
+    // las fechas) exactamente como el gauge del Dashboard 3, incluida OAXACA, para
+    // paridad exacta del comparativo; el KPI principal (pct, arriba) sí usa solo
+    // el corte más reciente. La hoja manual Dashboard_3_Otras_Plazas queda SOLO
+    // como respaldo para una plaza que aún no tenga filas por tienda cargadas.
+    const plazaStats = OXXO.metricsPlazaStatsD3(raw);
+    const plazas = Object.values(plazaStats).map(s => ({ name: s.plaza.toUpperCase(), value: s.aprov }));
+    const hasPlaza = name => plazas.some(p => normText(p.name) === normText(name));
     try {
       const otras = await OXXO.fetchSheetData(OXXO.SHEETS_CONFIG.TABS.d3plazas,{scoped:false});
       if(otras && otras.length){
-        // findDataKey (no findKey): la hoja de "Otras Plazas" es una carga
-        // manual y, como la de TREO, puede traer el mismo problema de
+        // findDataKey (no findKey): la hoja manual puede traer el problema de
         // exportacion de Google donde el encabezado real queda pegado como
-        // texto dentro de otra columna (fila "_buffer_..."). findKey se
-        // conformaba con la primera columna que *mencionara* el alias
-        // (pudiendo ser una vacia); findDataKey elige la que de verdad
-        // tiene datos.
+        // texto dentro de otra columna. findDataKey elige la que de verdad
+        // tiene datos, no la primera que mencione el alias.
         const plazaKey = findDataKey(otras, ['PLAZAS','Plaza']);
         const valKey = findDataKey(otras, ['Aprovechamiento de estructura a hoy','Aprovechamiento'], 25, true);
-        plazas = otras.map(r => ({ name: String(val(r, plazaKey)||'').trim(), value: normPct(val(r, valKey)) })).filter(p => p.name);
+        otras.forEach(r => {
+          const rawName = String(val(r, plazaKey)||'').trim();
+          if(!rawName) return;
+          const name = OXXO.metricsCanonicalPlazaLabel(rawName).toUpperCase();
+          if(!hasPlaza(name)) plazas.push({ name, value: normPct(val(r, valKey)) });
+        });
       }
-    } catch(e){ /* sin datos de otras plazas: se muestra solo Oaxaca */ }
-    plazas.push({ name: 'OAXACA', value: oaxacaAvg });
+    } catch(e){ /* sin respaldo de otras plazas: se muestran solo las calculadas */ }
+    // Respaldo: si por algun motivo OAXACA no salio del helper (hoja sin filas
+    // de Oaxaca), se usa el EC% del corte vigente ya calculado arriba.
+    if(!hasPlaza('OAXACA')) plazas.push({ name: 'OAXACA', value: oaxacaAvg });
     plazas.sort((a,b) => b.value - a.value);
 
     // "Aprovechamiento por AT" = tabla EC% (AT) del Dashboard 3: usa la
@@ -509,9 +540,11 @@
   const buildEstructuraDiariaD1 = OXXO.metricsBuildEstructuraDiariaD1;
 
   async function dataD7(){
+    // scope: Plaza Oaxaca explicita (TREO y la estructura diaria D1), para no
+    // heredar un alcance regional del panel. Ver OAXACA_SCOPE arriba.
     const [rawSheet, estructuraD1] = await Promise.all([
-      OXXO.fetchSheetData(OXXO.SHEETS_CONFIG.TABS.s7),
-      buildEstructuraDiariaD1(),
+      OXXO.fetchSheetData(OXXO.SHEETS_CONFIG.TABS.s7, { scope: OAXACA_SCOPE }),
+      buildEstructuraDiariaD1({ scope: OAXACA_SCOPE }),
     ]);
     const raw = coerceTreoRowsD7(rawSheet);
     if(!raw || !raw.length) return null;
@@ -1161,9 +1194,12 @@
     const items=d.rows||[], pageSize=12, pages=Math.max(1,Math.ceil(items.length/pageSize));
     for(let page=0;page<pages;page++){
       const {text,rect}=editorialSlide(pptx,'KPI de enfoque 2026',dateLabel);
-      text('Indicadores actualizados automáticamente',.5,1.92,7,.3,15,DARK,true);
-      text(d.sub,.5,2.27,12.3,.28,10,MUTED);
-      const x=.55, y=2.82, widths=[3,1.6,1.45,1.35,1.55,1.45,1.6], headers=['Asesor','Aprovechamiento\nde estructura','Tiempo promedio\nde vacantes','Bajas del mes','Rotación\nde equipo','Banca\noperativa','% Apego a\nindicadores'];
+      // No afirmar "todo actualizado": solo Aprovechamiento, Tiempo de vacantes
+      // y Bajas se recalculan cada corte; Rotación, Banca y Apego son
+      // referencia fija 2026 (FOCUS_STATIC_METRICS) hasta que tengan tablero.
+      text('Aprovechamiento, tiempo de vacantes y bajas se actualizan cada corte',.5,1.92,12,.3,15,DARK,true);
+      text(`${d.sub} · Rotación, banca y apego son referencia fija 2026 (no se recalculan).`,.5,2.27,12.3,.28,10,MUTED);
+      const x=.55, y=2.82, widths=[3,1.6,1.45,1.35,1.55,1.45,1.6], headers=['Asesor','Aprovechamiento\nde estructura','Tiempo promedio\nde vacantes','Bajas del mes','Rotación de\nequipo (fija)','Banca\noperativa (fija)','% Apego a\nindicadores (fija)'];
       let cursor=x;
       headers.forEach((header,i)=>{ rect(cursor,y,widths[i],.62,i===0?'CC0000':'E30613'); text(header,cursor+.06,y+.13,widths[i]-.12,.36,12,WHITE,true,{align:i?'center':'left',breakLine:false}); cursor+=widths[i]; });
       const rowH=.27;
@@ -1254,29 +1290,36 @@
 
   const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 
-  // Llena el selector "#pptx-rae-mes" con los meses realmente presentes en
-  // Dashboard_1_Diario (columna 'Mes', formato crudo dd/mm/aaaa). Cada opcion
-  // guarda dos valores: el mes tal cual para dataD1() y su equivalente
-  // canonico YYYY-MM (data-canonico) para dataD2(), que usa otro formato de
-  // llave. Sin seleccion = comportamiento de siempre (mes mas reciente).
+  // rowMonthKeyD1() ya devuelve la llave CANONICA "YYYY-MM" (via
+  // metricsNormalizeMonthKey), no el "dd/mm/aaaa" crudo que suponia la version
+  // anterior. Tanto dataD1() (source.months) como dataD2()/metricsD2Rows() y el
+  // KPI de enfoque comparan contra esa MISMA llave canonica, por eso value y
+  // data-canon son identicos: al elegir un mes, Vacantes, Bajas, Análisis y KPI
+  // reciben exactamente el mismo periodo. label es la etiqueta amigable.
+  function raeMonthOption(key){
+    const k = String(key || '');
+    const canon = OXXO.metricsNormalizeMonthKey(k) || (/^\d{4}-\d{2}$/.test(k) ? k : '');
+    if(!canon) return { value: k, canon: '', label: k };
+    const [yyyy, mm] = canon.split('-').map(Number);
+    const label = (MESES[mm - 1] || 'Mes') + ' ' + yyyy;
+    return { value: canon, canon, label };
+  }
+
+  // Llena el selector "#pptx-rae-mes" con los meses presentes en
+  // Dashboard_1_Diario. Sin seleccion = comportamiento de siempre (mes mas
+  // reciente).
   async function populateMesSelector(){
     const select = document.getElementById('pptx-rae-mes');
     if(!select) return;
     try {
-      const raw = await OXXO.fetchSheetData(OXXO.SHEETS_CONFIG.TABS.d1);
+      const raw = await OXXO.fetchSheetData(OXXO.SHEETS_CONFIG.TABS.d1, { scope: OAXACA_SCOPE });
       if(!raw || !raw.length) return;
       const mesKey = findKey(raw[0], ['Mes']);
       const fechaKey = findKey(raw[0], ['Fecha']);
       const keys = [...new Set(raw.map(r => rowMonthKeyD1(r, mesKey, fechaKey)).filter(Boolean))].sort();
-      const opts = keys.map(k => {
-        const m = String(k).match(/^\d{1,2}\/(\d{1,2})\/(\d{4})$/);
-        if(!m) return { key: k, label: k, canon: '' };
-        const mm = Number(m[1]), yyyy = Number(m[2]);
-        const canon = (mm >= 1 && mm <= 12) ? `${yyyy}-${String(mm).padStart(2,'0')}` : '';
-        return { key: k, label: (MESES[mm - 1] || 'Mes') + ' ' + yyyy, canon };
-      });
+      const opts = keys.map(raeMonthOption);
       select.innerHTML = '<option value="">Más reciente</option>' + opts.map(o =>
-        `<option value="${escHtml(o.key)}" data-canon="${escHtml(o.canon)}">${escHtml(o.label)}</option>`
+        `<option value="${escHtml(o.value)}" data-canon="${escHtml(o.canon)}">${escHtml(o.label)}</option>`
       ).join('');
     } catch(e){ /* si falla, se queda solo "Más reciente" */ }
   }
