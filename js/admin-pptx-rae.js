@@ -75,6 +75,11 @@
     const months=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
     return `${String(date.getDate()).padStart(2,'0')} ${months[date.getMonth()]} ${date.getFullYear()}`;
   }
+  function rescueMonthLabel(date){
+    if(!date) return 'el mes del corte';
+    const months=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+    return `${months[date.getMonth()]} ${date.getFullYear()}`;
+  }
   function aprovechamientoBinario(value){
     if(String(value ?? '').trim()==='') return null;
     const pct=normPct(value);
@@ -253,7 +258,10 @@
     const fechaKey = findKey(scoped[0], ['Mes Semana','Semana','Fecha','FECHA']);
     const aprovechamientoKey = findDataKey(scoped, ['Aprovechamiento Estructura','Aprovechamiento'], 25, true);
     // Es específica para no confundirla con la fecha de corte de la carga.
-    const fechaRescateEcKey = findExactHeader(scoped[0], ['Fecha maxima rescate EC','Fecha máxima rescate EC']);
+    // La fuente publica el encabezado con o sin "de" ("Fecha maxima rescate EC"
+    // vigente vs "Fecha maxima de rescate EC" del fixture data-context). Se
+    // aceptan ambas para no perder la columna si el Sheet cambia de rotulo.
+    const fechaRescateEcKey = findExactHeader(scoped[0], ['Fecha maxima rescate EC','Fecha máxima rescate EC','Fecha maxima de rescate EC','Fecha máxima de rescate EC']);
     const ausentismosKey = findKey(scoped[0], ['Ausentismos','AUSENTISMOS','aus no justificado']);
     const vacantesKey = findKey(scoped[0], ['Vacante','Vacantes','% Vacantes']);
     const asesorCatalog = await OXXO.loadAsesorCatalog();
@@ -369,7 +377,12 @@
       })
       .sort((a,b) => b.value - a.value || a.name.localeCompare(b.name, 'es'));
     const ranking = rankingAll.filter(x => x.hasData).slice(0, 15);
-    const rescueReferenceDate=startOfDay(today);
+    // Mes de referencia = mes del corte D3 mas reciente (`fecha`), no la fecha
+    // de hoy: la lamina de rescate lista las tiendas cuyo plazo de rescate EC
+    // cae dentro de ese mes calendario. Si el corte no trae fecha parseable se
+    // usa hoy como respaldo.
+    const rescueReferenceMonth=startOfDay(parseFecha(fecha)||today);
+    const rescueRefYear=rescueReferenceMonth.getFullYear(), rescueRefMonth=rescueReferenceMonth.getMonth();
     const zeroAprovechamiento=rows.map(r=>{
       if(aprovechamientoBinario(val(r, aprovechamientoKey))!==0) return null;
       const fechaRescateEc=parseFecha(val(r, fechaRescateEcKey));
@@ -380,7 +393,13 @@
         fechaRescateEcLabel:rescueDateLabel(fechaRescateEc),
       };
     }).filter(Boolean).sort((a,b)=>a.tienda.localeCompare(b.tienda,'es'));
-    const rescatablesEc=zeroAprovechamiento.filter(item=>item.fechaRescateEc && startOfDay(item.fechaRescateEc).getTime()>=rescueReferenceDate.getTime())
+    // Regla de negocio: se cuentan las tiendas sin Equipo Completo (EC=0, es
+    // decir Aprovechamiento Estructura <92.5) cuya "Fecha maxima rescate EC"
+    // cae en el MES del corte (dia 1 a fin de mes, inclusive), AUNQUE el plazo
+    // exacto ya haya pasado. Fechas de meses previos o futuros se excluyen; las
+    // fechas invalidas (sin fechaRescateEc) tambien quedan fuera.
+    const rescatablesEc=zeroAprovechamiento.filter(item=>item.fechaRescateEc &&
+        item.fechaRescateEc.getFullYear()===rescueRefYear && item.fechaRescateEc.getMonth()===rescueRefMonth)
       .sort((a,b)=>a.fechaRescateEc-b.fechaRescateEc || a.tienda.localeCompare(b.tienda,'es'));
 
     return {
@@ -391,7 +410,8 @@
       rankingAll,
       zeroAprovechamiento,
       rescatablesEc,
-      rescueReferenceDate,
+      rescueReferenceMonth,
+      rescueMonthLabel: rescueMonthLabel(rescueReferenceMonth),
     };
   }
 
@@ -1090,17 +1110,17 @@
 
   function buildD3ZeroAprovechamiento(pptx,d,dateLabel){
     buildD3StoreListSlides(pptx,d,dateLabel,{
-      title:'Tiendas con 0% de aprovechamiento', items:d.zeroAprovechamiento,
-      countLabel:'TIENDAS CON 0%', detail:'Tiendas cuyo aprovechamiento actual está por debajo de 92.5%.',
-      emptyText:'No hay tiendas con 0% de aprovechamiento en el corte actual.'
+      title:'Tiendas sin Equipo Completo (EC)', items:d.zeroAprovechamiento,
+      countLabel:'TIENDAS SIN EC', detail:'Tiendas con Aprovechamiento Estructura por debajo de 92.5% (EC = 0).',
+      emptyText:'No hay tiendas por debajo del umbral EC (92.5%) en el corte actual.'
     });
   }
 
   function buildD3RescateEc(pptx,d,dateLabel){
     buildD3StoreListSlides(pptx,d,dateLabel,{
-      title:'Tiendas con rescate EC vigente', items:d.rescatablesEc,
-      countLabel:'AÚN RESCATABLES', detail:`0% actual con fecha máxima EC vigente al ${rescueDateLabel(d.rescueReferenceDate)}.`,
-      emptyText:'No hay tiendas con 0% y fecha máxima de rescate EC vigente.'
+      title:'Tiendas con rescate EC en el mes', items:d.rescatablesEc,
+      countLabel:'CON OPCIÓN DE RESCATE ESTE MES', detail:`Tiendas sin EC (Aprov. Estructura <92.5%) con fecha máxima de rescate EC dentro de ${d.rescueMonthLabel}.`,
+      emptyText:`No hay tiendas sin EC con fecha máxima de rescate EC en ${d.rescueMonthLabel}.`
     });
   }
 
@@ -1340,8 +1360,8 @@
       { title: 'BAJAS', fetch: loadBajas, build: buildD2 },
       { title: 'ANÁLISIS DE BAJAS', fetch: loadBajas, build: buildD2Analysis },
       { title: 'APROVECHAMIENTO DE ESTRUCTURA', fetch: loadAprovechamiento, build: buildD3 },
-      { title: 'TIENDAS CON 0% DE APROVECHAMIENTO', fetch: loadAprovechamiento, build: buildD3ZeroAprovechamiento },
-      { title: 'TIENDAS CON RESCATE EC VIGENTE', fetch: loadAprovechamiento, build: buildD3RescateEc },
+      { title: 'TIENDAS SIN EQUIPO COMPLETO (EC)', fetch: loadAprovechamiento, build: buildD3ZeroAprovechamiento },
+      { title: 'TIENDAS CON RESCATE EC EN EL MES', fetch: loadAprovechamiento, build: buildD3RescateEc },
       { title: 'KPI DE ENFOQUE 2026', fetch: loadFocus, build: buildFocusKpis },
       { title: 'CAPACIDADES 2026', fetch: loadCapacidades, build: buildD8 },
       { title: 'CAPACIDADES POR MÓDULO', fetch: loadCapacidades, build: buildD8Capabilities },

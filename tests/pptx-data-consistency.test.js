@@ -165,12 +165,40 @@ sandbox.loadAsesorCatalog=async()=>null;sandbox.OXXO.loadAsesorCatalog=sandbox.l
  const rescateSlide={background:{},addText(...args){rescateDrawn.push(['text',...args]);},addShape(...args){rescateDrawn.push(['shape',...args]);}};
  sandbox.rae.buildD3ZeroAprovechamiento({addSlide(){return rescateSlide;}},d3Rescate,d3Rescate.sub);
  sandbox.rae.buildD3RescateEc({addSlide(){return rescateSlide;}},d3Rescate,d3Rescate.sub);
- assert.ok(rescateDrawn.some(([kind,value])=>kind==='text'&&String(value).includes('Tiendas con rescate EC vigente')));
+ assert.ok(rescateDrawn.some(([kind,value])=>kind==='text'&&String(value).includes('Tiendas con rescate EC en el mes')));
+ assert.ok(rescateDrawn.some(([kind,value])=>kind==='text'&&String(value).includes('con opción de rescate este mes')));
  const listSlides=[];
  const listItems=Array.from({length:32},(_,i)=>({tienda:`OXXO TIENDA ${i+1}`,asesor:`Asesor ${i+1}`,ausentismos:i%4,vacantes:i%2,fechaRescateEc:new Date(2026,8,23),fechaRescateEcLabel:'23 sep 2026'}));
  sandbox.rae.buildD3StoreListSlides({addSlide(){const slide={background:{},addText(...args){listSlides.push(['text',...args]);},addShape(){}};return slide;}},d3Rescate,d3Rescate.sub,{title:'Lista completa',items:listItems,countLabel:'TIENDAS CON 0%',detail:'Detalle',emptyText:'Sin datos'});
  assert.equal(listSlides.filter(([kind])=>kind==='text').filter(([,value])=>String(value)==='OXXO TIENDA 1').length,1);
  assert.equal(listSlides.filter(([kind])=>kind==='text').filter(([,value])=>String(value)==='OXXO TIENDA 32').length,1);
+
+ // ── Regresion RAE: rescate EC por MES del corte (no por fecha de hoy) ──────
+ // Regla de negocio: tiendas sin EC (Aprov Estructura <92.5) cuya Fecha maxima
+ // rescate EC cae en el mes del corte D3 (dia 1 a fin de mes, INCLUSIVE),
+ // aunque el plazo exacto ya haya pasado. Meses previos/futuros y fechas
+ // invalidas se excluyen. El encabezado se lee con o sin "de".
+ fixtureByTab={[sandbox.OXXO.SHEETS_CONFIG.TABS.d3]:[
+  {Plaza:'Oaxaca',Tienda:'OXXO DIA1',FECHA:'2026-09-28',Estatus:'CRITICA','Aprovechamiento Estructura':0,'Fecha máxima de rescate EC':'2026-09-01'},
+  {Plaza:'Oaxaca',Tienda:'OXXO FIN',FECHA:'2026-09-28',Estatus:'CRITICA','Aprovechamiento Estructura':0,'Fecha máxima de rescate EC':'2026-09-30'},
+  {Plaza:'Oaxaca',Tienda:'OXXO EXP',FECHA:'2026-09-28',Estatus:'CRITICA','Aprovechamiento Estructura':0,'Fecha máxima de rescate EC':'2026-09-04'},
+  {Plaza:'Oaxaca',Tienda:'OXXO PREV',FECHA:'2026-09-28',Estatus:'CRITICA','Aprovechamiento Estructura':0,'Fecha máxima de rescate EC':'2026-08-31'},
+  {Plaza:'Oaxaca',Tienda:'OXXO FUT',FECHA:'2026-09-28',Estatus:'CRITICA','Aprovechamiento Estructura':0,'Fecha máxima de rescate EC':'2026-10-01'},
+  {Plaza:'Oaxaca',Tienda:'OXXO INV',FECHA:'2026-09-28',Estatus:'CRITICA','Aprovechamiento Estructura':0,'Fecha máxima de rescate EC':'N/D'},
+  {Plaza:'Oaxaca',Tienda:'OXXO OK',FECHA:'2026-09-28',Estatus:'COMPLETA','Aprovechamiento Estructura':95,'Fecha máxima de rescate EC':'2026-09-10'}]};
+ // today en OCTUBRE a proposito: el mes de referencia sale del CORTE
+ // (septiembre), no de la fecha de hoy.
+ const rescMes = await sandbox.rae.dataD3(new Date(2026,9,15));
+ assert.equal(rescMes.zeroAprovechamiento.length,6);                 // 6 tiendas sin EC (0% binario)
+ const rescTiendas = rescMes.rescatablesEc.map(x=>x.tienda);
+ assert.deepEqual(rescTiendas,['OXXO DIA1','OXXO EXP','OXXO FIN']);  // dia 1, vencida en el mes y fin de mes
+ assert.ok(!rescTiendas.includes('OXXO PREV'));                      // mes previo excluido
+ assert.ok(!rescTiendas.includes('OXXO FUT'));                       // mes futuro excluido
+ assert.ok(!rescTiendas.includes('OXXO INV'));                       // fecha invalida excluida
+ assert.equal(rescMes.rescueMonthLabel,'septiembre 2026');           // etiqueta del mes del corte
+ assert.ok(rescMes.rescatablesEc[0].fechaRescateEc instanceof Date); // alias con "de" leido
+ fixtureByTab=null;
+
  fixtureByTab={
   [sandbox.OXXO.SHEETS_CONFIG.TABS.d1]: [{Mes:'2026-09',Tienda:'OXXO A','CR TIENDA':'50AAA',Empleados:'Persona',Puesto:'AYUDANTE TIENDA'}],
   [sandbox.OXXO.SHEETS_CONFIG.TABS.s7]: [{Tienda:'OXXO A',CR:'50AAA',Asesor:'Timoteo Antonio Perez','Estructura Propuesta TREO P2 Jun - Ago':1,'Estructura SAP':1,'Empleados Activos':1,Vacantes:0,'Dif SAP vs Est Optima Final':0}]
