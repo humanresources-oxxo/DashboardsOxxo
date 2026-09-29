@@ -877,11 +877,16 @@
   const TONO_NIVEL = { low: 'verde', medium: 'amarillo', high: 'rojo' };
   const CLASE_NIVEL = { low: 'is-ok', medium: 'is-warn', high: 'is-bad' };
 
-  // Resumen por tienda de cada indicador. Reproduce el mismo recorte que usa
-  // la ficha (mes vigente en bajas, corte vigente en tiempo extra y
-  // ausentismos, ultimo corte en inventarios) para que el ranking no diga algo
-  // distinto de lo que se ve al abrir la tienda. Devuelve null cuando la
-  // tienda no aparece en esa fuente: "sin dato" no es lo mismo que "cumple".
+  // Indicadores que entran al ranking. Deliberadamente NO estan Resultados de
+  // Inventario, Personal FLEX ni Faltantes y Sobrantes: son administrativos y
+  // comerciales, no de gestion de personal, asi que no deben mover la posicion
+  // de una tienda en este ranking. Sus semaforos siguen apareciendo en la
+  // ficha, que es donde corresponden.
+  //
+  // Cada resumen reproduce el mismo recorte que usa la ficha (mes vigente en
+  // bajas, corte vigente en tiempo extra y ausentismos) para que el ranking no
+  // diga algo distinto de lo que se ve al abrir la tienda. Devuelve null cuando
+  // la tienda no aparece en esa fuente: "sin dato" no es lo mismo que "cumple".
   const INDICADORES = [
     {
       id: 'd2', etiqueta: 'Bajas', inicial: 'B',
@@ -933,21 +938,6 @@
           nivel: nivelCapacidades(pendientes, critico),
           detalle: pendientes ? `${n(pendientes)} pendiente${pendientes === 1 ? '' : 's'}` : 'Sin pendientes',
         };
-      },
-    },
-    {
-      id: 'inv', etiqueta: 'Inventarios', inicial: 'I',
-      resumen(tienda) {
-        const d = DATA.inventarios; if (!d) return null;
-        const allRows = rowsFor(d, tienda); if (!allRows.length) return null;
-        const periods = [...new Set(allRows.map((row) => row.period).filter(Boolean))].sort();
-        const latest = periods.at(-1) || '';
-        const rows = latest ? allRows.filter((row) => row.period === latest) : allRows;
-        if (!rows.length) return null;
-        const merma = rows.reduce((sum, row) => sum + row.finalResult, 0);
-        const ventas = rows.reduce((sum, row) => sum + row.totalSales, 0);
-        const ratio = ventas ? merma / ventas : rows.reduce((sum, row) => sum + row.finalRatio, 0) / rows.length;
-        return { nivel: nivelInventarios(ratio), detalle: `Merma ${invPercent(ratio)}` };
       },
     },
   ];

@@ -309,6 +309,10 @@ body.mi-modal-open{overflow:hidden}
 .mi-modal__meta{font-weight:800;color:var(--mt-ink)}
 .mi-modal__hint{display:inline-flex;align-items:center;gap:6px;text-align:right}
 .mi-modal:not(.is-wide) .mi-modal__hint{display:none}
+/* openModal marca el aviso con [hidden] cuando nada desborda. El display
+   de la clase gana sobre el [hidden] del navegador, asi que hay que
+   declararlo aqui; con !important tambien por el override de movil. */
+.mi-modal__hint[hidden]{display:none!important}
 .mi-modal__hint svg{width:15px;height:15px;fill:none;stroke:#C1101B;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 
 /* Paneles con historial (Vacantes, Bajas, Tiempo Extra, Ausentismos,
