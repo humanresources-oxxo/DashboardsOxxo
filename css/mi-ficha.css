@@ -62,6 +62,7 @@
    antes compartian filas de grid y se estiraban a la altura del
    mas alto, dejando huecos grandes en los paneles cortos. */
 .ficha{background:rgba(255,255,255,.72);border:1px solid rgba(255,255,255,.7);border-radius:20px;overflow:hidden;box-shadow:0 16px 44px rgba(117,23,23,.12);margin-bottom:18px}
+.mi-tienda-page #mi-content{scroll-margin-top:76px}
 
 .ficha__head{background:linear-gradient(126deg,#F71926 0%,#D91F2D 54%,#A9111B 100%);color:#fff;padding:16px 22px}
 .ficha__head-top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
@@ -489,6 +490,12 @@ body.mi-modal-open{overflow:hidden}
 
 .mt-rank-note{margin:0 0 12px;font-size:12px;font-weight:650;color:var(--mt-muted)}
 .mt-rank-cell{display:inline-flex;align-items:center;gap:8px;min-width:0}
+/* El nombre de la tienda es un boton real (abre su ficha). Se ve como texto
+   pulsable: hereda tipografia, subraya al pasar/enfocar y mantiene un foco
+   visible por teclado. */
+.mt-rank-store{display:inline-block;min-width:0;min-height:32px;padding:2px 4px;margin:-2px -4px;border:0;border-radius:6px;background:none;font:inherit;color:var(--mt-ink);font-weight:750;line-height:28px;text-align:left;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;transition:background .12s ease,color .12s ease}
+.mt-rank-store:hover{color:var(--color-primary,#D91F2D);text-decoration:underline}
+.mt-rank-store:focus-visible{outline:2px solid var(--color-primary,#D91F2D);outline-offset:1px}
 .mt-rank-tbl{font-size:12.5px}
 .mt-rank-tbl td,.mt-rank-tbl th{padding-left:8px;padding-right:8px}
 .mt-rank-group{display:inline-block;margin:0 0 4px;font-size:11px;font-weight:900;letter-spacing:.12em;text-transform:uppercase}

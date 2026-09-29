@@ -142,3 +142,112 @@ test('el boton existe en la pagina y arranca deshabilitado', () => {
   assert.match(fuente, /getElementById\('mi-ranking-btn'\)\?\.addEventListener\('click', abrirRanking\)/);
   assert.match(fuente, /actualizarBotonRanking\(\);/, 'Debe habilitarse al terminar la carga');
 });
+
+// ── Activación de tiendas del ranking ──────────────────────────────────
+// Cada tienda del Top/Bottom 10 debe poder activarse (mouse y teclado) para
+// abrir su ficha completa, sin crear un modal ni un computo paralelo.
+
+// filaRanking es la fila que usan AMBAS listas (top y bottom), asi que probar
+// su salida cubre las dos columnas. Se ejecuta con el esc REAL de la ficha
+// para que la prueba de seguridad valide el escape de verdad, no un stub.
+function cargarFilaRanking() {
+  const fichaFuente = fs.readFileSync(path.join(raiz, 'js', 'mi-ficha-ui.js'), 'utf8');
+  const mEsc = fichaFuente.match(/const esc = \(s\) => String\(s == null[\s\S]*?&#39;'\);/);
+  assert.ok(mEsc, 'Debe poder extraerse esc de mi-ficha-ui.js');
+  const mFila = fuente.match(/function filaRanking\(t, posicion\) \{[\s\S]*?\n  \}/);
+  assert.ok(mFila, 'Debe existir filaRanking');
+  const ctx = {};
+  vm.runInNewContext(
+    `const NIVEL_TEXTO = { low: 'verde', medium: 'ambar', high: 'rojo' };\n` +
+    mEsc[0] + '\n' + mFila[0] + '\nthis.filaRanking = filaRanking;',
+    ctx,
+  );
+  return ctx.filaRanking;
+}
+
+test('cada tienda del ranking es un boton semantico (mouse y teclado)', () => {
+  const filaRanking = cargarFilaRanking();
+  const fila = { display: 'OXXO Las Flores', verdes: 3, evaluados: 4, detalle: [
+    { etiqueta: 'Bajas', texto: '0 bajas en el mes', nivel: 'low', inicial: 'B' },
+  ] };
+  const html = filaRanking(fila, 1);
+  // <button> nativo: Enter/Espacio lo activan sin listener de teclado extra.
+  assert.match(html, /<button type="button" class="mt-rank-store" data-rank-tienda="OXXO Las Flores" title="OXXO Las Flores">OXXO Las Flores<\/button>/,
+    'El nombre de la tienda debe ser un <button> con el nombre exacto y title completo');
+});
+
+test('el nombre de la tienda en el ranking va escapado (seguridad de HTML)', () => {
+  const filaRanking = cargarFilaRanking();
+  const malicioso = '<img src=x onerror=alert(1)>';
+  const fila = { display: malicioso, verdes: 1, evaluados: 3, detalle: [
+    { etiqueta: 'Bajas', texto: '1 baja', nivel: 'high', inicial: 'B' },
+  ] };
+  const html = filaRanking(fila, 1);
+  assert.ok(!html.includes('<img src=x'), 'No debe inyectarse HTML crudo en la celda');
+  assert.ok(html.includes('&lt;img src=x onerror=alert(1)&gt;'), 'El texto visible debe ir escapado');
+  assert.ok(html.includes('data-rank-tienda="&lt;img src=x onerror=alert(1)&gt;"'),
+    'El atributo data-rank-tienda debe ir escapado');
+});
+
+test('activar una tienda del ranking abre su ficha con el flujo del selector', () => {
+  const m = fuente.match(/function activarTiendaDesdeRanking\([\s\S]*?\n  \}/);
+  assert.ok(m, 'Debe existir activarTiendaDesdeRanking');
+  const cuerpo = m[0];
+  assert.match(cuerpo, /closeModal\(\)/, 'Debe cerrar el modal del ranking');
+  assert.match(cuerpo, /tiendaSelectControl\?\.setValue\(display\)/, 'Debe seleccionar la tienda en el combobox existente');
+  assert.match(cuerpo, /renderFor\(display\)/, 'Debe renderizar la ficha completa ya existente');
+  assert.match(cuerpo, /scrollIntoView/, 'Debe desplazar la ficha a la vista');
+  assert.match(cuerpo, /\.focus\(/, 'Debe enfocar la ficha');
+  // No crea modal ni computo paralelo: reusa renderFor, nunca abre openModal.
+  assert.ok(!/openModal\(/.test(cuerpo), 'No debe abrir un modal paralelo');
+  // Solo activa tiendas que existen en el catalogo (no confia en el data-attr).
+  assert.match(cuerpo, /TIENDAS\.has\(tKey\(display\)\)/, 'Debe validar la tienda contra el catalogo');
+});
+
+test('Top y Bottom seleccionan su propia tienda y una tienda desconocida no altera la ficha', () => {
+  const m = fuente.match(/function activarTiendaDesdeRanking\([\s\S]*?\n  \}/);
+  assert.ok(m, 'Debe existir activarTiendaDesdeRanking');
+  const eventos = [];
+  const titulo = {
+    setAttribute: (...args) => eventos.push(['tabindex', ...args]),
+    focus: (options) => eventos.push(['focus', options.preventScroll]),
+  };
+  const ficha = { scrollIntoView: (options) => eventos.push(['scroll', options.block]) };
+  const ctx = {
+    TIENDAS: new Map([['oxxo top', 'OXXO Top'], ['oxxo bottom', 'OXXO Bottom']]),
+    tKey: (value) => String(value).toLowerCase(),
+    closeModal: () => eventos.push(['close']),
+    tiendaSelectControl: { setValue: (value) => eventos.push(['select', value]) },
+    renderFor: (value) => eventos.push(['render', value]),
+    document: { getElementById: (id) => id === 'mi-content' ? ficha : id === 'ficha-tienda-title' ? titulo : null },
+  };
+  vm.runInNewContext(m[0] + ';this.activar = activarTiendaDesdeRanking;', ctx);
+  for (const tienda of ['OXXO Top', 'OXXO Bottom']) {
+    eventos.length = 0;
+    ctx.activar(tienda);
+    assert.deepEqual(eventos.slice(0, 3), [['close'], ['select', tienda], ['render', tienda]]);
+    assert.deepEqual(eventos.slice(3), [['scroll', 'start'], ['tabindex', 'tabindex', '-1'], ['focus', true]]);
+  }
+  eventos.length = 0;
+  ctx.activar('OXXO Ajena');
+  assert.deepEqual(eventos, [], 'Una tienda ajena no debe cambiar seleccion ni ficha');
+});
+
+test('un solo listener delegado, sin duplicarlo en cada reintento', () => {
+  const apariciones = (fuente.match(/mt-rank-store/g) || []).length;
+  assert.equal(apariciones, 2, 'mt-rank-store solo debe aparecer en el markup y en el selector del listener');
+  const dom = fuente.match(/document\.addEventListener\('DOMContentLoaded'[\s\S]*?\n  \}\);/);
+  assert.ok(dom && /mt-rank-store/.test(dom[0]) && /activarTiendaDesdeRanking/.test(dom[0]),
+    'El listener delegado debe registrarse en DOMContentLoaded');
+  const init = fuente.match(/async function init\(\)[\s\S]*?\n  \}/);
+  assert.ok(init && !/mt-rank-store/.test(init[0]),
+    'init() no debe registrar el listener (evitar duplicados en reintentos)');
+  assert.ok(!/mi-ranking-btn'\)\?\.addEventListener/.test(init[0]),
+    'init() tampoco debe duplicar el listener que abre el ranking');
+});
+
+test('el modal del ranking sigue cerrando con Escape', () => {
+  const ficha = fs.readFileSync(path.join(raiz, 'js', 'mi-ficha-ui.js'), 'utf8');
+  assert.match(ficha, /e\.key === 'Escape'[\s\S]{0,40}closeModal\(\)/,
+    'Escape debe seguir cerrando el modal');
+});

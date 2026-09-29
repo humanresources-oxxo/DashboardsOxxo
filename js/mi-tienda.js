@@ -18,7 +18,7 @@
     esc, plural, statTile, emptyRow, clearBox, noneBox,
     gaugeTone, gaugeSVG, gaugeRowHTML, barListHTML, pctBarsHTML,
     movInfo, movPill, estatusCell, rkTile, toneByCount, tonePct,
-    chipsHTML, metaHTML, mountSingleSelect, openModal,
+    chipsHTML, metaHTML, mountSingleSelect, openModal, closeModal,
   } = window.OXXO_FICHA;
   const V = (row, key) => OXXO.metricsVal(row, key);
   const K = (row, aliases) => OXXO.metricsFindKey(row, aliases);
@@ -994,8 +994,12 @@
     const chips = t.detalle.map((d) =>
       `<span class="mt-rank-dot mt-rank-dot--${d.nivel}" title="${esc(d.etiqueta)}: ${esc(d.texto)} (${NIVEL_TEXTO[d.nivel]})" aria-label="${esc(d.etiqueta)} en ${NIVEL_TEXTO[d.nivel]}">${esc(d.inicial)}</span>`
     ).join('');
+    // El nombre es un boton real (no un span con onclick) para que el mouse y
+    // el teclado lo activen igual sin codigo extra: Enter/Espacio ya disparan
+    // click en un <button>. Al pulsarlo se abre la misma ficha del selector
+    // (ver activarTiendaDesdeRanking), no un computo aparte.
     return `<tr>
-      <td><span class="mt-rank-cell"><span class="mt-rank-pos">${posicion}</span>${esc(t.display)}</span></td>
+      <td><span class="mt-rank-cell"><span class="mt-rank-pos">${posicion}</span><button type="button" class="mt-rank-store" data-rank-tienda="${esc(t.display)}" title="${esc(t.display)}">${esc(t.display)}</button></span></td>
       <td class="center"><span class="mt-rank-score">${t.verdes}/${t.evaluados}</span></td>
       <td><span class="mt-rank-dots">${chips}</span></td>
     </tr>`;
@@ -1041,6 +1045,25 @@
         </div>
       </div>`;
     openModal('Ranking de tiendas · Indicadores en verde', html);
+  }
+
+  // Al activar una tienda del ranking se cierra el modal y se reutiliza el
+  // MISMO flujo del selector (setValue + renderFor): la ficha completa que ya
+  // existe, sin modal ni computo paralelo. Luego se desplaza y se enfoca la
+  // ficha para que el cambio sea visible aunque el usuario venga del modal.
+  function activarTiendaDesdeRanking(display) {
+    if (!display || !TIENDAS.has(tKey(display))) return;
+    closeModal();
+    tiendaSelectControl?.setValue(display);
+    renderFor(display);
+    const ficha = document.getElementById('mi-content');
+    if (!ficha) return;
+    ficha.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const title = document.getElementById('ficha-tienda-title');
+    // tabindex -1: el titulo no es enfocable por si mismo, pero si por codigo,
+    // para llevar el foco (y los lectores de pantalla) a la ficha recien
+    // abierta sin agregarlo al orden de tabulacion normal.
+    if (title) { title.setAttribute('tabindex', '-1'); title.focus({ preventScroll: true }); }
   }
 
   function actualizarBotonRanking() {
@@ -1554,7 +1577,6 @@
       activeTiendaDisplay = '';
       CATALOG = await OXXO.loadAsesorCatalog();
       seedTiendasFromCatalog();
-      document.getElementById('mi-ranking-btn')?.addEventListener('click', abrirRanking);
       if (!TIENDAS.size) throw new Error('El catálogo no contiene tiendas disponibles.');
       mountTiendaSelector();
       setPageState('ready', 'Busca tu tienda arriba', 'Ya puedes elegirla. Cada apartado aparecerá en cuanto termine de cargar su fuente.');
@@ -1593,6 +1615,14 @@
 
   document.addEventListener('DOMContentLoaded', () => {
     applyScopeLabels();
+    document.getElementById('mi-ranking-btn')?.addEventListener('click', abrirRanking);
+    // Un solo listener delegado (el contenido del modal se regenera en cada
+    // apertura); registrado aqui, fuera de init(), para no duplicarlo en cada
+    // reintento de carga. Al ser <button> nativo, el teclado ya viene incluido.
+    document.addEventListener('click', (e) => {
+      const btn = e.target.closest?.('.mt-rank-store');
+      if (btn) activarTiendaDesdeRanking(btn.dataset.rankTienda);
+    });
     OXXO.setRetryHandler(init);
     document.getElementById('mi-retry').addEventListener('click', init);
     document.getElementById('mi-pdf-btn')?.addEventListener('click', () => window.print());
