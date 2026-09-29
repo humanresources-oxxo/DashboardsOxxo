@@ -249,7 +249,7 @@
       document.getElementById('stats-d2').innerHTML =
         statTile(n(rows.length), 'Bajas del mes', 'rojo') +
         statTile(topMotivo ? esc(OXXO.truncate(topMotivo[0], 22)) : '—', 'Motivo más frecuente', 'amarillo txt');
-      const risk = rows.length >= 3 ? 'high' : rows.length >= 1 ? 'medium' : 'low';
+      const risk = nivelBajas(rows.length);
       const riskTitle = risk === 'high' ? 'Rotación alta' : 'Seguimiento recomendado';
       const riskDetail = topMotivo ? `${topMotivo[1]} baja${topMotivo[1] > 1 ? 's' : ''} por ${OXXO.truncate(topMotivo[0], 34)}` : 'Revisa el detalle del periodo';
       const motivosOrdenados = Object.entries(porMotivo).sort((a, b) => b[1] - a[1]);
@@ -396,7 +396,7 @@
         statTile(n(totHoras), 'Horas TE', 'amarillo') +
         statTile('$' + n(totGasto), 'Gasto TE', 'rojo') +
         statTile(n(rows.length), 'Registros');
-      const risk = totHoras >= 20 ? 'high' : totHoras >= 10 ? 'medium' : 'low';
+      const risk = nivelTiempoExtra(totHoras);
       const riskTitle = risk === 'high' ? 'Tiempo extra alto' : risk === 'medium' ? 'Tiempo extra en seguimiento' : 'Tiempo extra controlado';
       const riskDetail = `${n(totHoras)} horas y $${n(totGasto)} en el corte vigente`;
       document.getElementById('viz-d4').innerHTML = trend + signalHTML(risk, riskTitle, riskDetail) + barListHTML(
@@ -526,7 +526,7 @@
         statTile(n(empleados), 'Empleados', 'rojo') +
         statTile(n(totDias), 'Días ausentes', 'amarillo') +
         statTile(n(faltas), 'Faltas', faltas > 0 ? 'rojo' : 'verde');
-      const risk = faltas > 0 || totDias >= 10 ? 'high' : totDias >= 5 ? 'medium' : 'low';
+      const risk = nivelAusentismos(faltas, totDias);
       const riskTitle = risk === 'high' ? 'Ausentismo prioritario' : risk === 'medium' ? 'Ausentismo en seguimiento' : 'Ausentismo controlado';
       const riskDetail = faltas > 0 ? `${n(faltas)} falta${faltas > 1 ? 's' : ''} y ${n(totDias)} días ausentes` : `${n(totDias)} días ausentes en el corte vigente`;
       document.getElementById('viz-d6').innerHTML = trend + signalHTML(risk, riskTitle, riskDetail) + barListHTML(
@@ -738,7 +738,7 @@
     const critica = certStats.filter((c) => c.pct !== null).sort((a, b) => a.pct - b.pct)[0] || null;
     document.getElementById('stats-d8').innerHTML = '';
     const certBars = barListHTML(certStats.filter((c) => c.pct !== null).map((c) => ({ label: c.label, value: c.pct, display: c.pct + '%' })), 'verde');
-    const capRisk = !pendientes ? 'low' : (critica && critica.pct < 60 ? 'high' : 'medium');
+    const capRisk = nivelCapacidades(pendientes, critica ? critica.pct : null);
     const capTitle = !pendientes ? 'Certificaciones completas' : `${n(pendientes)} persona${pendientes > 1 ? 's' : ''} con pendientes`;
     const capDetail = critica ? `Módulo más crítico: ${critica.label} (${critica.pct}%)` : 'Sin módulos evaluados';
     document.getElementById('viz-d8').innerHTML = rows.length
@@ -852,6 +852,192 @@
   // incorporamos tiendas que vengan en una carga vigente pero que aún no se
   // hayan dado de alta en el catálogo, conservando la selección del usuario.
   // Así una tienda nunca desaparece de Mi Tienda por un desfase de catálogo.
+  // ── Indicadores de la tienda: una sola definicion de umbrales ────────
+  // La ficha (los semaforos de cada seccion) y el ranking Top/Bottom 10 leen
+  // de aqui. Antes cada umbral vivia suelto dentro de su render, asi que el
+  // ranking y la ficha podian separarse sin que nada avisara; ahora un cambio
+  // aqui mueve los dos a la vez y las pruebas lo vigilan.
+  function nivelBajas(bajas) {
+    return bajas >= 3 ? 'high' : bajas >= 1 ? 'medium' : 'low';
+  }
+  function nivelTiempoExtra(horas) {
+    return horas >= 20 ? 'high' : horas >= 10 ? 'medium' : 'low';
+  }
+  function nivelAusentismos(faltas, dias) {
+    return faltas > 0 || dias >= 10 ? 'high' : dias >= 5 ? 'medium' : 'low';
+  }
+  function nivelCapacidades(pendientes, pctCritico) {
+    return !pendientes ? 'low' : (pctCritico !== null && pctCritico < 60 ? 'high' : 'medium');
+  }
+  function nivelInventarios(ratio) {
+    return ratio > .01 ? 'high' : ratio > .005 ? 'medium' : 'low';
+  }
+  // Un nivel se pinta con dos vocabularios distintos segun el componente.
+  // Se traducen aqui para que los umbrales numericos vivan en un solo lugar.
+  const TONO_NIVEL = { low: 'verde', medium: 'amarillo', high: 'rojo' };
+  const CLASE_NIVEL = { low: 'is-ok', medium: 'is-warn', high: 'is-bad' };
+
+  // Resumen por tienda de cada indicador. Reproduce el mismo recorte que usa
+  // la ficha (mes vigente en bajas, corte vigente en tiempo extra y
+  // ausentismos, ultimo corte en inventarios) para que el ranking no diga algo
+  // distinto de lo que se ve al abrir la tienda. Devuelve null cuando la
+  // tienda no aparece en esa fuente: "sin dato" no es lo mismo que "cumple".
+  const INDICADORES = [
+    {
+      id: 'd2', etiqueta: 'Bajas',
+      resumen(tienda) {
+        const d = DATA.d2; if (!d) return null;
+        const allRows = rowsFor(d, tienda); if (!allRows.length) return null;
+        const mes = d.currentMonth || '';
+        const rows = mes ? allRows.filter((r) => OXXO.metricsRowMonthKeyD2(r, d.mesKey, d.fechaKey) === mes) : [];
+        return { nivel: nivelBajas(rows.length), detalle: `${n(rows.length)} baja${rows.length === 1 ? '' : 's'} en el mes` };
+      },
+    },
+    {
+      id: 'd4', etiqueta: 'Tiempo extra',
+      resumen(tienda) {
+        const d = DATA.d4; if (!d) return null;
+        const allRows = rowsFor(d, tienda); if (!allRows.length) return null;
+        const rows = allRows.filter((r) => d.period.periodOf(r) === d.period.currentPeriod);
+        const horas = rows.reduce((sum, r) => sum + numParse(V(r, d.horasKey)), 0);
+        return { nivel: nivelTiempoExtra(horas), detalle: `${n(horas)} horas en el corte` };
+      },
+    },
+    {
+      id: 'd6', etiqueta: 'Ausentismos',
+      resumen(tienda) {
+        const d = DATA.d6; if (!d) return null;
+        const allRows = rowsFor(d, tienda); if (!allRows.length) return null;
+        const rows = allRows.filter((r) => d.period.periodOf(r) === d.period.currentPeriod);
+        const dias = rows.reduce((sum, r) => sum + (parseFloat(V(r, d.diasKey)) || 0), 0);
+        const faltas = rows.filter((r) => OXXO.metricsNormText(V(r, d.tipoKey)).includes('FALTA')).length;
+        return { nivel: nivelAusentismos(faltas, dias), detalle: `${n(faltas)} falta${faltas === 1 ? '' : 's'} · ${n(dias)} dias` };
+      },
+    },
+    {
+      id: 'd8', etiqueta: 'Capacidades',
+      resumen(tienda) {
+        const d = DATA.d8; if (!d) return null;
+        const rows = rowsFor(d, tienda); if (!rows.length) return null;
+        const pendientes = new Set(rows.filter((r) => CERT_COLS.some((c) => {
+          const value = capValue(r, c.key, d.certRealKeys);
+          return value !== null && value < 1;
+        })).map((r) => V(r, d.noPersKey) || V(r, d.empleadoKey)).filter(Boolean)).size;
+        const pcts = CERT_COLS.map((c) => {
+          let aplic = 0, comp = 0;
+          rows.forEach((r) => { const v = capValue(r, c.key, d.certRealKeys); if (v !== null) { aplic++; if (v >= 1) comp++; } });
+          return aplic ? Math.round((comp / aplic) * 100) : null;
+        }).filter((v) => v !== null).sort((a, b) => a - b);
+        const critico = pcts.length ? pcts[0] : null;
+        return {
+          nivel: nivelCapacidades(pendientes, critico),
+          detalle: pendientes ? `${n(pendientes)} pendiente${pendientes === 1 ? '' : 's'}` : 'Sin pendientes',
+        };
+      },
+    },
+    {
+      id: 'inv', etiqueta: 'Inventarios',
+      resumen(tienda) {
+        const d = DATA.inventarios; if (!d) return null;
+        const allRows = rowsFor(d, tienda); if (!allRows.length) return null;
+        const periods = [...new Set(allRows.map((row) => row.period).filter(Boolean))].sort();
+        const latest = periods.at(-1) || '';
+        const rows = latest ? allRows.filter((row) => row.period === latest) : allRows;
+        if (!rows.length) return null;
+        const merma = rows.reduce((sum, row) => sum + row.finalResult, 0);
+        const ventas = rows.reduce((sum, row) => sum + row.totalSales, 0);
+        const ratio = ventas ? merma / ventas : rows.reduce((sum, row) => sum + row.finalRatio, 0) / rows.length;
+        return { nivel: nivelInventarios(ratio), detalle: `Merma ${invPercent(ratio)}` };
+      },
+    },
+  ];
+
+  // Minimo de indicadores con dato para entrar al ranking: comparar una tienda
+  // con un solo indicador evaluado contra otra con cinco no dice nada util.
+  const RANKING_MIN_EVALUADOS = 3;
+
+  function evaluarTienda(display) {
+    const tienda = tKey(display);
+    const detalle = [];
+    INDICADORES.forEach((ind) => {
+      const r = ind.resumen(tienda);
+      if (r) detalle.push({ id: ind.id, etiqueta: ind.etiqueta, nivel: r.nivel, texto: r.detalle });
+    });
+    const verdes = detalle.filter((d) => d.nivel === 'low').length;
+    const rojos = detalle.filter((d) => d.nivel === 'high').length;
+    return {
+      display, evaluados: detalle.length, verdes, rojos, detalle,
+      pct: detalle.length ? verdes / detalle.length : 0,
+    };
+  }
+
+  // Orden: primero la proporcion de indicadores en verde; a igualdad, la que
+  // tenga menos rojos; luego la que tenga mas indicadores evaluados (mas
+  // respaldo); y por nombre al final, para que el orden sea estable entre
+  // recargas en vez de depender del orden de llegada de los datos.
+  function compararTiendas(a, b) {
+    return (b.pct - a.pct)
+      || (a.rojos - b.rojos)
+      || (b.evaluados - a.evaluados)
+      || a.display.localeCompare(b.display, 'es');
+  }
+
+  function rankingTiendas(limite = 10) {
+    const evaluadas = [...TIENDAS.values()]
+      .map(evaluarTienda)
+      .filter((t) => t.evaluados >= RANKING_MIN_EVALUADOS)
+      .sort(compararTiendas);
+    return {
+      total: evaluadas.length,
+      top: evaluadas.slice(0, limite),
+      bottom: evaluadas.slice(-limite).reverse(),
+    };
+  }
+
+  // ── Vista del ranking ────────────────────────────────────────────────
+  const NIVEL_TEXTO = { low: 'verde', medium: 'ambar', high: 'rojo' };
+
+  function filaRanking(t, posicion) {
+    const chips = t.detalle.map((d) =>
+      `<span class="mt-rank-dot mt-rank-dot--${d.nivel}" title="${esc(d.etiqueta)}: ${esc(d.texto)} (${NIVEL_TEXTO[d.nivel]})">${esc(d.etiqueta)}</span>`
+    ).join('');
+    return `<tr>
+      <td><span class="mt-rank-pos">${posicion}</span></td>
+      <td>${esc(t.display)}</td>
+      <td class="center"><span class="mt-rank-score">${t.verdes} de ${t.evaluados}</span></td>
+      <td><span class="mt-rank-dots">${chips}</span></td>
+    </tr>`;
+  }
+
+  function abrirRanking() {
+    const { top, bottom, total } = rankingTiendas(10);
+    if (!total) {
+      openModal('Ranking de tiendas · Sin datos suficientes',
+        emptyRow(4, `Todavia no hay tiendas con al menos ${RANKING_MIN_EVALUADOS} indicadores con dato en este corte.`));
+      return;
+    }
+    const encabezado = '<thead><tr><th>#</th><th>Tienda</th><th class="center">En verde</th><th>Indicadores</th></tr></thead>';
+    const html = `
+      <p class="mt-rank-note">
+        Se comparan ${plural(total, 'tienda', 'tiendas')} de la plaza activa con los mismos umbrales que ves en la ficha:
+        bajas, tiempo extra, ausentismos, capacidades e inventarios. Solo entran las tiendas con al menos
+        ${RANKING_MIN_EVALUADOS} indicadores con dato; las que no aparecen en una fuente no suman ni restan por ella.
+      </p>
+      <p class="mt-rank-group mt-rank-group--top">Las 10 que mas cumplen</p>
+      <table class="tbl">${encabezado}<tbody>${top.map((t, i) => filaRanking(t, i + 1)).join('')}</tbody></table>
+      <p class="mt-rank-group mt-rank-group--bottom" style="margin-top:18px">Las 10 que menos cumplen</p>
+      <table class="tbl"><tbody>${bottom.map((t, i) => filaRanking(t, total - i)).join('')}</tbody></table>`;
+    openModal('Ranking de tiendas · Indicadores en verde', html);
+  }
+
+  function actualizarBotonRanking() {
+    const boton = document.getElementById('mi-ranking-btn');
+    if (!boton) return;
+    const hay = rankingTiendas(1).total > 0;
+    boton.disabled = !hay;
+    boton.title = hay ? 'Top 10 y Bottom 10 de la plaza activa' : 'Aun no hay suficientes datos cargados';
+  }
+
   function mountTiendaSelector() {
     const previous = activeTiendaDisplay;
     tiendaSelectControl = mountSingleSelect('mi-tienda-select', [...TIENDAS.values()], {
@@ -961,10 +1147,10 @@
     setSectionBadge('badge-inventarios', 'Último corte', latestPeriod ? mesLabel(latestPeriod) : invDateText(latestDate), 'is-current');
     document.getElementById('stats-inventarios').innerHTML =
       statTile(n(rows.length), 'Inventarios') +
-      statTile(invMoneyCompact(merma), 'Merma final', ratio > .01 ? 'rojo' : ratio > .005 ? 'amarillo' : 'verde') +
+      statTile(invMoneyCompact(merma), 'Merma final', TONO_NIVEL[nivelInventarios(ratio)]) +
       statTile(invMoneyCompact(ventas), 'Venta sin TAE') +
-      statTile(invPercent(ratio), '% Merma / venta', ratio > .01 ? 'rojo' : ratio > .005 ? 'amarillo' : 'verde');
-    const risk = ratio > .01 ? 'high' : ratio > .005 ? 'medium' : 'low';
+      statTile(invPercent(ratio), '% Merma / venta', TONO_NIVEL[nivelInventarios(ratio)]);
+    const risk = nivelInventarios(ratio);
     document.getElementById('viz-inventarios').innerHTML = signalHTML(risk,
       risk === 'high' ? 'Merma por arriba de 1%' : risk === 'medium' ? 'Merma en seguimiento' : 'Merma controlada',
       `${invPercent(ratio)} sobre venta sin TAE · inventario ${invDateText(latestDate)}`);
@@ -1112,8 +1298,8 @@
       estructura.push(rkTile((dif > 0 ? '+' : '') + dif, 'Diferencia TREO', dif === 0 ? 'is-ok' : Math.abs(dif) <= 2 ? 'is-warn' : 'is-bad', S.d7.mov?.txt || ''));
     }
     if (S.inventarios) {
-      administrativo.push(rkTile(invMoneyCompact(S.inventarios.merma), 'Merma final', S.inventarios.ratio > .01 ? 'is-bad' : S.inventarios.ratio > .005 ? 'is-warn' : 'is-ok'));
-      administrativo.push(rkTile(invPercent(S.inventarios.ratio), '% Merma / venta', S.inventarios.ratio > .01 ? 'is-bad' : S.inventarios.ratio > .005 ? 'is-warn' : 'is-ok', S.inventarios.period ? mesLabel(S.inventarios.period) : ''));
+      administrativo.push(rkTile(invMoneyCompact(S.inventarios.merma), 'Merma final', CLASE_NIVEL[nivelInventarios(S.inventarios.ratio)]));
+      administrativo.push(rkTile(invPercent(S.inventarios.ratio), '% Merma / venta', CLASE_NIVEL[nivelInventarios(S.inventarios.ratio)], S.inventarios.period ? mesLabel(S.inventarios.period) : ''));
     }
     const group = (title, subtitle, cls, icon, tiles) => tiles.length ? `<section class="mt-summary-group ${cls}">
       <div class="mt-summary-group__head"><span class="mt-summary-group__icon">${icon}</span><div><strong>${title}</strong><small>${subtitle}</small></div></div>
@@ -1145,7 +1331,7 @@
     if (S.d7 && S.d7.dif) a.push({ t: 'is-info', target: 'sec-d7', txt: `TREO: ${S.d7.mov.txt.toLowerCase()} ${Math.abs(S.d7.dif)} posición${Math.abs(S.d7.dif) > 1 ? 'es' : ''}` });
     if (S.d8 && S.d8.capPct < 100) a.push({ t: S.d8.capPct < 60 ? 'is-bad' : 'is-warn', target: 'sec-d8', txt: `Capacidades al ${S.d8.capPct}%${S.d8.pendientes ? ` · ${n(S.d8.pendientes)} pendientes` : ''}` });
     if (S.d11 && S.d11.cumplTotal !== null && S.d11.cumplTotal < 90) a.push({ t: S.d11.cumplTotal < 70 ? 'is-bad' : 'is-warn', target: 'sec-d11', txt: `Cumplimiento de registro al ${S.d11.cumplTotal}%` });
-    if (S.inventarios && S.inventarios.ratio > .005) a.push({ t: S.inventarios.ratio > .01 ? 'is-bad' : 'is-warn', target: 'sec-inventarios', txt: `Merma de inventario al ${invPercent(S.inventarios.ratio)}` });
+    if (S.inventarios && nivelInventarios(S.inventarios.ratio) !== 'low') a.push({ t: CLASE_NIVEL[nivelInventarios(S.inventarios.ratio)], target: 'sec-inventarios', txt: `Merma de inventario al ${invPercent(S.inventarios.ratio)}` });
     const container = document.getElementById('ficha-alertas');
     container.innerHTML = a.length ? a.map((item) => `<button type="button" class="chip mt-alert-link ${item.t}" data-target="${item.target}">${esc(item.txt)} <span aria-hidden="true">→</span></button>`).join('') : chipsHTML([], 'Sin alertas: tu tienda está en orden');
     container.querySelectorAll('.mt-alert-link').forEach((button) => button.addEventListener('click', () => {
@@ -1355,6 +1541,7 @@
       activeTiendaDisplay = '';
       CATALOG = await OXXO.loadAsesorCatalog();
       seedTiendasFromCatalog();
+      document.getElementById('mi-ranking-btn')?.addEventListener('click', abrirRanking);
       if (!TIENDAS.size) throw new Error('El catálogo no contiene tiendas disponibles.');
       mountTiendaSelector();
       setPageState('ready', 'Busca tu tienda arriba', 'Ya puedes elegirla. Cada apartado aparecerá en cuanto termine de cargar su fuente.');
@@ -1380,6 +1567,7 @@
       // Las cargas pueden traer tiendas vigentes que aún no estén listadas en
       // el catálogo. Se reconstruye una vez, ya con todas las fuentes listas.
       mountTiendaSelector();
+      actualizarBotonRanking();
     } catch (error) {
       console.error('Mi Tienda: error de carga', error);
       corte.className = 'hero-badge is-error';
