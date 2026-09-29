@@ -88,9 +88,24 @@ test('el ranking existe y declara su minimo de indicadores', () => {
   // Los cinco indicadores deben estar declarados.
   const bloque = fuente.match(/const INDICADORES = \[[\s\S]*?\n  \];/);
   assert.ok(bloque, 'Debe existir INDICADORES');
-  for (const id of ["'d2'", "'d4'", "'d6'", "'d8'", "'inv'"]) {
+  for (const id of ["'d2'", "'d4'", "'d6'", "'d8'"]) {
     assert.ok(bloque[0].includes(id), `INDICADORES debe incluir ${id}`);
   }
+
+  // Resultados de Inventario, Personal FLEX y Faltantes y Sobrantes quedan
+  // fuera del ranking a proposito: son administrativos y comerciales, no de
+  // gestion de personal. Sus semaforos siguen en la ficha, no aqui.
+  const excluidos = [
+    ['DATA.inventarios', 'Resultados de Inventario'],
+    ['DATA.d10', 'Personal FLEX'],
+    ['DATA.d9', 'Faltantes y Sobrantes'],
+  ];
+  for (const [fuenteDato, nombre] of excluidos) {
+    assert.ok(!bloque[0].includes(fuenteDato),
+      `${nombre} (${fuenteDato}) no debe entrar al ranking`);
+  }
+  assert.equal((bloque[0].match(/\bid: '/g) || []).length, 4,
+    'El ranking debe evaluar exactamente 4 indicadores');
 });
 
 test('el orden del ranking es determinista', () => {
