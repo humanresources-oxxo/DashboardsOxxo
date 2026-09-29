@@ -884,7 +884,7 @@
   // tienda no aparece en esa fuente: "sin dato" no es lo mismo que "cumple".
   const INDICADORES = [
     {
-      id: 'd2', etiqueta: 'Bajas',
+      id: 'd2', etiqueta: 'Bajas', inicial: 'B',
       resumen(tienda) {
         const d = DATA.d2; if (!d) return null;
         const allRows = rowsFor(d, tienda); if (!allRows.length) return null;
@@ -894,7 +894,7 @@
       },
     },
     {
-      id: 'd4', etiqueta: 'Tiempo extra',
+      id: 'd4', etiqueta: 'Tiempo extra', inicial: 'T',
       resumen(tienda) {
         const d = DATA.d4; if (!d) return null;
         const allRows = rowsFor(d, tienda); if (!allRows.length) return null;
@@ -904,7 +904,7 @@
       },
     },
     {
-      id: 'd6', etiqueta: 'Ausentismos',
+      id: 'd6', etiqueta: 'Ausentismos', inicial: 'A',
       resumen(tienda) {
         const d = DATA.d6; if (!d) return null;
         const allRows = rowsFor(d, tienda); if (!allRows.length) return null;
@@ -915,7 +915,7 @@
       },
     },
     {
-      id: 'd8', etiqueta: 'Capacidades',
+      id: 'd8', etiqueta: 'Capacidades', inicial: 'C',
       resumen(tienda) {
         const d = DATA.d8; if (!d) return null;
         const rows = rowsFor(d, tienda); if (!rows.length) return null;
@@ -936,7 +936,7 @@
       },
     },
     {
-      id: 'inv', etiqueta: 'Inventarios',
+      id: 'inv', etiqueta: 'Inventarios', inicial: 'I',
       resumen(tienda) {
         const d = DATA.inventarios; if (!d) return null;
         const allRows = rowsFor(d, tienda); if (!allRows.length) return null;
@@ -961,7 +961,7 @@
     const detalle = [];
     INDICADORES.forEach((ind) => {
       const r = ind.resumen(tienda);
-      if (r) detalle.push({ id: ind.id, etiqueta: ind.etiqueta, nivel: r.nivel, texto: r.detalle });
+      if (r) detalle.push({ id: ind.id, etiqueta: ind.etiqueta, inicial: ind.inicial, nivel: r.nivel, texto: r.detalle });
     });
     const verdes = detalle.filter((d) => d.nivel === 'low').length;
     const rojos = detalle.filter((d) => d.nivel === 'high').length;
@@ -998,17 +998,25 @@
   const NIVEL_TEXTO = { low: 'verde', medium: 'ambar', high: 'rojo' };
 
   function filaRanking(t, posicion) {
+    // En dos columnas no cabe el nombre completo de cada indicador, asi que se
+    // compacta a su inicial. El color nunca va solo: lleva la letra visible y
+    // el title con indicador, valor y nivel en palabras.
     const chips = t.detalle.map((d) =>
-      `<span class="mt-rank-dot mt-rank-dot--${d.nivel}" title="${esc(d.etiqueta)}: ${esc(d.texto)} (${NIVEL_TEXTO[d.nivel]})">${esc(d.etiqueta)}</span>`
+      `<span class="mt-rank-dot mt-rank-dot--${d.nivel}" title="${esc(d.etiqueta)}: ${esc(d.texto)} (${NIVEL_TEXTO[d.nivel]})" aria-label="${esc(d.etiqueta)} en ${NIVEL_TEXTO[d.nivel]}">${esc(d.inicial)}</span>`
     ).join('');
-    // La posicion va dentro de la celda de la tienda: como columna propia el
-    // reparto de anchos de table-layout:auto le daba 180px y el numero quedaba
-    // flotando en un hueco vacio.
     return `<tr>
       <td><span class="mt-rank-cell"><span class="mt-rank-pos">${posicion}</span>${esc(t.display)}</span></td>
-      <td class="center"><span class="mt-rank-score">${t.verdes} de ${t.evaluados}</span></td>
+      <td class="center"><span class="mt-rank-score">${t.verdes}/${t.evaluados}</span></td>
       <td><span class="mt-rank-dots">${chips}</span></td>
     </tr>`;
+  }
+
+  function tablaRanking(filas, primeraPosicion, descendente) {
+    const cuerpo = filas.map((t, i) =>
+      filaRanking(t, descendente ? primeraPosicion - i : primeraPosicion + i)).join('');
+    return `<table class="tbl mt-rank-tbl">
+      <thead><tr><th>Tienda</th><th class="center">Verde</th><th>Indicadores</th></tr></thead>
+      <tbody>${cuerpo}</tbody></table>`;
   }
 
   function abrirRanking() {
@@ -1018,26 +1026,30 @@
         emptyRow(3, `Todavia no hay tiendas con al menos ${RANKING_MIN_EVALUADOS} indicadores con dato en este corte.`));
       return;
     }
-    // Una sola tabla con un renglon separador entre los dos grupos: asi el
-    // contador del pie del modal (que lee la primera .tbl) cuenta las 20 filas
-    // reales en vez de solo las 10 de arriba.
-    const separador = (texto, clase) =>
-      `<tr class="mt-rank-sep" data-meta-skip><td colspan="3"><span class="mt-rank-group mt-rank-group--${clase}">${esc(texto)}</span></td></tr>`;
+    const leyenda = INDICADORES.map((ind) =>
+      `<span class="mt-rank-leg"><span class="mt-rank-dot mt-rank-dot--low">${esc(ind.inicial)}</span>${esc(ind.etiqueta)}</span>`
+    ).join('');
+    // data-modal-wide pide el ancho grande: dos columnas necesitan mas que los
+    // 920px normales. openModal lo detecta sin que el ranking sepa de clases.
     const html = `
-      <p class="mt-rank-note">
-        Se comparan ${plural(total, 'tienda', 'tiendas')} de la plaza activa con los mismos umbrales que ves en la ficha:
-        bajas, tiempo extra, ausentismos, capacidades e inventarios. Solo entran las tiendas con al menos
-        ${RANKING_MIN_EVALUADOS} indicadores con dato; las que no aparecen en una fuente no suman ni restan por ella.
-      </p>
-      <table class="tbl mt-rank-tbl">
-        <thead><tr><th>Tienda</th><th class="center">En verde</th><th>Indicadores</th></tr></thead>
-        <tbody>
-          ${separador('Las 10 que mas cumplen', 'top')}
-          ${top.map((t, i) => filaRanking(t, i + 1)).join('')}
-          ${separador('Las 10 que menos cumplen', 'bottom')}
-          ${bottom.map((t, i) => filaRanking(t, total - i)).join('')}
-        </tbody>
-      </table>`;
+      <div data-modal-wide>
+        <p class="mt-rank-note">
+          Se comparan ${plural(total, 'tienda', 'tiendas')} de la plaza activa con los mismos umbrales que ves en la ficha.
+          Solo entran las tiendas con al menos ${RANKING_MIN_EVALUADOS} indicadores con dato;
+          las que no aparecen en una fuente no suman ni restan por ella.
+        </p>
+        <p class="mt-rank-legend">${leyenda}</p>
+        <div class="mt-rank-split">
+          <section class="mt-rank-col">
+            <p class="mt-rank-group mt-rank-group--top">Las 10 que mas cumplen</p>
+            ${tablaRanking(top, 1, false)}
+          </section>
+          <section class="mt-rank-col">
+            <p class="mt-rank-group mt-rank-group--bottom">Las 10 que menos cumplen</p>
+            ${tablaRanking(bottom, total, true)}
+          </section>
+        </div>
+      </div>`;
     openModal('Ranking de tiendas · Indicadores en verde', html);
   }
 
