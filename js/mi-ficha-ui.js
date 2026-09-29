@@ -368,14 +368,17 @@
     } else if (typeof content === 'string') {
       modalBodyEl.innerHTML = `<div class="tbl-wrap">${content}</div>`;
     }
-    const table = modalBodyEl.querySelector('.tbl');
-    const columns = table ? table.querySelectorAll('thead th').length : 0;
-    const bodyRows = table ? [...table.querySelectorAll('tbody tr')] : [];
+    // Un modal puede traer varias tablas (por ejemplo dos listas lado a lado):
+    // se suman las filas de todas, o el pie contaria solo la primera.
+    const tables = [...modalBodyEl.querySelectorAll('.tbl')];
+    const columns = tables.reduce((max, t) => Math.max(max, t.querySelectorAll('thead th').length), 0);
+    const bodyRows = tables.flatMap(t => [...t.querySelectorAll('tbody tr')]);
     // Las filas marcadas con data-meta-skip son separadores de grupo, no
     // registros: contarlas hacia que el pie dijera 22 donde hay 20 tiendas.
     const recordCount = bodyRows.filter(row => !row.querySelector('.mi-empty-mini') && !row.hasAttribute('data-meta-skip')).length;
     modalMetaEl.textContent = `${plural(recordCount, 'registro', 'registros')} · ${plural(columns, 'columna', 'columnas')}`;
-    modalDialog.classList.toggle('is-wide', columns > 5);
+    // El contenido puede pedir el ancho grande aunque tenga pocas columnas.
+    modalDialog.classList.toggle('is-wide', columns > 5 || !!modalBodyEl.querySelector('[data-modal-wide]'));
     modalLastTrigger = document.activeElement;
     modalOverlay.setAttribute('aria-hidden', 'false');
     modalOverlay.classList.add('show');
@@ -383,6 +386,16 @@
     // Espera a que termine la entrada: un elemento con visibility en
     // transición no siempre acepta foco en el primer frame (Chrome).
     setTimeout(() => document.getElementById('mi-modal-close')?.focus(), 250);
+    // El aviso de "desliza para ver las columnas" estaba siempre visible,
+    // tambien cuando la tabla cabia entera. Se muestra solo si algo desborda
+    // de verdad, ya con el modal medido.
+    requestAnimationFrame(() => {
+      const hint = modalDialog.querySelector('.mi-modal__hint');
+      if (!hint) return;
+      const desborda = [...modalBodyEl.querySelectorAll('.tbl-wrap')]
+        .some((wrap) => wrap.scrollWidth > wrap.clientWidth + 2);
+      hint.hidden = !desborda;
+    });
   }
   // Registro de la ultima lista de capacidades pintada, para que el modal
   // sepa a que persona corresponde el renglon en el que hicieron clic.
