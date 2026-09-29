@@ -1001,9 +1001,11 @@
     const chips = t.detalle.map((d) =>
       `<span class="mt-rank-dot mt-rank-dot--${d.nivel}" title="${esc(d.etiqueta)}: ${esc(d.texto)} (${NIVEL_TEXTO[d.nivel]})">${esc(d.etiqueta)}</span>`
     ).join('');
+    // La posicion va dentro de la celda de la tienda: como columna propia el
+    // reparto de anchos de table-layout:auto le daba 180px y el numero quedaba
+    // flotando en un hueco vacio.
     return `<tr>
-      <td><span class="mt-rank-pos">${posicion}</span></td>
-      <td>${esc(t.display)}</td>
+      <td><span class="mt-rank-cell"><span class="mt-rank-pos">${posicion}</span>${esc(t.display)}</span></td>
       <td class="center"><span class="mt-rank-score">${t.verdes} de ${t.evaluados}</span></td>
       <td><span class="mt-rank-dots">${chips}</span></td>
     </tr>`;
@@ -1013,20 +1015,29 @@
     const { top, bottom, total } = rankingTiendas(10);
     if (!total) {
       openModal('Ranking de tiendas · Sin datos suficientes',
-        emptyRow(4, `Todavia no hay tiendas con al menos ${RANKING_MIN_EVALUADOS} indicadores con dato en este corte.`));
+        emptyRow(3, `Todavia no hay tiendas con al menos ${RANKING_MIN_EVALUADOS} indicadores con dato en este corte.`));
       return;
     }
-    const encabezado = '<thead><tr><th>#</th><th>Tienda</th><th class="center">En verde</th><th>Indicadores</th></tr></thead>';
+    // Una sola tabla con un renglon separador entre los dos grupos: asi el
+    // contador del pie del modal (que lee la primera .tbl) cuenta las 20 filas
+    // reales en vez de solo las 10 de arriba.
+    const separador = (texto, clase) =>
+      `<tr class="mt-rank-sep" data-meta-skip><td colspan="3"><span class="mt-rank-group mt-rank-group--${clase}">${esc(texto)}</span></td></tr>`;
     const html = `
       <p class="mt-rank-note">
         Se comparan ${plural(total, 'tienda', 'tiendas')} de la plaza activa con los mismos umbrales que ves en la ficha:
         bajas, tiempo extra, ausentismos, capacidades e inventarios. Solo entran las tiendas con al menos
         ${RANKING_MIN_EVALUADOS} indicadores con dato; las que no aparecen en una fuente no suman ni restan por ella.
       </p>
-      <p class="mt-rank-group mt-rank-group--top">Las 10 que mas cumplen</p>
-      <table class="tbl">${encabezado}<tbody>${top.map((t, i) => filaRanking(t, i + 1)).join('')}</tbody></table>
-      <p class="mt-rank-group mt-rank-group--bottom" style="margin-top:18px">Las 10 que menos cumplen</p>
-      <table class="tbl"><tbody>${bottom.map((t, i) => filaRanking(t, total - i)).join('')}</tbody></table>`;
+      <table class="tbl mt-rank-tbl">
+        <thead><tr><th>Tienda</th><th class="center">En verde</th><th>Indicadores</th></tr></thead>
+        <tbody>
+          ${separador('Las 10 que mas cumplen', 'top')}
+          ${top.map((t, i) => filaRanking(t, i + 1)).join('')}
+          ${separador('Las 10 que menos cumplen', 'bottom')}
+          ${bottom.map((t, i) => filaRanking(t, total - i)).join('')}
+        </tbody>
+      </table>`;
     openModal('Ranking de tiendas · Indicadores en verde', html);
   }
 
