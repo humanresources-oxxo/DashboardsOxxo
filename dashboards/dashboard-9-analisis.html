@@ -11,86 +11,11 @@
   <link rel="icon" type="image/png" href="../assets/favicon.png"/>
   <link rel="apple-touch-icon" href="../assets/favicon.png"/>
   <link rel="stylesheet" href="../css/global.css?v=c29d565a"/>
-  <link rel="stylesheet" href="../css/dashboard-skin.css?v=c29d565a"/>
+  <link rel="stylesheet" href="../css/dashboard-rh-unified.css?v=c29d565a"/>
+  <link rel="stylesheet" href="../css/dashboard-9-analisis.css?v=c29d565a"/>
   <script defer src="../assets/vendor/chart.umd.min.js?v=c29d565a"></script>
-<style>
-.bc-page{max-width:1420px;margin:0 auto;padding:14px 16px 40px}
-
-.bc-header{
-  background:linear-gradient(135deg,#6A1B85 0%,#7B1FA2 55%,#3F0F55 100%);
-  border-radius:16px;padding:22px 26px;color:#fff;
-  display:flex;flex-direction:column;gap:6px;
-  box-shadow:0 14px 36px rgba(74,20,140,.24);margin-bottom:16px;
-}
-.bc-header__top{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap}
-.bc-header h1{font-family:var(--font-display);font-size:28px;font-weight:800;letter-spacing:.3px;margin:0}
-.bc-header p{font-size:13px;color:rgba(255,255,255,.82);font-weight:500;margin-top:4px;max-width:56ch}
-.bc-back{text-decoration:none;color:#fff;background:rgba(0,0,0,.2);border:1px solid rgba(255,255,255,.32);border-radius:999px;padding:8px 16px;font-size:12px;font-weight:700;white-space:nowrap}
-.bc-back:hover{background:rgba(0,0,0,.32)}
-
-/* KPIs — mismos acentos que Dashboard 9 */
-.bc-kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:16px}
-.bc-kpi{background:var(--color-surface);border-radius:14px;padding:16px 18px;box-shadow:var(--shadow-card);border-top:3px solid #9E9E9E}
-.bc-kpi__label{font-size:11px;font-weight:700;color:var(--color-gray);text-transform:uppercase;letter-spacing:.06em}
-.bc-kpi__value{font-family:var(--font-display);font-size:24px;font-weight:800;color:var(--color-dark);margin-top:4px}
-.bc-kpi__sub{font-size:11px;color:var(--color-gray);margin-top:2px}
-
-.bc-card{background:var(--color-surface);border-radius:14px;padding:18px 20px;box-shadow:var(--shadow-card);margin-bottom:16px}
-.bc-card h2{font-family:var(--font-display);font-size:16px;font-weight:800;margin:0 0 4px;color:var(--color-dark)}
-.bc-card .bc-sub{font-size:12px;color:var(--color-gray);margin-bottom:14px}
-.bc-grid-2{display:grid;grid-template-columns:1.15fr .85fr;gap:16px;align-items:start}
-@media(max-width:980px){.bc-grid-2{grid-template-columns:1fr}}
-
-.bc-chart-box{position:relative;height:280px}
-
-/* Ranking de tiendas */
-.bc-rank-row{display:grid;grid-template-columns:26px 1fr 90px;align-items:center;gap:10px;padding:8px 4px;border-bottom:1px solid var(--color-border)}
-.bc-rank-row:last-child{border-bottom:none}
-.bc-rank-num{width:22px;height:22px;border-radius:50%;background:#f0f0f0;color:#666;font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.bc-rank-num.top{background:#7B1FA2;color:#fff}
-.bc-rank-name{font-size:12px;font-weight:700;color:var(--color-dark);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.bc-rank-cr{font-size:10px;font-weight:600;color:var(--color-gray)}
-.bc-rank-bar-wrap{grid-column:2/3;height:7px;background:#f0f0f0;border-radius:999px;overflow:hidden;margin-top:4px}
-.bc-rank-bar{height:100%;border-radius:999px;background:#B24FCF}
-.bc-rank-val{font-size:12px;font-weight:800;color:#D92B2B;text-align:right;white-space:nowrap}
-.bc-rank-val small{display:block;font-size:10px;font-weight:700;color:#1DB954}
-
-/* Hallazgo */
-.bc-finding{
-  background:linear-gradient(135deg,rgba(123,31,162,.06),rgba(123,31,162,.02));
-  border:1px solid rgba(123,31,162,.18);border-radius:14px;padding:16px 18px;
-  font-size:13px;line-height:1.6;color:var(--color-dark);margin-bottom:16px;
-}
-.bc-finding strong{color:#7B1FA2}
-.bc-imb-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px}
-.bc-imb-card{border:1px solid var(--color-border);border-radius:12px;padding:12px 14px}
-.bc-imb-card__name{font-size:12px;font-weight:800;color:var(--color-dark);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.bc-imb-card__cr{font-size:10px;font-weight:600;color:var(--color-gray);margin-bottom:6px}
-.bc-imb-card__neto{font-family:var(--font-display);font-size:19px;font-weight:800}
-.bc-imb-card__neto.pos{color:#D92B2B}
-.bc-imb-card__neto.neg{color:#1DB954}
-.bc-imb-card__lbl{font-size:10px;font-weight:700;color:var(--color-gray);text-transform:uppercase;letter-spacing:.04em;margin-top:2px}
-
-/* Motivos */
-.bc-c-row{display:grid;grid-template-columns:1fr 110px;align-items:center;gap:10px;padding:8px 4px;border-bottom:1px solid var(--color-border)}
-.bc-c-row:last-child{border-bottom:none}
-.bc-c-name{font-size:12px;font-weight:700;color:var(--color-dark)}
-.bc-c-track{height:7px;background:#f0f0f0;border-radius:999px;overflow:hidden;margin-top:4px}
-.bc-c-fill{height:100%;border-radius:999px}
-.bc-c-fill.falt{background:#D92B2B}
-.bc-c-fill.sobr{background:#1DB954}
-.bc-c-val{font-size:12px;font-weight:800;text-align:right}
-.bc-c-val small{display:block;font-size:10px;font-weight:600;color:var(--color-gray)}
-
-.state-box{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:40px 20px;color:var(--color-gray);text-align:center}
-.spinner{width:32px;height:32px;border:3px solid var(--color-border);border-top-color:#7B1FA2;border-radius:50%;animation:spin .7s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-
-@media(max-width:900px){.bc-kpis{grid-template-columns:repeat(3,1fr)}}
-@media(max-width:600px){.bc-kpis{grid-template-columns:repeat(2,1fr)}.bc-chart-box{height:220px}}
-</style>
 </head>
-<body>
+<body class="dashboard-9-analisis-page rh-unified">
 <nav class="topbar">
   <div class="topbar__brand">
     <div class="topbar__logo"><img src="../assets/oxxo-logo-original.png" alt="OXXO"></div>
@@ -105,9 +30,9 @@
   </div>
 </nav>
 
-<main class="bc-page">
-  <section class="bc-header">
-    <div class="bc-header__top" data-oxxo-scope-mount>
+<main class="page bc-page">
+  <section class="hero">
+    <div class="hero-top" data-oxxo-scope-mount>
       <div>
         <h1>Balance de Caja</h1>
         <p>Faltantes y sobrantes a través del tiempo, por tienda, por asesor y por motivo · lectura exploratoria de la misma base de Dashboard 9 · Plaza Oaxaca</p>
@@ -120,33 +45,33 @@
     <div class="bc-kpi"><div class="bc-kpi__label">Cargando…</div><div class="bc-kpi__value"><div class="spinner"></div></div></div>
   </section>
 
-  <section class="bc-card">
+  <section class="card">
     <h2>Pulso semanal</h2>
     <div class="bc-sub">Faltante (rojo, hacia arriba) y Sobrante (verde, hacia abajo) por semana, todo el periodo.</div>
     <div class="bc-chart-box"><canvas id="chart-pulso"></canvas></div>
   </section>
 
   <div class="bc-grid-2">
-    <section class="bc-card">
+    <section class="card">
       <h2>Ranking de tiendas por Faltante</h2>
       <div class="bc-sub">Top 15 tiendas · barra en Faltante, cifra chica en verde es su Sobrante</div>
       <div id="rank-list"><div class="state-box"><div class="spinner"></div></div></div>
     </section>
-    <section class="bc-card">
+    <section class="card">
       <h2>Top motivos</h2>
       <div class="bc-sub">Los 10 conceptos con mayor monto combinado, coloreados por el tipo dominante</div>
       <div id="concept-list"><div class="state-box"><div class="spinner"></div></div></div>
     </section>
   </div>
 
-  <section class="bc-card">
+  <section class="card">
     <h2>El hallazgo</h2>
     <div id="finding-text" class="bc-finding"><div class="state-box"><div class="spinner"></div></div></div>
     <div class="bc-sub" style="margin-bottom:10px">Pero no en todas las tiendas se cancela igual — estas son las que más se desvían del patrón (mínimo 5 movimientos):</div>
     <div class="bc-imb-grid" id="imb-grid"></div>
   </section>
 
-  <section class="bc-card">
+  <section class="card">
     <h2>Asesores: Faltante vs Sobrante</h2>
     <div class="bc-sub">Cada punto es un asesor · tamaño = movimientos · la línea diagonal marca faltante = sobrante</div>
     <div class="bc-chart-box"><canvas id="chart-quad"></canvas></div>

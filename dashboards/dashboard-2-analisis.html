@@ -12,62 +12,11 @@
   <link rel="icon" type="image/png" href="../assets/favicon.png" />
   <link rel="apple-touch-icon" href="../assets/favicon.png" />
   <link rel="stylesheet" href="../css/global.css?v=c29d565a" />
-  <link rel="stylesheet" href="../css/dashboard-skin.css?v=c29d565a" />
+  <link rel="stylesheet" href="../css/dashboard-rh-unified.css?v=c29d565a" />
+  <link rel="stylesheet" href="../css/dashboard-2-analisis.css?v=c29d565a" />
   <script defer src="../assets/vendor/chart.umd.min.js?v=c29d565a"></script>
-  <style>
-    .an-page { max-width: 1420px; margin: 0 auto; padding: 14px 16px 40px; }
-    .an-header {
-      background: linear-gradient(135deg, #c0181f 0%, #e42929 60%, #b01218 100%);
-      border-radius: 14px; padding: 20px 26px; color: #fff;
-      display: flex; flex-direction: column; gap: 10px;
-      box-shadow: 0 4px 24px rgba(180,0,0,.18); margin-bottom: 16px;
-    }
-    .an-header__title { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; flex-wrap:wrap; }
-    .an-header h1 { font-family:var(--font-display); font-size:26px; font-weight:900; margin:0; letter-spacing:.4px; }
-    .an-header__meta { font-size:12px; color:rgba(255,255,255,0.8); font-weight:700; margin-top:4px; }
-    .an-back { text-decoration:none; color:#fff; background:rgba(0,0,0,.18); border:1px solid rgba(255,255,255,.3); border-radius:999px; padding:8px 16px; font-size:12px; font-weight:700; white-space:nowrap; }
-    .an-back:hover { background:rgba(0,0,0,.3); }
-    .an-mes-select { background:rgba(255,255,255,.14); color:#fff; border:1px solid rgba(255,255,255,.32); border-radius:999px; padding:8px 16px; font-size:12px; font-weight:700; }
-    .an-mes-select option { color:#1A1A2E; }
-
-    .an-kpis { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:14px; margin-bottom:16px; }
-
-    /* min-width:0 evita que la tabla interior estire la tarjeta: como elemento
-       de grid conservaba min-width:auto y crecia hasta el ancho de su contenido,
-       sacando la tarjeta de la pantalla en vez de dejar que la tabla se desplace. */
-    .an-card { min-width:0; background:var(--color-card,#fff); border-radius:14px; padding:18px 20px; box-shadow:var(--shadow-card,0 2px 12px rgba(0,0,0,.06)); margin-bottom:16px; }
-    .an-card h2 { font-family:var(--font-display); font-size:16px; font-weight:800; margin:0 0 14px; display:flex; align-items:center; gap:8px; }
-    .an-grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; align-items:start; }
-    @media (max-width:980px){ .an-grid-2{ grid-template-columns:1fr; } }
-
-    .an-table { width:100%; border-collapse:collapse; font-size:13px; }
-    .an-table th { text-align:left; font-size:10px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--color-gray); padding:8px 10px; border-bottom:2px solid var(--color-border); }
-    .an-table td { padding:9px 10px; border-bottom:1px solid var(--color-border); vertical-align:top; }
-    .an-table tbody tr:hover { background:var(--color-bg); }
-    .an-table .num { text-align:right; font-variant-numeric:tabular-nums; }
-
-    .an-bar-row { display:flex; align-items:center; gap:10px; padding:6px 0; }
-    .an-bar-label { width:150px; flex-shrink:0; font-size:12px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    @media (max-width:640px){ .an-page{ padding:14px 12px 40px; } .an-card{ padding:16px 14px; } .an-bar-label{ width:104px; } .an-bar-val{ width:54px; } }
-    .an-bar-track { flex:1; height:14px; background:var(--color-border); border-radius:7px; position:relative; overflow:hidden; }
-    .an-bar-fill { height:100%; border-radius:7px; background:linear-gradient(90deg,#e42929,#c0181f); transition:width .6s ease; }
-    .an-bar-val { width:60px; text-align:right; font-size:12px; font-weight:800; flex-shrink:0; }
-
-    .an-pill { display:inline-block; font-size:11px; font-weight:800; padding:3px 10px; border-radius:999px; }
-    .an-pill.alta { background:#FDEAEA; color:#B91520; }
-    .an-pill.media { background:#FFF3DC; color:#A95708; }
-    .an-pill.baja { background:#EAF6EC; color:#1E7B34; }
-
-    .an-hallazgo-item { display:flex; gap:10px; padding:10px 0; border-bottom:1px solid var(--color-border); font-size:13px; line-height:1.5; }
-    .an-hallazgo-item:last-child { border-bottom:none; }
-    .an-hallazgo-num { flex-shrink:0; width:24px; height:24px; border-radius:50%; background:#FDEAEA; color:#B91520; font-weight:800; font-size:12px; display:flex; align-items:center; justify-content:center; }
-
-    .state-box { padding:24px; text-align:center; color:var(--color-gray); }
-
-    .chart-box { position:relative; height:280px; }
-  </style>
 </head>
-<body>
+<body class="dashboard-2-analisis-page rh-unified">
 <nav class="topbar">
   <div class="topbar__brand">
     <div class="topbar__logo"><img src="../assets/oxxo-logo-original.png" alt="OXXO"></div>
@@ -83,58 +32,61 @@
   </div>
 </nav>
 
-<main class="an-page">
-  <section class="an-header">
-    <div class="an-header__title" data-oxxo-scope-mount>
+<main class="page an-page">
+  <section class="hero">
+    <div class="hero-top" data-oxxo-scope-mount>
       <div>
         <h1>Análisis de Bajas</h1>
-        <div class="an-header__meta">Rotación, antigüedad y hallazgos · Plaza Oaxaca</div>
+        <p>Rotación, antigüedad y hallazgos · Plaza Oaxaca</p>
       </div>
       <a href="dashboard-2.html" class="an-back">← Volver a Bajas Diarias</a>
     </div>
-    <div>
-      <select class="an-mes-select" id="filtro-mes"><option value="">Todos los meses</option></select>
+    <div class="vac-filters">
+      <div class="vac-fbox">
+        <label for="filtro-mes">Mes</label>
+        <select class="filtro-select" id="filtro-mes"><option value="">Todos los meses</option></select>
+      </div>
     </div>
   </section>
 
-  <section class="an-kpis" id="kpi-section">
+  <section class="kpis" id="kpi-section">
     <div class="kpi-card"><div class="kpi-card__label">Cargando…</div><div class="kpi-card__value"><div class="spinner"></div></div></div>
   </section>
 
   <div class="an-grid-2">
-    <section class="an-card">
+    <section class="card">
       <h2>Bajas por rango de antigüedad<span class="info-tip" tabindex="0" data-tip="Número de bajas agrupadas por la columna 'Temporalidad' del Excel de Bajas."></span></h2>
       <div class="chart-box"><canvas id="chart-antiguedad"></canvas></div>
     </section>
-    <section class="an-card">
+    <section class="card">
       <h2>Distribución por detalle de baja<span class="info-tip" tabindex="0" data-tip="Distribución de la columna 'Detalle' (motivo específico de la baja) del periodo seleccionado."></span></h2>
       <div class="chart-box"><canvas id="chart-detalle"></canvas></div>
     </section>
   </div>
 
-  <section class="an-card">
+  <section class="card">
     <h2>Distribución de bajas por rango de antigüedad<span class="info-tip" tabindex="0" data-tip="Agrupa las bajas por la columna 'Temporalidad' del Excel de Bajas. % Abandono = filas cuyo 'Detalle' es 'Abandono de Trabajo' sobre el total del rango."></span></h2>
     <div id="tabla-antiguedad"><div class="state-box"><div class="spinner"></div></div></div>
   </section>
 
   <div class="an-grid-2">
-    <section class="an-card">
+    <section class="card">
       <h2>Correlación Asesor × Antigüedad<span class="info-tip" tabindex="0" data-tip="Número de bajas de cada asesor por rango de antigüedad (columna Temporalidad)."></span></h2>
       <div id="tabla-correlacion"><div class="state-box"><div class="spinner"></div></div></div>
     </section>
 
-    <section class="an-card">
+    <section class="card">
       <h2>Hallazgos · Motivos de baja<span class="info-tip" tabindex="0" data-tip="Distribución de la columna 'Detalle' (motivo específico de la baja) y una lectura automática generada de los datos del periodo seleccionado."></span></h2>
       <div id="hallazgos-motivos"><div class="state-box"><div class="spinner"></div></div></div>
     </section>
   </div>
 
-  <section class="an-card">
+  <section class="card">
     <h2>Lectura de los hallazgos</h2>
     <div id="hallazgos-lectura"><div class="state-box"><div class="spinner"></div></div></div>
   </section>
 
-  <section class="an-card">
+  <section class="card">
     <h2>Plan de acción<span class="info-tip" tabindex="0" data-tip="Se sugiere automáticamente según los patrones detectados en los datos del periodo. Si capturas un plan manual desde el panel admin (Dashboard 2 - Plan de accion), ese reemplaza al sugerido."></span></h2>
     <div id="tabla-plan"><div class="state-box"><div class="spinner"></div></div></div>
   </section>

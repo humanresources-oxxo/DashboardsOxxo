@@ -1,0 +1,71 @@
+/* Dashboard 2 · Análisis de Bajas: excepciones propias sobre el canon.
+   El shell visual (topbar/hero/filtros/KPIs/cards/estados blancos sobre lienzo
+   cálido, foco, responsive) lo aporta dashboard-rh-unified.css vía
+   class="rh-unified". Aquí quedan SOLO piezas de esta vista de análisis sin
+   equivalente en el canon: el enlace de volver, la rejilla de dos columnas, las
+   cajas de gráfico, la tabla compacta de análisis, las barras de motivos, las
+   píldoras de prioridad y los ítems de hallazgo. Sin degradado rojo de héroe ni
+   vidrio heredado: eso lo da el canon. */
+
+/* Enlace "volver" en el héroe (el canon no trae variante propia). */
+body.dashboard-2-analisis-page .an-back {
+  display: inline-flex; align-items: center; min-height: 36px; padding: 0 14px;
+  border: 1px solid var(--du-border); border-radius: 999px; background: #fff;
+  color: var(--du-red-dark); font-size: 13px; font-weight: 700; white-space: nowrap; text-decoration: none;
+}
+body.dashboard-2-analisis-page .an-back:hover { border-color: var(--du-red); }
+
+/* KPI "azul" del JS → acento de foco; rojo/naranja/amarillo ya los da el canon. */
+body.dashboard-2-analisis-page .kpi-card.azul { --du-accent: var(--du-focus); }
+
+/* Encabezados de card (estáticos en el HTML, no los genera el JS). */
+body.dashboard-2-analisis-page .card h2 {
+  display: flex; align-items: center; gap: 8px; margin: 0 0 12px;
+  color: var(--du-text); font-family: var(--font-display); font-size: 1.15rem; font-weight: 700; line-height: 1.2;
+}
+
+/* Rejilla de dos columnas para gráficos y tablas pareadas. */
+body.dashboard-2-analisis-page .an-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: start; }
+@media (max-width: 980px) { body.dashboard-2-analisis-page .an-grid-2 { grid-template-columns: 1fr; } }
+
+/* Caja de gráfico Chart.js (alto fijo, responsive gestionado por Chart). */
+body.dashboard-2-analisis-page .chart-box { position: relative; height: 280px; }
+
+/* Tabla compacta de análisis (la genera el JS con class="an-table" dentro de
+   .table-wrap). Es una tabla densa de análisis, no la .tbl del canon. */
+body.dashboard-2-analisis-page .table-wrap { max-width: 100%; overflow: auto; }
+body.dashboard-2-analisis-page .an-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+body.dashboard-2-analisis-page .an-table th {
+  padding: 8px 10px; border-bottom: 2px solid var(--du-border);
+  color: var(--du-muted); font-size: 10px; font-weight: 800; letter-spacing: .08em; text-align: left; text-transform: uppercase;
+}
+body.dashboard-2-analisis-page .an-table td { padding: 9px 10px; border-bottom: 1px solid var(--du-border); vertical-align: top; }
+body.dashboard-2-analisis-page .an-table tbody tr:hover { background: var(--du-soft); }
+body.dashboard-2-analisis-page .an-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+
+/* Barras de motivos de baja. */
+body.dashboard-2-analisis-page .an-bar-row { display: flex; align-items: center; gap: 10px; padding: 6px 0; }
+body.dashboard-2-analisis-page .an-bar-label { width: 150px; flex-shrink: 0; overflow: hidden; font-size: 12px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+body.dashboard-2-analisis-page .an-bar-track { position: relative; flex: 1; height: 14px; overflow: hidden; border-radius: 7px; background: var(--du-border); }
+body.dashboard-2-analisis-page .an-bar-fill { height: 100%; border-radius: 7px; background: var(--du-red); transition: width .6s ease; }
+body.dashboard-2-analisis-page .an-bar-val { width: 60px; flex-shrink: 0; text-align: right; font-size: 12px; font-weight: 800; }
+
+/* Píldoras de prioridad (Plan de acción). */
+body.dashboard-2-analisis-page .an-pill { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 800; }
+body.dashboard-2-analisis-page .an-pill.alta { background: #fbe9ea; color: #a91f26; }
+body.dashboard-2-analisis-page .an-pill.media { background: #fff3d6; color: #8a4a00; }
+body.dashboard-2-analisis-page .an-pill.baja { background: #e6f5ec; color: #0f6a3c; }
+
+/* Ítems de la lectura de hallazgos. */
+body.dashboard-2-analisis-page .an-hallazgo-item { display: flex; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--du-border); font-size: 13px; line-height: 1.5; }
+body.dashboard-2-analisis-page .an-hallazgo-item:last-child { border-bottom: none; }
+body.dashboard-2-analisis-page .an-hallazgo-num {
+  display: flex; flex-shrink: 0; align-items: center; justify-content: center; width: 24px; height: 24px;
+  border-radius: 50%; background: #fbe9ea; color: #a91f26; font-size: 12px; font-weight: 800;
+}
+
+@media (max-width: 640px) {
+  body.dashboard-2-analisis-page .an-bar-label { width: 104px; }
+  body.dashboard-2-analisis-page .an-bar-val { width: 54px; }
+  body.dashboard-2-analisis-page .chart-box { height: 240px; }
+}
