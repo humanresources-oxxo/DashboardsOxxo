@@ -3007,9 +3007,20 @@ function initScopeSelector() {
           .hero-top,.bajas-header__title{max-width:100%}
           .oxxo-scope-selector__intro{padding:1px 3px}
           .oxxo-scope-selector__pin{width:27px;height:27px;border-radius:9px}
-          .oxxo-scope-switch{width:100%;justify-content:flex-start}
+          /* Plazas en rejilla de 2 columnas: en 320-430 las 5 chips no caben en
+             una fila y, en fila con scroll horizontal, quedaban recortadas. La
+             rejilla las apila sin overflow. Layout compartido por los 18 tableros
+             con selector. (El recuadro gris vacio era otro defecto ya resuelto:
+             la base 'flex:1 1 220px' de tablet cruzaba a movil; global.css la
+             acota a 641-979.) */
+          .oxxo-scope-switch{display:grid;grid-template-columns:1fr 1fr;gap:5px;width:100%;overflow:visible}
           .oxxo-scope-switch__opt{padding:8px 12px}
-          .oxxo-store-status{width:100%;border-left:0;border-top:1px solid #e4dcd9;padding-top:7px;overflow-x:auto}
+          /* La 5a plaza (ultimo impar) ocupa la fila entera, sin quedar suelta a media. */
+          .oxxo-scope-switch__opt:last-child:nth-child(odd){grid-column:1/-1}
+          /* Estado: etiqueta a ancho completo + 3 botones alineados en su fila,
+             sin el wrap irregular que se veia en 320px. */
+          .oxxo-store-status{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;width:100%;border-left:0;border-top:1px solid #e4dcd9;padding-top:7px;overflow:visible}
+          .oxxo-store-status__label{grid-column:1/-1}
         }
         @media print{.oxxo-scope-selector{display:none!important}}
       `;

@@ -1091,7 +1091,8 @@ body {
    caja. Se acota a min-width:641px a proposito: a <=640 core.js apila el selector
    en columna, y ahi 'flex:1 1 220px' pasaria a fijar 220px sobre el eje vertical
    (la base es el ALTO), dejando el rectangulo gris vacio del switch. A <=640 el
-   layout lo define core.js (columna) y, en Mi Tienda, mi-ficha.css (rejilla). */
+   layout lo define core.js: rejilla de 2 columnas para las plazas y 3 para el
+   estado, compartida por los 18 tableros con selector. */
 @media (min-width: 641px) and (max-width: 979px) {
   .oxxo-scope-selector--inline { max-width: 100%; flex-wrap: wrap; }
   .oxxo-scope-selector--inline .oxxo-scope-switch { min-width: 0; flex: 1 1 220px; }

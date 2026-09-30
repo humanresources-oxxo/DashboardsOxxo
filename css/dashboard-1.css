@@ -165,3 +165,18 @@ body.dashboard-1-page .am-body .tbl-wrap { max-height: 420px; }
   body.dashboard-1-page .plazas-chart { gap: 6px; }
   body.dashboard-1-page .plazas-chart__plot { padding-inline: 5px; }
 }
+
+/* Selector movil: D1 tiene su propio layout de fila con scroll horizontal (base,
+   arriba) que ganaba por especificidad al compartido. A <=640 lo alineamos con
+   el resto de tableros: rejilla de 2 columnas para las plazas y 3 para el estado.
+   Solo se voltean display/overflow del contenedor; el resto (grid-template,
+   5a plaza a fila entera, etiqueta a ancho completo) lo aporta core.js, y el
+   chrome de los botones de D1 (color, checkmark, 44px) no cambia. */
+@media (max-width: 640px) {
+  body.dashboard-1-page .hero .oxxo-scope-switch {
+    display: grid; overflow: visible;
+  }
+  body.dashboard-1-page .hero .oxxo-store-status {
+    display: grid; overflow: visible;
+  }
+}

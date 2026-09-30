@@ -526,22 +526,3 @@ body.mi-modal-open{overflow:hidden}
   .mt-rank-dots{gap:3px}
   .mt-rank-dot{width:19px;height:19px;font-size:10px}
 }
-
-/* Selector de plaza/estado que core.js inyecta en el hero: layout movil propio
-   de Mi Tienda. El arreglo compartido (global.css acota flex:1 1 220px a tablet)
-   ya elimina el rectangulo gris vacio en todos los tableros; aqui, SOLO en Mi
-   Tienda (body.mi-tienda-page), acomodamos las 5 plazas en rejilla de 2 columnas
-   y el estado en 3, sin scroll horizontal ni recorte. Se acota por body para no
-   cambiar la UX de los demas tableros (piden esta vista para Mi Tienda). Las
-   reglas ganan por especificidad (body.mi-tienda-page ...) sobre las inyectadas,
-   sin !important. El objetivo tactil de 44px lo aporta global.css (<=760px). */
-@media (max-width:640px){
-  body.mi-tienda-page .oxxo-scope-switch{display:grid;grid-template-columns:1fr 1fr;gap:5px;overflow:visible}
-  body.mi-tienda-page .oxxo-scope-switch__opt{justify-content:center}
-  /* Ultimo impar (la 5a plaza) ocupa la fila entera, sin quedar suelto a media. */
-  body.mi-tienda-page .oxxo-scope-switch__opt:last-child:nth-child(odd){grid-column:1/-1}
-  /* Estado: etiqueta a ancho completo + 3 botones en su fila, sin el wrap
-     irregular (TIENDAS+Operativas arriba, dos abajo) que se veia en 320px. */
-  body.mi-tienda-page .oxxo-store-status{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;overflow:visible}
-  body.mi-tienda-page .oxxo-store-status__label{grid-column:1/-1}
-}
