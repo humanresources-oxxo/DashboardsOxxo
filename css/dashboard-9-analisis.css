@@ -1,0 +1,86 @@
+/* Dashboard 9 · Balance de Caja (Análisis): excepciones propias sobre el canon.
+   El shell visual (topbar/hero/cards/estados blancos sobre lienzo cálido, foco,
+   responsive) lo aporta dashboard-rh-unified.css vía class="rh-unified". Aquí
+   queda SOLO lo propio de esta lectura exploratoria: el enlace de volver, la fila
+   de KPIs de 6 con filo superior por dato, la rejilla de dos columnas, las cajas
+   de gráfico, el ranking de tiendas, el bloque de hallazgo/desbalance, la lista
+   de motivos y el pie. La identidad morada se conserva SOLO en los elementos de
+   dato (barras, acentos del hallazgo), no en el shell. Sin degradado morado de
+   héroe ni vidrio heredado: eso lo da el canon. */
+
+/* Enlace "volver" en el héroe. */
+body.dashboard-9-analisis-page .bc-back {
+  display: inline-flex; align-items: center; min-height: 36px; padding: 0 14px;
+  border: 1px solid var(--du-border); border-radius: 999px; background: #fff;
+  color: var(--du-red-dark); font-size: 13px; font-weight: 700; white-space: nowrap; text-decoration: none;
+}
+body.dashboard-9-analisis-page .bc-back:hover { border-color: var(--du-red); }
+
+/* Encabezados de card (estáticos) + subtítulo. */
+body.dashboard-9-analisis-page .card h2 { margin: 0 0 4px; color: var(--du-text); font-family: var(--font-display); font-size: 1.15rem; font-weight: 700; }
+body.dashboard-9-analisis-page .bc-sub { margin-bottom: 14px; color: var(--du-muted); font-size: 12px; }
+
+/* KPIs de balance: tarjeta blanca con filo superior cuyo color lo fija el JS por
+   dato (faltante/sobrante/neto…). No es la .kpi-card del canon (6 métricas, filo
+   arriba en vez de a la izquierda). */
+body.dashboard-9-analisis-page .bc-kpis { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px; margin-bottom: 12px; }
+body.dashboard-9-analisis-page .bc-kpi { padding: 16px 18px; border: 1px solid var(--du-border); border-top: 3px solid #9e9e9e; border-radius: var(--du-radius); background: var(--du-card); box-shadow: var(--du-shadow); }
+body.dashboard-9-analisis-page .bc-kpi__label { color: var(--du-muted); font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+body.dashboard-9-analisis-page .bc-kpi__value { margin-top: 4px; color: var(--du-text); font-family: var(--font-display); font-size: 24px; font-weight: 800; }
+body.dashboard-9-analisis-page .bc-kpi__sub { margin-top: 2px; color: var(--du-muted); font-size: 11px; }
+
+/* Rejilla de dos columnas y cajas de gráfico. */
+body.dashboard-9-analisis-page .bc-grid-2 { display: grid; grid-template-columns: 1.15fr .85fr; gap: 12px; align-items: start; }
+body.dashboard-9-analisis-page .bc-chart-box { position: relative; height: 280px; }
+
+/* Ranking de tiendas por Faltante. */
+body.dashboard-9-analisis-page .bc-rank-row { display: grid; grid-template-columns: 26px 1fr 90px; align-items: center; gap: 10px; padding: 8px 4px; border-bottom: 1px solid var(--du-border); }
+body.dashboard-9-analisis-page .bc-rank-row:last-child { border-bottom: none; }
+body.dashboard-9-analisis-page .bc-rank-num { display: flex; flex-shrink: 0; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; background: #f0ece7; color: var(--du-muted); font-size: 11px; font-weight: 900; }
+body.dashboard-9-analisis-page .bc-rank-num.top { background: #7b1fa2; color: #fff; }
+body.dashboard-9-analisis-page .bc-rank-name { overflow: hidden; color: var(--du-text); font-size: 12px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+body.dashboard-9-analisis-page .bc-rank-cr { color: var(--du-muted); font-size: 10px; font-weight: 600; }
+body.dashboard-9-analisis-page .bc-rank-bar-wrap { grid-column: 2/3; height: 7px; margin-top: 4px; overflow: hidden; border-radius: 999px; background: #f0ece7; }
+body.dashboard-9-analisis-page .bc-rank-bar { height: 100%; border-radius: 999px; background: #b24fcf; }
+body.dashboard-9-analisis-page .bc-rank-val { color: #d92b2b; font-size: 12px; font-weight: 800; text-align: right; white-space: nowrap; }
+body.dashboard-9-analisis-page .bc-rank-val small { display: block; color: #1a8f45; font-size: 10px; font-weight: 700; }
+
+/* Hallazgo + tarjetas de desbalance. */
+body.dashboard-9-analisis-page .bc-finding {
+  margin-bottom: 16px; padding: 16px 18px;
+  border: 1px solid rgba(123, 31, 162, .18); border-radius: var(--du-radius);
+  background: linear-gradient(135deg, rgba(123, 31, 162, .06), rgba(123, 31, 162, .02));
+  color: var(--du-text); font-size: 13px; line-height: 1.6;
+}
+body.dashboard-9-analisis-page .bc-finding strong { color: #7b1fa2; }
+body.dashboard-9-analisis-page .bc-imb-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; }
+body.dashboard-9-analisis-page .bc-imb-card { padding: 12px 14px; border: 1px solid var(--du-border); border-radius: 12px; }
+body.dashboard-9-analisis-page .bc-imb-card__name { overflow: hidden; color: var(--du-text); font-size: 12px; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
+body.dashboard-9-analisis-page .bc-imb-card__cr { margin-bottom: 6px; color: var(--du-muted); font-size: 10px; font-weight: 600; }
+body.dashboard-9-analisis-page .bc-imb-card__neto { font-family: var(--font-display); font-size: 19px; font-weight: 800; }
+body.dashboard-9-analisis-page .bc-imb-card__neto.pos { color: #d92b2b; }
+body.dashboard-9-analisis-page .bc-imb-card__neto.neg { color: #1a8f45; }
+body.dashboard-9-analisis-page .bc-imb-card__lbl { margin-top: 2px; color: var(--du-muted); font-size: 10px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+
+/* Lista de motivos (conceptos). */
+body.dashboard-9-analisis-page .bc-c-row { display: grid; grid-template-columns: 1fr 110px; align-items: center; gap: 10px; padding: 8px 4px; border-bottom: 1px solid var(--du-border); }
+body.dashboard-9-analisis-page .bc-c-row:last-child { border-bottom: none; }
+body.dashboard-9-analisis-page .bc-c-name { color: var(--du-text); font-size: 12px; font-weight: 700; }
+body.dashboard-9-analisis-page .bc-c-track { height: 7px; margin-top: 4px; overflow: hidden; border-radius: 999px; background: #f0ece7; }
+body.dashboard-9-analisis-page .bc-c-fill { height: 100%; border-radius: 999px; }
+body.dashboard-9-analisis-page .bc-c-fill.falt { background: #d92b2b; }
+body.dashboard-9-analisis-page .bc-c-fill.sobr { background: #1a8f45; }
+body.dashboard-9-analisis-page .bc-c-val { font-size: 12px; font-weight: 800; text-align: right; }
+body.dashboard-9-analisis-page .bc-c-val small { display: block; color: var(--du-muted); font-size: 10px; font-weight: 600; }
+
+/* Pie propio (el canon no define .dash-footer). */
+body.dashboard-9-analisis-page .dash-footer { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; margin-top: 16px; padding: 14px 4px; color: var(--du-muted); font-size: 12px; }
+body.dashboard-9-analisis-page .dash-footer__update { display: flex; align-items: center; gap: 7px; }
+body.dashboard-9-analisis-page .dash-footer__update-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--du-green); }
+
+@media (max-width: 980px) { body.dashboard-9-analisis-page .bc-grid-2 { grid-template-columns: 1fr; } }
+@media (max-width: 900px) { body.dashboard-9-analisis-page .bc-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 600px) {
+  body.dashboard-9-analisis-page .bc-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  body.dashboard-9-analisis-page .bc-chart-box { height: 220px; }
+}
