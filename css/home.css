@@ -134,12 +134,11 @@ a:hover{color:var(--red-dk)}
 .stat__n{font-family:Archivo,var(--sf-d);font-weight:800;font-size:2.45rem;line-height:.9;color:#fff}
 .stat__l{margin-top:6px;font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:rgba(255,255,255,.82);line-height:1.25}
 
-/* ── Barra de conexión ──────────────────────────────── */
-.statusbar{
-  width:var(--shell);margin:10px auto 0;padding:11px 16px;border-radius:18px;
-  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;
+/* ── Estado accesible de las fuentes ─────────────────── */
+.home-summary--sr-only{
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
+  clip:rect(0,0,0,0);white-space:nowrap;border:0;
 }
-.statusbar>*{position:relative;z-index:1}
 
 /* ── Selector de área ───────────────────────────────── */
 .area-switch{
@@ -230,8 +229,6 @@ a:hover{color:var(--red-dk)}
 .pill--live[data-state="error"]{background:rgba(247,25,38,.08);box-shadow:inset 0 0 0 .5px rgba(194,16,27,.24);color:var(--red-dk)}
 .pill--live[data-state="error"] i{background:var(--red);box-shadow:0 0 0 3px rgba(247,25,38,.16)}
 .pill--live[data-state="loading"] i{background:var(--ink-4);box-shadow:0 0 0 3px rgba(138,131,125,.2);animation:pulse 1.4s ease-in-out infinite}
-.statusbar__text{font-size:13px;color:var(--ink-2)}
-.statusbar__text strong{color:var(--ink)}
 .btn--ghost{color:var(--red-dk);background:rgba(255,255,255,.7);box-shadow:inset 0 0 0 1px rgba(247,25,38,.28)}
 .btn--ghost:hover{color:var(--red-dk);background:#fff;transform:none}
 .btn[hidden]{display:none}

@@ -12,7 +12,7 @@ const name = process.argv[2];
 const width = Number(process.argv[3] || 375);
 const seconds = Number(process.argv[4] || 15);
 const action = process.argv[5] || '';
-if (!/^(?:dashboard-(?:\d+|\d+-analisis)|inventarios|promociones|mi-tienda|mi-dashboard)$/.test(name || '')) throw new Error('Invalid page');
+if (!/^(?:home|dashboard-(?:\d+|\d+-analisis)|inventarios|promociones|mi-tienda|mi-dashboard)$/.test(name || '')) throw new Error('Invalid page');
 if (!Number.isInteger(width) || width < 280 || width > 3000 || !Number.isFinite(seconds) || seconds < 1 || seconds > 60) throw new Error('Invalid width/wait');
 const root = resolve('.');
 const chrome = ['C:/Program Files/Google/Chrome/Application/chrome.exe', 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe'].find(existsSync);
@@ -77,7 +77,7 @@ try {
   await send('Log.enable');
   await send('Page.addScriptToEvaluateOnNewDocument', { source: "localStorage.setItem('oxxo_site_unlocked','1')" });
   await send('Emulation.setDeviceMetricsOverride', { width, height: 900, deviceScaleFactor: 1, mobile: false });
-  await send('Page.navigate', { url: `http://127.0.0.1:${port}/dashboards/${name}.html` });
+  await send('Page.navigate', { url: `http://127.0.0.1:${port}/${name === 'home' ? 'index.html' : `dashboards/${name}.html`}` });
   await delay(seconds * 1000);
   const actions = {
     kpi: "() => { const button=document.querySelector('.kpi-card[role=button],button.kpi-card'); if(!button) return 'missing KPI'; const id=button.id; button.click(); const current=id?document.getElementById(id):button; return {pressed:current?.getAttribute('aria-pressed'),active:current?.className,banner:document.querySelector('#filter-banner')?.className}; }",
@@ -104,7 +104,7 @@ try {
     }
   }
   const evaluated = await send('Runtime.evaluate', {
-    expression: `JSON.stringify({readyState:document.readyState,locked:document.documentElement.classList.contains('oxxo-locked'),innerWidth,scrollWidth:document.documentElement.scrollWidth,bodyText:document.body.innerText.slice(0,800),kpis:document.querySelectorAll('.kpi-card').length,activeKpiPressed:document.querySelector('.kpi-card.kpi-active,.kpi-card.kpi-active-red,.kpi-card.kpi-active-blue')?.getAttribute('aria-pressed')??null,modals:document.querySelectorAll('[role="dialog"]').length,buttons:document.querySelectorAll('button').length,selects:document.querySelectorAll('select').length,errors:[...document.querySelectorAll('.is-source-error')].map(el=>el.dataset.sourceMessage)})`,
+    expression: `JSON.stringify({readyState:document.readyState,locked:document.documentElement.classList.contains('oxxo-locked'),innerWidth,scrollWidth:document.documentElement.scrollWidth,bodyText:document.body.innerText.slice(0,800),homeStatusbar:!!document.querySelector('#home-statusbar'),homeSummaryVisible:!!document.querySelector('#home-summary')?.getBoundingClientRect().width&&document.querySelector('#home-summary')?.getBoundingClientRect().width>1,homeRetryPresent:!!document.querySelector('#home-retry'),kpis:document.querySelectorAll('.kpi-card').length,activeKpiPressed:document.querySelector('.kpi-card.kpi-active,.kpi-card.kpi-active-red,.kpi-card.kpi-active-blue')?.getAttribute('aria-pressed')??null,modals:document.querySelectorAll('[role="dialog"]').length,buttons:document.querySelectorAll('button').length,selects:document.querySelectorAll('select').length,errors:[...document.querySelectorAll('.is-source-error')].map(el=>el.dataset.sourceMessage)})`,
     returnByValue: true,
   });
   const screenshot = await send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false, fromSurface: true });
