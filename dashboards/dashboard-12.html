@@ -11,129 +11,17 @@
   <link rel="icon" type="image/png" href="../assets/favicon.png"/>
   <link rel="apple-touch-icon" href="../assets/favicon.png"/>
   <link rel="stylesheet" href="../css/global.css?v=94b1e55a"/>
-  <script defer src="../assets/vendor/chart.umd.min.js?v=94b1e55a"></script>
-<style>
-.page{max-width:1500px;margin:0 auto;padding:18px 20px 36px}
-.hero-download-link{ text-decoration:none !important; cursor:pointer; }
-
-.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
-.card{background:var(--color-surface);border-radius:14px;padding:20px;box-shadow:var(--shadow-card)}
-.card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--color-border)}
-.card-title{font-family:var(--font-display);font-size:1rem;font-weight:700;color:var(--color-dark)}
-.card-badge{font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;background:var(--color-bg);color:var(--color-gray)}
-
-.row2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px}
-.row2-wide{display:grid;grid-template-columns:1.35fr 0.65fr;gap:14px;margin-bottom:16px}
-.chart-wrap{position:relative}
-.chart-md{height:280px}
-.chart-lg{height:320px}
-
-.tbl-wrap{overflow-x:auto;max-height:460px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:#FF6B00 rgba(0,0,0,.06)}
-.tbl-wrap::-webkit-scrollbar{width:5px;height:5px}
-.tbl-wrap::-webkit-scrollbar-thumb{background:#FF6B00;border-radius:3px}
-.tbl{width:100%;border-collapse:collapse;font-size:12px}
-.tbl thead th{position:sticky;top:0;z-index:2;background:#2D2D44;color:#fff;padding:9px 12px;text-align:left;font-size:10px;font-weight:700;letter-spacing:1.1px;text-transform:uppercase;white-space:nowrap;border-right:1px solid rgba(255,255,255,.1)}
-.tbl thead th:last-child{border-right:none}
-.tbl tbody tr{border-bottom:1px solid var(--color-border)}
-.tbl tbody tr:hover{background:var(--color-bg);cursor:pointer}
-.tbl tbody td{padding:8px 12px;color:var(--color-dark);vertical-align:middle}
-.tbl td.center{text-align:center}
-
-#tabla-asesor tbody tr.is-selected{background:rgba(247,25,38,.14);box-shadow:inset 5px 0 0 var(--color-red),inset 0 0 0 2px rgba(247,25,38,.38)}
-#tabla-asesor tbody tr.is-selected td{font-weight:800}
-.detalle-head-tools{display:flex;align-items:center;flex-wrap:wrap;gap:0}
-.lid-clear{display:none;align-items:center;gap:6px;margin-left:8px;padding:3px 10px;border:1px solid var(--color-red);border-radius:20px;background:var(--color-surface);color:var(--color-red);font-family:var(--font-display);font-weight:800;font-size:10px;letter-spacing:.02em;cursor:pointer}
-.lid-clear.show{display:inline-flex}
-.lid-clear:hover{background:var(--color-red);color:#fff}
-
-/* Etiqueta de etapa */
-.etapa{display:inline-flex;align-items:center;gap:5px;font-family:var(--font-display);font-weight:800;font-size:10px;letter-spacing:.02em;padding:3px 9px;border-radius:20px;white-space:nowrap}
-.etapa i{width:7px;height:7px;border-radius:50%;display:inline-block;flex-shrink:0}
-.etapa.e-dcien{background:#e8f8f0;color:#138c3e}
-.etapa.e-cliente{background:#e6f0fb;color:#0a4f9c}
-.etapa.e-equipo{background:#fff0e3;color:#B45309}
-.etapa.e-ingreso{background:#fdeaea;color:#C0393B}
-.etapa.e-nuevo{background:#f2ecfd;color:#6D31C7}
-.etapa.e-na{background:#f0f0f0;color:#999}
-
-/* Calificación y semáforos */
-.calif{display:inline-flex;align-items:center;justify-content:center;min-width:30px;font-family:var(--font-display);font-weight:800;font-size:11px;padding:2px 7px;border-radius:7px}
-.calif.c-ap{background:#d8f5e5;color:#0f7a37}
-.calif.c-a{background:#e8f8f0;color:#138c3e}
-.calif.c-b{background:#fff4d6;color:#B8860B}
-.calif.c-c{background:#fdeaea;color:#C0393B}
-.calif.c-n{background:#f0f0f0;color:#888}
-.pilar{display:inline-block;width:11px;height:11px;border-radius:50%}
-.pilar.ok{background:#1DB954}
-.pilar.no{background:#D92B2B}
-.pilar.na{background:#d8d8d8}
-.mov{font-family:var(--font-display);font-weight:800;font-size:11px}
-.mov.up{color:#138c3e}
-.mov.down{color:#C0393B}
-.mov.same{color:#b0a49f}
-.kpi-card__value .mov-up{color:#138c3e !important}
-.kpi-card__value .mov-down{color:#C0393B !important}
-
-.leyenda{display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--color-gray);margin-top:10px}
-.leyenda span{display:inline-flex;align-items:center;gap:5px}
-.leyenda i{width:10px;height:10px;border-radius:3px;display:inline-block}
-
-.state-box{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:40px 20px;color:var(--color-gray);text-align:center}
-.spinner{width:32px;height:32px;border:3px solid var(--color-border);border-top-color:var(--color-yellow);border-radius:50%;animation:spin .7s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-
-/* Modal */
-.am-overlay{position:fixed;inset:0;background:rgba(20,10,10,.55);display:none;align-items:center;justify-content:center;z-index:9999;padding:20px}
-.am-overlay.open{display:flex}
-.am-dialog{background:var(--color-surface);border-radius:16px;max-width:720px;width:100%;max-height:85vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 24px 60px rgba(0,0,0,.35)}
-.am-head{display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid var(--color-border)}
-.am-head h3{font-family:var(--font-display);font-size:1.05rem;margin:0}
-.am-head__sub{display:block;font-size:11px;font-weight:600;color:var(--color-gray);margin-top:3px;text-transform:none;letter-spacing:0}
-.am-close{background:none;border:none;font-size:22px;cursor:pointer;color:var(--color-gray);line-height:1}
-.am-body{padding:18px 22px;overflow-y:auto}
-.am-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
-.am-kpi{background:var(--color-bg);border-radius:10px;padding:12px;text-align:center}
-.am-kpi b{display:block;font-family:var(--font-display);font-size:1.3rem}
-.am-kpi span{font-size:10px;color:var(--color-gray);text-transform:uppercase;letter-spacing:.06em}
-.am-chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
-.am-chip{display:inline-flex;flex-direction:column;gap:2px;background:var(--color-bg);border:1px solid var(--color-border);border-radius:10px;padding:7px 12px;min-width:0}
-.am-chip span{font-family:var(--font-display);font-size:9px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--color-gray)}
-.am-chip b{font-size:12px;font-weight:700;color:var(--color-dark);word-break:break-word}
-
-@media(max-width:1100px){.kpis{grid-template-columns:repeat(2,1fr)}.row2,.row2-wide{grid-template-columns:1fr}}
-@media(max-width:600px){.kpis{grid-template-columns:1fr !important}.row2,.row2-wide{grid-template-columns:1fr}.chart-md{height:220px}.chart-lg{height:250px}}
-</style>
-<style id="d12-extras">
-.hero{flex-direction:column !important;align-items:stretch !important;gap:18px}
-.hero-top{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap}
-.vac-filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px 16px;align-items:end}
-.vac-fbox{display:flex;flex-direction:column;gap:6px;min-width:0}
-.vac-fbox > label{font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,0.85)}
-.hero .filtro-select,.hero .filtro-btn{
-  width:100%;box-sizing:border-box;
-  background:rgba(255,255,255,0.78) !important;
-  border:1px solid var(--exec-line-strong,rgba(42,27,25,0.2)) !important;
-  color:var(--exec-ink,#181112) !important;
-  -webkit-text-fill-color:var(--exec-ink,#181112) !important;
-  font-weight:700;border-radius:999px !important;padding:10px 16px !important;
-  transition:background .2s,color .2s,border-color .2s;
-}
-.hero .filtro-select:focus{outline:none;border-color:#fff !important}
-.hero .filtro-select option{color:#1a1a1a;background:#fff}
-.hero .filtro-btn:hover{background:#fff !important;color:var(--hb-red) !important;border-color:#fff !important}
-.hero h1{font-family:var(--font-display) !important;font-weight:800 !important}
-</style>
-<link rel="stylesheet" href="../css/dashboard-skin.css?v=94b1e55a"/>
-  <link rel="stylesheet" href="../css/floating-filter-layout.css?v=94b1e55a" />
-  <link rel="stylesheet" href="../css/rh-dashboard-refresh.css?v=94b1e55a" />
-  <link rel="stylesheet" href="../css/rh-table-tools.css?v=94b1e55a" />
+  <script defer src="../assets/vendor/chart.umd.min.js?v=94b1e55a"></script>  <link rel="stylesheet" href="../css/rh-table-tools.css?v=94b1e55a" />
   <link rel="stylesheet" href="../css/rh-filter-summary.css?v=94b1e55a" />
+  <link rel="stylesheet" href="../css/dashboard-rh-unified.css?v=94b1e55a">
+  <link rel="stylesheet" href="../css/dashboard-12.css?v=94b1e55a">
+
   <link rel="stylesheet" href="../css/dashboard-dialogs.css?v=94b1e55a" />
   <script defer src="../js/rh-dashboard-enhancements.js?v=94b1e55a"></script>
   <script defer src="../js/rh-table-tools.js?v=94b1e55a"></script>
   <script defer src="../js/rh-filter-summary.js?v=94b1e55a"></script>
 </head>
-<body class="hr-dashboard">
+<body class="dashboard-12-page hr-dashboard rh-unified">
 <nav class="topbar">
   <div class="topbar__brand">
     <div class="topbar__logo"><img src="../assets/oxxo-logo-original.png" alt="OXXO"></div>
@@ -170,8 +58,7 @@
           <option value="">Todas las etapas</option>
         </select>
       </div>
-      <div class="vac-fbox">
-        <label aria-hidden="true">&nbsp;</label>
+      <div class="vac-fbox vac-fbox--actions">
         <button type="button" class="filtro-btn" onclick="limpiarFiltros()">Limpiar filtros</button>
       </div>
     </div>
@@ -199,7 +86,7 @@
     </div>
   </div>
 
-  <div class="card" style="margin-bottom:16px">
+  <div class="card">
     <div class="card-head">
       <div class="card-title"><svg class="icon-inline" viewBox="0 0 24 24" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>Etapas por Asesor<span class="info-tip" tabindex="0" data-tip="Distribución de los líderes de cada asesor entre las etapas, en el mes de corte. Clic en una fila para filtrar el Detalle por Líder de abajo."></span></div>
       <span class="card-badge" id="asesor-badge">— asesores</span>
@@ -221,12 +108,12 @@
     </div>
   </div>
 
-  <div class="card" style="margin-bottom:16px">
+  <div class="card">
     <div class="card-head">
       <div class="card-title"><svg class="icon-inline" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>Detalle por Líder<span class="info-tip" tabindex="0" data-tip="Un renglón por tienda en el mes de corte. Clic en una fila para ver la trayectoria del líder mes a mes. La etapa se toma tal cual del reporte, que la arrastra un mes cuando el líder ya la cerró: por eso a veces no coincide al pie de la letra con los tres semáforos de la derecha. La racha viene del reporte y no todos los líderes la traen calculada."></span></div>
       <div class="detalle-head-tools">
         <span class="card-badge" id="row-count">— líderes</span>
-        <button type="button" class="lid-clear" id="detalle-clear" onclick="clearAsesorDetalle()"><svg viewBox="0 0 24 24" aria-hidden="true" style="width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2.6;stroke-linecap:round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg><span>Quitar filtro</span></button>
+        <button type="button" class="lid-clear" id="detalle-clear" onclick="clearAsesorDetalle()"><svg viewBox="0 0 24 24" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg><span>Quitar filtro</span></button>
       </div>
     </div>
     <div class="tbl-wrap">
@@ -235,8 +122,8 @@
       </table>
     </div>
     <div class="leyenda">
-      <span><i class="pilar ok" style="border-radius:50%"></i> Pilar en OK</span>
-      <span><i class="pilar no" style="border-radius:50%"></i> Pilar en NO OK</span>
+      <span><i class="pilar ok"></i> Pilar en OK</span>
+      <span><i class="pilar no"></i> Pilar en NO OK</span>
       <span><b class="mov up">▲</b> Avanzó de etapa vs. mes anterior</span>
       <span><b class="mov same">⇄</b> Cambió de líder</span>
       <span><b class="mov down">▼</b> Retrocedió</span>
@@ -260,7 +147,7 @@
     <div class="am-body">
       <div class="am-kpis" id="lm-kpis"></div>
       <div class="am-chips" id="lm-chips"></div>
-      <div class="tbl-wrap" style="max-height:330px">
+      <div class="tbl-wrap">
         <table class="tbl" id="lm-table">
           <thead><tr><th>Mes</th><th>Etapa</th><th class="center">Calif.</th><th class="center">Equipo</th><th class="center">Ingreso</th><th class="center">Cliente</th></tr></thead>
           <tbody></tbody>

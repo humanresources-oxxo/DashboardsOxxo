@@ -12,283 +12,15 @@
   <link rel="icon" type="image/png" href="../assets/favicon.png"/>
   <link rel="apple-touch-icon" href="../assets/favicon.png"/>
   <link rel="stylesheet" href="../css/global.css?v=94b1e55a"/>
-  <script defer src="../assets/vendor/chart.umd.min.js?v=94b1e55a"></script>
-  <style>
-    .hero-download-link{ text-decoration:none !important; cursor:pointer; }
-    .dashboard-hero {
-      flex-direction: column !important;
-      align-items: stretch !important;
-      gap: 18px !important;
-    }
-
-    .hero-top {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 16px;
-      flex-wrap: wrap;
-    }
-
-    .vac-filters {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(160px, 1fr)) auto;
-      gap: 12px 16px;
-      align-items: end;
-    }
-
-    .vac-fbox {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      min-width: 0;
-    }
-
-    .vac-fbox > label {
-      color: rgba(255,255,255,.86);
-      font-size: 11px;
-      font-weight: 900;
-      letter-spacing: .14em;
-      text-transform: uppercase;
-    }
-
-    .dashboard-hero .filtro-select,
-    .dashboard-hero .filtro-btn {
-      width: 100%;
-      min-height: 40px;
-      box-sizing: border-box;
-      border-radius: 999px !important;
-      border: 1px solid rgba(255,255,255,.32) !important;
-      background: rgba(255,255,255,.14) !important;
-      color: #fff !important;
-      font-weight: 800;
-      padding: 10px 16px !important;
-    }
-
-    .dashboard-hero .filtro-select option {
-      color: #181112;
-      background: #fff;
-    }
-
-    .dashboard-hero .filtro-btn {
-      cursor: pointer;
-    }
-
-    .dashboard-hero .filtro-btn:hover {
-      background: #fff !important;
-      color: var(--exec-red, #F71926) !important;
-      border-color: #fff !important;
-    }
-
-    .vac-filter-status {
-      grid-column: 1 / -1;
-      min-height: 36px;
-      display: flex;
-      align-items: center;
-      padding: 8px 12px;
-      border: 1px solid rgba(255,255,255,.22);
-      border-radius: 999px;
-      background: rgba(255,255,255,.10);
-      color: rgba(255,255,255,.86);
-      font-size: 12px;
-      font-weight: 800;
-    }
-
-    .dashboard-hero .filtro-select,
-    .dashboard-hero .filtro-btn {
-      background: rgba(255,255,255,.78) !important;
-      border-color: var(--exec-line-strong, rgba(42,27,25,.2)) !important;
-      color: var(--exec-ink, #181112) !important;
-      -webkit-text-fill-color: var(--exec-ink, #181112) !important;
-    }
-
-    .vac-fbox > label,
-    .vac-filter-status {
-      color: rgba(255,255,255,.86);
-    }
-
-    .vac-grid-main {
-      display: grid;
-      grid-template-columns: minmax(0, 1.45fr) minmax(340px, .75fr);
-      gap: 14px;
-      margin-bottom: 14px;
-    }
-
-    .vac-grid-two {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 14px;
-      margin-bottom: 14px;
-    }
-
-    .vac-chart {
-      position: relative;
-      height: 330px;
-      min-height: 330px;
-    }
-
-    .vac-chart--compact {
-      height: 285px;
-      min-height: 285px;
-    }
-
-    .kpi-card {
-      cursor: pointer;
-      user-select: none;
-    }
-
-    .kpi-card.is-active {
-      border-color: rgba(227,6,19,.36) !important;
-      box-shadow: 0 0 0 3px rgba(227,6,19,.11), 0 14px 34px rgba(28,17,14,.1) !important;
-      transform: translateY(-2px);
-    }
-
-    .vac-actions-list {
-      display: grid;
-      gap: 10px;
-    }
-
-    .vac-action {
-      padding: 13px 14px;
-      border: 1px solid var(--exec-line, rgba(42,27,25,.12));
-      border-radius: 10px;
-      background: var(--exec-surface-soft, #fbfaf7);
-    }
-
-    .vac-action__title {
-      color: var(--exec-ink, #181112);
-      font-size: 13px;
-      font-weight: 900;
-    }
-
-    .vac-action__text {
-      margin-top: 4px;
-      color: var(--exec-muted, #6f6664);
-      font-size: 12px;
-      font-weight: 700;
-      line-height: 1.35;
-    }
-
-    @media (max-width: 1100px) {
-      .vac-grid-main,
-      .vac-grid-two,
-      .vac-filters {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    .asesor-modal {
-      position: fixed;
-      inset: 0;
-      z-index: 1000;
-      display: none;
-    }
-
-    .asesor-modal.is-open {
-      display: block;
-    }
-
-    .asesor-modal__backdrop {
-      position: absolute;
-      inset: 0;
-      background: rgba(24,17,18,.55);
-    }
-
-    .asesor-modal__panel {
-      position: relative;
-      max-width: 920px;
-      width: min(92vw, 920px);
-      max-height: 82vh;
-      margin: 6vh auto 0;
-      background: var(--exec-surface, #fff);
-      border-radius: 16px;
-      box-shadow: 0 24px 60px rgba(28,17,14,.32);
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
-
-    .asesor-modal__header {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 12px;
-      padding: 18px 20px;
-      border-bottom: 1px solid var(--exec-line, rgba(42,27,25,.12));
-    }
-
-    .asesor-modal__title {
-      font-size: 17px;
-      font-weight: 900;
-      color: var(--exec-ink, #181112);
-    }
-
-    .asesor-modal__subtitle {
-      margin-top: 4px;
-      font-size: 12px;
-      font-weight: 700;
-      color: var(--exec-muted, #6f6664);
-    }
-
-    .asesor-modal__close {
-      border: none;
-      background: transparent;
-      font-size: 24px;
-      line-height: 1;
-      cursor: pointer;
-      color: var(--exec-muted, #6f6664);
-      padding: 4px 8px;
-    }
-
-    .asesor-modal__close:hover {
-      color: var(--exec-red, #F71926);
-    }
-
-    .asesor-modal__body {
-      padding: 12px 20px 20px;
-      overflow: auto;
-    }
-
-    .asesor-modal__table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 12.5px;
-    }
-
-    .asesor-modal__table th {
-      position: sticky;
-      top: 0;
-      text-align: left;
-      padding: 8px 10px;
-      background: var(--exec-surface-soft, #fbfaf7);
-      color: var(--exec-muted, #6f6664);
-      font-size: 11px;
-      font-weight: 900;
-      letter-spacing: .06em;
-      text-transform: uppercase;
-      border-bottom: 1px solid var(--exec-line, rgba(42,27,25,.12));
-    }
-
-    .asesor-modal__table td {
-      padding: 8px 10px;
-      border-bottom: 1px solid var(--exec-line, rgba(42,27,25,.08));
-      color: var(--exec-ink, #181112);
-      font-weight: 600;
-    }
-
-    .asesor-modal__table tbody tr:hover {
-      background: var(--exec-surface-soft, #fbfaf7);
-    }
-  </style>
-  <link rel="stylesheet" href="../css/dashboard-skin.css?v=94b1e55a"/>
-  <link rel="stylesheet" href="../css/floating-filter-layout.css?v=94b1e55a" />
-  <link rel="stylesheet" href="../css/rh-dashboard-refresh.css?v=94b1e55a" />
-  <link rel="stylesheet" href="../css/rh-table-tools.css?v=94b1e55a" />
+  <script defer src="../assets/vendor/chart.umd.min.js?v=94b1e55a"></script>  <link rel="stylesheet" href="../css/rh-table-tools.css?v=94b1e55a" />
   <link rel="stylesheet" href="../css/rh-filter-summary.css?v=94b1e55a" />
   <script defer src="../js/rh-dashboard-enhancements.js?v=94b1e55a"></script>
   <script defer src="../js/rh-table-tools.js?v=94b1e55a"></script>
   <script defer src="../js/rh-filter-summary.js?v=94b1e55a"></script>
+  <link rel="stylesheet" href="../css/dashboard-rh-unified.css?v=94b1e55a">
+  <link rel="stylesheet" href="../css/dashboard-5.css?v=94b1e55a">
 </head>
-<body class="dashboard-5-page hr-dashboard">
+<body class="dashboard-5-page hr-dashboard rh-unified">
 <nav class="topbar">
   <div class="topbar__brand">
     <div class="topbar__logo"><img src="../assets/oxxo-logo-original.png" alt="OXXO"></div>
@@ -303,14 +35,14 @@
   </div>
 </nav>
 
-<div class="dashboard-page">
-  <section class="dashboard-hero dashboard-hero--purple">
+<div class="dashboard-page page">
+  <section class="dashboard-hero hero">
     <div class="hero-top">
       <div>
         <h1>Control de Vacaciones</h1>
         <p>Saldos, vencimientos y concentracion operativa para Plaza Oaxaca por asesor, tienda y puesto.</p>
       </div>
-      <span class="dashboard-hero__badge">Actualizado <span id="snapshot-date">--</span></span>
+      <span class="dashboard-hero__badge hero-badge">Actualizado <span id="snapshot-date">--</span></span>
       <span id="hero-download" style="display:none"></span>
     </div>
 
@@ -344,7 +76,7 @@
           <option value="31+">31 dias o mas</option>
         </select>
       </div>
-      <div class="vac-fbox" role="group" aria-labelledby="filtros-acciones-label">
+      <div class="vac-fbox vac-fbox--actions" role="group" aria-labelledby="filtros-acciones-label">
         <label id="filtros-acciones-label">Filtros</label>
         <button class="filtro-btn" type="button" id="clear-filters">Limpiar</button>
         <button class="filtro-btn" type="button" id="download-base">Descargar base</button>
@@ -353,46 +85,46 @@
     </div>
   </section>
 
-  <div class="kpi-grid executive-kpis" id="kpi-section">
+  <div class="kpi-grid executive-kpis kpis" id="kpi-section">
     <div class="kpi-card"><div class="kpi-card__label">Cargando</div><div class="kpi-card__value"><div class="spinner"></div></div></div>
   </div>
 
   <section class="vac-grid-main">
-    <article class="panel panel--dark-title panel--accent-red">
-      <div class="panel__header">
-        <div class="panel__title">Dias por asesor<span class="info-tip" tabindex="0" data-tip="Compara 'periodo_anterior' vs 'periodo_actual' agrupado por Asesor."></span></div>
-        <span class="panel__badge badge-gris">Periodo anterior vs actual</span>
+    <article class="panel card">
+      <div class="panel__header card-head">
+        <div class="panel__title card-title">Dias por asesor<span class="info-tip" tabindex="0" data-tip="Compara 'periodo_anterior' vs 'periodo_actual' agrupado por Asesor."></span></div>
+        <span class="panel__badge card-badge badge-gris">Periodo anterior vs actual</span>
       </div>
       <div class="vac-chart"><canvas id="chart-asesores"></canvas></div>
     </article>
 
-    <article class="panel panel--accent-red">
-      <div class="panel__header">
-        <div class="panel__title">Acciones recomendadas<span class="info-tip" tabindex="0" data-tip="Recomendaciones generadas a partir de los colaboradores con saldo vencido o por vencer en los proximos 30 dias."></span></div>
-        <span class="panel__badge badge-gris">Prioridad</span>
+    <article class="panel card">
+      <div class="panel__header card-head">
+        <div class="panel__title card-title">Acciones recomendadas<span class="info-tip" tabindex="0" data-tip="Recomendaciones generadas a partir de los colaboradores con saldo vencido o por vencer en los proximos 30 dias."></span></div>
+        <span class="panel__badge card-badge badge-gris">Prioridad</span>
       </div>
       <div id="actions-list" class="vac-actions-list"><div class="state-box"><div class="spinner"></div></div></div>
     </article>
   </section>
 
   <section class="vac-grid-two">
-    <article class="panel panel--accent-red">
-      <div class="panel__header"><div class="panel__title">Top tiendas con mas dias<span class="info-tip" tabindex="0" data-tip="Suma de 'dias_restantes' agrupada por Tienda, ordenado de mayor a menor."></span></div></div>
+    <article class="panel card">
+      <div class="panel__header card-head"><div class="panel__title card-title">Top tiendas con mas dias<span class="info-tip" tabindex="0" data-tip="Suma de 'dias_restantes' agrupada por Tienda, ordenado de mayor a menor."></span></div></div>
       <div class="vac-chart"><canvas id="chart-plazas"></canvas></div>
     </article>
-    <article class="panel panel--accent-yellow">
-      <div class="panel__header"><div class="panel__title">Puestos con mayor acumulacion<span class="info-tip" tabindex="0" data-tip="Suma de 'dias_restantes' agrupada por Puesto, ordenado de mayor a menor."></span></div></div>
+    <article class="panel card">
+      <div class="panel__header card-head"><div class="panel__title card-title">Puestos con mayor acumulacion<span class="info-tip" tabindex="0" data-tip="Suma de 'dias_restantes' agrupada por Puesto, ordenado de mayor a menor."></span></div></div>
       <div class="vac-chart"><canvas id="chart-puestos"></canvas></div>
     </article>
   </section>
 
   <section class="vac-grid-two">
-    <article class="panel panel--accent-red">
-      <div class="panel__header"><div class="panel__title">Vencimiento periodo anterior<span class="info-tip" tabindex="0" data-tip="Clasifica el saldo de 'periodo_anterior' en buckets de dias hasta su fecha de vencimiento: Vencido, 0-30, 31-60, 61-90."></span></div></div>
+    <article class="panel card">
+      <div class="panel__header card-head"><div class="panel__title card-title">Vencimiento periodo anterior<span class="info-tip" tabindex="0" data-tip="Clasifica el saldo de 'periodo_anterior' en buckets de dias hasta su fecha de vencimiento: Vencido, 0-30, 31-60, 61-90."></span></div></div>
       <div class="vac-chart vac-chart--compact"><canvas id="chart-vencimiento-ant"></canvas></div>
     </article>
-    <article class="panel panel--accent-blue">
-      <div class="panel__header"><div class="panel__title">Distribucion de saldo por colaborador<span class="info-tip" tabindex="0" data-tip="Agrupa colaboradores en rangos de 'dias_restantes' (0, 1-5, 6-10, 11-15, 16-20, 21+)."></span></div></div>
+    <article class="panel card">
+      <div class="panel__header card-head"><div class="panel__title card-title">Distribucion de saldo por colaborador<span class="info-tip" tabindex="0" data-tip="Agrupa colaboradores en rangos de 'dias_restantes' (0, 1-5, 6-10, 11-15, 16-20, 21+)."></span></div></div>
       <div class="vac-chart vac-chart--compact"><canvas id="chart-distribucion"></canvas></div>
     </article>
   </section>

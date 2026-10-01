@@ -12,11 +12,11 @@
   <link rel="icon" type="image/png" href="../assets/favicon.png">
   <link rel="apple-touch-icon" href="../assets/favicon.png">
   <link rel="stylesheet" href="../css/global.css?v=94b1e55a">
-  <link rel="stylesheet" href="../css/dashboard-skin.css?v=94b1e55a">
-  <link rel="stylesheet" href="../css/inventarios.css?v=94b1e55a">
+  <link rel="stylesheet" href="../css/dashboard-rh-unified.css?v=94b1e55a">
+  <link rel="stylesheet" href="../css/inventarios-visual.css?v=94b1e55a">
   <script defer src="../assets/vendor/chart.umd.min.js?v=94b1e55a"></script>
 </head>
-<body>
+<body class="rh-unified inventarios-page">
   <nav class="topbar inv-topbar">
     <div class="topbar__brand">
       <div class="topbar__logo"><img src="../assets/oxxo-logo-original.png" alt="OXXO"></div>
@@ -27,8 +27,8 @@
     </div>
   </nav>
 
-  <main class="inv-page">
-    <section class="inv-hero" data-oxxo-scope-mount>
+  <main class="inv-page page">
+    <section class="inv-hero hero" data-oxxo-scope-mount>
       <div class="inv-hero__copy">
         <span class="inv-hero__eyebrow">Administrativo · Plaza Oaxaca</span>
         <h1>Resultados de Inventario</h1>
@@ -37,7 +37,7 @@
       <div class="inv-hero__status" id="inventory-cut"><span></span>Cargando información…</div>
     </section>
 
-    <section class="inv-kpis" id="inventory-kpis" aria-label="Indicadores de inventario">
+    <section class="inv-kpis kpis" id="inventory-kpis" aria-label="Indicadores de inventario">
       <article><span>Tiendas</span><strong id="kpi-stores">—</strong><small id="kpi-records">Registros cargados</small></article>
       <article><span>Con inventario</span><strong id="kpi-inventories">—</strong><small id="kpi-coverage">Cobertura del periodo</small></article>
       <article><span>Merma final</span><strong id="kpi-result">—</strong><small>Resultado acumulado</small></article>
@@ -45,7 +45,7 @@
       <article class="inv-kpi--primary"><span>% Merma / Venta</span><strong id="kpi-ratio">—</strong><small id="kpi-ratio-note">Indicador ponderado</small></article>
     </section>
 
-    <section class="inv-filters" aria-label="Filtros de inventario">
+    <section class="inv-filters filter-panel" aria-label="Filtros de inventario">
       <div class="inv-filter"><label for="filter-period">Periodo</label><select id="filter-period"><option value="">Todos los periodos</option></select></div>
       <div class="inv-filter"><label for="filter-advisor">Asesor comercial</label><select id="filter-advisor"><option value="">Todos los asesores</option></select></div>
       <div class="inv-filter"><label for="filter-type">Tipo de inventario</label><select id="filter-type"><option value="">Todos los tipos</option></select></div>

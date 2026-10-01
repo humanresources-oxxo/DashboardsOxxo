@@ -12,208 +12,17 @@
   <link rel="apple-touch-icon" href="../assets/favicon.png"/>
   <link rel="stylesheet" href="../css/global.css?v=94b1e55a"/>
   <script defer src="../assets/vendor/chart.umd.min.js?v=94b1e55a"></script>
-<style>
-.page{max-width:1500px;margin:0 auto;padding:18px 20px 36px}
-.hero-download-link{ text-decoration:none !important; cursor:pointer; }
 
-/* KPI grid — igual que D1 */
-.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
-.card{background:var(--color-surface);border-radius:14px;padding:20px;box-shadow:var(--shadow-card)}
-.card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--color-border)}
-.card-title{font-family:var(--font-display);font-size:1rem;font-weight:700;color:var(--color-dark)}
-.card-badge{font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;background:var(--color-bg);color:var(--color-gray)}
-
-/* Active filter banner */
-.filter-banner{
-  display:none;background:#FFF9E0;border:1px solid #FFD200;border-radius:10px;
-  padding:8px 16px;margin-bottom:12px;font-size:12px;font-weight:700;color:#6b5a00;
-  align-items:center;gap:10px;
-}
-.filter-banner.visible{display:flex}
-.filter-banner__clear{margin-left:auto;cursor:pointer;background:#FFD200;color:#1a1a1a;border:none;border-radius:6px;padding:4px 12px;font-size:11px;font-weight:800}
-
-/* Row 1: Ranking + Donut */
-.te-row1{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;align-items:stretch}
-.te-row1 > .card{display:flex;flex-direction:column}
-.te-row1 .donut-body{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:20px;padding:16px 20px}
-.te-row1 .donut-chart-wrap{width:min(100%,280px);height:280px;flex-shrink:0}
-.te-row1 .donut-legend{display:flex;flex-direction:row;flex-wrap:wrap;gap:10px 24px;justify-content:center}
-
-/* Row 2 */
-.te-row2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
-.bar-chart-area{position:relative;height:220px}
-
-/* Ranking */
-.rank-list{padding:4px 0}
-.rank-row{display:grid;grid-template-columns:28px 1fr 80px 90px;align-items:center;gap:8px;padding:7px 12px;border-bottom:1px solid var(--color-border)}
-.rank-row:last-child{border-bottom:none}
-@media(max-width:640px){.rank-row{grid-template-columns:24px 1fr 46px 72px;gap:6px;padding:7px 8px}}
-.rank-num{width:22px;height:22px;border-radius:50%;background:#f0f0f0;color:#666;font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.rank-num.top{background:#FF6B00;color:#fff}
-/* min-width:0 permite que la columna 1fr se encoja: como elemento de grid
-   conservaba min-width:auto, asi que el nombre imponia su ancho completo y
-   empujaba la fila fuera de la pantalla en lugar de recortarse con puntos. */
-.rank-name{min-width:0;font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--color-dark)}
-.rank-bar-wrap{height:8px;background:#f0f0f0;border-radius:999px;overflow:hidden}
-.rank-bar{height:100%;border-radius:999px}
-.rank-val{font-size:12px;font-weight:800;color:#FF6B00;text-align:right;white-space:nowrap}
-
-/* dashboard-skin.css enlaza dos veces (una antes y otra despues de este bloque)
-   y trae un tema rojo/dorado !important para .rank-num.top/.rank-bar/.rank-val
-   pensado para otros dashboards -- con la misma especificidad que las reglas
-   de arriba, la segunda carga de dashboard-skin.css gana por orden y el
-   ranking de Tiempo Extra se veia rojo en vez de naranja. Se fuerza con
-   selectores con ID (ganan sin importar el orden) igual que se hizo en D9. */
-#ranking-container .rank-num.top{background:#FF6B00 !important}
-#ranking-container .rank-bar{background:linear-gradient(90deg,#FF6B00,#FFD200) !important;box-shadow:none}
-#ranking-container .rank-val{color:#FF6B00 !important}
-
-/* Donut */
-.donut-body{display:flex;align-items:center;padding:16px 20px;gap:20px}
-.donut-chart-wrap{width:200px;height:200px;flex-shrink:0;position:relative}
-.donut-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none}
-.donut-center__val{font-family:var(--font-display);font-size:26px;font-weight:900;color:var(--color-dark);line-height:1}
-.donut-center__lbl{font-size:10px;color:#888;font-weight:700;margin-top:2px}
-.donut-legend{flex:1;display:flex;flex-direction:column;gap:10px}
-.donut-leg-item{}
-.donut-leg-dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:middle}
-.donut-leg-label{font-size:12px;color:#555;font-weight:600}
-.donut-leg-val{font-family:var(--font-display);font-size:18px;font-weight:900;color:var(--color-dark);margin-top:1px}
-.donut-leg-pct{font-size:11px;color:#888;font-weight:700;margin-left:5px}
-
-/* Detail table */
-.te-detail{margin-bottom:12px}
-.te-table-wrap{overflow-x:auto;max-height:480px;overflow-y:auto}
-.te-table{width:100%;border-collapse:collapse;font-size:12px}
-.te-table thead tr:first-child th{
-  background:#2D2D44;color:#fff;font-family:var(--font-display);font-size:11px;font-weight:900;
-  letter-spacing:.8px;text-transform:uppercase;padding:9px 10px;text-align:center;
-  border-right:1px solid rgba(255,255,255,.1);white-space:nowrap;position:sticky;top:0;z-index:2;
-}
-.te-table thead tr:first-child th:first-child{text-align:left}
-.te-table thead tr:nth-child(2) th{
-  background:#f5f5f5;color:#444;font-size:10px;font-weight:800;text-transform:uppercase;
-  letter-spacing:.04em;padding:6px 10px;text-align:center;border:1px solid #e8e8e8;
-  position:sticky;top:37px;z-index:2;
-}
-.te-table thead tr:nth-child(2) th:first-child{text-align:left}
-.te-table tbody td{padding:7px 10px;border:1px solid var(--color-border);color:var(--color-dark);vertical-align:middle}
-.te-table tbody td:first-child{font-weight:700;background:var(--color-bg);white-space:nowrap}
-.te-table tbody td.num{text-align:right;font-variant-numeric:tabular-nums}
-.te-table tbody td.money{text-align:right;font-variant-numeric:tabular-nums;color:#D92B2B;font-weight:700}
-.te-table tbody tr:hover td{background:var(--color-bg)}
-.te-table tfoot td{
-  background:#2D2D44;color:#FFD200;font-weight:900;font-family:var(--font-display);
-  font-size:12px;padding:8px 10px;border:1px solid #3a3a5c;
-  position:sticky;bottom:0;z-index:2;
-}
-.te-table tfoot td.num{text-align:right}
-.te-table tfoot td.money{text-align:right}
-
-/* State */
-.state-box{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:40px 20px;color:var(--color-gray);text-align:center}
-.spinner{width:32px;height:32px;border:3px solid var(--color-border);border-top-color:var(--color-yellow);border-radius:50%;animation:spin .7s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-
-@media(max-width:1100px){.kpis{grid-template-columns:repeat(2,1fr)}.te-row1,.te-row2{grid-template-columns:1fr}}
-@media(max-width:700px){.kpis{grid-template-columns:repeat(2,1fr)}.te-row1,.te-row2{grid-template-columns:1fr}}
-@media(max-width:600px){
-  .kpis{grid-template-columns:1fr 1fr !important}
-  .te-row1,.te-row2{grid-template-columns:1fr !important}
-  .te-row1 .donut-chart-wrap{height:220px}
-  .bar-chart-area{height:180px}
-}
-</style>
-<style id="d4-extras">
-/* ── Fuente igual que D1 ── */
-.hero h1{font-family:var(--font-display) !important;font-weight:800 !important}
-
-/* ── FILTROS DENTRO DEL HERO (igual que D1) ── */
-.hero{flex-direction:column !important;align-items:stretch !important;gap:18px}
-.hero-top{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap}
-.vac-filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px 16px;align-items:end}
-.vac-fbox{display:flex;flex-direction:column;gap:6px;min-width:0}
-.vac-fbox > label{font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,0.85)}
-.hero .filtro-select,.hero .filtro-btn{
-  width:100%;box-sizing:border-box;
-  background:rgba(255,255,255,0.14) !important;
-  border:1px solid rgba(255,255,255,0.32) !important;
-  color:#fff !important;font-weight:700;
-  border-radius:999px !important;padding:10px 16px !important;
-  transition:background .2s,color .2s,border-color .2s;
-}
-.hero .filtro-select:focus{outline:none;border-color:#fff !important}
-.hero .filtro-select option{color:#1a1a1a;background:#fff}
-.hero .filtro-btn{cursor:pointer}
-.hero .filtro-btn:hover{background:#fff !important;color:var(--hb-red) !important;border-color:#fff !important}
-.hero .filtro-select,
-.hero .filtro-btn{
-  background:rgba(255,255,255,0.78) !important;
-  border-color:var(--exec-line-strong,rgba(42,27,25,0.2)) !important;
-  color:var(--exec-ink,#181112) !important;
-  -webkit-text-fill-color:var(--exec-ink,#181112) !important;
-}
-
-.kpi-card__sub{margin-top:6px;font-size:11px;font-weight:500;color:var(--color-gray)}
-
-/* KPI cards clickables */
-.kpi-card{cursor:pointer;transition:all .18s;user-select:none}
-.kpi-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-hover)}
-.kpi-card.kpi-active{border-top-width:4px !important;box-shadow:0 0 0 3px rgba(255,210,0,.25) !important}
-.kpi-card.kpi-active-red{border-top-color:#D92B2B !important;box-shadow:0 0 0 3px rgba(217,43,43,.15) !important}
-.kpi-card.kpi-active-blue{border-top-color:#0066CC !important;box-shadow:0 0 0 3px rgba(0,102,204,.15) !important}
-/* Mismo problema de doble carga de dashboard-skin.css que el ranking (ver
-   arriba): su regla generica .kpi-active/.kpi-active-red/.kpi-active-blue
-   fuerza un borde y sombra rojos para las tres, pisando el anillo dorado de
-   kpi-active y el azul de kpi-active-blue. Se refuerza con ID. */
-#kpi-section .kpi-card.kpi-active{border-top-width:4px !important;box-shadow:0 0 0 3px rgba(255,210,0,.25) !important}
-#kpi-section .kpi-card.kpi-active-red{border-top-color:#D92B2B !important;box-shadow:0 0 0 3px rgba(217,43,43,.15) !important}
-#kpi-section .kpi-card.kpi-active-blue{border-top-color:#0066CC !important;box-shadow:0 0 0 3px rgba(0,102,204,.15) !important}
-.kpi-filter-hint{font-size:9px;color:#ccc;margin-top:5px;font-weight:600;letter-spacing:.04em}
-.kpi-card.kpi-active .kpi-filter-hint,.kpi-card.kpi-active-red .kpi-filter-hint,
-.kpi-card.kpi-active-blue .kpi-filter-hint{color:#888}
-
-.te-table tfoot td{color:#FFF8EE !important;background:#341414 !important;border-color:rgba(255,255,255,.14) !important}
-.te-table tfoot td:first-child{color:#FFD25A !important}
-.te-table tfoot td.num,.te-table tfoot td.money{color:#FFF8EE !important;text-shadow:0 1px 0 rgba(0,0,0,.18)}
-.detail-toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.table-sort-select{min-width:210px;border:1px solid rgba(217,43,43,.18);background:rgba(255,255,255,.78);border-radius:999px;padding:8px 14px;font-size:12px;font-weight:800;color:var(--color-dark);box-shadow:0 10px 24px rgba(80,35,25,.08)}
-.table-sort-select:focus{outline:none;border-color:#F04444;box-shadow:0 0 0 3px rgba(240,68,68,.12)}
-.asesor-detail-link{font:inherit;font-weight:800;color:var(--color-dark);cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:6px;background:transparent;border:0;padding:0;text-align:left}
-.asesor-detail-link::after{content:"Ver";font-size:9px;font-weight:900;color:#E71F2D;background:#FFE8E8;border:1px solid rgba(231,31,45,.16);border-radius:999px;padding:2px 7px;opacity:0;transform:translateX(-2px);transition:.16s ease}
-.te-table tbody tr:hover .asesor-detail-link::after{opacity:1;transform:translateX(0)}
-.te-modal-overlay{position:fixed;inset:0;z-index:1000;background:rgba(30,16,12,.55);display:none;align-items:center;justify-content:center;padding:28px 16px;overflow-y:auto}
-.te-modal-overlay.open{display:flex}
-.te-modal{width:min(860px,100%);background:var(--color-surface,#fff);border:1px solid rgba(255,160,140,.35);border-radius:22px;box-shadow:0 32px 90px rgba(30,16,12,.38);padding:24px;animation:teModalIn .2s ease}
-@keyframes teModalIn{from{opacity:0;transform:translateY(12px) scale(.98)}to{opacity:1;transform:none}}
-.te-modal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;border-bottom:1px solid var(--color-border);padding-bottom:14px;margin-bottom:16px}
-.te-modal-eyebrow{font-size:11px;font-weight:900;letter-spacing:.14em;text-transform:uppercase;color:#E71F2D}
-.te-modal-title{font-family:var(--font-display);font-size:28px;font-weight:900;color:var(--color-dark);margin-top:4px;line-height:1}
-.te-modal-close{border:0;background:#FFE8E8;color:#E71F2D;border-radius:999px;width:34px;height:34px;font-size:20px;font-weight:900;cursor:pointer}
-.te-modal-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
-.te-modal-kpi{border:1px solid var(--color-border);border-radius:16px;padding:12px;background:linear-gradient(135deg,rgba(255,255,255,.95),rgba(255,248,238,.72));box-shadow:0 14px 30px rgba(80,35,25,.06)}
-.te-modal-kpi span{display:block;font-size:10px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;color:#9A6E62;margin-bottom:4px}
-.te-modal-kpi strong{font-family:var(--font-display);font-size:22px;color:var(--color-dark)}
-.te-modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-.te-modal-block{border:1px solid var(--color-border);border-radius:16px;padding:14px;background:rgba(255,255,255,.68)}
-.te-modal-block h3{font-family:var(--font-display);font-size:15px;margin:0 0 10px;color:var(--color-dark)}
-.te-modal-list{display:flex;flex-direction:column;gap:8px}
-.te-modal-row{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;font-size:12px;font-weight:700;color:var(--color-dark)}
-.te-modal-row small{display:block;color:#8A6A62;font-weight:700;margin-top:2px}
-.te-modal-pill{font-weight:900;color:#E71F2D;background:#FFF0F0;border:1px solid rgba(231,31,45,.14);border-radius:999px;padding:5px 10px;white-space:nowrap}
-@media(max-width:760px){.te-modal-kpis{grid-template-columns:repeat(2,1fr)}.te-modal-grid{grid-template-columns:1fr}.table-sort-select{width:100%}}
-</style>
-<link rel="stylesheet" href="../css/dashboard-skin.css?v=94b1e55a"/>
-  <link rel="stylesheet" href="../css/floating-filter-layout.css?v=94b1e55a" />
-  <link rel="stylesheet" href="../css/rh-dashboard-refresh.css?v=94b1e55a" />
   <link rel="stylesheet" href="../css/rh-table-tools.css?v=94b1e55a" />
   <link rel="stylesheet" href="../css/rh-filter-summary.css?v=94b1e55a" />
+  <link rel="stylesheet" href="../css/dashboard-rh-unified.css?v=94b1e55a"/>
+  <link rel="stylesheet" href="../css/dashboard-4.css?v=94b1e55a"/>
   <link rel="stylesheet" href="../css/dashboard-dialogs.css?v=94b1e55a" />
   <script defer src="../js/rh-dashboard-enhancements.js?v=94b1e55a"></script>
   <script defer src="../js/rh-table-tools.js?v=94b1e55a"></script>
   <script defer src="../js/rh-filter-summary.js?v=94b1e55a"></script>
 </head>
-<body class="hr-dashboard">
+<body class="dashboard-4-page hr-dashboard rh-unified">
 <nav class="topbar">
   <div class="topbar__brand">
     <div class="topbar__logo"><img src="../assets/oxxo-logo-original.png" alt="OXXO"></div>
@@ -515,49 +324,49 @@ function renderAll() {
   const semana      = selectedSemanaLabel();
   document.getElementById('semana-badge').textContent = DROP_SEMANA ? 'Sem ' + DROP_SEMANA + ' - Plaza Oaxaca' : 'Todas las semanas - Plaza Oaxaca';
 
-  // ── KPIs (kpi-card skin style) ──
+  // ── KPIs sobre el canon visual compartido ──
   document.getElementById('kpi-section').innerHTML = `
-    <div class="kpi-card" id="kpi-all" role="button" tabindex="0" onclick="setFilter(null)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();setFilter(null)}" title="Ver todo" style="border-top:3px solid #FFD200">
+    <div class="kpi-card" id="kpi-all" role="button" tabindex="0" onclick="setFilter(null)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();setFilter(null)}" title="Ver todo" style="--du-accent:#FFD200">
       <div class="kpi-card__label">Total Horas TE<span class="info-tip" tabindex="0" onclick="event.stopPropagation()" data-tip="Suma de la columna 'Cantidad' de todas las filas de Dashboard_4_Semanal con los filtros activos (incluye doble, triple y día descanso)."></span></div>
       <div class="kpi-card__value">${fmtH(totalHoras)}</div>
       <div class="kpi-card__sub">${semana === 'Todas' ? 'horas - Todas las semanas' : 'horas - Sem ' + semana}</div>
       <div class="kpi-filter-hint">▶ Ver todo</div>
     </div>
-    <div class="kpi-card" id="kpi-gasto" role="button" tabindex="0" onclick="setFilter(null)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();setFilter(null)}" title="Ver todo" style="border-top:3px solid #FF6B00">
+    <div class="kpi-card" id="kpi-gasto" role="button" tabindex="0" onclick="setFilter(null)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();setFilter(null)}" title="Ver todo" style="--du-accent:#FF6B00">
       <div class="kpi-card__label">Total Gasto $<span class="info-tip" tabindex="0" onclick="event.stopPropagation()" data-tip="Suma de la columna 'Importe' de todas las filas filtradas. Costo/hora = Total Gasto ÷ Total Horas."></span></div>
       <div class="kpi-card__value">${fmt$(totalGasto)}</div>
       <div class="kpi-card__sub">${totalEmps} empleados · $${costoXHora.toFixed(0)}/h</div>
       <div class="kpi-filter-hint">▶ Ver todo</div>
     </div>
-    <div class="kpi-card" id="kpi-doble" role="button" tabindex="0" onclick="setFilter('doble')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();setFilter('doble')}" title="Filtrar: TE Doble" style="border-top:3px solid #FFD200">
+    <div class="kpi-card" id="kpi-doble" role="button" tabindex="0" onclick="setFilter('doble')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();setFilter('doble')}" title="Filtrar: TE Doble" style="--du-accent:#FFD200">
       <div class="kpi-card__label">Horas TE Doble<span class="info-tip" tabindex="0" onclick="event.stopPropagation()" data-tip="Filas donde 'Textos homologados' = 'Tiempo Extra Doble'. Clic en la tarjeta filtra el dashboard a este tipo."></span></div>
       <div class="kpi-card__value">${fmtH(totalHDoble)}</div>
       <div class="kpi-card__sub">${pct(totalHDoble,totalBase)} del total · ${fmt$(totalGDoble)}</div>
       <div class="kpi-filter-hint">▶ Click para filtrar</div>
     </div>
-    <div class="kpi-card" id="kpi-triple" role="button" tabindex="0" onclick="setFilter('triple')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();setFilter('triple')}" title="Filtrar: TE Triple" style="border-top:3px solid #D92B2B">
+    <div class="kpi-card" id="kpi-triple" role="button" tabindex="0" onclick="setFilter('triple')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();setFilter('triple')}" title="Filtrar: TE Triple" style="--du-accent:#D92B2B">
       <div class="kpi-card__label">Horas TE Triple<span class="info-tip" tabindex="0" onclick="event.stopPropagation()" data-tip="Filas donde 'Textos homologados' = 'Tiempo Extra Triple'. Clic en la tarjeta filtra el dashboard a este tipo."></span></div>
       <div class="kpi-card__value">${fmtH(totalHTriple)}</div>
       <div class="kpi-card__sub">${pct(totalHTriple,totalBase)} del total · ${fmt$(totalGTriple)}</div>
       <div class="kpi-filter-hint">▶ Click para filtrar</div>
     </div>
-    <div class="kpi-card" id="kpi-desc" role="button" tabindex="0" onclick="setFilter('descanso')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();setFilter('descanso')}" title="Filtrar: Día Descanso" style="border-top:3px solid #0066CC">
+    <div class="kpi-card" id="kpi-desc" role="button" tabindex="0" onclick="setFilter('descanso')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();setFilter('descanso')}" title="Filtrar: Día Descanso" style="--du-accent:#0066CC">
       <div class="kpi-card__label">Día Descanso<span class="info-tip" tabindex="0" onclick="event.stopPropagation()" data-tip="Filas donde 'Textos homologados' empieza con 'Día Des' (trabajo en día de descanso). Clic filtra el dashboard a este tipo."></span></div>
       <div class="kpi-card__value">${fmtH(totalHDesc)}</div>
       <div class="kpi-card__sub">${pct(totalHDesc,totalBase)} del total · ${fmt$(totalGDesc)}</div>
       <div class="kpi-filter-hint">▶ Click para filtrar</div>
     </div>
-    <div class="kpi-card" style="border-top:3px solid #00A650">
+    <div class="kpi-card" style="--du-accent:#00A650">
       <div class="kpi-card__label">Tiendas con TE<span class="info-tip" tabindex="0" data-tip="Tiendas distintas (columna unidad organizativa) con al menos una hora de tiempo extra en la semana."></span></div>
       <div class="kpi-card__value">${totalTiendas}</div>
       <div class="kpi-card__sub">tiendas activas</div>
     </div>
-    <div class="kpi-card" style="border-top:3px solid #9E9E9E">
+    <div class="kpi-card" style="--du-accent:#9E9E9E">
       <div class="kpi-card__label">Empleados con TE<span class="info-tip" tabindex="0" data-tip="Empleados distintos (columna Asesor / Nombre del empleado) con al menos una hora de tiempo extra registrada."></span></div>
       <div class="kpi-card__value">${totalEmps}</div>
       <div class="kpi-card__sub">colaboradores</div>
     </div>
-    <div class="kpi-card" style="border-top:3px solid #FF6B00">
+    <div class="kpi-card" style="--du-accent:#FF6B00">
       <div class="kpi-card__label">Costo / Hora Prom.<span class="info-tip" tabindex="0" data-tip="Total Gasto $ dividido entre Total Horas TE de todas las filas filtradas."></span></div>
       <div class="kpi-card__value">$${costoXHora.toFixed(0)}</div>
       <div class="kpi-card__sub">promedio por hora</div>

@@ -1,0 +1,75 @@
+/* Vacaciones: solo disposiciones y componentes sin equivalente en rh-unified. */
+body.dashboard-5-page .hero-download-link { text-decoration: none; cursor: pointer; }
+body.dashboard-5-page .dashboard-hero__badge { gap: 4px; }
+body.dashboard-5-page .vac-fbox--actions { min-width: 0; }
+body.dashboard-5-page .vac-filter-status {
+  grid-column: 1 / -1; display: flex; align-items: center; min-height: 36px;
+  padding: 8px 12px; border: 1px solid var(--du-border); border-radius: 10px;
+  background: var(--du-soft); color: var(--du-muted); font-size: 12px; font-weight: 700;
+}
+body.dashboard-5-page .kpi-card { cursor: pointer; user-select: none; }
+body.dashboard-5-page #kpi-section > .kpi-card:only-child { grid-column: 1 / -1; min-height: 100px; }
+body.dashboard-5-page .kpi-card.is-active {
+  border-color: var(--du-red); border-left-width: 4px; background: #fffaf6;
+  box-shadow: var(--du-shadow);
+}
+body.dashboard-5-page .vac-grid-main,
+body.dashboard-5-page .vac-grid-two { display: grid; gap: 12px; margin-bottom: 12px; }
+body.dashboard-5-page .vac-grid-main { grid-template-columns: minmax(0, 1.45fr) minmax(0, .75fr); }
+body.dashboard-5-page .vac-grid-two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+body.dashboard-5-page :is(.vac-grid-main, .vac-grid-two) > .panel { grid-column: auto; }
+body.dashboard-5-page .vac-chart { position: relative; min-width: 0; height: 330px; }
+body.dashboard-5-page .vac-chart--compact { height: 285px; }
+body.dashboard-5-page .vac-actions-list { display: grid; align-content: start; gap: 8px; }
+body.dashboard-5-page .vac-action {
+  padding: 12px 14px; border: 1px solid var(--du-border); border-radius: 10px;
+  background: var(--du-soft);
+}
+body.dashboard-5-page .vac-action__title { color: var(--du-text); font-size: 13px; font-weight: 800; }
+body.dashboard-5-page .vac-action__text { margin-top: 4px; color: var(--du-muted); font-size: 12px; line-height: 1.35; }
+
+/* Ficha por asesor: conserva el contrato data-close-modal del controlador. */
+body.dashboard-5-page .asesor-modal { position: fixed; z-index: 1000; inset: 0; display: none; padding: 16px; overflow: auto; }
+body.dashboard-5-page .asesor-modal.is-open { display: flex; align-items: flex-start; justify-content: center; }
+body.dashboard-5-page .asesor-modal__backdrop { position: fixed; inset: 0; background: rgba(42, 28, 25, .58); }
+body.dashboard-5-page .asesor-modal__panel {
+  position: relative; display: flex; flex-direction: column; width: min(920px, 100%);
+  max-height: min(85vh, 900px); margin: min(6vh, 48px) auto 0; overflow: hidden;
+  border: 1px solid var(--du-border); border-radius: 16px; background: var(--du-card);
+  color: var(--du-text); box-shadow: 0 18px 50px rgba(30, 15, 14, .24);
+}
+body.dashboard-5-page .asesor-modal__header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 16px 18px; border-bottom: 1px solid var(--du-border); }
+body.dashboard-5-page .asesor-modal__title { color: var(--du-text); font: 700 1.2rem/1.2 var(--font-display); }
+body.dashboard-5-page .asesor-modal__subtitle { margin-top: 4px; color: var(--du-muted); font-size: 12px; }
+body.dashboard-5-page .asesor-modal__close { flex: 0 0 var(--du-target); width: var(--du-target); height: var(--du-target); border: 1px solid var(--du-border); border-radius: 50%; background: #fff; color: var(--du-red-dark); font-size: 22px; cursor: pointer; }
+body.dashboard-5-page .asesor-modal__close:hover { border-color: var(--du-red); }
+body.dashboard-5-page .asesor-modal__body { min-height: 0; padding: 12px 18px 18px; overflow: auto; }
+body.dashboard-5-page .asesor-modal__table { width: 100%; border-collapse: collapse; color: var(--du-text); font-size: 12px; }
+body.dashboard-5-page .asesor-modal__table th { position: sticky; z-index: 2; top: 0; padding: 10px 12px; border-bottom: 1px solid var(--du-border); background: #f8f3ee; color: var(--du-text); font-size: 11px; text-align: left; text-transform: uppercase; white-space: nowrap; }
+body.dashboard-5-page .asesor-modal__table td { padding: 10px 12px; border-bottom: 1px solid var(--du-border); }
+body.dashboard-5-page .asesor-modal__table tbody tr:nth-child(even) { background: #fcfaf7; }
+body.dashboard-5-page .asesor-modal__table tbody tr:hover { background: #faf5f0; }
+body.dashboard-5-page .dash-footer { margin-top: 12px; color: var(--du-muted); }
+body.dashboard-5-page .dash-footer__update-dot { background: var(--du-green); box-shadow: none; }
+
+@media (min-width: 768px) {
+  body.dashboard-5-page .kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  body.dashboard-5-page .hero .vac-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  body.dashboard-5-page .vac-fbox--actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-content: end; gap: 6px 8px; }
+  body.dashboard-5-page .vac-fbox--actions > label { grid-column: 1 / -1; }
+}
+@media (min-width: 1100px) {
+  body.dashboard-5-page .hero .vac-filters { grid-template-columns: repeat(4, minmax(0, 1fr)) minmax(220px, 1.1fr); }
+}
+@media (min-width: 1320px) {
+  body.dashboard-5-page .kpis { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+}
+@media (max-width: 1100px) {
+  body.dashboard-5-page .vac-grid-main { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 720px) {
+  body.dashboard-5-page .vac-grid-two { grid-template-columns: minmax(0, 1fr); }
+  body.dashboard-5-page .vac-chart { height: 260px; }
+  body.dashboard-5-page .vac-chart--compact { height: 240px; }
+  body.dashboard-5-page .asesor-modal__panel { max-height: calc(100dvh - 32px); margin: 0 auto; }
+}

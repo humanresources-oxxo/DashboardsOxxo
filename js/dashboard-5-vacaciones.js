@@ -341,7 +341,7 @@ function renderKpis(rows) {
     const active = state.activeKpi === card.id ? ' is-active' : '';
     const deltaClass = ['all', 'act', 'avg'].includes(card.id) ? 'neu' : 'neg';
     return `
-      <button class="kpi-card ${def.color}${active}" type="button" data-kpi-filter="${card.id}">
+      <button class="kpi-card ${def.color}${active}" type="button" data-kpi-filter="${card.id}" aria-pressed="${state.activeKpi === card.id}">
         <div class="kpi-card__label">${def.label}<span class="info-tip" tabindex="0" onclick="event.stopPropagation()" data-tip="${def.tip}"></span></div>
         <div class="kpi-card__value">${card.value}</div>
         <div class="kpi-card__delta ${deltaClass}">${card.delta}</div>

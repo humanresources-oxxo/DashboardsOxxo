@@ -2713,7 +2713,7 @@ function mountAsesorFilter(rootId, values, options = {}) {
 
   root.innerHTML = `
     <div class="smart-filter" id="${rootId}-filter">
-      <button class="smart-filter__button" type="button" id="${rootId}-button">
+      <button class="smart-filter__button" type="button" id="${rootId}-button" aria-expanded="false" aria-controls="${rootId}-menu">
         <span class="smart-filter__label" id="${rootId}-label">${allLabel}</span>
         <span class="smart-filter__chev">▾</span>
       </button>
@@ -2801,11 +2801,22 @@ function mountAsesorFilter(rootId, values, options = {}) {
   button.addEventListener('click', (event) => {
     event.stopPropagation();
     const isOpen = wrap.classList.toggle('open');
+    button.setAttribute('aria-expanded', String(isOpen));
     if (isOpen) { renderOptions(''); search.value = ''; setTimeout(() => search.focus(), 0); }
   });
 
   document.addEventListener('click', (event) => {
-    if (!wrap.contains(event.target)) wrap.classList.remove('open');
+    if (!wrap.contains(event.target)) {
+      wrap.classList.remove('open');
+      button.setAttribute('aria-expanded', 'false');
+    }
+  });
+  wrap.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape' || !wrap.classList.contains('open')) return;
+    event.preventDefault();
+    wrap.classList.remove('open');
+    button.setAttribute('aria-expanded', 'false');
+    button.focus();
   });
 
   renderOptions('');
