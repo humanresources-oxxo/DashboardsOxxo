@@ -152,7 +152,7 @@ a:hover{color:var(--red-dk)}
   font:700 12px/1 var(--sf);letter-spacing:.03em;text-transform:uppercase;cursor:pointer;
   transition:background .18s ease,color .18s ease,box-shadow .18s ease,transform .18s var(--ease);
 }
-.area-switch__button[data-area="rh"]{--area-start:#ff3a46;--area-end:#d50614;--area-color:var(--red);--area-shadow:rgba(216,9,25,.22);--area-icon-bg:#fff0ee}
+.area-switch__button[data-area="rh"]{--area-start:#df2633;--area-end:#d50614;--area-color:var(--red);--area-shadow:rgba(216,9,25,.22);--area-icon-bg:#fff0ee}
 .area-switch__button[data-area="comercial"]{--area-start:#247aa4;--area-end:#155a80;--area-color:#247aa4;--area-shadow:rgba(36,122,164,.22);--area-icon-bg:#edf1f4}
 .area-switch__button[data-area="administrativo"]{--area-start:#7255a1;--area-end:#533a82;--area-color:#7255a1;--area-shadow:rgba(114,85,161,.22);--area-icon-bg:#f0eef8}
 .area-switch__icon{width:28px;height:28px;border-radius:9px;display:grid;place-items:center;background:var(--area-icon-bg);color:var(--area-color)}
