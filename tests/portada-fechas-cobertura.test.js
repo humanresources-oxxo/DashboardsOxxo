@@ -66,7 +66,16 @@ assert.match(marcado, /id="home-summary"[^>]*aria-live="polite"/, 'debe existir 
 assert.doesNotMatch(marcado, /id="home-statusbar"|class="statusbar(?:\s|__|\")/, 'la portada no debe mostrar la barra de resumen de fuentes');
 assert.match(marcado, /class="topbar__actions"[\s\S]*?id="home-retry"[\s\S]*?<\/div>/, 'el reintento debe seguir disponible en el encabezado');
 for (const area of ['rh', 'comercial', 'administrativo']) {
-  assert.match(estilos, new RegExp(`\\.area-switch__button\\[data-area="${area}"\\]\\{[^}]*--area-start:`), `${area} debe definir su color activo`);
+  const regla = estilos.match(new RegExp(`\\.area-switch__button\\[data-area="${area}"\\]\\{([^}]*)\\}`));
+  assert.ok(regla, `${area} debe definir su color activo`);
+  for (const extremo of ['start', 'end']) {
+    const color = regla[1].match(new RegExp(`--area-${extremo}:(#[0-9a-f]{6})`, 'i'))?.[1];
+    assert.ok(color, `${area} debe definir su color ${extremo}`);
+    const canales = [1, 3, 5].map(indice => parseInt(color.slice(indice, indice + 2), 16) / 255);
+    const lineales = canales.map(valor => valor <= .04045 ? valor / 12.92 : ((valor + .055) / 1.055) ** 2.4);
+    const luminancia = .2126 * lineales[0] + .7152 * lineales[1] + .0722 * lineales[2];
+    assert.ok(1.05 / (luminancia + .05) >= 4.5, `${area} ${extremo} debe contrastar con el texto blanco`);
+  }
 }
 assert.match(estilos, /\.area-switch__button\.is-active\{[^}]*var\(--area-start\)[^}]*var\(--area-end\)/, 'el botón activo debe usar el color de su apartado');
 assert.match(script, /Datos disponibles/);
