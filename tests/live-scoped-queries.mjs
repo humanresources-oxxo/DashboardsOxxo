@@ -33,7 +33,11 @@ vm.runInContext(fs.readFileSync(path.join(root, 'js/config.js'), 'utf8'), sandbo
 vm.runInContext(fs.readFileSync(path.join(root, 'js/core.js'), 'utf8'), sandbox);
 
 const config = sandbox.OXXO.SHEETS_CONFIG;
-const tabs = Object.keys(config.SCOPED_GVIZ_COLUMNS || {});
+const tabs = [...new Set([
+  ...Object.keys(config.SCOPED_GVIZ_COLUMNS || {}),
+  config.TABS.m12,
+  config.TABS.inventories
+])];
 const results = [];
 let cursor = 0;
 

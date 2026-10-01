@@ -623,8 +623,14 @@ async function loadCompromisosBajas(){
 
 function compromisoConfigForScope(){
   const scope=OXXO.getActiveDataScope();
-  const target=[...COMPROMISOS_BY_PLAZA.entries()].find(([plaza])=>OXXO.matchesScopeValue(plaza,'plaza',scope));
-  return {defaultValue:Number(OXXO.SHEETS_CONFIG.BAJAS_COMMITMENTS_DEFAULT)||0,values:target?target[1]:{}};
+  const values=Object.create(null);
+  for(const [plaza,asesores] of COMPROMISOS_BY_PLAZA){
+    if(!OXXO.matchesScopeValue(plaza,'plaza',scope))continue;
+    for(const [asesor,compromiso] of Object.entries(asesores)){
+      values[asesor]=(values[asesor]||0)+compromiso;
+    }
+  }
+  return {defaultValue:Number(OXXO.SHEETS_CONFIG.BAJAS_COMMITMENTS_DEFAULT)||0,values};
 }
 
 function compromisoRoster(cols){
@@ -1264,13 +1270,11 @@ function renderPlazas(allData, cols) {
     plazasData.sort((a, b) => b.bajas - a.bajas);
   }
 
-  // En alcance de plaza, ambos componentes deben hablar únicamente de la
-  // plaza seleccionada. El comparativo completo se ve solo si el usuario
-  // activa el boton "Ver todas las plazas" (PLAZAS_SHOW_ALL) -- el switch
-  // global de Alcance ya no ofrece un nivel de "region", asi que este
-  // toggle local es la unica forma de ver el comparativo completo.
+  // El alcance regional ya incluye todas las plazas. En alcance de plaza,
+  // el comparativo completo sigue siendo opcional mediante el boton local.
   const activeScope=OXXO.getActiveDataScope();
-  if(!PLAZAS_SHOW_ALL){
+  const showAllPlazas=activeScope.level==='region'||PLAZAS_SHOW_ALL;
+  if(!showAllPlazas){
     plazasData=plazasData.filter(item=>OXXO.matchesScopeValue(item.plaza,'plaza',activeScope));
   }
 
@@ -1278,12 +1282,13 @@ function renderPlazas(allData, cols) {
   // presenta automáticamente en una versión compacta.
   const plazasPanel=document.querySelector('.d2-plazas');
   if(plazasPanel){
-    plazasPanel.classList.toggle('is-single-plaza', !PLAZAS_SHOW_ALL);
+    plazasPanel.classList.toggle('is-single-plaza', !showAllPlazas);
   }
   const plazasToggleBtn=document.getElementById('plazas-scope-toggle');
   if(plazasToggleBtn){
+    plazasToggleBtn.hidden=activeScope.level==='region';
     plazasToggleBtn.textContent=PLAZAS_SHOW_ALL ? `Ver solo · ${String(activeScope.plaza||'Oaxaca').replace(/^Plaza\s+/i,'')}` : 'Ver todas las plazas';
-    plazasToggleBtn.classList.toggle('is-active',PLAZAS_SHOW_ALL);
+    plazasToggleBtn.classList.toggle('is-active',showAllPlazas);
   }
 
   if(!plazasData.length) {
@@ -1596,6 +1601,7 @@ async function initDashboard(){
   renderBajasDashboard(applyUserFilters(BASE_BAJAS_DATA, BAJAS_COLS), BAJAS_COLS);
   void rawDenominacionesPromise.then(loadDenominaciones).catch(() => {});
   document.getElementById('plazas-scope-toggle')?.addEventListener('click', () => {
+    if(OXXO.getActiveDataScope().level==='region')return;
     PLAZAS_SHOW_ALL = !PLAZAS_SHOW_ALL;
     renderPlazas(BASE_BAJAS_DATA, BAJAS_COLS);
     updatePanelScopeLabels();
@@ -1684,6 +1690,7 @@ function setPanelScope(kind, short, full){
 function updatePanelScopeLabels(){
   if(!BASE_BAJAS_DATA.length) return;   // sin datos cargados no hay alcance que rotular
   const scope = d2ScopeName();
+  const showAllPlazas=OXXO.getActiveDataScope().level==='region'||PLAZAS_SHOW_ALL;
   const mes = FILTER_STATE.mes || '';
   const status = `Tiendas: ${d2StoreStatus()}`;
   const filters = d2FilterInfo();
@@ -1697,8 +1704,8 @@ function updatePanelScopeLabels(){
   setPanelScope('heatmap', `${common} · ${filtersShort(noHeat.count)}`, `${commonFull} ${filtersFull(noHeat)}. La selección del propio mapa no reduce su matriz.`);
   const mesActual = BASE_BAJAS_DATA.length ? latestMonthKey(BASE_BAJAS_DATA, BAJAS_COLS) : '';
   setPanelScope('plazas',
-    `Mes actual · ${PLAZAS_SHOW_ALL ? 'Todas las plazas' : 'Plaza activa'} · Sin filtros secundarios`,
-    `${d2MonthLong(mesActual)} (mes más reciente). ${PLAZAS_SHOW_ALL ? 'Todas las plazas.' : `Solo ${scope}.`} No usa los filtros de mes, Temporalidad, Rot. Temp., Puesto, Tienda ni Asesor.`);
+    `Mes actual · ${showAllPlazas ? 'Todas las plazas' : 'Plaza activa'} · Sin filtros secundarios`,
+    `${d2MonthLong(mesActual)} (mes más reciente). ${showAllPlazas ? 'Todas las plazas.' : `Solo ${scope}.`} No usa los filtros de mes, Temporalidad, Rot. Temp., Puesto, Tienda ni Asesor.`);
   setPanelScope('denom', `${scope} · ${d2MonthShort(mes)} · Solo filtra por mes`,
     `${scope}. Mes: ${d2MonthLong(mes)}. Este panel solo usa el filtro de mes; el resto de filtros no lo afecta.`);
   updateActiveContext(filters);

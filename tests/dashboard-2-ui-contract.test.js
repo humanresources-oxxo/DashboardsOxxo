@@ -198,11 +198,31 @@ test('rotulos de alcance: cada panel declara lo que de verdad usa', () => {
     ok(cuerpo, new RegExp(`class="d2-panel-scope" data-d2-scope="${tipo}"`), `falta el rotulo ${tipo}`);
   }
   ok(js, /function updatePanelScopeLabels\(\)/);
-  ok(js, /Mes actual · \$\{PLAZAS_SHOW_ALL \? 'Todas las plazas' : 'Plaza activa'\} · Sin filtros secundarios/);
+  ok(js, /showAllPlazas=OXXO\.getActiveDataScope\(\)\.level==='region'\|\|PLAZAS_SHOW_ALL/);
+  ok(js, /Mes actual · \$\{showAllPlazas \? 'Todas las plazas' : 'Plaza activa'\} · Sin filtros secundarios/);
   ok(js, /Solo filtra por mes/);
   // Se llama tras cada render, el toggle de plazas y las denominaciones.
   assert.ok((js.match(/syncD2UI\(\)/g) || []).length >= 3);
-  ok(js, /PLAZAS_SHOW_ALL = !PLAZAS_SHOW_ALL;\s*renderPlazas\(BASE_BAJAS_DATA, BAJAS_COLS\);\s*updatePanelScopeLabels\(\);/);
+  ok(js, /if\(OXXO\.getActiveDataScope\(\)\.level==='region'\)return;\s*PLAZAS_SHOW_ALL = !PLAZAS_SHOW_ALL;\s*renderPlazas\(BASE_BAJAS_DATA, BAJAS_COLS\);\s*updatePanelScopeLabels\(\);/);
+});
+
+test('compromisos regionales suman las metas de todas las plazas sin duplicar la vista individual', () => {
+  const cuerpoFuncion = js.match(/function compromisoConfigForScope\(\)\{[\s\S]*?\n\}/)?.[0];
+  assert.ok(cuerpoFuncion, 'falta compromisoConfigForScope');
+  const metas = new Map([
+    ['Oaxaca', { Ana: 2, Juan: 1 }],
+    ['Tuxtla', { Ana: 3, Luisa: 4 }]
+  ]);
+  const calcular = (level, plaza = '') => new Function('OXXO', 'COMPROMISOS_BY_PLAZA',
+    `${cuerpoFuncion}; return compromisoConfigForScope();`)(
+    {
+      SHEETS_CONFIG: { BAJAS_COMMITMENTS_DEFAULT: 1 },
+      getActiveDataScope: () => ({ level, plaza }),
+      matchesScopeValue: (actual, _dimension, scope) => scope.level === 'region' || actual === scope.plaza
+    }, metas
+  );
+  assert.deepEqual({ ...calcular('region').values }, { Ana: 5, Juan: 1, Luisa: 4 });
+  assert.deepEqual({ ...calcular('plaza', 'Oaxaca').values }, { Ana: 2, Juan: 1 });
 });
 
 test('css aislado: todo bajo body.dashboard-2-page, pocos !important, sin vidrio ni sombras multicapa', () => {

@@ -119,7 +119,13 @@ function getActiveDataScope() {
     const zone = query.get('zona');
     if (level || region || plaza || zone) saved = { ...saved, level: level || saved.level, region: region || saved.region, plaza: plaza || saved.plaza, zone: zone || saved.zone };
   } catch (_) {}
-  return normalizeDataScope(saved);
+  const active = normalizeDataScope(saved);
+  // Una vista con fuente incompleta no debe aparentar un acumulado regional
+  // heredado de otra página. La selección global se conserva para las demás.
+  if (active.level === 'region' && document.documentElement?.dataset?.oxxoRegionUnavailable) {
+    return normalizeDataScope({ level: 'plaza', region: active.region, plaza: getDataContext().plaza });
+  }
+  return active;
 }
 
 function setActiveDataScope(scope, { updateUrl = true } = {}) {
@@ -2950,6 +2956,8 @@ function initScopeSelector() {
   if (!hideWidget && !document.querySelector('[data-oxxo-scope-selector]')) {
     const active = getActiveDataScope();
     const activeStoreStatus = getActiveStoreStatus();
+    const regionAvailable = !document.documentElement?.dataset?.oxxoRegionUnavailable;
+    const isActiveRegion = (region) => active.level === 'region' && normalizeScopeToken(active.region) === normalizeScopeToken(region.name);
     const isActivePlaza = (plaza) => active.level !== 'region' && normalizeScopeToken(active.plaza) === normalizeScopeToken(plaza.name);
     const isActiveStoreStatus = (status) => activeStoreStatus === status;
     // Preferimos montarlo dentro del encabezado (junto al badge "Diario ·
@@ -2967,10 +2975,10 @@ function initScopeSelector() {
     host.innerHTML = `
       <div class="oxxo-scope-selector__intro">
         <span class="oxxo-scope-selector__pin" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20 10c0 5.4-8 11-8 11S4 15.4 4 10a8 8 0 1 1 16 0Z"></path><circle cx="12" cy="10" r="2.5"></circle></svg></span>
-        <span class="oxxo-scope-selector__label"><strong>Plaza activa</strong><small>Cambiar vista</small></span>
+        <span class="oxxo-scope-selector__label"><strong>${active.level === 'region' ? 'Región activa' : 'Plaza activa'}</strong><small>Cambiar vista</small></span>
       </div>
-      <div class="oxxo-scope-switch" role="tablist" aria-label="Seleccionar plaza">
-        ${catalog.map((region) => region.plazas.map((plaza) => `<button type="button" class="oxxo-scope-switch__opt${isActivePlaza(plaza) ? ' is-active' : ''}" role="tab" aria-selected="${isActivePlaza(plaza)}" data-scope="plaza|${escHtml(region.name)}|${escHtml(plaza.name)}"><span class="oxxo-scope-switch__dot" aria-hidden="true"></span><span>${escHtml(plaza.shortName || plaza.name)}</span></button>`).join('')).join('')}
+      <div class="oxxo-scope-switch" role="tablist" aria-label="${regionAvailable ? 'Seleccionar plaza o región' : 'Seleccionar plaza'}">
+        ${catalog.map((region) => `${regionAvailable ? `<button type="button" class="oxxo-scope-switch__opt${isActiveRegion(region) ? ' is-active' : ''}" role="tab" aria-selected="${isActiveRegion(region)}" data-scope="region|${escHtml(region.name)}|" aria-label="Región ${escHtml(region.name)}: acumulado de todas sus plazas"><span class="oxxo-scope-switch__dot" aria-hidden="true"></span><span>Región</span></button>` : ''}${region.plazas.map((plaza) => `<button type="button" class="oxxo-scope-switch__opt${isActivePlaza(plaza) ? ' is-active' : ''}" role="tab" aria-selected="${isActivePlaza(plaza)}" data-scope="plaza|${escHtml(region.name)}|${escHtml(plaza.name)}"><span class="oxxo-scope-switch__dot" aria-hidden="true"></span><span>${escHtml(plaza.shortName || plaza.name)}</span></button>`).join('')}`).join('')}
       </div>
       <div class="oxxo-store-status" role="group" aria-label="Estado de tiendas">
         <span class="oxxo-store-status__label">Tiendas</span>
@@ -3018,7 +3026,7 @@ function initScopeSelector() {
           .hero-top,.bajas-header__title{max-width:100%}
           .oxxo-scope-selector__intro{padding:1px 3px}
           .oxxo-scope-selector__pin{width:27px;height:27px;border-radius:9px}
-          /* Plazas en rejilla de 2 columnas: en 320-430 las 5 chips no caben en
+          /* Región y plazas en rejilla de 2 columnas: en 320-430 no caben en
              una fila y, en fila con scroll horizontal, quedaban recortadas. La
              rejilla las apila sin overflow. Layout compartido por los 18 tableros
              con selector. (El recuadro gris vacio era otro defecto ya resuelto:
@@ -3026,7 +3034,7 @@ function initScopeSelector() {
              acota a 641-979.) */
           .oxxo-scope-switch{display:grid;grid-template-columns:1fr 1fr;gap:5px;width:100%;overflow:visible}
           .oxxo-scope-switch__opt{padding:8px 12px}
-          /* La 5a plaza (ultimo impar) ocupa la fila entera, sin quedar suelta a media. */
+          /* Si el catálogo deja un último botón impar, ocupa la fila entera. */
           .oxxo-scope-switch__opt:last-child:nth-child(odd){grid-column:1/-1}
           /* Estado: etiqueta a ancho completo + 3 botones alineados en su fila,
              sin el wrap irregular que se veia en 320px. */
