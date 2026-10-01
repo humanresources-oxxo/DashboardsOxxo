@@ -27,7 +27,9 @@
       </div>
     </div>
     <div class="topbar__actions">
+      <span class="home-summary--sr-only" id="home-summary" role="status" aria-live="polite">Consultando la fecha de cada fuente en Configuración…</span>
       <span class="pill pill--live" id="home-pill" data-state="loading"><i aria-hidden="true"></i><span>Consultando fuentes…</span></span>
+      <button class="btn btn--sm btn--ghost" type="button" id="home-retry" hidden>Reintentar</button>
       <a class="btn" href="admin.html">Panel Admin</a>
     </div>
   </header>
@@ -46,11 +48,6 @@
       </div>
     </div>
   </section>
-
-  <div class="statusbar glass" id="home-statusbar">
-    <p class="statusbar__text" id="home-summary" role="status" aria-live="polite">Consultando la fecha de cada fuente en Configuración…</p>
-    <button class="btn btn--sm btn--ghost" type="button" id="home-retry" hidden>Reintentar</button>
-  </div>
 
   <nav class="area-switch glass" aria-label="Cambiar área de dashboards">
     <button class="area-switch__button is-active" type="button" data-area="rh" aria-pressed="true"><span class="area-switch__icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"></circle><path d="M3.5 19c.6-3.1 2.5-5 5.5-5s4.9 1.9 5.5 5M16 11a2.5 2.5 0 1 0 0-5M16 14c2.4 0 3.9 1.4 4.5 3.7"></path></svg></span>Recursos Humanos</button>

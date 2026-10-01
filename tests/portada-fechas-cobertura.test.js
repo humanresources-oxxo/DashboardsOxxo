@@ -62,6 +62,8 @@ const marcado = pagina.replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style
 assert.doesNotMatch(marcado, /\b\d+(?:[.,]\d+)?\s*(?:%|pt\b|vacantes|bajas|tiendas|d[ií]as)/i, 'no debe haber cifras de KPI fijas en la portada');
 assert.equal((marcado.match(/class="card__state"/g) || []).length, 11, 'cada tarjeta estatica declara su estado de fuente');
 assert.match(marcado, /id="home-summary"[^>]*aria-live="polite"/, 'debe existir un resumen aria-live');
+assert.doesNotMatch(marcado, /id="home-statusbar"|class="statusbar(?:\s|__|\")/, 'la portada no debe mostrar la barra de resumen de fuentes');
+assert.match(marcado, /class="topbar__actions"[\s\S]*?id="home-retry"[\s\S]*?<\/div>/, 'el reintento debe seguir disponible en el encabezado');
 assert.match(script, /Datos disponibles/);
 assert.match(script, /Sin fecha registrada/);
 
