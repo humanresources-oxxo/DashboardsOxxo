@@ -89,6 +89,8 @@ try {
     filter: "() => { const select=[...document.querySelectorAll('.filtro-select,.inv-filter select,.promo-filter select')].find(el=>el.options.length>1); if(!select) return 'missing populated select'; const before=select.value; select.selectedIndex=1; select.dispatchEvent(new Event('change',{bubbles:true})); return {id:select.id,before,after:select.value}; }",
     smart: "() => { const button=document.querySelector('.smart-filter__button'); if(!button) return 'missing smart filter'; button.click(); return {expanded:button.getAttribute('aria-expanded'),menu:button.parentElement?.className}; }",
     selectstore: "() => { const root=document.querySelector('#mi-tienda-select,#mi-asesor-select'); if(!root) return 'missing selector'; const button=root.querySelector('.smart-filter__button'); button?.click(); const option=root.querySelector('.smart-filter__option'); if(!option) return 'missing option'; const value=option.dataset.value; option.click(); return {value,label:root.querySelector('.smart-filter__label')?.textContent}; }",
+    chartspace: "() => { const panel=document.querySelector('.vac-grid-main > .panel:first-child'); const chart=panel?.querySelector('.vac-chart'); const actions=document.querySelector('.vac-grid-main > .panel:last-child'); if(!panel||!chart||!actions) return 'missing chart row'; panel.scrollIntoView({block:'start'}); const p=panel.getBoundingClientRect(),c=chart.getBoundingClientRect(),a=actions.getBoundingClientRect(); return {panelHeight:p.height,chartHeight:c.height,actionsHeight:a.height,emptyBelowChart:Math.round(p.bottom-c.bottom),chartCanvasHeight:chart.querySelector('canvas')?.getBoundingClientRect().height}; }",
+    chartclick: "() => { const canvas=document.querySelector('#chart-asesores'); const chart=window.Chart?.getChart(canvas); const bar=chart?.getDatasetMeta(0).data[0]; if(!bar) return 'missing chart bar'; canvas.scrollIntoView({block:'center'}); const point=bar.getCenterPoint(),rect=canvas.getBoundingClientRect(); canvas.dispatchEvent(new MouseEvent('click',{bubbles:true,clientX:rect.left+point.x,clientY:rect.top+point.y})); return {clickedBar:true}; }",
   };
   let actionResult = null;
   if (action) {
@@ -96,6 +98,10 @@ try {
     const result = await send('Runtime.evaluate', { expression: `(${actions[action]})()`, returnByValue: true });
     actionResult = result.result.value;
     await delay(action === 'selectstore' ? 3000 : 500);
+    if (action === 'chartclick') {
+      const modalResult = await send('Runtime.evaluate', { expression: "({modal:document.querySelector('#asesor-modal')?.className||null,advisor:document.querySelector('#asesor-modal-title')?.textContent||null})", returnByValue: true });
+      actionResult = { ...actionResult, ...modalResult.result.value };
+    }
   }
   const evaluated = await send('Runtime.evaluate', {
     expression: `JSON.stringify({readyState:document.readyState,locked:document.documentElement.classList.contains('oxxo-locked'),innerWidth,scrollWidth:document.documentElement.scrollWidth,bodyText:document.body.innerText.slice(0,800),kpis:document.querySelectorAll('.kpi-card').length,activeKpiPressed:document.querySelector('.kpi-card.kpi-active,.kpi-card.kpi-active-red,.kpi-card.kpi-active-blue')?.getAttribute('aria-pressed')??null,modals:document.querySelectorAll('[role="dialog"]').length,buttons:document.querySelectorAll('button').length,selects:document.querySelectorAll('select').length,errors:[...document.querySelectorAll('.is-source-error')].map(el=>el.dataset.sourceMessage)})`,

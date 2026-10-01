@@ -18,6 +18,7 @@ body.dashboard-5-page .vac-grid-two { display: grid; gap: 12px; margin-bottom: 1
 body.dashboard-5-page .vac-grid-main { grid-template-columns: minmax(0, 1.45fr) minmax(0, .75fr); }
 body.dashboard-5-page .vac-grid-two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 body.dashboard-5-page :is(.vac-grid-main, .vac-grid-two) > .panel { grid-column: auto; }
+body.dashboard-5-page .vac-grid-main > .panel:first-child { display: flex; flex-direction: column; }
 body.dashboard-5-page .vac-chart { position: relative; min-width: 0; height: 330px; }
 body.dashboard-5-page .vac-chart--compact { height: 285px; }
 body.dashboard-5-page .vac-actions-list { display: grid; align-content: start; gap: 8px; }
@@ -63,6 +64,9 @@ body.dashboard-5-page .dash-footer__update-dot { background: var(--du-green); bo
 }
 @media (min-width: 1320px) {
   body.dashboard-5-page .kpis { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+}
+@media (min-width: 1101px) {
+  body.dashboard-5-page .vac-chart--advisors { flex: 1 1 auto; height: auto; min-height: 330px; }
 }
 @media (max-width: 1100px) {
   body.dashboard-5-page .vac-grid-main { grid-template-columns: minmax(0, 1fr); }
