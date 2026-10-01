@@ -751,8 +751,8 @@ function renderPlazasPanel(){
     el.innerHTML = `<div class="pz-lead"><b>${total}</b> vacantes de los puestos seleccionados en la región.
       <span class="pz-warn">Respeta los filtros de puestos, mes y estado de tiendas. No aplica el filtro individual de asesor o tienda.</span></div>`
     + `<div class="plazas-chart" role="img" aria-label="Vacantes por plaza">${PLAZAS_CACHE.map(p=>{
-      const esActiva = normalizeSearchText(p.plaza) === normalizeSearchText(activa)
-        || OXXO.matchesScopeValue?.(p.plaza,'plaza');
+      const esActiva = Boolean(activa) && (normalizeSearchText(p.plaza) === normalizeSearchText(activa)
+        || OXXO.matchesScopeValue?.(p.plaza,'plaza'));
       const pct=Math.max(8,Math.round(p.vacantes/max*100));
       return `<div class="plazas-chart__item${esActiva?' is-active':''}" title="${escapeAttr(p.plaza)}: ${p.vacantes} vacantes; ${p.tiendas} tiendas con vacante">
         <strong>${p.vacantes}</strong>

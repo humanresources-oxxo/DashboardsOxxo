@@ -44,7 +44,8 @@ const sandbox = {
 sandbox.window = sandbox;
 vm.createContext(sandbox);
 vm.runInContext(fs.readFileSync(path.join(root, 'js/config.js'), 'utf8'), sandbox);
-vm.runInContext(fs.readFileSync(path.join(root, 'js/core.js'), 'utf8'), sandbox);
+const coreSource = fs.readFileSync(path.join(root, 'js/core.js'), 'utf8');
+vm.runInContext(coreSource, sandbox);
 
 const { OXXO } = sandbox;
 const context = OXXO.getDataContext();
@@ -57,6 +58,18 @@ assert.equal(OXXO.getActiveDataScope().plaza, 'Plaza Oaxaca');
 assert.equal(OXXO.matchesScopeValue('10VHT Oaxaca', 'plaza'), true);
 assert.equal(OXXO.rowMatchesDataScope({ Plaza: 'Villahermosa' }), false);
 const regionalScope = OXXO.normalizeDataScope({ level: 'region', region: 'TABASCO' });
+assert.match(coreSource, /data-scope="region\|\$\{escHtml\(region\.name\)\}\|"/, 'el selector debe ofrecer la región');
+assert.equal(OXXO.setActiveDataScope(regionalScope, { updateUrl: false }).level, 'region');
+assert.equal(OXXO.getActiveDataScope().plaza, '', 'la región no debe conservar la plaza anterior');
+documentStub.documentElement.dataset = { oxxoRegionUnavailable: '1' };
+assert.equal(OXXO.getActiveDataScope().plaza, 'Plaza Oaxaca', 'una fuente incompleta debe usar Oaxaca sin fingir un acumulado');
+documentStub.documentElement.dataset = {};
+assert.equal(OXXO.getActiveDataScope().level, 'region', 'la excepción local no debe borrar el alcance regional de la sesión');
+OXXO.setActiveDataScope({ level: 'plaza', region: 'TABASCO', plaza: 'Plaza Oaxaca' }, { updateUrl: false });
+for (const pagina of ['dashboard-9', 'dashboard-9-analisis', 'dashboard-12', 'dashboard-14', 'inventarios', 'promociones', 'mi-tienda']) {
+  const html = fs.readFileSync(path.join(root, 'dashboards', `${pagina}.html`), 'utf8');
+  assert.match(html, /<html[^>]*data-oxxo-region-unavailable="1"/, `${pagina} no debe ofrecer un total regional incompleto`);
+}
 assert.equal(OXXO.rowMatchesDataScope({ Region: 'TABASCO', Plaza: 'Villahermosa' }, regionalScope), true);
 assert.equal(OXXO.rowMatchesDataScope({ Region: 'TABASCO', Plaza: 'Puebla' }, regionalScope), false);
 assert.equal(OXXO.filterRowsByDataScope([{ Plaza: 'Oaxaca' }, { Plaza: 'Tuxtla' }]).length, 1);

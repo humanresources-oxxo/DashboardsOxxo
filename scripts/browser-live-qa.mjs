@@ -12,6 +12,7 @@ const name = process.argv[2];
 const width = Number(process.argv[3] || 375);
 const seconds = Number(process.argv[4] || 15);
 const action = process.argv[5] || '';
+const scopeQuery = process.env.OXXO_TEST_SCOPE === 'region' ? '?scope=region&region=TABASCO' : '';
 if (!/^(?:home|dashboard-(?:\d+|\d+-analisis)|inventarios|promociones|mi-tienda|mi-dashboard)$/.test(name || '')) throw new Error('Invalid page');
 if (!Number.isInteger(width) || width < 280 || width > 3000 || !Number.isFinite(seconds) || seconds < 1 || seconds > 60) throw new Error('Invalid width/wait');
 const root = resolve('.');
@@ -77,7 +78,7 @@ try {
   await send('Log.enable');
   await send('Page.addScriptToEvaluateOnNewDocument', { source: "localStorage.setItem('oxxo_site_unlocked','1')" });
   await send('Emulation.setDeviceMetricsOverride', { width, height: 900, deviceScaleFactor: 1, mobile: false });
-  await send('Page.navigate', { url: `http://127.0.0.1:${port}/${name === 'home' ? 'index.html' : `dashboards/${name}.html`}` });
+  await send('Page.navigate', { url: `http://127.0.0.1:${port}/${name === 'home' ? 'index.html' : `dashboards/${name}.html`}${scopeQuery}` });
   await delay(seconds * 1000);
   const actions = {
     kpi: "() => { const button=document.querySelector('.kpi-card[role=button],button.kpi-card'); if(!button) return 'missing KPI'; const id=button.id; button.click(); const current=id?document.getElementById(id):button; return {pressed:current?.getAttribute('aria-pressed'),active:current?.className,banner:document.querySelector('#filter-banner')?.className}; }",
@@ -92,20 +93,21 @@ try {
     chartspace: "() => { const panel=document.querySelector('.vac-grid-main > .panel:first-child'); const chart=panel?.querySelector('.vac-chart'); const actions=document.querySelector('.vac-grid-main > .panel:last-child'); if(!panel||!chart||!actions) return 'missing chart row'; panel.scrollIntoView({block:'start'}); const p=panel.getBoundingClientRect(),c=chart.getBoundingClientRect(),a=actions.getBoundingClientRect(); return {panelHeight:p.height,chartHeight:c.height,actionsHeight:a.height,emptyBelowChart:Math.round(p.bottom-c.bottom),chartCanvasHeight:chart.querySelector('canvas')?.getBoundingClientRect().height}; }",
     chartclick: "() => { const canvas=document.querySelector('#chart-asesores'); const chart=window.Chart?.getChart(canvas); const bar=chart?.getDatasetMeta(0).data[0]; if(!bar) return 'missing chart bar'; canvas.scrollIntoView({block:'center'}); const point=bar.getCenterPoint(),rect=canvas.getBoundingClientRect(); canvas.dispatchEvent(new MouseEvent('click',{bubbles:true,clientX:rect.left+point.x,clientY:rect.top+point.y})); return {clickedBar:true}; }",
     areacolors: "() => ['rh','comercial','administrativo'].map(area => { const button=document.querySelector(`.area-switch__button[data-area=${area}]`); button?.click(); return {area,active:button?.classList.contains('is-active'),pressed:button?.getAttribute('aria-pressed'),bodyArea:document.body.dataset.area,background:button&&getComputedStyle(button).backgroundImage,accent:button&&getComputedStyle(button).getPropertyValue('--area-color').trim()}; })",
+    selectregion: "() => { const button=document.querySelector('[data-scope^=\"region|\"]'); if(!button) return 'region unavailable'; button.click(); return {selected:true}; }",
   };
   let actionResult = null;
   if (action) {
     if (!actions[action]) throw new Error('Invalid action');
     const result = await send('Runtime.evaluate', { expression: `(${actions[action]})()`, returnByValue: true });
     actionResult = result.result.value;
-    await delay(action === 'selectstore' ? 3000 : 500);
+    await delay(action === 'selectregion' ? 10000 : action === 'selectstore' ? 3000 : 500);
     if (action === 'chartclick') {
       const modalResult = await send('Runtime.evaluate', { expression: "({modal:document.querySelector('#asesor-modal')?.className||null,advisor:document.querySelector('#asesor-modal-title')?.textContent||null})", returnByValue: true });
       actionResult = { ...actionResult, ...modalResult.result.value };
     }
   }
   const evaluated = await send('Runtime.evaluate', {
-    expression: `JSON.stringify({readyState:document.readyState,locked:document.documentElement.classList.contains('oxxo-locked'),innerWidth,scrollWidth:document.documentElement.scrollWidth,bodyText:document.body.innerText.slice(0,800),homeStatusbar:!!document.querySelector('#home-statusbar'),homeSummaryVisible:!!document.querySelector('#home-summary')?.getBoundingClientRect().width&&document.querySelector('#home-summary')?.getBoundingClientRect().width>1,homeRetryPresent:!!document.querySelector('#home-retry'),kpis:document.querySelectorAll('.kpi-card').length,activeKpiPressed:document.querySelector('.kpi-card.kpi-active,.kpi-card.kpi-active-red,.kpi-card.kpi-active-blue')?.getAttribute('aria-pressed')??null,modals:document.querySelectorAll('[role="dialog"]').length,buttons:document.querySelectorAll('button').length,selects:document.querySelectorAll('select').length,errors:[...document.querySelectorAll('.is-source-error')].map(el=>el.dataset.sourceMessage)})`,
+    expression: `JSON.stringify({readyState:document.readyState,locked:document.documentElement.classList.contains('oxxo-locked'),innerWidth,scrollWidth:document.documentElement.scrollWidth,scope:window.OXXO?.getActiveDataScope?.(),scopeOptions:document.querySelectorAll('.oxxo-scope-switch__opt').length,regionOption:!!document.querySelector('[data-scope^="region|"]'),activeScopeOption:document.querySelector('.oxxo-scope-switch__opt.is-active')?.dataset.scope||null,bodyText:document.body.innerText.slice(0,800),homeStatusbar:!!document.querySelector('#home-statusbar'),homeSummaryVisible:!!document.querySelector('#home-summary')?.getBoundingClientRect().width&&document.querySelector('#home-summary')?.getBoundingClientRect().width>1,homeRetryPresent:!!document.querySelector('#home-retry'),kpis:document.querySelectorAll('.kpi-card').length,activeKpiPressed:document.querySelector('.kpi-card.kpi-active,.kpi-card.kpi-active-red,.kpi-card.kpi-active-blue')?.getAttribute('aria-pressed')??null,modals:document.querySelectorAll('[role="dialog"]').length,buttons:document.querySelectorAll('button').length,selects:document.querySelectorAll('select').length,errors:[...document.querySelectorAll('.is-source-error')].map(el=>el.dataset.sourceMessage)})`,
     returnByValue: true,
   });
   const screenshot = await send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false, fromSurface: true });
