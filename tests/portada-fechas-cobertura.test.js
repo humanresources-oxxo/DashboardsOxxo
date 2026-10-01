@@ -11,6 +11,7 @@ const pagina = fs.readFileSync(path.join(raiz, 'index.html'), 'utf8');
 // El markup de la portada vive en index.html; el mapa de rutas y las tarjetas de
 // Comercial/Administrativo, en js/home.js.
 const script = fs.readFileSync(path.join(raiz, 'js', 'home.js'), 'utf8');
+const estilos = fs.readFileSync(path.join(raiz, 'css', 'home.css'), 'utf8');
 const html = pagina + '\n' + script;
 
 // 1) Rutas declaradas en el mapa.
@@ -64,6 +65,10 @@ assert.equal((marcado.match(/class="card__state"/g) || []).length, 11, 'cada tar
 assert.match(marcado, /id="home-summary"[^>]*aria-live="polite"/, 'debe existir un resumen aria-live');
 assert.doesNotMatch(marcado, /id="home-statusbar"|class="statusbar(?:\s|__|\")/, 'la portada no debe mostrar la barra de resumen de fuentes');
 assert.match(marcado, /class="topbar__actions"[\s\S]*?id="home-retry"[\s\S]*?<\/div>/, 'el reintento debe seguir disponible en el encabezado');
+for (const area of ['rh', 'comercial', 'administrativo']) {
+  assert.match(estilos, new RegExp(`\\.area-switch__button\\[data-area="${area}"\\]\\{[^}]*--area-start:`), `${area} debe definir su color activo`);
+}
+assert.match(estilos, /\.area-switch__button\.is-active\{[^}]*var\(--area-start\)[^}]*var\(--area-end\)/, 'el botón activo debe usar el color de su apartado');
 assert.match(script, /Datos disponibles/);
 assert.match(script, /Sin fecha registrada/);
 
