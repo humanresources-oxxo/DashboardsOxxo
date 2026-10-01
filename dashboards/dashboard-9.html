@@ -11,265 +11,13 @@
   <link rel="icon" type="image/png" href="../assets/favicon.png"/>
   <link rel="apple-touch-icon" href="../assets/favicon.png"/>
   <link rel="stylesheet" href="../css/global.css?v=94b1e55a"/>
-  <link rel="stylesheet" href="../css/inventarios.css?v=94b1e55a"/>
   <script defer src="../assets/vendor/chart.umd.min.js?v=94b1e55a"></script>
-<style>
-.page{max-width:1540px;margin:0 auto;padding:18px 24px 40px}
-.hero-download-link{ text-decoration:none !important; cursor:pointer; }
-
-/* KPI grid — igual que D1/D4 */
-.kpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px;margin-bottom:22px}
-.card{background:rgba(255,255,255,.9);border:1px solid rgba(101,82,154,.12);border-radius:20px;padding:20px;box-shadow:0 18px 46px rgba(53,31,36,.08)}
-.card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--color-border)}
-.card-title{font-family:var(--font-display);font-size:1rem;font-weight:700;color:var(--color-dark)}
-.card-badge{font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;background:var(--color-bg);color:var(--color-gray)}
-.section-intro{display:flex;align-items:center;gap:16px;margin:24px 2px 12px}
-.section-intro::after{content:"";height:1px;flex:1;background:linear-gradient(90deg,rgba(101,82,154,.24),rgba(101,82,154,0))}
-.section-intro__eyebrow{font-size:10px;font-weight:900;letter-spacing:.16em;text-transform:uppercase;color:#725b9f;margin-bottom:4px}
-.section-intro h2{font-family:var(--font-display);font-size:clamp(20px,2vw,28px);line-height:1;margin:0;color:var(--color-dark)}
-.section-intro p{font-size:12px;color:#7d6d70;margin:6px 0 0;max-width:680px}
-
-/* Active filter banner */
-.filter-banner{
-  display:none;background:#FFF9E0;border:1px solid #FFD200;border-radius:10px;
-  padding:8px 16px;margin-bottom:12px;font-size:12px;font-weight:700;color:#6b5a00;
-  align-items:center;gap:10px;
-}
-.filter-banner.visible{display:flex}
-.filter-banner__clear{margin-left:auto;cursor:pointer;background:#FFD200;color:#1a1a1a;border:none;border-radius:6px;padding:4px 12px;font-size:11px;font-weight:800}
-
-/* Priority view: stores + balance */
-.fs-row1{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(330px,.65fr);gap:14px;margin-bottom:14px;align-items:stretch}
-.fs-row1 > .card{display:flex;flex-direction:column}
-
-/* Row 2 */
-.fs-row2{display:grid;grid-template-columns:1fr;gap:14px;margin-bottom:14px}
-.fs-row2--single{grid-template-columns:1fr}
-.bar-chart-area{position:relative;height:300px}
-.bar-chart-area--stores{height:330px}
-
-/* Donut */
-.donut-body{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:12px 16px 18px;gap:16px;flex:1}
-.donut-chart-wrap{width:200px;height:200px;flex-shrink:0;position:relative}
-.donut-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none}
-.donut-center__val{font-family:var(--font-display);font-size:22px;font-weight:900;color:var(--color-dark);line-height:1}
-.donut-center__lbl{font-size:10px;color:#888;font-weight:700;margin-top:2px}
-.donut-legend{width:100%;display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.donut-leg-item{border:1px solid rgba(101,82,154,.12);border-radius:14px;padding:11px 12px;background:linear-gradient(145deg,#fff,#faf8fd)}
-.donut-leg-dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:middle}
-.donut-leg-label{font-size:12px;color:#555;font-weight:600}
-.donut-leg-val{font-family:var(--font-display);font-size:18px;font-weight:900;color:var(--color-dark);margin-top:1px}
-.donut-leg-pct{font-size:11px;color:#888;font-weight:700;margin-left:5px}
-
-/* Detail table */
-.fs-detail{margin-bottom:14px;padding:0;overflow:hidden}
-.fs-detail .card-head{padding:20px 20px 14px;margin:0}
-.fs-table-wrap{overflow-x:auto;max-height:480px;overflow-y:auto}
-.fs-table{width:100%;border-collapse:collapse;font-size:12px}
-.fs-table thead th{
-  background:#2D2D44;color:#fff;font-family:var(--font-display);font-size:11px;font-weight:900;
-  letter-spacing:.8px;text-transform:uppercase;padding:9px 10px;text-align:center;
-  border-right:1px solid rgba(255,255,255,.1);white-space:nowrap;position:sticky;top:0;z-index:2;
-}
-.fs-table thead th:first-child{text-align:left}
-.fs-table tbody td{padding:10px 12px;border:0;border-bottom:1px solid rgba(101,82,154,.1);color:var(--color-dark);vertical-align:middle;background:rgba(255,255,255,.82)}
-.fs-table tbody tr:nth-child(even) td{background:rgba(247,244,251,.7)}
-.fs-table tbody td:first-child{font-weight:700;white-space:nowrap}
-.fs-table tbody td.num{text-align:right;font-variant-numeric:tabular-nums}
-.fs-table tbody td.money{text-align:right;font-variant-numeric:tabular-nums;color:#7B1FA2;font-weight:700}
-.fs-table tbody td.money.faltante{color:#D92B2B}
-.fs-table tbody td.money.sobrante{color:#1DB954}
-.fs-table tbody tr:hover td{background:#f2eef9}
-.fs-table tfoot td{
-  background:#2D2D44;color:#FFD200;font-weight:900;font-family:var(--font-display);
-  font-size:12px;padding:8px 10px;border:1px solid #3a3a5c;
-  position:sticky;bottom:0;z-index:2;
-}
-.fs-table tfoot td.num,.fs-table tfoot td.money{text-align:right}
-
-/* State */
-.state-box{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:40px 20px;color:var(--color-gray);text-align:center}
-.spinner{width:32px;height:32px;border:3px solid var(--color-border);border-top-color:var(--color-yellow);border-radius:50%;animation:spin .7s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-
-@media(max-width:1100px){.kpis{grid-template-columns:repeat(3,1fr)}.fs-row1,.fs-row2{grid-template-columns:1fr}.donut-body{flex-direction:row}.donut-legend{max-width:420px}}
-@media(max-width:700px){.kpis{grid-template-columns:repeat(2,1fr)}.fs-row1,.fs-row2{grid-template-columns:1fr}}
-@media(max-width:600px){
-  .page{padding:12px 10px 28px}
-  .kpis{grid-template-columns:1fr 1fr !important}
-  .fs-row1,.fs-row2{grid-template-columns:1fr !important}
-  .fs-row1 .donut-chart-wrap{height:170px;width:170px}
-  .donut-body{flex-direction:column;padding-inline:4px}
-  .donut-legend{width:100%;grid-template-columns:1fr}
-  .bar-chart-area,.bar-chart-area--stores{height:300px}
-  .section-intro{align-items:flex-start;margin-top:20px}
-  .card{padding:16px;border-radius:17px}
-}
-/* dashboard-skin.css trae una regla para pantallas anchas (min-width:1180px)
-   pensada solo para D4 ("D4 Tiempo Extra: keep row 1 compact") que fuerza
-   8 columnas en .kpis.kpi-grid con body:has(#ranking-container):has(#chart-dona)
-   -- pero D9 tambien tiene esos dos ids, asi que le pega igual y deja las 6
-   tarjetas KPI de D9 con columnas vacias en vez de las suyas propias. Se
-   iguala/supera esa especificidad (2 :has(#id)) encadenando 3 ids unicos de
-   D9 para que esta regla gane sin importar el orden de las hojas de estilo.
-   3 columnas (no 4): D9 siempre pinta exactamente 6 tarjetas KPI (ver
-   innerHTML de kpi-section mas abajo), y 6 entre 4 deja una fila de 2 con
-   2 huecos vacios a la derecha; 6 entre 3 llena las 2 filas completas. */
-@media(min-width:1180px){
-  body:has(#kpi-faltante):has(#kpi-sobrante):has(#kpi-neto) .kpis.kpi-grid{
-    grid-template-columns:repeat(6,minmax(0,1fr)) !important;
-  }
-}
-</style>
-<style id="d9-extras">
-.hero h1{font-family:var(--font-display) !important;font-weight:800 !important}
-.hero{flex-direction:column !important;align-items:stretch !important;gap:18px;position:relative;overflow:hidden}
-.hero::after{content:"";position:absolute;width:360px;height:360px;border:70px solid rgba(255,255,255,.08);border-radius:50%;right:-135px;top:-190px;pointer-events:none}
-.hero-top{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap}
-.hero-copy{position:relative;z-index:1;max-width:760px}
-.hero-eyebrow{font-size:10px;font-weight:900;letter-spacing:.17em;text-transform:uppercase;color:rgba(255,255,255,.78);margin-bottom:8px}
-.hero-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap;position:relative;z-index:1}
-.vac-filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px 16px;align-items:end}
-.vac-fbox{display:flex;flex-direction:column;gap:6px;min-width:0}
-.vac-fbox > label{font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,0.85)}
-.hero .filtro-select,.hero .filtro-btn{
-  width:100%;box-sizing:border-box;
-  background:rgba(255,255,255,0.14) !important;
-  border:1px solid rgba(255,255,255,0.32) !important;
-  color:#fff !important;font-weight:700;
-  border-radius:999px !important;padding:10px 16px !important;
-  transition:background .2s,color .2s,border-color .2s;
-}
-.hero .filtro-select:focus{outline:none;border-color:#fff !important}
-.hero .filtro-select option{color:#1a1a1a;background:#fff}
-.hero .filtro-btn{cursor:pointer}
-.hero .filtro-btn:hover{background:#fff !important;color:var(--hb-red) !important;border-color:#fff !important}
-.hero .filtro-select,
-.hero .filtro-btn{
-  background:rgba(255,255,255,0.78) !important;
-  border-color:var(--exec-line-strong,rgba(42,27,25,0.2)) !important;
-  color:var(--exec-ink,#181112) !important;
-  -webkit-text-fill-color:var(--exec-ink,#181112) !important;
-}
-.vac-fbox--actions{display:grid;grid-template-columns:1fr 1.1fr;gap:8px}
-.vac-fbox--actions > label{grid-column:1/-1}
-
-.kpi-card__sub{margin-top:6px;font-size:11px;font-weight:500;color:var(--color-gray)}
-.kpi-card{min-width:0;position:relative;overflow:hidden;padding:18px !important;border:1px solid rgba(101,82,154,.12) !important;border-top-width:3px !important;border-radius:18px !important;background:linear-gradient(145deg,rgba(255,255,255,.98),rgba(249,247,252,.92)) !important}
-.kpi-card::after{content:"";position:absolute;width:86px;height:86px;border-radius:50%;right:-42px;bottom:-44px;background:var(--kpi-glow,rgba(101,82,154,.08));pointer-events:none}
-.kpi-card__label{min-height:28px;line-height:1.25}
-.kpi-card__value{font-size:clamp(23px,2.1vw,36px) !important;letter-spacing:-.025em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.kpi-card--faltante{--kpi-glow:rgba(217,43,43,.12)}
-.kpi-card--sobrante{--kpi-glow:rgba(29,185,84,.12)}
-.kpi-card--neto{--kpi-glow:rgba(101,82,154,.13)}
-.kpi-card--support .kpi-card__value{font-size:clamp(22px,1.8vw,31px) !important}
-
-/* KPI cards clickables */
-.kpi-card{cursor:pointer;transition:all .18s;user-select:none}
-.kpi-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-hover)}
-.kpi-card.kpi-active{border-top-width:4px !important;box-shadow:0 0 0 3px rgba(123,31,162,.22) !important}
-.kpi-card.kpi-active-red{border-top-color:#D92B2B !important;box-shadow:0 0 0 3px rgba(217,43,43,.15) !important}
-.kpi-card.kpi-active-green{border-top-color:#1DB954 !important;box-shadow:0 0 0 3px rgba(29,185,84,.15) !important}
-.kpi-filter-hint{font-size:9px;color:#ccc;margin-top:5px;font-weight:600;letter-spacing:.04em}
-.kpi-card.kpi-active .kpi-filter-hint,.kpi-card.kpi-active-red .kpi-filter-hint,
-.kpi-card.kpi-active-green .kpi-filter-hint{color:#888}
-
-.fs-table tfoot td{color:#FFF8EE !important;background:#341414 !important;border-color:rgba(255,255,255,.14) !important}
-.fs-table tfoot td:first-child{color:#FFD25A !important}
-.fs-table tfoot td.num,.fs-table tfoot td.money{color:#FFF8EE !important;text-shadow:0 1px 0 rgba(0,0,0,.18)}
-.detail-toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.table-sort-select{min-width:210px;border:1px solid rgba(123,31,162,.18);background:rgba(255,255,255,.78);border-radius:999px;padding:8px 14px;font-size:12px;font-weight:800;color:var(--color-dark);box-shadow:0 10px 24px rgba(80,35,25,.08)}
-.table-sort-select:focus{outline:none;border-color:#7B1FA2;box-shadow:0 0 0 3px rgba(123,31,162,.12)}
-.asesor-detail-link{font:inherit;font-weight:800;color:var(--color-dark);cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:6px;background:transparent;border:0;padding:0;text-align:left}
-.asesor-detail-link::after{content:"Ver";font-size:9px;font-weight:900;color:#7B1FA2;background:#F3E5F9;border:1px solid rgba(123,31,162,.16);border-radius:999px;padding:2px 7px;opacity:0;transform:translateX(-2px);transition:.16s ease}
-.fs-table tbody tr:hover .asesor-detail-link::after{opacity:1;transform:translateX(0)}
-.fs-modal-overlay{position:fixed;inset:0;z-index:1000;background:rgba(30,16,12,.55);display:none;align-items:center;justify-content:center;padding:28px 16px;overflow-y:auto}
-.fs-modal-overlay.open{display:flex}
-.fs-modal{width:min(860px,100%);background:var(--color-surface,#fff);border:1px solid rgba(160,120,200,.35);border-radius:22px;box-shadow:0 32px 90px rgba(30,16,12,.38);padding:24px;animation:fsModalIn .2s ease}
-@keyframes fsModalIn{from{opacity:0;transform:translateY(12px) scale(.98)}to{opacity:1;transform:none}}
-.fs-modal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;border-bottom:1px solid var(--color-border);padding-bottom:14px;margin-bottom:16px}
-.fs-modal-eyebrow{font-size:11px;font-weight:900;letter-spacing:.14em;text-transform:uppercase;color:#7B1FA2}
-.fs-modal-title{font-family:var(--font-display);font-size:28px;font-weight:900;color:var(--color-dark);margin-top:4px;line-height:1}
-.fs-modal-close{border:0;background:#F3E5F9;color:#7B1FA2;border-radius:999px;width:34px;height:34px;font-size:20px;font-weight:900;cursor:pointer}
-.fs-modal-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
-.fs-modal-kpi{border:1px solid var(--color-border);border-radius:16px;padding:12px;background:linear-gradient(135deg,rgba(255,255,255,.95),rgba(248,238,255,.72));box-shadow:0 14px 30px rgba(80,35,25,.06)}
-.fs-modal-kpi span{display:block;font-size:10px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;color:#8A6E9A;margin-bottom:4px}
-.fs-modal-kpi strong{font-family:var(--font-display);font-size:22px;color:var(--color-dark)}
-.fs-modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-.fs-modal-block{border:1px solid var(--color-border);border-radius:16px;padding:14px;background:rgba(255,255,255,.68)}
-.fs-modal-block h3{font-family:var(--font-display);font-size:15px;margin:0 0 10px;color:var(--color-dark)}
-.fs-modal-list{display:flex;flex-direction:column;gap:8px}
-.fs-modal-row{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;font-size:12px;font-weight:700;color:var(--color-dark)}
-.fs-modal-row small{display:block;color:#8A6A62;font-weight:700;margin-top:2px}
-.fs-modal-pill{font-weight:900;color:#7B1FA2;background:#F3E5F9;border:1px solid rgba(123,31,162,.14);border-radius:999px;padding:5px 10px;white-space:nowrap}
-@media(max-width:760px){.fs-modal-kpis{grid-template-columns:repeat(2,1fr)}.fs-modal-grid{grid-template-columns:1fr}.table-sort-select{width:100%}}
-@media(max-width:600px){
-  .hero-actions{justify-content:flex-start}
-  .vac-filters{grid-template-columns:1fr 1fr;gap:10px}
-  .vac-fbox--actions{grid-column:1/-1}
-  .hero .filtro-select,.hero .filtro-btn{padding:9px 12px !important;font-size:11px}
-  .kpi-card{padding:14px !important}
-  .kpi-card__label{font-size:9px !important;min-height:24px}
-  .kpi-card__sub{font-size:10px}
-  .kpi-filter-hint{display:none}
-  .fs-detail .card-head{align-items:flex-start;flex-direction:column}
-  .detail-toolbar{width:100%}
-}
-
-</style>
-<link rel="stylesheet" href="../css/dashboard-skin.css?v=94b1e55a"/>
-<link rel="stylesheet" href="../css/floating-filter-layout.css?v=94b1e55a" />
+  <link rel="stylesheet" href="../css/dashboard-rh-unified.css?v=94b1e55a">
+  <link rel="stylesheet" href="../css/inventarios-visual.css?v=94b1e55a">
+  <link rel="stylesheet" href="../css/dashboard-9.css?v=94b1e55a">
   <link rel="stylesheet" href="../css/dashboard-dialogs.css?v=94b1e55a" />
-<style id="d9-inventory-alignment">
-body{background:radial-gradient(circle at 90% 7%,rgba(128,106,178,.14),transparent 29%),linear-gradient(180deg,#f4f1fa 0%,#fcfbfd 46%,#f0edf7 100%)}
-.d9-hero-meta{display:flex;align-items:center;justify-content:flex-end;gap:9px;flex-wrap:wrap}
-.d9-analysis-link{color:#fff;text-decoration:none}
-.d9-analysis-link svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2}
-.inv-kpis#kpi-section{grid-template-columns:repeat(6,minmax(0,1fr))}
-.inv-kpis#kpi-section .kpi-card{min-height:112px;padding:17px 18px!important;border:1px solid rgba(255,255,255,.88)!important;border-radius:18px!important;background:rgba(255,255,255,.91)!important;box-shadow:0 14px 34px rgba(8,62,94,.10)!important;}
-.inv-kpis#kpi-section .kpi-card::before{display:none!important}
-.inv-kpis#kpi-section .kpi-card__label{min-height:0;color:var(--inv-muted);font-size:9px!important;font-weight:900;letter-spacing:.13em;text-transform:uppercase}
-.inv-kpis#kpi-section .kpi-card__value{display:block;margin:7px 0 6px;color:var(--inv-blue);font-family:var(--font-display);font-size:clamp(1.35rem,1.8vw,1.9rem)!important;font-weight:850;line-height:1}
-.inv-kpis#kpi-section .kpi-card__sub{color:#78909c;font-size:10px;font-weight:700}
-.inv-kpis#kpi-section .kpi-filter-hint{font-size:8px;color:#9a90a4}
-.inv-kpis#kpi-section .kpi-card--faltante .kpi-card__value{color:#c82b36}
-.inv-kpis#kpi-section .kpi-card--sobrante .kpi-card__value{color:#1b9556}
-.inv-kpis#kpi-section .kpi-card--neto{background:linear-gradient(145deg,#fff,#f0ecf8)!important;border-color:rgba(101,82,154,.22)!important}
-.inv-filters .filtro-select,.inv-filters .filtro-btn{width:100%;height:44px;box-sizing:border-box;border:1px solid rgba(101,82,154,.16)!important;border-radius:12px!important;background:#fff!important;color:var(--inv-ink)!important;-webkit-text-fill-color:var(--inv-ink)!important;font:700 12px var(--font-body);box-shadow:none;padding:0 13px!important}
-.inv-filters .vac-fbox{display:flex;min-width:0;flex-direction:column;gap:6px}
-.inv-filters .vac-fbox>label{color:var(--inv-muted)!important;-webkit-text-fill-color:var(--inv-muted)!important;font-size:9px;font-weight:900;letter-spacing:.13em;text-transform:uppercase}
-#d9-filters .vac-fbox>label::before{display:none!important}
-.inv-filters .filtro-btn{cursor:pointer;font-weight:850}
-#d9-filters .vac-fbox .filtro-btn:last-child:not(:only-of-type){border:0!important;color:#fff!important;-webkit-text-fill-color:#fff!important;background:linear-gradient(135deg,#806ab2,#4d3d79)!important;box-shadow:0 9px 20px rgba(101,82,154,.24)!important}
-.inv-filters .vac-fbox--actions{display:grid;grid-template-columns:1fr 1.2fr;gap:8px}
-.inv-filters .vac-fbox--actions>label{grid-column:1/-1}
-.d9-result-line{margin-bottom:16px}
-.fs-row1{grid-template-columns:minmax(0,1.55fr) minmax(300px,.75fr);gap:16px;margin-bottom:16px}
-.fs-row2{gap:16px;margin-bottom:16px}
-.fs-row1>.card,.fs-row2>.card,.fs-detail{padding:20px;border:1px solid var(--inv-line);border-radius:22px;background:var(--inv-panel);box-shadow:0 12px 32px rgba(8,62,94,.075);}
-.card-head{align-items:flex-start;margin-bottom:16px;padding:0;border:0}
-.card-title{color:var(--inv-ink);font-size:1.15rem;line-height:1.12}
-.card-title::before{display:none!important}
-.card-title .icon-inline{color:var(--inv-blue)}
-.d9-panel-eyebrow{display:block;margin-bottom:4px;color:var(--inv-blue);font-size:9px;font-weight:900;letter-spacing:.14em;text-transform:uppercase}
-.card-badge{color:var(--inv-muted);background:#eeeaf6}
-.fs-detail{padding-bottom:0;overflow:hidden}
-.fs-detail .card-head{padding:0;margin-bottom:14px}
-.fs-table-wrap{max-height:490px;margin:0 -20px;overflow:auto;border-top:1px solid var(--inv-line)}
-.fs-table{min-width:760px;border-collapse:separate;border-spacing:0}
-.fs-table thead th{padding:12px 15px;border:0;border-bottom:1px solid rgba(101,82,154,.15);background:#eeeaf6;color:#5f5278;font-family:var(--font-body);font-size:9px;font-weight:900;letter-spacing:.08em}
-.fs-table tbody td{padding:12px 15px;border-bottom:1px solid rgba(101,82,154,.08);background:transparent;color:#625a6d;font-size:10.5px;font-weight:650}
-.fs-table tbody tr:nth-child(even) td{background:rgba(244,241,250,.52)}
-.fs-table tbody tr:hover td{background:#f0ecf8}
-.fs-table tfoot td{position:sticky;bottom:0;padding:12px 15px;border:0;background:#e5def1!important;color:#403265!important;text-shadow:none!important;font-family:var(--font-body);font-size:10px;font-weight:900}
-.table-sort-select{height:40px;border-color:rgba(101,82,154,.18);border-radius:12px;background:#faf8fd;color:var(--inv-ink);box-shadow:none}
-.dash-footer{max-width:1500px;margin:0 auto;padding-left:24px;padding-right:24px}
-@media(max-width:1180px){.inv-kpis#kpi-section{grid-template-columns:repeat(3,minmax(0,1fr))}.fs-row1{grid-template-columns:1fr}}
-@media(max-width:700px){.d9-hero-meta{justify-content:flex-start}.inv-kpis#kpi-section{grid-template-columns:repeat(2,minmax(0,1fr))}.inv-filters .vac-fbox--actions{grid-column:auto}.fs-row1>.card,.fs-row2>.card,.fs-detail{padding:16px;border-radius:18px}.fs-table-wrap{margin:0 -16px}.fs-detail .card-head{padding:0}.dash-footer{padding-left:14px;padding-right:14px}}
-@media(max-width:420px){.inv-kpis#kpi-section{grid-template-columns:1fr}.inv-filters .vac-fbox--actions{grid-template-columns:1fr}}
-</style>
 </head>
-<body>
+<body class="dashboard-9-page rh-unified">
 <nav class="topbar inv-topbar">
   <div class="topbar__brand">
     <div class="topbar__logo"><img src="../assets/oxxo-logo-original.png" alt="OXXO"></div>
@@ -284,9 +32,9 @@ body{background:radial-gradient(circle at 90% 7%,rgba(128,106,178,.14),transpare
   </div>
 </nav>
 
-<main class="inv-page">
+<main class="inv-page page">
 
-  <section class="inv-hero" data-oxxo-scope-mount>
+  <section class="inv-hero hero" data-oxxo-scope-mount>
       <div class="inv-hero__copy">
         <span class="inv-hero__eyebrow">Administrativo · Plaza Oaxaca</span>
         <h1>Faltantes y Sobrantes</h1>
@@ -301,11 +49,11 @@ body{background:radial-gradient(circle at 90% 7%,rgba(128,106,178,.14),transpare
   <span id="hero-download" style="display:none"></span>
 
   <!-- KPIs -->
-  <section class="inv-kpis" id="kpi-section" aria-label="Indicadores de faltantes y sobrantes">
+  <section class="inv-kpis kpis" id="kpi-section" aria-label="Indicadores de faltantes y sobrantes">
     <article><span>Cargando…</span><strong><span class="spinner"></span></strong></article>
   </section>
 
-  <section class="inv-filters" id="d9-filters" aria-label="Filtros de faltantes y sobrantes">
+  <section class="inv-filters filter-panel" id="d9-filters" aria-label="Filtros de faltantes y sobrantes">
       <div class="vac-fbox">
         <label for="filtro-semana">Semana</label>
         <select class="filtro-select" id="filtro-semana" onchange="applyDropdownFilters()">
@@ -537,35 +285,35 @@ function renderAll() {
 
   // ── KPIs ──
   document.getElementById('kpi-section').innerHTML = `
-    <div class="kpi-card kpi-card--faltante" id="kpi-faltante" role="button" tabindex="0" onclick="setFilter('Faltante')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();setFilter('Faltante')}" title="Filtrar: Faltante" style="border-top:3px solid #D92B2B">
+    <div class="kpi-card kpi-card--faltante" id="kpi-faltante" role="button" tabindex="0" onclick="setFilter('Faltante')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();setFilter('Faltante')}" title="Filtrar: Faltante">
       <div class="kpi-card__label">Total Faltante $<span class="info-tip" tabindex="0" onclick="event.stopPropagation()" data-tip="Suma de Importe en filas donde Tipo=Faltante (Importe positivo). Clic filtra el dashboard a este tipo."></span></div>
       <div class="kpi-card__value">${fmt$(totalFaltante)}</div>
       <div class="kpi-card__sub">${pct(totalFaltante,totalBaseFalt)} del total del periodo</div>
       <div class="kpi-filter-hint">▶ Click para filtrar</div>
     </div>
-    <div class="kpi-card kpi-card--sobrante" id="kpi-sobrante" role="button" tabindex="0" onclick="setFilter('Sobrante')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();setFilter('Sobrante')}" title="Filtrar: Sobrante" style="border-top:3px solid #1DB954">
+    <div class="kpi-card kpi-card--sobrante" id="kpi-sobrante" role="button" tabindex="0" onclick="setFilter('Sobrante')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();setFilter('Sobrante')}" title="Filtrar: Sobrante">
       <div class="kpi-card__label">Total Sobrante $<span class="info-tip" tabindex="0" onclick="event.stopPropagation()" data-tip="Suma de |Importe| en filas donde Tipo=Sobrante (Importe negativo). Clic filtra el dashboard a este tipo."></span></div>
       <div class="kpi-card__value">${fmt$(totalSobrante)}</div>
       <div class="kpi-card__sub">${totalAsesores} asesores con movimientos</div>
       <div class="kpi-filter-hint">▶ Click para filtrar</div>
     </div>
-    <div class="kpi-card kpi-card--neto" id="kpi-neto" role="button" tabindex="0" onclick="setFilter(null)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();setFilter(null)}" title="Ver todo" style="border-top:3px solid #7B1FA2">
+    <div class="kpi-card kpi-card--neto" id="kpi-neto" role="button" tabindex="0" onclick="setFilter(null)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();setFilter(null)}" title="Ver todo">
       <div class="kpi-card__label">Neto $<span class="info-tip" tabindex="0" onclick="event.stopPropagation()" data-tip="Total Faltante menos Total Sobrante. Positivo = la plaza debe dinero en neto; negativo = hay credito a favor."></span></div>
       <div class="kpi-card__value">${fmt$(totalNeto)}</div>
       <div class="kpi-card__sub">${semana === 'Todas' ? 'Todas las semanas' : semanaLabel(semana)}</div>
       <div class="kpi-filter-hint">▶ Ver todo</div>
     </div>
-    <div class="kpi-card kpi-card--support" style="border-top:3px solid #FFD200">
+    <div class="kpi-card kpi-card--support">
       <div class="kpi-card__label">Movimientos<span class="info-tip" tabindex="0" data-tip="Numero de filas (movimientos de caja) con los filtros activos."></span></div>
       <div class="kpi-card__value">${OXXO.formatNum(totalMovs)}</div>
       <div class="kpi-card__sub">registros</div>
     </div>
-    <div class="kpi-card kpi-card--support" style="border-top:3px solid #FF6B00">
+    <div class="kpi-card kpi-card--support">
       <div class="kpi-card__label">Tiendas con movimientos<span class="info-tip" tabindex="0" data-tip="Tiendas distintas con al menos un movimiento de faltante o sobrante en el periodo filtrado."></span></div>
       <div class="kpi-card__value">${totalTiendas}</div>
       <div class="kpi-card__sub">tiendas</div>
     </div>
-    <div class="kpi-card kpi-card--support" style="border-top:3px solid #9E9E9E">
+    <div class="kpi-card kpi-card--support">
       <div class="kpi-card__label">Asesores con movimientos<span class="info-tip" tabindex="0" data-tip="Asesores distintos con al menos un movimiento de faltante o sobrante en el periodo filtrado."></span></div>
       <div class="kpi-card__value">${totalAsesores}</div>
       <div class="kpi-card__sub">asesores</div>

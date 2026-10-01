@@ -1,4 +1,4 @@
-/* Consumido por: mi-dashboard, mi-tienda. */
+/* Consumido por: mi-dashboard, mi-tienda. Componentes de ficha sobre rh-unified. */
 /* ==========================================================
    FICHA — estilo compartido por "Mi Tienda" y "Mi Dashboard"
    Las dos paginas son la misma idea (una ficha unica con
@@ -10,46 +10,38 @@
    rojo o dorado de marca (--color-green es dorado, --color-blue
    es rojo), asi que aqui se declaran colores semanticos propios:
    el rojo debe significar "atencion", no "es un numero". El rojo
-   de marca se reserva para la cabecera y los acentos.
+   de marca se reserva para acentos y el toldo del escaparate.
    ========================================================== */
-.page{max-width:1320px;margin:0 auto;padding:14px 20px 40px}
+body.rh-unified .page{max-width:1320px}
 
-:root{
+body.rh-unified{
   --mt-ink:#211510;
   --mt-muted:#7d6a61;
-  --mt-line:rgba(130,54,38,.14);
-  --mt-tile:rgba(255,255,255,.62);
-  --mt-tile-2:rgba(255,247,240,.72);
+  --mt-line:var(--du-border);
+  --mt-tile:#fff;
+  --mt-tile-2:var(--du-soft);
   --mt-ok:#12813F;      --mt-ok-bg:rgba(29,185,84,.13);
   --mt-warn:#9A6A00;    --mt-warn-bg:rgba(242,165,43,.18);
   --mt-bad:#C0181F;     --mt-bad-bg:rgba(239,68,68,.12);
   --mt-info:#12608F;    --mt-info-bg:rgba(21,101,192,.11);
 }
 
-/* ── Encabezado de pagina + buscador ─────────────────────────
-   .mt-hero (no ".hero" a secas): dashboard-skin.css tambien define
-   ".hero" con varios bloques !important (se carga DESPUES de este
-   archivo en mi-tienda.html/mi-dashboard.html), asi que un simple
-   ".hero" de aqui podia perder el pulso segun el orden de carga. El
-   div sigue trayendo tambien la clase "hero" (por si algo mas la
-   necesita), pero el layout propio de esta pagina vive en la clase
-   propia de abajo, reforzada con !important para no depender de
-   quien cargue despues. */
-.mt-hero{padding:16px 22px !important;margin-bottom:14px !important;color:#fff !important;display:flex !important;align-items:center !important;justify-content:space-between !important;gap:14px !important;flex-wrap:wrap !important}
-.mt-hero h1{font-family:var(--font-display);font-size:1.5rem !important;font-weight:800;margin:0 !important;line-height:1.1}
-.mt-hero p{margin:3px 0 0 !important;opacity:.9;font-size:12.5px !important;max-width:620px}
-.hero-badge{display:inline-block;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);padding:6px 14px;border-radius:999px;font-size:11px;font-weight:800;white-space:nowrap}
-.hero-badge.is-loading{animation:mtPulse 1.3s ease-in-out infinite}
-.hero-badge.is-partial{background:rgba(242,165,43,.2);border-color:rgba(255,220,151,.55)}
-.hero-badge.is-error{background:rgba(107,0,8,.34);border-color:rgba(255,255,255,.42)}
+/* La ficha comparte la misma cabecera blanca que los dashboards numerados. */
+body.rh-unified .mt-hero{display:flex;flex-direction:row;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px}
+body.rh-unified .mt-hero h1{font-size:clamp(1.8rem,4vw,2.5rem)}
+body.rh-unified .mt-hero p{max-width:620px}
+body.rh-unified .mt-hero .hero-badge{white-space:normal}
+body.rh-unified .mt-hero .hero-badge.is-loading{animation:mtPulse 1.3s ease-in-out infinite}
+body.rh-unified .mt-hero .hero-badge.is-partial{background:#fff3d6;border-color:#e6d6a5;color:#765500}
+body.rh-unified .mt-hero .hero-badge.is-error{background:#fbe9ea;border-color:#e7bcc0;color:#a91f26}
 @keyframes mtPulse{50%{opacity:.58}}
 
 .mt-picker{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}
-.mi-tienda-page .mt-picker{position:sticky;top:8px;z-index:35;width:max-content;max-width:100%;padding:8px 10px;border:1px solid rgba(130,54,38,.12);border-radius:15px;background:rgba(255,250,246,.9);box-shadow:0 10px 28px rgba(78,29,21,.09);}
+.mi-tienda-page .mt-picker{position:sticky;top:8px;z-index:35;width:max-content;max-width:100%;padding:8px 10px;border:1px solid var(--du-border);border-radius:var(--du-radius);background:#fff;box-shadow:var(--du-shadow)}
 .mt-picker__label{font-size:10.5px;font-weight:800;letter-spacing:.13em;text-transform:uppercase;color:var(--mt-muted)}
 #mi-tienda-select,#mi-asesor-select{flex:0 1 360px;min-width:240px}
 
-.empty-state{background:var(--mt-tile);border:1px solid var(--mt-line);border-radius:18px;padding:56px 24px;text-align:center;color:var(--mt-muted)}
+.empty-state{background:#fff;border:1px solid var(--du-border);border-radius:var(--du-radius);padding:40px 24px;text-align:center;color:var(--mt-muted);box-shadow:var(--du-shadow)}
 .empty-state .big{font-size:2.4rem;margin-bottom:10px}
 .empty-state h2{font-family:var(--font-display);color:var(--mt-ink);margin:0 0 6px}
 .mt-state-action{margin-top:16px;cursor:pointer;border:0;border-radius:11px;padding:10px 18px;background:#C1101B;color:#fff;font-family:inherit;font-size:12px;font-weight:800;box-shadow:0 8px 20px rgba(193,16,27,.2)}
@@ -61,16 +53,16 @@
    dashboard. Los paneles son tiles con gap y align-items:start:
    antes compartian filas de grid y se estiraban a la altura del
    mas alto, dejando huecos grandes en los paneles cortos. */
-.ficha{background:rgba(255,255,255,.72);border:1px solid rgba(255,255,255,.7);border-radius:20px;overflow:hidden;box-shadow:0 16px 44px rgba(117,23,23,.12);margin-bottom:18px}
+.ficha{background:#fff;border:1px solid var(--du-border);border-radius:var(--du-radius);overflow:hidden;box-shadow:var(--du-shadow);margin-bottom:18px}
 .mi-tienda-page #mi-content{scroll-margin-top:76px}
 
-.ficha__head{background:linear-gradient(126deg,#F71926 0%,#D91F2D 54%,#A9111B 100%);color:#fff;padding:16px 22px}
+.ficha__head{background:#fff;color:var(--du-text);padding:16px 22px;border-bottom:1px solid var(--du-border)}
 .ficha__head-top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .ficha__name{font-family:var(--font-display);font-size:1.5rem;font-weight:800;line-height:1.1;letter-spacing:.01em}
-.ficha__status{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.34);border-radius:999px;padding:5px 14px;font-size:11px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;white-space:nowrap}
+.ficha__status{display:inline-flex;align-items:center;gap:6px;background:var(--du-soft);border:1px solid var(--du-border);border-radius:999px;padding:5px 14px;color:var(--du-red-dark);font-size:11px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;white-space:nowrap}
 .ficha__meta{display:flex;flex-wrap:wrap;gap:6px 22px;margin-top:9px}
 .ficha__meta div{font-size:11.5px;line-height:1.35}
-.ficha__meta span{display:block;font-size:9px;font-weight:800;letter-spacing:.11em;text-transform:uppercase;opacity:.72}
+.ficha__meta span{display:block;font-size:9px;font-weight:800;letter-spacing:.11em;text-transform:uppercase;color:var(--du-muted)}
 .ficha__meta b{font-weight:700}
 
 /* Resumen: los titulares de los 8 dashboards en una sola fila */
@@ -92,21 +84,21 @@
 /* Mi Tienda: el resumen deja de ser una sola tira de numeros y se
    organiza por decision operativa. Se limita a esta pagina para que
    Mi Dashboard conserve su composicion actual. */
-.mi-tienda-page .ficha__resumen{display:block;background:linear-gradient(145deg,rgba(255,252,249,.97),rgba(255,246,239,.76));padding:0;border-bottom:1px solid var(--mt-line)}
+.mi-tienda-page .ficha__resumen{display:block;background:var(--du-soft);padding:0;border-bottom:1px solid var(--mt-line)}
 .mt-current-head{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:15px 20px 13px;border-bottom:1px solid var(--mt-line)}
 .mt-current-head__eyebrow{display:block;margin-bottom:3px;color:#c51625;font-size:9px;font-weight:900;letter-spacing:.15em;text-transform:uppercase}
 .mt-current-head strong{display:block;color:var(--mt-ink);font-family:var(--font-display);font-size:1.05rem;line-height:1.1}
 .mt-current-head__note{display:inline-flex;align-items:center;gap:7px;padding:6px 10px;border:1px solid rgba(18,96,143,.15);border-radius:999px;background:rgba(21,101,192,.07);color:var(--mt-info);font-size:10px;font-weight:800;white-space:nowrap}
 .mt-current-head__note::before{content:'';width:7px;height:7px;border-radius:50%;background:#2b8bc4;box-shadow:0 0 0 4px rgba(43,139,196,.11)}
 .mt-summary-groups{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;padding:13px 16px 16px}
-.mt-summary-group{min-width:0;overflow:hidden;border:1px solid var(--mt-line);border-radius:15px;background:rgba(255,255,255,.66);box-shadow:0 8px 20px rgba(89,36,24,.045)}
-.mt-summary-group__head{display:flex;align-items:center;gap:9px;padding:10px 12px;border-bottom:1px solid var(--mt-line);background:rgba(255,255,255,.64)}
+.mt-summary-group{min-width:0;overflow:hidden;border:1px solid var(--mt-line);border-radius:var(--du-radius);background:#fff;box-shadow:var(--du-shadow)}
+.mt-summary-group__head{display:flex;align-items:center;gap:9px;padding:10px 12px;border-bottom:1px solid var(--mt-line);background:#fff}
 .mt-summary-group__icon{width:26px;height:26px;flex:0 0 26px;display:grid;place-items:center;border-radius:8px;background:rgba(227,6,19,.08);color:#c51625}
 .mt-summary-group__icon svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .mt-summary-group__head strong{display:block;color:var(--mt-ink);font-family:var(--font-display);font-size:.84rem;line-height:1.1}
 .mt-summary-group__head small{display:block;margin-top:2px;color:var(--mt-muted);font-size:8.5px;font-weight:700;line-height:1.2}
 .mt-summary-group__grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;background:var(--mt-line)}
-.mt-summary-group .rk{min-height:73px;padding:11px 12px 10px;background:rgba(255,250,246,.94)}
+.mt-summary-group .rk{min-height:73px;padding:11px 12px 10px;background:var(--du-soft)}
 .mt-summary-group .rk b{font-size:1.5rem}
 .mt-summary-group .rk span{font-size:8.5px;letter-spacing:.055em}
 .mt-summary-group .rk i{font-size:9px}
@@ -128,7 +120,7 @@
 .mt-storefront__marquee{background:var(--color-red,#F71926);padding:11px 20px;display:flex;align-items:center;justify-content:center}
 .mt-storefront__logo{height:34px;width:auto;display:block}
 .mt-storefront__windows{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--mt-line)}
-.mt-storefront__window{background:linear-gradient(160deg,rgba(255,255,255,.92),rgba(255,255,255,.6));padding:13px 8px;display:flex;flex-direction:column;align-items:center;gap:7px;text-align:center}
+.mt-storefront__window{background:#fff;padding:13px 8px;display:flex;flex-direction:column;align-items:center;gap:7px;text-align:center}
 .mt-storefront__window-dot{width:10px;height:10px;border-radius:50%;background:currentColor;box-shadow:0 0 0 5px color-mix(in srgb,currentColor 16%,transparent)}
 .mt-storefront__window.is-ok{color:var(--mt-ok)}
 .mt-storefront__window.is-warn{color:var(--mt-warn)}
@@ -141,14 +133,14 @@
 @media(max-width:660px){.mt-storefront__windows{grid-template-columns:repeat(2,1fr)}}
 
 /* Alertas: solo aparecen las que aplican */
-.ficha__alertas{display:flex;flex-wrap:wrap;gap:7px;padding:12px 18px;border-bottom:1px solid var(--mt-line);background:rgba(255,255,255,.34)}
+.ficha__alertas{display:flex;flex-wrap:wrap;gap:7px;padding:12px 18px;border-bottom:1px solid var(--mt-line);background:#fff}
 
 /* Lectura cruzada: a diferencia del resumen (un indicador -> una tarjeta) y
    las alertas (un indicador -> un chip), esto combina 2+ indicadores de
    distintas fuentes en una sola historia (ej. ausentismo + tiempo extra).
    Reutiliza .mt-signal (ya usado en Capacidades) para la misma semantica de
    color en vez de inventar un tercer lenguaje visual. */
-.ficha__cruzado{background:linear-gradient(145deg,rgba(255,252,249,.97),rgba(255,246,239,.76));padding:0;border-bottom:1px solid var(--mt-line)}
+.ficha__cruzado{background:var(--du-soft);padding:0;border-bottom:1px solid var(--mt-line)}
 .mt-cruzado-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:10px;padding:13px 16px 16px}
 .mt-cruzado-list .mt-signal{margin-bottom:0}
 @media(max-width:660px){.mt-cruzado-list{grid-template-columns:1fr;padding:11px}}
@@ -163,7 +155,7 @@
 .mi-section.mt-section-focus{animation:mtSectionFocus 1.65s ease}
 @keyframes mtSectionFocus{0%,100%{box-shadow:none}20%,72%{box-shadow:0 0 0 4px rgba(247,25,38,.16),0 16px 30px rgba(108,29,22,.13);border-color:rgba(247,25,38,.42)}}
 
-.mt-glossary{border-bottom:1px solid var(--mt-line);background:rgba(255,251,247,.72)}
+.mt-glossary{border-bottom:1px solid var(--mt-line);background:#fff}
 .mt-glossary summary{cursor:pointer;display:flex;align-items:center;gap:9px;padding:11px 18px;color:var(--mt-ink);font-size:11.5px;font-weight:850;list-style:none}
 .mt-glossary summary::-webkit-details-marker{display:none}
 .mt-glossary summary::before{content:'?';width:20px;height:20px;display:grid;place-items:center;border-radius:7px;background:var(--mt-info-bg);color:var(--mt-info);font-size:11px}
@@ -179,7 +171,7 @@
    ancha (ej. Aprovechamiento con sus dos columnas de estatus) estira la
    columna mas alla de la pantalla en celular, en vez de dejar que
    .tbl-wrap haga su propio scroll horizontal. */
-.mi-section{background:var(--mt-tile);border:1px solid var(--mt-line);border-radius:14px;padding:13px 14px;display:none;min-width:0}
+.mi-section{background:#fff;border:1px solid var(--du-border);border-radius:var(--du-radius);padding:13px 14px;display:none;min-width:0;box-shadow:var(--du-shadow)}
 .mi-section.show{display:block}
 .mi-section.is-loading,.mi-section.is-source-error{display:block;overflow:hidden;position:relative}
 .mi-section.is-loading>:not(.mi-section-head),.mi-section.is-source-error>:not(.mi-section-head){display:none!important}
@@ -207,14 +199,14 @@
 .mt-signal--low{color:var(--mt-ok);background:var(--mt-ok-bg);border-color:rgba(29,185,84,.2)}
 .mt-signal--medium{color:var(--mt-warn);background:var(--mt-warn-bg);border-color:rgba(242,165,43,.28)}
 .mt-signal--high{color:var(--mt-bad);background:var(--mt-bad-bg);border-color:rgba(239,68,68,.24)}
-.mt-trend{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:9px;padding:9px 10px;border-radius:11px;border:1px solid var(--mt-line);background:rgba(255,255,255,.58)}
+.mt-trend{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:9px;padding:9px 10px;border-radius:11px;border:1px solid var(--mt-line);background:var(--du-soft)}
 .mt-trend div>span,.mt-trend div>strong,.mt-trend small{display:block}
 .mt-trend div>span{color:var(--mt-muted);font-size:8.5px;font-weight:850;letter-spacing:.055em;text-transform:uppercase}
 .mt-trend div>strong{margin-top:2px;color:var(--mt-ink);font-family:var(--font-display);font-size:1rem}.mt-trend strong i{margin-left:5px;font-family:var(--font-body);font-size:9.5px;font-style:normal}
 .mt-trend small{color:var(--mt-muted);font-size:9px;font-weight:700;white-space:nowrap}.mt-trend--good strong i{color:var(--mt-ok)}.mt-trend--bad strong i{color:var(--mt-bad)}.mt-trend--flat strong i{color:var(--mt-info)}
 
 .mi-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(58px,1fr));gap:6px;margin-bottom:10px}
-.mi-stat{background:rgba(255,255,255,.72);border:1px solid var(--mt-line);border-radius:10px;padding:8px 4px;text-align:center;min-width:0}
+.mi-stat{background:var(--du-soft);border:1px solid var(--mt-line);border-radius:10px;padding:8px 4px;text-align:center;min-width:0}
 .mi-stat b{display:block;font-family:var(--font-display);font-size:1.18rem;font-weight:800;color:var(--mt-ink);line-height:1.1;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mi-stat span{display:block;margin-top:3px;font-size:8px;color:var(--mt-muted);text-transform:uppercase;letter-spacing:.03em;font-weight:800;line-height:1.25}
 .mi-stat.verde b{color:var(--mt-ok)}
@@ -269,11 +261,11 @@
 .mi-modal-overlay{position:fixed;inset:0;background:rgba(34,10,10,.66);display:flex;align-items:center;justify-content:center;z-index:200;padding:24px;opacity:0;visibility:hidden;pointer-events:none;transition:opacity .22s ease,visibility .22s ease}
 .mi-modal-overlay.show{opacity:1;visibility:visible;pointer-events:auto}
 body.mi-modal-open{overflow:hidden}
-.mi-modal{position:relative;background:#FFFDFC;border:1px solid rgba(255,255,255,.72);border-radius:24px;width:min(94vw,920px);max-height:min(88vh,760px);display:flex;flex-direction:column;overflow:hidden;box-shadow:0 30px 90px rgba(34,10,10,.42),0 4px 18px rgba(34,10,10,.14);transform:translateY(18px) scale(.975);opacity:0;transition:transform .24s cubic-bezier(.2,.8,.2,1),opacity .18s ease}
+.mi-modal{position:relative;background:#fff;border:1px solid var(--du-border);border-radius:16px;width:min(94vw,920px);max-height:min(88vh,760px);display:flex;flex-direction:column;overflow:hidden;box-shadow:0 18px 50px rgba(30,15,14,.24);transform:translateY(18px) scale(.975);opacity:0;transition:transform .24s cubic-bezier(.2,.8,.2,1),opacity .18s ease}
 .mi-modal.is-wide{width:min(94vw,1180px)}
 .mi-modal-overlay.show .mi-modal{transform:translateY(0) scale(1);opacity:1}
-.mi-modal::before{content:'';position:absolute;z-index:4;inset:0 0 auto;height:4px;background:linear-gradient(90deg,#F71926 0%,#D91F2D 55%,#F2A52B 100%)}
-.mi-modal__head{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:21px 22px 17px;border-bottom:1px solid var(--mt-line);background:linear-gradient(135deg,rgba(255,247,240,.96),rgba(255,255,255,.96))}
+.mi-modal::before{content:'';position:absolute;z-index:4;inset:0 0 auto;height:4px;background:var(--du-red)}
+.mi-modal__head{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:21px 22px 17px;border-bottom:1px solid var(--mt-line);background:#fff}
 .mi-modal__heading{display:flex;align-items:center;gap:12px;min-width:0}
 .mi-modal__heading-icon{width:40px;height:40px;flex:0 0 40px;display:grid;place-items:center;border-radius:12px;color:#C1101B;background:rgba(247,25,38,.09);border:1px solid rgba(247,25,38,.12)}
 .mi-modal__heading-icon svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
@@ -285,7 +277,7 @@ body.mi-modal-open{overflow:hidden}
 .mi-modal__close svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round}
 .mi-modal__close:hover{background:#FFF1F1;border-color:rgba(193,16,27,.24);color:#C1101B;transform:rotate(4deg)}
 .mi-modal__close:focus-visible{outline:3px solid rgba(247,25,38,.2);outline-offset:2px}
-.mi-modal__body{min-height:0;padding:18px 22px 12px;overflow:auto;background:linear-gradient(180deg,#FFFCFA 0%,#FFF8F3 100%)}
+.mi-modal__body{min-height:0;padding:18px 22px 12px;overflow:auto;background:#fff}
 .mi-modal__body .tbl-wrap{max-height:calc(88vh - 184px);border:1px solid rgba(130,54,38,.13);border-radius:14px;background:#fff;box-shadow:0 8px 24px rgba(94,44,31,.07);scrollbar-color:rgba(193,16,27,.45) rgba(130,54,38,.06);scrollbar-width:thin}
 .mi-modal__body .tbl-wrap::-webkit-scrollbar{width:9px;height:9px}
 .mi-modal__body .tbl-wrap::-webkit-scrollbar-track{background:rgba(130,54,38,.05);border-radius:999px}
@@ -297,12 +289,12 @@ body.mi-modal-open{overflow:hidden}
    para que las tablas angostas sigan llenando el modal), y .tbl-wrap
    ya trae overflow-x:auto para las que de plano no quepan. */
 .mi-modal__body .tbl{width:max-content;min-width:100%;font-size:12px}
-.mi-modal__body .tbl thead th{padding:11px 13px;background:linear-gradient(180deg,#49231F 0%,#321816 100%);font-size:9px;letter-spacing:.075em}
+.mi-modal__body .tbl thead th{padding:11px 13px;background:#f8f3ee;color:var(--du-text);font-size:11px;letter-spacing:.04em}
 .mi-modal__body .tbl tbody tr:nth-child(even){background:#FFF9F5}
 .mi-modal__body .tbl tbody tr:hover{background:#FFF0EB}
 .mi-modal__body .tbl tbody td{padding:10px 13px;white-space:nowrap}
 .mi-modal__body .tbl th:first-child,.mi-modal__body .tbl td:first-child{position:sticky;left:0;z-index:1;min-width:180px;max-width:260px}
-.mi-modal__body .tbl th:first-child{z-index:3;background:#49231F}
+.mi-modal__body .tbl th:first-child{z-index:3;background:#f8f3ee}
 .mi-modal__body .tbl td:first-child{background:#fff;font-weight:700;white-space:normal;box-shadow:8px 0 14px -14px rgba(45,11,12,.65)}
 .mi-modal__body .tbl tbody tr:nth-child(even) td:first-child{background:#FFF9F5}
 .mi-modal__body .tbl tbody tr:hover td:first-child{background:#FFF0EB}
@@ -333,7 +325,7 @@ body.mi-modal-open{overflow:hidden}
 
 .tbl-wrap{overflow-x:auto;max-height:220px;overflow-y:auto;scrollbar-width:thin;border-radius:10px;border:1px solid var(--mt-line)}
 .tbl{width:100%;border-collapse:collapse;font-size:11px}
-.tbl thead th{position:sticky;top:0;z-index:2;background:#3B2A24;color:#fff;padding:6px 9px;text-align:left;font-size:8.5px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;white-space:nowrap}
+.tbl thead th{position:sticky;top:0;z-index:2;background:#f8f3ee;color:var(--du-text);padding:8px 9px;text-align:left;font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap}
 .tbl tbody tr{border-bottom:1px solid var(--mt-line)}
 .tbl tbody tr:last-child{border-bottom:none}
 .tbl tbody tr:hover{background:rgba(255,255,255,.7)}
@@ -374,9 +366,9 @@ body.mi-modal-open{overflow:hidden}
 .ficha-treo__row--wide span:last-child{font-weight:700}
 
 @media(max-width:720px){
-  .page{padding:10px 10px 30px}
-  .mt-hero{padding:15px 16px!important}
-  .mt-hero h1{font-size:1.35rem!important}
+  body.rh-unified .page{padding:10px 10px 30px}
+  body.rh-unified .mt-hero{padding:15px 16px}
+  body.rh-unified .mt-hero h1{font-size:1.8rem}
   .mi-tienda-page .mt-picker{top:6px;width:100%;padding:9px;margin-bottom:12px}
   .mt-picker__label{width:100%}
   .ficha__grid{grid-template-columns:1fr;padding:12px}

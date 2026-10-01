@@ -110,7 +110,7 @@ SPIN, Premia, Cruzada Andatti, Venta Sugerida, Banner y MEP contra meta, por tie
 
 ## Inventarios
 
-`dashboards/inventarios.html` · `css/inventarios.css`, `js/inventarios.js`
+`dashboards/inventarios.html` · `css/inventarios-visual.css`, `js/inventarios.js`
 
 Resultados de Inventario: merma, venta sin TAE, inventarios y focos por tienda y asesor comercial. Se actualiza desde el panel admin con `.xlsm` y conserva historico por periodo.
 

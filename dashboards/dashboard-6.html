@@ -12,116 +12,15 @@
   <link rel="apple-touch-icon" href="../assets/favicon.png"/>
   <link rel="stylesheet" href="../css/global.css?v=94b1e55a"/>
   <script defer src="../assets/vendor/chart.umd.min.js?v=94b1e55a"></script>
-<style>
-.page{max-width:1500px;margin:0 auto;padding:18px 20px 36px}
-.hero-download-link{ text-decoration:none !important; cursor:pointer; }
-
-.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
-.card{background:var(--color-surface);border-radius:14px;padding:20px;box-shadow:var(--shadow-card)}
-.card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--color-border)}
-.card-title{font-family:var(--font-display);font-size:1rem;font-weight:700;color:var(--color-dark)}
-.card-badge{font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;background:var(--color-bg);color:var(--color-gray)}
-
-/* Grid rows */
-.row2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px}
-.row2-wide{display:grid;grid-template-columns:1.2fr 0.8fr;gap:14px;margin-bottom:16px}
-.chart-wrap{position:relative}
-.chart-md{height:260px}
-.chart-lg{height:320px}
-
-/* Ranking */
-.rank-item{display:grid;grid-template-columns:24px 1fr auto;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--color-border)}
-.rank-item:last-child{border-bottom:none}
-.rank-num{font-family:var(--font-display);font-size:13px;font-weight:800;color:var(--color-gray);text-align:center}
-.rank-num.top{color:#FF6B00}
-.rank-name{font-size:12px;font-weight:600;color:var(--color-dark);margin-bottom:3px}
-.rank-sub{font-size:10px;color:var(--color-gray)}
-.rank-bar-bg{height:5px;background:var(--color-border);border-radius:3px;overflow:hidden;margin-top:4px}
-.rank-bar-fill{height:100%;border-radius:3px;transition:width .8s cubic-bezier(.4,0,.2,1)}
-.rank-val{font-family:var(--font-display);font-size:15px;font-weight:800;text-align:right;white-space:nowrap}
-
-/* dashboard-skin.css enlaza dos veces y trae un tema rojo/dorado !important
-   para .rank-num.top/.rank-bar-fill/.rank-val pensado para otros dashboards;
-   con la misma especificidad, la segunda carga gana por orden y pisa el
-   naranja que este ranking pinta inline por JS (color/background:#FF6B00).
-   Se fuerza con ID igual que en D9/D4. */
-#ranking-asesores .rank-num.top{color:#FF6B00 !important}
-#ranking-asesores .rank-bar-fill{background:#FF6B00 !important}
-#ranking-asesores .rank-val{color:#FF6B00 !important}
-
-/* Tipo pills en tabla resumen */
-.tipo-pill{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px}
-.tipo-falta    {background:#fdeaea;color:#C0393B}
-.tipo-inc      {background:#fff4e0;color:#B85000}
-.tipo-vac      {background:#e8f8f0;color:#138c3e}
-.tipo-accidente{background:#fde8ff;color:#7B1FA2}
-.tipo-permiso  {background:#e3f2fd;color:#1565C0}
-.tipo-otro     {background:#f5f5f5;color:#555}
-
-/* Tabla detalle */
-.tbl-wrap{overflow-x:auto;max-height:460px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:#FF6B00 rgba(0,0,0,.06)}
-.tbl-wrap::-webkit-scrollbar{width:5px;height:5px}
-.tbl-wrap::-webkit-scrollbar-thumb{background:#FF6B00;border-radius:3px}
-.tbl{width:100%;border-collapse:collapse;font-size:12px}
-.tbl thead th{position:sticky;top:0;z-index:2;background:#2D2D44;color:#fff;padding:9px 12px;text-align:left;font-size:10px;font-weight:700;letter-spacing:1.1px;text-transform:uppercase;white-space:nowrap;border-right:1px solid rgba(255,255,255,.1)}
-.tbl thead th:last-child{border-right:none}
-.tbl tbody tr{border-bottom:1px solid var(--color-border)}
-.tbl tbody tr:hover{background:var(--color-bg)}
-.tbl tbody td{padding:8px 12px;color:var(--color-dark);vertical-align:middle}
-.tbl td.center{text-align:center}
-
-/* State */
-.state-box{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:40px 20px;color:var(--color-gray);text-align:center}
-.spinner{width:32px;height:32px;border:3px solid var(--color-border);border-top-color:var(--color-yellow);border-radius:50%;animation:spin .7s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-
-@media(max-width:1100px){.kpis{grid-template-columns:repeat(2,1fr)}.row2,.row2-wide{grid-template-columns:1fr}}
-@media(max-width:600px){.kpis{grid-template-columns:1fr 1fr !important}.row2,.row2-wide{grid-template-columns:1fr}.chart-md{height:200px}.chart-lg{height:240px}}
-/* dashboard-skin.css trae "body:has(#ranking-asesores) .kpis.kpi-grid{grid-
-   template-columns:repeat(4,...) !important}" a max-width:1319px (parche
-   pensado para otro caso) -- el :has() con un ID adentro cuenta como
-   especificidad de ID, asi que le gana a las reglas de arriba y las
-   tarjetas KPI se quedaban en 4 columnas apretadas en vez de 2 en tablet/
-   celular. Se iguala esa misma especificidad, mismo truco ya usado para
-   D7 (row-main) en dashboard-skin.css. */
-@media(max-width:1100px){body:has(#ranking-asesores) .kpis.kpi-grid{grid-template-columns:repeat(2,1fr) !important}}
-</style>
-<style id="d6-extras">
-.hero{flex-direction:column !important;align-items:stretch !important;gap:18px}
-.hero-top{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap}
-.vac-filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px 16px;align-items:end}
-.vac-fbox{display:flex;flex-direction:column;gap:6px;min-width:0}
-.vac-fbox > label{font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,0.85)}
-.hero .filtro-select,.hero .filtro-btn{
-  width:100%;box-sizing:border-box;
-  background:rgba(255,255,255,0.14) !important;
-  border:1px solid rgba(255,255,255,0.32) !important;
-  color:#fff !important;font-weight:700;
-  border-radius:999px !important;padding:10px 16px !important;
-  transition:background .2s,color .2s,border-color .2s;
-}
-.hero .filtro-select:focus{outline:none;border-color:#fff !important}
-.hero .filtro-select option{color:#1a1a1a;background:#fff}
-.hero .filtro-btn:hover{background:#fff !important;color:var(--hb-red) !important;border-color:#fff !important}
-.hero .filtro-select,
-.hero .filtro-btn{
-  background:rgba(255,255,255,0.78) !important;
-  border-color:var(--exec-line-strong,rgba(42,27,25,0.2)) !important;
-  color:var(--exec-ink,#181112) !important;
-  -webkit-text-fill-color:var(--exec-ink,#181112) !important;
-}
-.hero h1{font-family:var(--font-display) !important;font-weight:800 !important}
-</style>
-<link rel="stylesheet" href="../css/dashboard-skin.css?v=94b1e55a"/>
-  <link rel="stylesheet" href="../css/floating-filter-layout.css?v=94b1e55a" />
-  <link rel="stylesheet" href="../css/rh-dashboard-refresh.css?v=94b1e55a" />
   <link rel="stylesheet" href="../css/rh-table-tools.css?v=94b1e55a" />
   <link rel="stylesheet" href="../css/rh-filter-summary.css?v=94b1e55a" />
+  <link rel="stylesheet" href="../css/dashboard-rh-unified.css?v=94b1e55a" />
+  <link rel="stylesheet" href="../css/dashboard-6.css?v=94b1e55a" />
   <script defer src="../js/rh-dashboard-enhancements.js?v=94b1e55a"></script>
   <script defer src="../js/rh-table-tools.js?v=94b1e55a"></script>
   <script defer src="../js/rh-filter-summary.js?v=94b1e55a"></script>
 </head>
-<body class="hr-dashboard">
+<body class="dashboard-6-page hr-dashboard rh-unified">
 <nav class="topbar">
   <div class="topbar__brand">
     <div class="topbar__logo"><img src="../assets/oxxo-logo-original.png" alt="OXXO"></div>
@@ -139,7 +38,7 @@
 <div class="page">
 
   <!-- Hero con filtros -->
-  <div class="hero hero--blue">
+  <div class="hero">
     <div class="hero-top">
       <div>
         <h1>Ausentismos Semanal</h1>
@@ -197,7 +96,7 @@
       <div class="card-head">
         <div class="card-title"><svg class="icon-inline" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></svg>Días Ausentes por Asesor<span class="info-tip" tabindex="0" data-tip="Suma de 'Días presenc./abs.' agrupada por columna Asesor, ordenado de mayor a menor."></span></div>
       </div>
-      <div id="ranking-asesores" style="max-height:360px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:#FF6B00 rgba(0,0,0,.06);padding-right:6px"><div class="state-box"><div class="spinner"></div></div></div>
+      <div id="ranking-asesores"><div class="state-box"><div class="spinner"></div></div></div>
     </div>
   </div>
 
@@ -219,7 +118,7 @@
   </div>
 
   <!-- Resumen por tipo -->
-  <div class="card" style="margin-bottom:16px">
+  <div class="card d6-stack-card">
     <div class="card-head">
       <div class="card-title"><svg class="icon-inline" viewBox="0 0 24 24" aria-hidden="true"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>Resumen por Tipo de Ausentismo<span class="info-tip" tabindex="0" data-tip="Tabla agregada por 'Denominación' con conteo de registros, días y horas totales."></span></div>
     </div>
@@ -227,7 +126,7 @@
   </div>
 
   <!-- Detalle completo -->
-  <div class="card" style="margin-bottom:16px">
+  <div class="card d6-stack-card">
     <div class="card-head">
       <div class="card-title"><svg class="icon-inline" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>Detalle Completo<span class="info-tip" tabindex="0" data-tip="Listado fila por fila de Dashboard_6_Semanal con los filtros activos aplicados (Plaza, Tienda, Función, Tipo)."></span></div>
       <span class="card-badge" id="row-count">— registros</span>

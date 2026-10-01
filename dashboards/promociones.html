@@ -12,10 +12,10 @@
   <link rel="icon" type="image/png" href="../assets/favicon.png">
   <link rel="apple-touch-icon" href="../assets/favicon.png">
   <link rel="stylesheet" href="../css/global.css?v=94b1e55a">
-  <link rel="stylesheet" href="../css/dashboard-skin.css?v=94b1e55a">
+  <link rel="stylesheet" href="../css/dashboard-rh-unified.css?v=94b1e55a">
   <link rel="stylesheet" href="../css/promociones.css?v=94b1e55a">
 </head>
-<body>
+<body class="rh-unified promociones-page">
   <nav class="topbar">
     <div class="topbar__brand">
       <div class="topbar__logo"><img src="../assets/oxxo-logo-original.png" alt="OXXO"></div>
@@ -26,8 +26,8 @@
     </div>
   </nav>
 
-  <main class="promo-page">
-    <section class="promo-hero" data-oxxo-scope-mount>
+  <main class="promo-page page">
+    <section class="promo-hero hero" data-oxxo-scope-mount>
       <div class="promo-hero__copy">
         <span class="promo-hero__eyebrow">Comercial · Plaza Oaxaca</span>
         <h1>PromosD100</h1>
@@ -36,13 +36,13 @@
       <div class="promo-hero__status" id="promo-corte"><span></span>Cargando promociones…</div>
     </section>
 
-    <section class="promo-summary" aria-label="Resumen de promociones">
+    <section class="promo-summary kpis" aria-label="Resumen de promociones">
       <article><span>Vigentes</span><strong id="count-current">—</strong></article>
       <article><span>Próximas</span><strong id="count-next">—</strong></article>
       <article><span>Categorías</span><strong id="count-categories">—</strong></article>
     </section>
 
-    <section class="promo-toolbar" aria-label="Filtros de promociones">
+    <section class="promo-toolbar filter-panel" aria-label="Filtros de promociones">
       <div class="promo-filter">
         <label for="promo-status">Mostrar</label>
         <select id="promo-status"><option value="current">Promociones vigentes</option><option value="next">Próximamente</option><option value="all">Todas las activas</option></select>

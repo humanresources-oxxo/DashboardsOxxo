@@ -11,216 +11,17 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
   <link rel="icon" type="image/png" href="../assets/favicon.png"/>
   <link rel="apple-touch-icon" href="../assets/favicon.png"/>
-  <link rel="stylesheet" href="../css/global.css?v=94b1e55a"/>
-  <style>
-  .page{max-width:1600px;margin:0 auto;padding:18px 20px 36px}
-
-  /* Hero unificado al rojo compartido del skin (igual que Dashboards 1-6). */
-  .hero{flex-direction:column !important;align-items:stretch !important;gap:20px}
-  body .hero h1{font-family:var(--font-display) !important;font-weight:800 !important;letter-spacing:-.5px !important}
-  .hero-download-link{ text-decoration:none !important; cursor:pointer; }
-  .hero-top{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap}
-  .vac-filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px 18px;align-items:end}
-  .vac-fbox{display:flex;flex-direction:column;gap:8px;min-width:0}
-  .vac-fbox > label{font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,0.92);display:flex;align-items:center;gap:6px}
-  .hero .filtro-select,.hero .filtro-btn,.hero .filtro-input{
-    width:100%;box-sizing:border-box;
-    background:rgba(255,255,255,0.97) !important;border:1px solid rgba(255,255,255,0.6) !important;
-    color:#181112 !important;-webkit-text-fill-color:#181112 !important;font-weight:700;font-family:inherit;font-size:14px;
-    border-radius:14px !important;padding:12px 16px !important;
-    box-shadow:0 6px 18px rgba(60,20,15,0.16);
-    transition:transform .15s ease,box-shadow .2s ease,border-color .2s ease;cursor:pointer;
-  }
-  .hero .filtro-select{appearance:none;-webkit-appearance:none;-moz-appearance:none;
-    background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='none' stroke='%23b3261e' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round' viewBox='0 0 24 24'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") !important;
-    background-repeat:no-repeat !important;background-position:right 14px center !important;padding-right:40px !important}
-  .hero .filtro-input{cursor:text}
-  .hero .filtro-select:hover,.hero .filtro-input:hover{transform:translateY(-1px);box-shadow:0 10px 26px rgba(60,20,15,0.22)}
-  .hero .filtro-select:focus,.hero .filtro-input:focus{outline:none;border-color:var(--hb-red,#F71926) !important;box-shadow:0 0 0 3px rgba(247,25,38,.20)}
-  .hero .filtro-select option{color:#1a1a1a;background:#fff}
-  .hero .filtro-input::placeholder{color:rgba(24,17,18,0.45)}
-  .hero .filtro-btn{background:rgba(255,255,255,0.14) !important;border:1px solid rgba(255,255,255,0.6) !important;color:#fff !important;-webkit-text-fill-color:#fff !important;font-weight:800;box-shadow:none;display:flex;align-items:center;justify-content:center;gap:6px}
-  .hero .filtro-btn:hover{background:#fff !important;color:var(--hb-red) !important;-webkit-text-fill-color:var(--hb-red) !important;border-color:#fff !important;transform:translateY(-1px);box-shadow:0 10px 24px rgba(60,20,15,0.22)}
-
-  /* KPIs */
-  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
-
-  /* Cards */
-  .card{background:var(--color-surface);border-radius:14px;padding:20px;box-shadow:var(--shadow-card)}
-  .card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--color-border)}
-  .card-title{font-family:var(--font-display);font-size:1rem;font-weight:700;color:var(--color-dark)}
-  .card-badge{font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;background:var(--color-bg);color:var(--color-gray)}
-
-  /* Layout grids */
-  .row-main{display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-bottom:16px;align-items:stretch}
-  .row2{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:16px}
-  .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:16px}
-  .row3 .card{display:flex;flex-direction:column;min-height:300px}
-  .row3 .card .card-head{flex:0 0 auto}
-  #dist-antiguedad{flex:1;display:flex;flex-direction:column;justify-content:space-evenly}
-  #dist-concepto{flex:1;overflow-y:auto;display:flex;flex-direction:column;justify-content:space-evenly}
-  #tot-estructura{flex:1;align-items:stretch}
-  .row3 .card #tot-bar{flex:0 0 auto}
-  .dbar-row{display:grid;grid-template-columns:110px 1fr 44px;align-items:center;gap:12px;margin:6px 0}
-  .dbar-lbl{font-size:14px;font-weight:700}
-  .dbar-bg{height:18px;background:var(--color-border);border-radius:9px;overflow:hidden}
-  .dbar-fill{height:100%;border-radius:9px;width:0;transition:width .8s ease}
-  .dbar-val{font-size:17px;font-weight:800;text-align:right;font-family:var(--font-display,sans-serif)}
-  .detail-card{display:flex;flex-direction:column;min-height:0}
-  .detail-card .tbl-wrap{flex:1}
-  .side-panel{display:flex;flex-direction:column;gap:14px;min-height:0;align-self:stretch}
-  .side-panel .card{flex:1;display:flex;flex-direction:column;min-height:0}
-  .side-panel .donut-wrap{flex:1;justify-content:space-between;gap:18px}
-  .side-panel #align-gauge{flex:1;display:flex;align-items:center;justify-content:center}
-  .side-panel .stat-grid{flex:0 0 auto;align-items:stretch}
-  .align-sum{display:grid;grid-template-columns:1fr 1fr;gap:8px 10px;margin:6px 4px 2px}
-  .align-sum__item{display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--color-bg,#FBF6F2);border:1px solid var(--color-border);border-radius:12px;padding:9px 13px}
-  .align-sum__lbl{font-size:11px;font-weight:700;color:var(--color-gray);letter-spacing:.02em}
-  .align-sum__val{font-family:var(--font-display,sans-serif);font-size:1.25rem;font-weight:800;line-height:1}
-
-  /* Tabla */
-  .tbl-wrap{overflow-x:auto;overflow-y:auto;max-height:480px;scrollbar-width:thin;scrollbar-color:#F71926 rgba(0,0,0,.06)}
-  .tbl-wrap::-webkit-scrollbar{width:5px;height:5px}
-  .tbl-wrap::-webkit-scrollbar-thumb{background:#F71926;border-radius:3px}
-  .tbl{width:100%;border-collapse:collapse;font-size:12px}
-  .tbl thead th{position:sticky;top:0;z-index:2;background:#2D2D44;color:#fff;padding:9px 12px;
-    text-align:left;font-size:10px;font-weight:700;letter-spacing:1.1px;text-transform:uppercase;
-    white-space:nowrap;border-right:1px solid rgba(255,255,255,.1);
-    cursor:pointer;user-select:none}
-  .tbl thead th:hover{background:#3d3d5a}
-  .tbl thead th.sort-asc::after{content:' ↑'}
-  .tbl thead th.sort-desc::after{content:' ↓'}
-  .tbl thead th:not(.sort-asc):not(.sort-desc)::after{content:' ⇅';opacity:.35}
-  .tbl tbody tr{border-bottom:1px solid var(--color-border)}
-  .tbl tbody tr:hover{background:var(--color-bg)}
-  .tbl tbody td{padding:8px 12px;color:var(--color-dark);vertical-align:middle}
-
-  /* Badges movimiento */
-  .mov-pill{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;white-space:nowrap}
-  .mov-alineada{background:#e8f8f0;color:#138c3e}
-  .mov-subir   {background:#fff4e0;color:#B85000}
-  .mov-bajar   {background:#fdeaea;color:#C0393B}
-
-  /* Rank */
-  .rank-item{display:grid;grid-template-columns:22px 1fr auto;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--color-border)}
-  .rank-item:last-child{border-bottom:none}
-  .rank-num{font-family:var(--font-display);font-size:13px;font-weight:800;color:var(--color-gray);text-align:center}
-  .rank-num.top{color:#F71926}
-  .rank-name{font-size:12px;font-weight:600;color:var(--color-dark);margin-bottom:2px}
-  .rank-sub{font-size:10px;color:var(--color-gray)}
-  .rank-bar-bg{height:5px;background:var(--color-border);border-radius:3px;overflow:hidden;margin-top:3px}
-  .rank-bar-fill{height:100%;border-radius:3px;transition:width .7s cubic-bezier(.4,0,.2,1)}
-  .rank-val{font-family:var(--font-display);font-size:14px;font-weight:800;text-align:right;white-space:nowrap}
-
-  /* Mini stat cards (movimiento mix) */
-  .stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:6px}
-  .stat-card{border-radius:12px;padding:18px 10px;text-align:center;display:flex;flex-direction:column;justify-content:center}
-  .stat-card.s{background:#e8f8f0}.stat-card.b{background:#fdeaea}.stat-card.m{background:#f5f5f5}
-  .stat-card .sv{font-family:var(--font-display);font-size:2rem;font-weight:800}
-  .stat-card.s .sv{color:#138c3e}.stat-card.b .sv{color:#C0393B}.stat-card.m .sv{color:#666}
-  .stat-card .sl{font-size:10px;font-weight:700;margin-top:2px;color:var(--color-gray)}
-
-  /* Características pills */
-  .char-pill{display:inline-block;font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;margin:1px}
-  .char-si{background:#fff4e0;color:#B85000}
-  .char-no{background:#f5f5f5;color:#888}
-  .char-madura{background:#e8f8f0;color:#138c3e}
-  .char-nueva{background:#fdeaea;color:#C0393B}
-  .char-reciente{background:#e3f2fd;color:#1565C0}
-  .char-mundialista{background:#fde8ff;color:#7B1FA2}
-
-  /* Modal detalle por tienda */
-  .d7-overlay{position:fixed;inset:0;z-index:1000;background:rgba(30,16,12,.55);display:none;align-items:center;justify-content:center;padding:28px 16px;overflow-y:auto}
-  .d7-overlay.open{display:flex}
-  .d7-modal{position:relative;width:min(900px,100%);background:var(--color-surface,#fff);border-radius:20px;box-shadow:0 30px 80px rgba(30,16,12,.4);padding:26px 28px;animation:d7In .22s ease}
-  .d7-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px 26px;align-items:start}
-  @media(max-width:700px){ .d7-grid{grid-template-columns:1fr} }
-  @keyframes d7In{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:none}}
-  .d7-close{position:absolute;top:14px;right:16px;border:0;background:var(--color-bg,#FBF6F2);width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:14px;color:var(--color-gray)}
-  .d7-close:hover{background:#F71926;color:#fff}
-  .d7-eyebrow{font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--color-gray)}
-  .d7-title{font-family:var(--font-display,sans-serif);font-size:1.5rem;font-weight:800;margin:2px 0 16px}
-  .d7-action{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:14px;font-weight:700;margin-bottom:14px}
-  .d7-recos{background:#FFFBEF;border:1px solid #F2E2B8;border-radius:14px;padding:12px 16px;margin-bottom:18px}
-  .d7-recos__title{font-size:12px;font-weight:800;letter-spacing:.04em;color:#9A6B00;margin-bottom:6px}
-  .d7-recos ul{margin:0;padding-left:18px}
-  .d7-recos li{font-size:13px;line-height:1.5;margin:3px 0;color:var(--color-dark)}
-  .d7-recos li b{font-weight:800}
-  .d7-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
-  .d7-kpi{background:linear-gradient(180deg,#fff,var(--color-bg,#FBF6F2));border:1px solid var(--color-border,#EEE3DC);border-radius:14px;padding:12px 8px;text-align:center}
-  .d7-kpi .v{font-family:var(--font-display,sans-serif);font-size:1.5rem;font-weight:800;line-height:1}
-  .d7-kpi .l{font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--color-gray);margin-top:6px}
-  .d7-tbl{width:100%;border-collapse:collapse}
-  .d7-tbl td{padding:8px 10px;border-bottom:1px solid var(--color-border,#EEE3DC);font-size:13px}
-  .d7-tbl td:first-child{font-weight:600;color:var(--color-gray)}
-  .d7-tbl td:last-child{text-align:right;font-weight:600}
-  .d7-sec{font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--color-gray);padding:10px 10px 4px}
-  @media(max-width:560px){ .d7-kpis{grid-template-columns:repeat(2,1fr)} }
-
-  /* Pagination */
-  .pag{display:flex;align-items:center;gap:8px;margin-top:12px;font-size:12px;color:var(--color-gray)}
-  .pag button{border:1px solid var(--color-border);background:var(--color-surface);border-radius:8px;padding:4px 12px;font-size:11px;cursor:pointer;color:var(--color-dark);font-family:inherit}
-  .pag button:hover{background:var(--color-bg)}
-  .pag button:disabled{opacity:.4;cursor:default}
-  .pag-info{margin:0 4px}
-
-  /* Spinner */
-  .spinner{width:28px;height:28px;border:3px solid var(--color-border);border-top-color:var(--color-yellow);border-radius:50%;animation:spin .7s linear infinite}
-  @keyframes spin{to{transform:rotate(360deg)}}
-  .state-box{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:40px 20px;color:var(--color-gray);text-align:center}
-
-  /* Donut */
-  .donut-wrap{display:flex;flex-direction:column;align-items:center;gap:14px}
-  .donut-container{position:relative;width:140px;height:140px}
-  svg.donut{transform:rotate(-90deg)}
-  .donut-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
-  .donut-center .big{font-family:var(--font-display);font-size:1.7rem;font-weight:800;color:#138c3e}
-  .donut-center .sm{font-size:10px;color:var(--color-gray);font-weight:500}
-  .donut-legend{width:100%;display:flex;flex-direction:column;gap:6px}
-  .legend-item{display:flex;align-items:center;justify-content:space-between;font-size:11px}
-  .legend-dot{width:9px;height:9px;border-radius:50%;margin-right:6px;flex-shrink:0}
-  .legend-label{display:flex;align-items:center;color:var(--color-dark)}
-  .legend-count{font-weight:700;color:var(--color-dark)}
-
-  @media(max-width:1100px){.kpis{grid-template-columns:repeat(3,1fr)}.row-main{grid-template-columns:1fr}.row2,.row3{grid-template-columns:1fr 1fr}.side-panel{grid-template-rows:auto}}
-  @media(max-width:600px){.kpis{grid-template-columns:1fr 1fr !important}.row-main,.row2,.row3{grid-template-columns:1fr !important}}
-  
-  /* D7 equal main panels */
-  .row-main{
-    align-items:stretch !important;
-  }
-  .row-main > .detail-card,
-  .row-main > .side-panel{
-    min-height:620px !important;
-    height:100% !important;
-  }
-  .row-main > .side-panel > .card{
-    min-height:620px !important;
-    height:100% !important;
-  }
-  .row-main > .detail-card .tbl-wrap{
-    min-height:0 !important;
-  }
-  @media(max-width:1100px){
-    .row-main > .detail-card,
-    .row-main > .side-panel,
-    .row-main > .side-panel > .card{
-      min-height:0 !important;
-      height:auto !important;
-    }
-  }
-</style>
-  <link rel="stylesheet" href="../css/dashboard-skin.css?v=94b1e55a"/>
-  <link rel="stylesheet" href="../css/floating-filter-layout.css?v=94b1e55a" />
-  <link rel="stylesheet" href="../css/rh-dashboard-refresh.css?v=94b1e55a" />
-  <link rel="stylesheet" href="../css/rh-table-tools.css?v=94b1e55a" />
+  <link rel="stylesheet" href="../css/global.css?v=94b1e55a"/>  <link rel="stylesheet" href="../css/rh-table-tools.css?v=94b1e55a" />
   <link rel="stylesheet" href="../css/rh-filter-summary.css?v=94b1e55a" />
+  <link rel="stylesheet" href="../css/dashboard-rh-unified.css?v=94b1e55a">
+  <link rel="stylesheet" href="../css/dashboard-7.css?v=94b1e55a">
+
   <link rel="stylesheet" href="../css/dashboard-dialogs.css?v=94b1e55a" />
   <script defer src="../js/rh-dashboard-enhancements.js?v=94b1e55a"></script>
   <script defer src="../js/rh-table-tools.js?v=94b1e55a"></script>
   <script defer src="../js/rh-filter-summary.js?v=94b1e55a"></script>
 </head>
-<body class="hr-dashboard">
+<body class="dashboard-7-page hr-dashboard rh-unified">
 <nav class="topbar">
   <div class="topbar__brand">
     <div class="topbar__logo"><img src="../assets/oxxo-logo-original.png" alt="OXXO"></div>
@@ -293,10 +94,9 @@
     <div class="card detail-card">
       <div class="card-head">
         <div class="card-title"><svg class="icon-inline" viewBox="0 0 24 24" aria-hidden="true"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>Detalle por Tienda<span class="info-tip" tabindex="0" data-tip="Listado fila por fila de Dashboard_7_Semanal con los filtros activos. Clic en una fila para ver el detalle completo."></span></div>
-        <div style="display:flex;align-items:center;gap:10px">
+        <div>
           <span class="card-badge" id="tbl-count">— tiendas</span>
-          <button type="button" id="btn-export" onclick="exportCSV()" title="Descargar la tabla filtrada en CSV"
-            style="border:1px solid var(--color-border);background:var(--color-bg);color:var(--color-dark);font-weight:700;font-size:12px;padding:7px 12px;border-radius:10px;cursor:pointer">⬇ Exportar</button>
+          <button type="button" id="btn-export" onclick="exportCSV()" title="Descargar la tabla filtrada en CSV">⬇ Exportar</button>
         </div>
       </div>
       <div class="tbl-wrap">
@@ -329,13 +129,13 @@
       <div class="card alignment-card">
         <div class="card-head"><div class="card-title"><svg class="icon-inline" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>Alineación Global<span class="info-tip" tabindex="0" data-tip="Velocímetro con el % de tiendas Alineadas y la distribución del movimiento (Alineada / Subir / Bajar) de las tiendas filtradas."></span></div></div>
         <div class="donut-wrap">
-          <div id="align-gauge" style="display:flex;justify-content:center;width:100%;padding:6px 0 4px">
+          <div id="align-gauge">
             <div class="state-box"><div class="spinner"></div></div>
           </div>
           <div class="align-sum" id="align-summary"></div>
-          <div class="stat-grid" style="margin-top:8px">
+          <div class="stat-grid">
             <div class="stat-card s"><div class="sv" id="mix-ali">—</div><div class="sl">✔ Alineada</div></div>
-            <div class="stat-card" style="background:#fff4e0"><div class="sv" id="mix-sub" style="color:#B85000">—</div><div class="sl">▲ Subir</div></div>
+            <div class="stat-card subir"><div class="sv" id="mix-sub">—</div><div class="sl">▲ Subir</div></div>
             <div class="stat-card b"><div class="sv" id="mix-baj">—</div><div class="sl">▼ Bajar</div></div>
           </div>
         </div>
@@ -350,7 +150,7 @@
     <!-- Distribución por antigüedad -->
     <div class="card">
       <div class="card-head"><div class="card-title"><svg class="icon-inline" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>Tiendas a Subir por AT<span class="info-tip" tabindex="0" data-tip="Cuenta tiendas con movimiento 'Subir' agrupadas por columna Asesor/AT."></span></div></div>
-      <div id="rank-subir" style="max-height:280px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:#F71926 rgba(0,0,0,.06);padding-right:6px">
+      <div id="rank-subir">
         <div class="state-box"><div class="spinner"></div></div>
       </div>
     </div>
@@ -358,7 +158,7 @@
     <!-- Tiendas a bajar por AT -->
     <div class="card">
       <div class="card-head"><div class="card-title"><svg class="icon-inline" viewBox="0 0 24 24" aria-hidden="true"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline><polyline points="17 18 23 18 23 12"></polyline></svg>Tiendas a Bajar por AT<span class="info-tip" tabindex="0" data-tip="Cuenta tiendas con movimiento 'Bajar' agrupadas por columna Asesor/AT."></span></div></div>
-      <div id="rank-bajar" style="max-height:280px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:#F71926 rgba(0,0,0,.06);padding-right:6px">
+      <div id="rank-bajar">
         <div class="state-box"><div class="spinner"></div></div>
       </div>
     </div>
@@ -366,7 +166,7 @@
     <!-- Top tiendas con mayor brecha -->
     <div class="card">
       <div class="card-head"><div class="card-title"><svg class="icon-inline" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>Mayor Brecha (Activos vs TREO)<span class="info-tip" tabindex="0" data-tip="Tiendas ordenadas por la diferencia absoluta entre Activos y TREO. Clic para ver el detalle."></span></div></div>
-      <div id="rank-brecha" style="max-height:280px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:#F71926 rgba(0,0,0,.06);padding-right:6px">
+      <div id="rank-brecha">
         <div class="state-box"><div class="spinner"></div></div>
       </div>
     </div>
@@ -381,16 +181,16 @@
     </div>
     <div class="card">
       <div class="card-head"><div class="card-title"><svg class="icon-inline" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.59 13.41L13.42 20.58a2 2 0 0 1-2.83 0L2.59 12.58a2 2 0 0 1 0-2.83L9.76 2.58A2 2 0 0 1 11.17 2H18a2 2 0 0 1 2 2v6.83a2 2 0 0 1-.59 1.41z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>Mix por Concepto<span class="info-tip" tabindex="0" data-tip="Conteo de tiendas filtradas agrupadas por Concepto de tienda."></span></div></div>
-      <div id="dist-concepto" style="max-height:240px;overflow-y:auto"><div class="state-box"><div class="spinner"></div></div></div>
+      <div id="dist-concepto"><div class="state-box"><div class="spinner"></div></div></div>
     </div>
     <div class="card">
       <div class="card-head"><div class="card-title"><svg class="icon-inline" viewBox="0 0 24 24" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>Totales de Estructura<span class="info-tip" tabindex="0" data-tip="Suma de SAP, TREO y Activos de las tiendas filtradas."></span></div></div>
-      <div class="stat-grid" id="tot-estructura" style="margin-top:4px">
+      <div class="stat-grid" id="tot-estructura">
         <div class="stat-card m"><div class="sv" id="tot-sap">—</div><div class="sl">SAP</div></div>
         <div class="stat-card s"><div class="sv" id="tot-treo">—</div><div class="sl">TREO</div></div>
-        <div class="stat-card" style="background:#eef4ff"><div class="sv" id="tot-act" style="color:#1D4ED8">—</div><div class="sl">Activos</div></div>
+        <div class="stat-card active"><div class="sv" id="tot-act">—</div><div class="sl">Activos</div></div>
       </div>
-      <div id="tot-bar" style="margin-top:14px"></div>
+      <div id="tot-bar"></div>
     </div>
   </div>
 
