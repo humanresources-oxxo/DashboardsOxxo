@@ -1290,7 +1290,49 @@ function showError(containerId, mensaje) {
       <div class="state-box__title">No pudimos conectar con los datos</div>
       <div class="state-box__text">${escapeAttr(mensaje || 'Google Sheets no respondió. La información no fue modificada.')}</div>
       <button type="button" class="state-box__retry" data-oxxo-retry>Reintentar carga</button>
+      <div class="state-box__juego" data-oxxo-juego-zona>
+        <button type="button" class="state-box__juego-abrir" data-oxxo-juego>Mientras tanto, apila cajas</button>
+      </div>
     </div>`;
+  montarJuegoDeEspera(el);
+}
+
+// El juego de la espera: aparece en la caja de error, el momento en que no
+// hay nada mas que hacer. No lee datos, asi que funciona justo cuando nada
+// mas funciona. Se carga solo si alguien lo pide: quien nunca pierda la
+// conexion no descarga un byte de mas.
+//
+// Una sola oferta por pagina. showError() se llama por contenedor, y un
+// tablero caido levanta cuatro o cinco cajas de error: repetir el boton en
+// todas lo convertia en ruido. Ademas se descarta cualquier caja demasiado
+// angosta (una columna de grafica mide ~220px), donde el juego no cabria.
+const JUEGO_ANCHO_MINIMO = 280;
+let juegoYaOfrecido = false;
+
+function montarJuegoDeEspera(contenedor) {
+  const abrir = contenedor.querySelector('[data-oxxo-juego]');
+  const zona = contenedor.querySelector('[data-oxxo-juego-zona]');
+  if (!abrir || !zona) return;
+
+  if (juegoYaOfrecido) { zona.remove(); return; }
+  // Se mide en el frame siguiente: recien insertado, el ancho todavia es 0.
+  requestAnimationFrame(() => {
+    if (juegoYaOfrecido || zona.getBoundingClientRect().width < JUEGO_ANCHO_MINIMO) { zona.remove(); return; }
+    juegoYaOfrecido = true;
+  });
+  abrir.addEventListener('click', () => {
+    abrir.remove();
+    const hueco = document.createElement('div');
+    zona.appendChild(hueco);
+    const arrancar = () => window.OXXO_JUEGO && window.OXXO_JUEGO.montar(hueco);
+    if (window.OXXO_JUEGO) { arrancar(); return; }
+    const script = document.createElement('script');
+    // Ruta relativa a la pagina: los tableros cuelgan de /dashboards/.
+    script.src = (location.pathname.includes('/dashboards/') ? '../' : '') + 'js/juego-cajas.js';
+    script.onload = arrancar;
+    script.onerror = () => { zona.textContent = 'No se pudo cargar el juego.'; };
+    document.head.appendChild(script);
+  }, { once: true });
 }
 
 // ─────────────────────────────────────────────────────────────
