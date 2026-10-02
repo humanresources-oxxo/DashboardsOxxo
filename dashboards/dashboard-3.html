@@ -306,8 +306,6 @@ function gn(row,map,k){
 // Corrige columnas de % que vienen con doble escala (ej. celda formateada como porcentaje
 // pero con el valor ya multiplicado por 100 en el sheet, dando 9341% en vez de 93.41%).
 function normalizePct(v){ return (v>150) ? v/100 : v; }
-
-function ecColorHex(pct){ if(pct>=0.95)return'#1DB954'; if(pct>=0.80)return'#B8960C'; return'#D92B2B'; }
 function ecColor(pct){if(pct>=0.95)return'verde';if(pct>=0.80)return'amarillo';return'rojo';}
 function statusText(e){return String(e||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();}
 function isCritica(e){const s=statusText(e);return s.includes('crit');}
@@ -319,8 +317,6 @@ function shortName(s){
   return String(s||'').trim().split(/\s+/).slice(0,2)
     .map(w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join(' ');
 }
-function ecPill(pct,label){const c=ecColor(pct);return`<span class="ec-pill ${c}"><span class="ec-dot"></span>${label}</span>`;}
-
 function renderEstatusDistribution(completas, incompletas, criticas, total){
   const canvas = document.getElementById('chart-dona');
   if(!canvas || !window.Chart) return;
@@ -951,14 +947,13 @@ function amWireSort(){
   });
 }
 let MODAL_CHARTS = [];
-// Semantica, foco y Escape: js/dashboard-dialogs.js. closeAsesorModal se
-// conserva como adaptador; las graficas se destruyen al cerrar por cualquier via.
+// Semantica, foco, Escape y cierre: js/dashboard-dialogs.js. Las graficas se
+// destruyen al cerrar por cualquier via mediante onClose: destroyModalCharts.
 function destroyModalCharts(){
   MODAL_CHARTS.forEach(c=>{ try{c.destroy();}catch(e){} });
   MODAL_CHARTS = [];
 }
 const dlgAsesor = OXXO_DIALOGS.register({ overlay:'asesor-modal', title:'asesor-modal-title', close:'.am-close', onClose: destroyModalCharts });
-function closeAsesorModal(){ destroyModalCharts(); dlgAsesor.close(); }
 function openAsesorModal(asesorName){
   const at = AT_DATA.find(a=>a.asesor===asesorName);
   if(!at) return;
@@ -1048,12 +1043,6 @@ let selectedAsesorValues = null;
 let asesorOptionsData = [];
 function uniqueSorted(data, key){
   return [...new Set(data.map(r=>String(r[key]||'').trim()).filter(Boolean))].sort();
-}
-function fillSelect(id, values){
-  const sel = document.getElementById(id); if(!sel) return;
-  const first = sel.querySelector('option');
-  sel.innerHTML = ''; sel.appendChild(first);
-  values.forEach(v=>{ const o=document.createElement('option'); o.value=v; o.textContent=v; sel.appendChild(o); });
 }
 function escHtml(v){ return String(v ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch])); }
 function selectedAsesores(){ return selectedAsesorValues ? [...selectedAsesorValues] : []; }

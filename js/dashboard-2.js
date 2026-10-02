@@ -53,8 +53,6 @@ function val(row, cols, key, fallback=''){ const k=cols[key]; const v=k ? row[k]
 function num(v){ const n = Number(String(v??'').replace(/[$,%]/g,'').replace(/,/g,'').trim()); return Number.isFinite(n) ? n : 0; }
 function countBy(data, getter){ const o={}; data.forEach(r=>{const k = getter(r) || 'Sin dato'; o[k]=(o[k]||0)+1;}); return o; }
 function topEntries(obj, limit=15){ return Object.entries(obj).map(([label,total])=>({label,total})).sort((a,b)=>b.total-a.total).slice(0,limit); }
-function uniq(data, getter, limit=8){ return [...new Set(data.map(getter).filter(Boolean))].slice(0,limit); }
-function chipHTML(values){ return values.length ? values.map(v=>`<span class="chip-orange">${OXXO.truncate(String(v),22)}</span>`).join('') : '<span class="chip-orange">—</span>'; }
 const MONTH_ABBR = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
 const MONTH_MAP = {
   ene:1, enero:1, jan:1, january:1,
@@ -658,66 +656,6 @@ function compPillClass(bajas){
   return 'bad';
 }
 
-function renderCompromisoChart(items,totalBajas,totalComp,totalDesfase){
-  const summary=document.getElementById('compromiso-summary');
-  if(summary) summary.innerHTML=`<span><b>${totalBajas}</b> bajas reales</span><span class="is-meta"><b>${totalComp}</b> meta comprometida</span><span class="is-desfase"><b>${totalDesfase > 0 ? '+' : ''}${totalDesfase}</b> desfase</span><span title="Punto lleno = bajas reales · círculo hueco = meta">● bajas reales &nbsp; ○ meta comprometida</span>`;
-  const details=document.getElementById('compromiso-details');
-  if(details){
-    details.style.setProperty('--comp-rows',String(items.length));
-    details.innerHTML=`<div class="compromiso-detail-head"><span>REAL</span><span>META</span><span>DIF.</span></div>${items.map(item=>{const diff=item.bajas-item.comp;return `<div class="compromiso-detail-row"><span>${item.bajas}</span><span class="meta">${item.comp}</span><span class="${diff>0?'up':'down'}">${diff>0?'+':''}${diff}</span></div>`;}).join('')}`;
-  }
-  const canvas=document.getElementById('chart-asesores');
-  if(!canvas || !chartReady(canvas)) return;
-  if(canvas._chartInstance) canvas._chartInstance.destroy();
-  const labels=items.map(item=>OXXO.truncate(item.nombre,30));
-  const values=items.map(item=>item.bajas);
-  const goals=items.map(item=>item.comp);
-  const colors=items.map(item=>item.bajas>item.comp?'#D91F2D':'#20A365');
-  const ceiling=Math.max(...values,...goals,1);
-  const axisMax=Math.ceil((ceiling+2)/2)*2;
-  const commitmentMarkers={
-    id:'commitmentMarkers',
-    afterDatasetsDraw(chart){
-      const {ctx,chartArea,scales}=chart;
-      const meta=chart.getDatasetMeta(0);
-      const nameX=chartArea.left-336;
-      const realX=chartArea.left-128;
-      const metaX=chartArea.left-72;
-      const diffX=chartArea.left-22;
-      ctx.save();ctx.font='800 10px Barlow, sans-serif';ctx.textBaseline='middle';ctx.textAlign='left';ctx.fillStyle='#8b756d';
-      ctx.fillText('ASESOR',nameX,chartArea.top-12);ctx.textAlign='center';ctx.fillText('BAJAS',realX,chartArea.top-12);ctx.fillText('META',metaX,chartArea.top-12);ctx.fillText('DESFASE',diffX,chartArea.top-12);
-      ctx.font='900 14px Barlow, sans-serif';
-      meta.data.forEach((bar,index)=>{
-        const pointX=Math.min(bar.x,chartArea.right-10);
-        const goalX=Math.max(chartArea.left+8,Math.min(scales.x.getPixelForValue(goals[index]),chartArea.right-10));
-        ctx.beginPath();ctx.arc(goalX,bar.y,8,0,Math.PI*2);ctx.fillStyle='rgba(255,255,255,.95)';ctx.fill();ctx.lineWidth=2.5;ctx.strokeStyle='#75645e';ctx.stroke();
-        ctx.beginPath();ctx.arc(pointX,bar.y,9,0,Math.PI*2);ctx.fillStyle=colors[index];ctx.fill();ctx.lineWidth=3;ctx.strokeStyle='rgba(255,255,255,.96)';ctx.stroke();
-        const diff=values[index]-goals[index];
-        ctx.textAlign='left';ctx.fillStyle='#4b3833';ctx.fillText(OXXO.truncate(items[index].nombre,24),nameX,bar.y);
-        ctx.textAlign='center';ctx.fillStyle='#3b2925';ctx.fillText(String(values[index]),realX,bar.y);
-        ctx.fillStyle='#75645e';ctx.fillText(String(goals[index]),metaX,bar.y);
-        ctx.fillStyle=diff>0?'#c91825':'#15945e';ctx.fillText(`${diff>0?'+':''}${diff}`,diffX,bar.y);
-      });
-      ctx.restore();
-    }
-  };
-  canvas._chartInstance=new Chart(canvas.getContext('2d'),{
-    type:'bar',
-    data:{labels,datasets:[{label:'Bajas reales',data:values,backgroundColor:colors,borderWidth:0,barThickness:6,borderRadius:4,borderSkipped:false}]},
-    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,layout:{padding:{top:28,right:32,bottom:8,left:350}},
-      onClick(_event,elements){
-        if(!elements.length)return;
-        const item=items[elements[0].index];
-        SELECTED_ASESORES=[item.full];updateAsesorLabel(BASE_BAJAS_DATA,BAJAS_COLS);
-        renderAsesorOptions(BASE_BAJAS_DATA,BAJAS_COLS,document.getElementById('asesor-search')?.value||'');
-        document.querySelectorAll('#kpi-section .kpi-card[data-kpi]').forEach(card=>card.classList.remove('active'));
-        renderBajasDashboard(applyUserFilters(BASE_BAJAS_DATA,BAJAS_COLS),BAJAS_COLS);
-      },
-      plugins:{legend:{display:false},tooltip:{backgroundColor:'#251313',titleColor:'#FFF8EE',bodyColor:'#FFF8EE',padding:12,cornerRadius:14,displayColors:false,callbacks:{title:context=>items[context[0].dataIndex].full,label:context=>{const item=items[context.dataIndex];return [`Bajas reales: ${item.bajas}`,`Meta: ${item.comp}`,`Desfase: ${item.bajas-item.comp}`];}}}},
-      scales:{x:{min:0,max:axisMax,border:{display:false},grid:{color:'rgba(128,63,38,.055)',drawTicks:false},ticks:{precision:0,color:chartTheme().text,font:{family:'Barlow',size:11,weight:'800'}},beginAtZero:true},y:{border:{display:false},grid:{display:false},ticks:{display:false}}}
-    },plugins:[commitmentMarkers]
-  });
-}
 function renderCompromiso(data, cols){
   const counts = {};
   data.forEach(r => {

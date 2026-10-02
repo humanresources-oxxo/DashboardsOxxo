@@ -44,13 +44,10 @@ body.dashboard-7-page .tbl thead th:not(.sort-asc):not(.sort-desc)::after { cont
 body.dashboard-7-page .detail-card .card-head > :last-child { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
 body.dashboard-7-page #btn-export { min-height: 36px; padding: 6px 12px; border: 1px solid var(--du-border); border-radius: 8px; background: #fff; color: var(--du-red-dark); font: 700 12px var(--font-body); cursor: pointer; }
 body.dashboard-7-page #btn-export:hover { border-color: var(--du-red); }
-body.dashboard-7-page .mov-pill, body.dashboard-7-page .char-pill { display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; white-space: nowrap; }
-body.dashboard-7-page .mov-alineada, body.dashboard-7-page .char-madura { background: #e6f5ec; color: #0f6a3c; }
-body.dashboard-7-page .mov-subir, body.dashboard-7-page .char-si { background: #fff3d6; color: #765500; }
-body.dashboard-7-page .mov-bajar, body.dashboard-7-page .char-nueva { background: #fbe9ea; color: #a91f26; }
-body.dashboard-7-page .char-no { background: #f3ede7; color: var(--du-muted); }
-body.dashboard-7-page .char-reciente { background: #e7f3f7; color: #12608f; }
-body.dashboard-7-page .char-mundialista { background: #f3ecfa; color: #684095; }
+body.dashboard-7-page .mov-pill { display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+body.dashboard-7-page .mov-alineada { background: #e6f5ec; color: #0f6a3c; }
+body.dashboard-7-page .mov-subir { background: #fff3d6; color: #765500; }
+body.dashboard-7-page .mov-bajar { background: #fbe9ea; color: #a91f26; }
 body.dashboard-7-page .rank-item { display: grid; grid-template-columns: 22px minmax(0,1fr) auto; align-items: center; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--du-border); }
 body.dashboard-7-page .rank-item:last-child { border-bottom: 0; }
 body.dashboard-7-page .rank-num { color: var(--du-muted); font-family: var(--font-display); font-size: 13px; font-weight: 800; text-align: center; }

@@ -230,22 +230,6 @@ function numParse(v){ const n = parseFloat(String(v??'').replace(/,/g,'')); retu
 function fmt$(n){ return '$'+OXXO.formatNum(numParse(n).toFixed(2)); }
 function fmtH(n){ return OXXO.formatNum(numParse(n).toFixed(2)); }
 function pct(part,total){ return total>0?((part/total)*100).toFixed(2)+'%':'0%'; }
-function semanaRank(value){
-  const v = String(value || '').trim();
-  const sem = v.match(/(?:sem|semana)\s*(\d{1,2})/i);
-  if (sem) return Number(sem[1]);
-  if (/^\d{1,2}$/.test(v)) return Number(v);
-  const nums = v.match(/\d+/g);
-  return nums ? Number(nums[nums.length - 1]) : -1;
-}
-function semanaLabel(value){ return value ? 'Sem ' + value : 'Todas las semanas'; }
-function sortSemanas(values){
-  return [...values].sort((a,b)=>{
-    const rb = semanaRank(b), ra = semanaRank(a);
-    if (rb !== ra) return rb - ra;
-    return String(b).localeCompare(String(a), 'es-MX', { numeric:true, sensitivity:'base' });
-  });
-}
 function baseForCurrentScope(){
   let data = BASE_DATA;
   if (DROP_SEMANA) data = data.filter(r => String(r[C.semana] || '') === DROP_SEMANA);
@@ -475,9 +459,8 @@ function renderAll() {
   });
 }
 
-// Semantica, foco y Escape: js/dashboard-dialogs.js (adaptador conservado).
+// Semantica, foco, Escape y cierre: js/dashboard-dialogs.js.
 const dlgAsesorTE = OXXO_DIALOGS.register({ overlay:'te-asesor-modal', title:'te-modal-title', close:'.te-modal-close' });
-function closeAsesorDetail(){ dlgAsesorTE.close(); }
 
 function openAsesorDetail(asesor){
   const rows = filteredData().filter(r => (r[C.asesor] || 'Sin Asignar') === asesor);
