@@ -405,9 +405,8 @@ function renderAll() {
   });
 }
 
-// Semantica, foco y Escape: js/dashboard-dialogs.js (adaptador conservado).
+// Semantica, foco, Escape y cierre: js/dashboard-dialogs.js.
 const dlgAsesorFS = OXXO_DIALOGS.register({ overlay:'fs-asesor-modal', title:'fs-modal-title', close:'.fs-modal-close' });
-function closeAsesorDetail(){ dlgAsesorFS.close(); }
 
 function openAsesorDetail(asesor){
   const rows = filteredData().filter(r => (r[C.asesor] || 'Sin Asignar') === asesor);

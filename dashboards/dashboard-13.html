@@ -959,10 +959,8 @@ function openColabRecord(r){
 
   dlgColab.open();
 }
-// Semantica, foco y Escape: js/dashboard-dialogs.js (adaptador conservado).
+// Semantica, foco, Escape y cierre: js/dashboard-dialogs.js.
 const dlgColab = OXXO_DIALOGS.register({ overlay:'colab-modal', title:'cm-title', close:'.am-close' });
-function closeColabModal(){ dlgColab.close(); }
-
 function applyFilters(){ DETALLE_ASESOR = null; CELDA_CALOR = null; renderAll(); }
 
 // Clic en una barra/rebanada de clasificacion (o en su leyenda) en cualquiera

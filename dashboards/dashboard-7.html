@@ -392,21 +392,6 @@ function movPill(mov){
   return `<span class="mov-pill">${esc(mov||'—')}</span>`;
 }
 
-function antPill(ant){
-  const a = (ant||'').toLowerCase();
-  if(a.includes('madura'))   return `<span class="char-pill char-madura">${ant}</span>`;
-  if(a.includes('reciente')) return `<span class="char-pill char-reciente">${ant}</span>`;
-  if(a.includes('nueva'))    return `<span class="char-pill char-nueva">${ant}</span>`;
-  return ant||'—';
-}
-
-function difCell(dif){
-  const n = Number(dif);
-  if(n > 0) return `<span style="color:#138c3e;font-weight:700">+${n}</span>`;
-  if(n < 0) return `<span style="color:#C0393B;font-weight:700">${n}</span>`;
-  return `<span style="color:var(--color-gray)">0</span>`;
-}
-
 // ─────────────────────────────────────────────────────────
 // Filtros
 function getFilters(){
@@ -713,9 +698,8 @@ function exportCSV(){
 
 // ─────────────────────────────────────────────────────────
 // Modal detalle por tienda
-// Semantica, foco y Escape: js/dashboard-dialogs.js (adaptador conservado).
+// Semantica, foco, Escape y cierre: js/dashboard-dialogs.js.
 const dlgD7 = OXXO_DIALOGS.register({ overlay:'d7-modal', title:'d7-title', close:'.d7-close' });
-function closeD7Modal(){ dlgD7.close(); }
 // Genera recomendaciones accionables según la situación de la tienda.
 function buildRecos(r){
   const sap=Number(r.est_sap)||0, treo=Number(r.est_final)||0, act=Number(r.empleados)||0, vac=Number(r.vacantes)||0;

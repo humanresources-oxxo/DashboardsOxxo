@@ -521,7 +521,7 @@ function syncAsesorSelection(){
 
 function escapeAttr(s){ return String(s||'').replace(/'/g,"\\'").replace(/"/g,'&quot;'); }
 
-// Semantica, foco y Escape: js/dashboard-dialogs.js (adaptadores conservados).
+// Semantica, foco, Escape y cierre: js/dashboard-dialogs.js.
 const dlgAsesorCap = OXXO_DIALOGS.register({ overlay:'asesor-cap-modal', title:'am-title', close:'.am-close' });
 const dlgEmpleado = OXXO_DIALOGS.register({ overlay:'empleado-modal', title:'emp-title', close:'.am-close' });
 function openAsesorCapModal(asesor){
@@ -540,8 +540,6 @@ function openAsesorCapModal(asesor){
   }).join('');
   dlgAsesorCap.open();
 }
-function closeAsesorCapModal(){ dlgAsesorCap.close(); }
-
 // Clic en una fila de "Detalle por Empleado": ficha del empleado con su
 // avance certificacion por certificacion.
 function openEmpleadoModal(idx){
@@ -582,8 +580,6 @@ function openEmpleadoModal(idx){
 
   dlgEmpleado.open();
 }
-function closeEmpleadoModal(){ dlgEmpleado.close(); }
-
 function applyFilters(){ renderAll(); }
 
 function limpiarFiltros(){

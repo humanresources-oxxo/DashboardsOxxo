@@ -29,7 +29,6 @@ body.dashboard-3-page .at-row:hover td { background: #faf5f0; }
 body.dashboard-3-page .ecat-row { border-bottom: 1px solid var(--du-border); }
 body.dashboard-3-page .ecat-row:last-child { border-bottom: 0; }
 body.dashboard-3-page .ecat-row:hover { background: #faf5f0; }
-body.dashboard-3-page .ec-pill { white-space: nowrap; }
 
 body.dashboard-3-page #tabla-at .tbl-wrap,
 body.dashboard-3-page #tabla-detalle .tbl-wrap { max-height: 560px; }

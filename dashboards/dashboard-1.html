@@ -212,7 +212,6 @@ const ALIASES = {
   dias:     ['Dias Vacantes','Días Vacantes','Dias vacantes','Días vacantes','DIAS VACANTES','Dias','Días'],
 };
 
-function cleanKey(s){return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9\/]/g,'');}
 // Delegado a core.js (OXXO.metricsFindKey): misma implementacion exacta,
 // para que dashboards y presentaciones nunca vuelvan a divergir.
 function findKey(sample,aliases){ return OXXO.metricsFindKey(sample, aliases); }
@@ -222,7 +221,6 @@ function buildMap(data){
   return m;
 }
 function gv(row,map,k,fb=''){const key=map[k];const v=key?row[key]:undefined;return(v===undefined||v===null||String(v).trim()==='')?fb:v;}
-function gn(row,map,k){const v=String(gv(row,map,k,0));const n=Number(v.replace(/[^0-9.-]/g,''));return isNaN(n)?0:n;}
 // Delegado a core.js (OXXO.metricsDiasVacantesValue): misma implementacion
 // exacta, compartida con el pipeline metricsD1Rows/metricsApplyD1Defaults
 // que usa el generador RAE.
@@ -1028,10 +1026,9 @@ function renderVacantesPorAsesorDias(allData){
   OXXO_DIALOGS.bindRows(el.querySelectorAll('tbody tr[data-asesor]'), 'Ver detalle del asesor', tr => openAsesorDiasModal(tr.dataset.asesor));
 }
 
-// Semantica, foco y Escape las resuelve js/dashboard-dialogs.js; estas dos
-// funciones se conservan como adaptadores para quien las llame en linea.
+// Semantica, foco, Escape y cierre los resuelve js/dashboard-dialogs.js;
+// solo se conserva el abridor openAsesorDiasModal() que usan las filas.
 const dlgAsesorDias = OXXO_DIALOGS.register({ overlay:'asesor-dias-modal', title:'asesor-dias-modal-title', close:'.am-close' });
-function closeAsesorDiasModal(){ dlgAsesorDias.close(); }
 function openAsesorDiasModal(asesorName){
   const v = VA_BY_ASESOR[asesorName];
   if(!v) return;

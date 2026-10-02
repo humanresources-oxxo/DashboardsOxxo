@@ -570,10 +570,8 @@ function openLiderModal(idx){
 
   dlgLider.open();
 }
-// Semantica, foco y Escape: js/dashboard-dialogs.js (adaptador conservado).
+// Semantica, foco, Escape y cierre: js/dashboard-dialogs.js.
 const dlgLider = OXXO_DIALOGS.register({ overlay:'lider-modal', title:'lm-title', close:'.am-close' });
-function closeLiderModal(){ dlgLider.close(); }
-
 function applyFilters(){ renderAll(); }
 
 function limpiarFiltros(){
