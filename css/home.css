@@ -316,6 +316,20 @@ body[data-area="rh"] .group .card::after{color:var(--red)}
 .tile--store .tile__desc{color:#634e47}
 .tile--store .tile__icon{color:#8D3C30;background:rgba(255,255,255,.45);box-shadow:inset 0 0 0 .5px rgba(141,60,48,.18)}
 .tile--store::after{color:#8D3C30}
+/* Torre de Cajas: deliberadamente el mosaico mas sobrio de los tres. Es un
+   respiro, no una herramienta de trabajo, y no debe competir con los accesos
+   a los indicadores. */
+.tile--juego{
+  color:#2b1a16;border:.5px solid rgba(130,54,38,.16);
+  background:linear-gradient(145deg,rgba(255,255,255,.50),rgba(130,54,38,.07));
+  -webkit-backdrop-filter:blur(28px) saturate(170%);backdrop-filter:blur(28px) saturate(170%);
+  box-shadow:var(--shadow-glass);
+}
+.tile--juego:hover{color:#2b1a16}
+.tile--juego .tile__kicker{color:#8a6a5e}
+.tile--juego .tile__desc{color:#6b5850}
+.tile--juego .tile__icon{color:#8a6a5e;background:rgba(255,255,255,.42);box-shadow:inset 0 0 0 .5px rgba(130,54,38,.14)}
+.tile--juego::after{color:#8a6a5e}
 
 /* ── Footer ─────────────────────────────────────────── */
 .foot{

@@ -126,6 +126,22 @@ Galeria de campañas vigentes y proximas. La pestaña `Promociones` es de **solo
 
 Consultas consolidadas: Mi Dashboard por asesor (bajas, estructura, tiempo extra, vacaciones, ausentismos, capacidades); Mi Tienda por tienda (ademas Dashboard 9, 10 FLEX, 11 e Inventarios). Sus modales usan el controlador propio de `mi-ficha-ui.js`.
 
+## Torre de Cajas (juego)
+
+`dashboards/juego.html` (`js/juego-cajas.js`). Juego de apilado en canvas, sin
+librerias ni imagenes. No lee ninguna pestana: por eso funciona justo cuando
+Google Sheets no responde.
+
+Tiene dos entradas. La primera es `dashboards/juego.html`, con su tarjeta en la
+portada. La segunda es la caja de error de `showError()` en `core.js`: cuando
+una fuente falla aparece un boton discreto que carga el juego bajo demanda, asi
+que quien nunca pierda la conexion no descarga ese archivo. Es el mismo papel
+que cumple el dinosaurio de Chrome.
+
+El record vive en `localStorage` (`oxxo-torre-cajas-record`), es decir por
+navegador. No hay identidad por persona en el sitio, asi que no existe marcador
+compartido ni se finge uno.
+
 ## Vistas consolidadas
 
 Al elegir Region TABASCO, los tableros muestran todas las plazas a la vez (los que tienen comparativo por plaza lo muestran siempre). Las lecturas por plaza piden a GViz solo las filas de esa plaza (`SCOPED_GVIZ_COLUMNS` en `js/config.js`); en region se lee la hoja completa.

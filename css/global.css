@@ -588,6 +588,27 @@ body {
   box-shadow: 0 10px 24px rgba(214, 20, 30, .2);
 }
 .state-box__retry:disabled { opacity: .65; cursor: wait; }
+/* El juego de la espera, dentro de la caja de error. Discreto: la accion
+   principal sigue siendo reintentar la carga. */
+.state-box__juego { margin-top: 14px; width: 100%; display: flex; justify-content: center; }
+.state-box__juego-abrir {
+  border: 1px solid var(--color-border, rgba(130,54,38,.18));
+  border-radius: 999px;
+  padding: 8px 15px;
+  background: transparent;
+  color: var(--color-muted, #7d6a61);
+  font: 700 12px var(--font-body);
+  cursor: pointer;
+}
+.state-box__juego-abrir:hover { background: rgba(130,54,38,.06); }
+.state-box__juego-abrir:focus-visible { outline: 2px solid var(--color-red, #D91F2D); outline-offset: 2px; }
+/* Dentro de la caja de error el juego va centrado y mas chico: aqui es un
+   acompanante de la espera, no el protagonista. Reintentar la carga sigue
+   siendo la accion principal. */
+.state-box__juego > div { width: 100%; display: flex; justify-content: center; }
+.state-box__juego .oxxo-juego__marco,
+.state-box__juego .oxxo-juego__pie,
+.state-box__juego .oxxo-juego__ayuda { max-width: 300px; }
 .connection-banner {
   position: fixed;
   z-index: 10020;
