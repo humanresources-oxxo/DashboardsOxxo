@@ -16,19 +16,101 @@ body.dashboard-3-page .kpi-card__delta.pos { color: var(--du-green); }
 body.dashboard-3-page .kpi-card__delta.neg { color: var(--du-red-dark); }
 body.dashboard-3-page .kpi-card__delta.neu { color: var(--du-muted); }
 
+/* Plaza (izq) y AT (der). Apiladas por defecto (movil/tablet); lado a lado solo
+   en >=1200px, donde las etiquetas del pastel siguen legibles. La lista de AT
+   muestra sus 12 filas completas (sin scroll interno). En desktop ambas tarjetas
+   igualan altura (align-items:stretch) y el pastel + metadatos se centran
+   verticalmente dentro de la suya (justify-content:center) para que no quede un
+   hueco al pie, sino un margen equilibrado arriba y abajo. */
 body.dashboard-3-page #plaza-ec-row { display: grid; grid-template-columns: minmax(0,1fr); gap: 12px; margin-bottom: 12px; }
 body.dashboard-3-page #plaza-ec-row > .card { display: flex; flex-direction: column; margin: 0; }
 body.dashboard-3-page #tabla-plazas,
 body.dashboard-3-page #tabla-ec-at { display: flex; flex: 1 1 auto; flex-direction: column; min-height: 0; }
 body.dashboard-3-page .d3-fullcard { margin-bottom: 12px; }
 
-body.dashboard-3-page .plaza-gauge { display: grid; gap: 8px; }
-body.dashboard-3-page .plaza-gauge > div { min-width: 0; }
+/* Aprovechamiento por Plaza: un solo pastel de porciones IGUALES (una por
+   plaza); el EC% real va en la etiqueta, no en el area. Mantiene el lenguaje
+   del dashboard: fondo blanco, bordes suaves y sombra muy ligera. */
+body.dashboard-3-page #tabla-plazas { justify-content: flex-start; gap: 12px; }
+body.dashboard-3-page .plaza-pie { display: block; width: 100%; height: auto; overflow: visible; }
+body.dashboard-3-page .plaza-pie--full { max-width: 760px; margin: 0 auto; }
+body.dashboard-3-page .plaza-pie--mini { display: none; }
+body.dashboard-3-page .plaza-pie__name { fill: var(--du-text); font-family: var(--font-display); font-size: 14px; font-weight: 700; }
+body.dashboard-3-page .plaza-pie__val { font-family: var(--font-display); font-size: 14px; font-weight: 700; }
+body.dashboard-3-page .plaza-pie__val.is-verde { fill: var(--du-green); }
+body.dashboard-3-page .plaza-pie__val.is-rojo { fill: var(--du-red-dark); }
+
+/* Porciones interactivas: al pasar el cursor o enfocar con teclado, la porcion
+   se eleva hacia afuera por su bisectriz (--tx/--ty, equivalente al hoverOffset
+   de Chart.js) y se resalta; el tooltip (JS) muestra plaza + EC% real. El area
+   sigue siendo igual entre porciones. */
+body.dashboard-3-page .plaza-pie__slice { cursor: pointer; transition: transform .18s cubic-bezier(.34,1.3,.64,1), filter .18s ease; }
+body.dashboard-3-page .plaza-pie__slice:hover,
+body.dashboard-3-page .plaza-pie__slice:focus { transform: translate(var(--tx,0), var(--ty,0)); filter: brightness(1.03); }
+body.dashboard-3-page .plaza-pie__slice:focus { outline: none; }
+body.dashboard-3-page .plaza-pie__slice:focus-visible { outline: 3px solid var(--du-accent); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) {
+  body.dashboard-3-page .plaza-pie__slice { transition: none; }
+  body.dashboard-3-page .plaza-pie__slice:hover,
+  body.dashboard-3-page .plaza-pie__slice:focus { transform: none; }
+}
+/* Tooltip (se agrega a <body>, que lleva .dashboard-3-page). pointer-events:none
+   evita parpadeo del hover. Estilo igual al tooltip de Chart.js del dashboard. */
+body.dashboard-3-page .plaza-pie__tip { position: fixed; z-index: 60; left: 0; top: 0; pointer-events: none; display: flex; flex-direction: column; gap: 2px; padding: 9px 12px; border: 1px solid var(--du-border); border-radius: 10px; background: #fff; color: var(--du-text); font: 700 12px/1.2 var(--font-body); box-shadow: var(--du-shadow); opacity: 0; transition: opacity .12s ease; }
+body.dashboard-3-page .plaza-pie__tip strong { font-family: var(--font-display); font-size: 14px; font-weight: 800; }
+body.dashboard-3-page .plaza-pie__tip span { color: var(--du-muted); font-weight: 700; }
+
+/* Leyenda: oculta en desktop (el pastel ya trae etiquetas), visible en movil.
+   Siempre en el DOM: es la fuente del title que lee la exportacion a Excel. */
+body.dashboard-3-page .plaza-legend { display: none; margin: 10px 0 0; padding: 0; list-style: none; }
+body.dashboard-3-page .plaza-legend__item { display: grid; grid-template-columns: auto minmax(0,1fr) auto; align-items: center; gap: 10px; padding: 6px 2px; border-bottom: 1px solid var(--du-border); }
+body.dashboard-3-page .plaza-legend__item:last-child { border-bottom: 0; }
+body.dashboard-3-page .plaza-legend__dot { width: 12px; height: 12px; border-radius: 3px; }
+body.dashboard-3-page .plaza-legend__name { min-width: 0; overflow: hidden; color: var(--du-text); font-size: 13px; font-weight: 700; white-space: nowrap; text-overflow: ellipsis; }
+body.dashboard-3-page .plaza-legend__val { font-family: var(--font-display); font-size: 14px; font-weight: 800; }
+body.dashboard-3-page .plaza-legend__val.is-verde { color: var(--du-green); }
+body.dashboard-3-page .plaza-legend__val.is-rojo { color: var(--du-red-dark); }
+
+body.dashboard-3-page .plaza-caption { margin: 8px 0 0; color: var(--du-muted); font-size: 12.5px; font-weight: 600; text-align: center; }
+body.dashboard-3-page .plaza-meta { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px 18px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--du-border); color: var(--du-muted); font-size: 12px; font-weight: 700; }
+body.dashboard-3-page .plaza-meta__item { display: inline-flex; align-items: center; gap: 6px; }
+body.dashboard-3-page .plaza-meta__dot { width: 10px; height: 10px; border-radius: 999px; background: var(--du-green); }
+body.dashboard-3-page .plaza-meta__upd { flex-basis: 100%; justify-content: center; color: var(--du-muted); font-weight: 600; }
+
+body.dashboard-3-page .plaza-summary { margin-top: 12px; padding: 10px 12px; border: 1px solid var(--du-border); border-radius: 12px; background: var(--du-soft); }
+body.dashboard-3-page .plaza-summary__head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 10px; margin: 0; color: var(--du-muted); font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+body.dashboard-3-page .plaza-summary__head-note { color: var(--du-text); font-size: 11px; font-weight: 700; letter-spacing: 0; text-transform: none; }
+body.dashboard-3-page .plaza-summary__items { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 8px; }
+body.dashboard-3-page .plaza-summary__item { min-width: 0; padding: 9px 10px; border: 1px solid var(--du-border); border-radius: 10px; background: var(--du-card); }
+body.dashboard-3-page .plaza-summary__label { display: block; overflow: hidden; color: var(--du-muted); font-size: 11px; font-weight: 700; white-space: nowrap; text-overflow: ellipsis; }
+body.dashboard-3-page .plaza-summary__value { display: block; margin-top: 3px; overflow: hidden; color: var(--du-text); font-family: var(--font-display); font-size: 16px; font-weight: 800; white-space: nowrap; text-overflow: ellipsis; }
+body.dashboard-3-page .plaza-summary__note { display: block; margin-top: 2px; overflow: hidden; color: var(--du-muted); font-size: 10.5px; font-weight: 600; white-space: nowrap; text-overflow: ellipsis; }
+body.dashboard-3-page .plaza-summary__bars { display: grid; gap: 6px; margin-top: 8px; padding-top: 9px; border-top: 1px solid var(--du-border); }
+body.dashboard-3-page .plaza-summary__bar-row { display: grid; grid-template-columns: 92px minmax(0,1fr) 58px; align-items: center; gap: 8px; }
+body.dashboard-3-page .plaza-summary__bar-label { overflow: hidden; color: var(--du-text); font-size: 11px; font-weight: 700; white-space: nowrap; text-overflow: ellipsis; }
+body.dashboard-3-page .plaza-summary__bar-track { position: relative; height: 7px; overflow: visible; border-radius: 99px; background: #e9e1da; }
+body.dashboard-3-page .plaza-summary__bar-fill { display: block; height: 100%; border-radius: inherit; background: var(--plaza-color); }
+body.dashboard-3-page .plaza-summary__bar-meta { position: absolute; top: -3px; bottom: -3px; left: 92.5%; width: 2px; border-radius: 2px; background: var(--du-text); opacity: .45; }
+body.dashboard-3-page .plaza-summary__bar-value { color: var(--du-text); font-family: var(--font-display); font-size: 12px; font-weight: 800; text-align: right; }
+body.dashboard-3-page .plaza-summary__legend { display: flex; align-items: center; gap: 6px; margin-top: 8px; color: var(--du-muted); font-size: 10.5px; font-weight: 600; }
+body.dashboard-3-page .plaza-summary__legend-mark { width: 2px; height: 12px; border-radius: 2px; background: var(--du-text); opacity: .45; }
+
+@media (max-width: 699px) {
+  body.dashboard-3-page .plaza-pie--full { display: none; }
+  body.dashboard-3-page .plaza-pie--mini { display: block; max-width: 280px; margin: 0 auto; }
+  body.dashboard-3-page .plaza-legend { display: grid; gap: 2px; }
+  body.dashboard-3-page .plaza-summary__items { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  body.dashboard-3-page .plaza-summary__bar-row { grid-template-columns: 82px minmax(0,1fr) 54px; gap: 6px; }
+}
 body.dashboard-3-page .at-row { color: var(--du-text); cursor: pointer; }
 body.dashboard-3-page .at-row:hover td { background: #faf5f0; }
 body.dashboard-3-page .ecat-row { border-bottom: 1px solid var(--du-border); }
 body.dashboard-3-page .ecat-row:last-child { border-bottom: 0; }
 body.dashboard-3-page .ecat-row:hover { background: #faf5f0; }
+/* En escritorio la tarjeta de AT comparte altura con la de Plaza. Reparte el
+   espacio disponible entre sus 12 filas para que el pie no quede separado. */
+body.dashboard-3-page .ecat-rows { flex: 1 1 auto; }
+body.dashboard-3-page .ecat-row { flex: 1 1 0; min-height: 0; }
 
 body.dashboard-3-page #tabla-at .tbl-wrap,
 body.dashboard-3-page #tabla-detalle .tbl-wrap { max-height: 560px; }
@@ -80,8 +162,14 @@ body.dashboard-3-page .am-empty-msg { padding: 20px; color: var(--du-muted); tex
 }
 @media (min-width: 1024px) {
   body.dashboard-3-page .hero .vac-filters { grid-template-columns: minmax(220px,1fr) minmax(200px,.8fr) minmax(300px,1.15fr); }
-  body.dashboard-3-page #plaza-ec-row { grid-template-columns: minmax(340px,1.3fr) minmax(300px,.9fr); }
   body.dashboard-3-page .charts-row { grid-template-columns: minmax(0,1fr); }
+}
+/* Desktop: Plaza (izq, ~1.2) junto a AT (der, ~1), ambas de la misma altura
+   (align-items:stretch). La lista de AT muestra sus 12 filas sin scroll y marca
+   la altura; la tarjeta de plaza la iguala y centra el pastel + metadatos
+   (justify-content:center en #tabla-plazas) para repartir el espacio sobrante. */
+@media (min-width: 1200px) {
+  body.dashboard-3-page #plaza-ec-row { grid-template-columns: minmax(0,1.2fr) minmax(0,1fr); align-items: stretch; }
 }
 
 @media (max-width: 560px) {

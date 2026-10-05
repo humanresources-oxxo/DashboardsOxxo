@@ -102,7 +102,7 @@
   <div id="plaza-ec-row">
     <div class="card d3-fullcard">
       <div class="card-head">
-        <div class="card-title">Aprovechamiento por Plaza<span class="info-tip" tabindex="0" data-tip="Promedio de '% Aprovechamiento' agrupado por columna Plaza, en la semana seleccionada."></span></div>
+        <div class="card-title">Aprovechamiento por Plaza<span class="info-tip" tabindex="0" data-tip="EC% por plaza (Equipo Completo ÷ Total tiendas) calculado sobre todas las tiendas de cada plaza. Es independiente de los filtros y de la semana seleccionada. Cada porción del pastel es una plaza (todas del mismo tamaño); el porcentaje de la etiqueta es el EC% real de esa plaza. La meta es 92.5%."></span></div>
       </div>
       <div id="tabla-plazas">
         <div class="state-box"><div class="spinner"></div></div>
@@ -576,9 +576,138 @@ async function initDashboard(){
 // Dashboard_3_Diario (ej. una plaza sin base por tienda todavia) -- antes,
 // ese caso cortaba initDashboard() antes de siquiera intentar dibujar este
 // comparativo, dejandolo en spinner eterno.
+// Paleta categorica (una por plaza): colores distintos y compatibles con el
+// tema OXXO. El color SOLO identifica la plaza; NO codifica el EC% -- todas las
+// porciones del pastel miden lo mismo a proposito (ver d3BuildPie).
+const D3_PLAZA_COLORS = ['#d65f6b','#d69b32','#579b75','#568eb9','#8968b9'];
+
+// Pastel plano de porciones IGUALES (una por plaza). El EC% NO se mapea al
+// area: es solo etiqueta. Con opts.callouts agrega etiquetas externas (nombre
+// + EC%) con lineas guia, repartidas por lado -- version desktop. Sin callouts
+// entrega solo el pastel para movil; la leyenda HTML muestra los valores.
+function d3BuildPie(plazaData, opts){
+  const o = Object.assign({ W:760, H:372, cx:380, cy:184, rx:190, ry:145, explode:5, callouts:false }, opts);
+  const n = plazaData.length;
+  const sliceAng = (Math.PI*2) / n;
+  const uid = o.callouts ? 'full' : 'mini';
+  const pt = (cx,cy,a) => [cx + o.rx*Math.cos(a), cy + o.ry*Math.sin(a)];
+  const arcPath = (cx,cy,a0,a1) => {
+    const [x0,y0] = pt(cx,cy,a0), [x1,y1] = pt(cx,cy,a1);
+    const large = (a1-a0) > Math.PI ? 1 : 0;
+    return `M${cx.toFixed(1)} ${cy.toFixed(1)}L${x0.toFixed(1)} ${y0.toFixed(1)}A${o.rx} ${o.ry} 0 ${large} 1 ${x1.toFixed(1)} ${y1.toFixed(1)}Z`;
+  };
+  // Elevacion discreta al pasar/enfocar (se suma al explode via CSS --tx/--ty).
+  const hlift = o.callouts ? 6 : 4;
+  const slices = plazaData.map((p,i) => {
+    const a0 = -Math.PI/2 + i*sliceAng, a1 = a0 + sliceAng, bis = a0 + sliceAng/2;
+    return { p, i, a0, a1, bis,
+      ox: o.explode*Math.cos(bis),
+      oy: o.explode*Math.sin(bis)*(o.ry/o.rx),
+      tx: hlift*Math.cos(bis),
+      ty: hlift*Math.sin(bis)*(o.ry/o.rx),
+      color: D3_PLAZA_COLORS[i % D3_PLAZA_COLORS.length] };
+  });
+  const full = n === 1; // una sola plaza: circulo completo, no un arco degenerado
+  // Atributos que hacen cada porcion interactiva: foco por teclado, aria-label y
+  // los datos que lee el tooltip. Una sola plaza no tiene bisectriz util, asi que
+  // no se desplaza (solo resalta).
+  const slcAttrs = s => {
+    const ec = s.p.aprov.toFixed(2);
+    const lx = full ? 0 : s.tx.toFixed(1), ly = full ? 0 : s.ty.toFixed(1);
+    return `class="plaza-pie__slice" tabindex="0" role="img" aria-label="${escHtml(String(s.p.plaza).toUpperCase())}, EC ${ec} por ciento" `
+      + `data-plaza="${escHtml(String(s.p.plaza))}" data-ec="${ec}" style="--tx:${lx}px;--ty:${ly}px"`;
+  };
+  let tops = '';
+  slices.forEach(s => {
+    const cx = o.cx + s.ox, cy = o.cy + s.oy;
+    if(full){
+      tops += `<ellipse ${slcAttrs(s)} cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" rx="${o.rx}" ry="${o.ry}" fill="${s.color}" stroke="#fff" stroke-width="1.5"/>`;
+    } else {
+      tops += `<path ${slcAttrs(s)} d="${arcPath(cx, cy, s.a0, s.a1)}" fill="${s.color}" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/>`;
+    }
+  });
+  let callouts = '';
+  if(o.callouts){
+    const boxW = 150, boxH = 44;
+    const items = slices.map(s => {
+      const cx = o.cx + s.ox, cy = o.cy + s.oy;
+      return { s,
+        ax: cx + o.rx*Math.cos(s.bis), ay: cy + o.ry*Math.sin(s.bis),
+        bx: cx + (o.rx+16)*Math.cos(s.bis), by: cy + (o.ry+14)*Math.sin(s.bis),
+        side: Math.cos(s.bis) >= -0.05 ? 'R' : 'L', ty: cy + (o.ry+20)*Math.sin(s.bis) };
+    });
+    // Reparte verticalmente las cajas de cada lado para que no se encimen ni se
+    // salgan del viewBox (asi no hay etiquetas recortadas al escalar el SVG).
+    ['L','R'].forEach(side => {
+      const col = items.filter(it => it.side===side).sort((a,b) => a.ty-b.ty);
+      let prev = -Infinity;
+      col.forEach(it => {
+        let ty = Math.max(it.ty, prev + boxH + 12);
+        ty = Math.min(ty, o.H - boxH/2 - 6);
+        ty = Math.max(ty, boxH/2 + 6);
+        it.ty = ty; prev = ty;
+      });
+    });
+    callouts = items.map(it => {
+      const s = it.s, right = it.side==='R';
+      const boxX = right ? o.W - boxW : 0;
+      const hx = right ? boxX - 6 : boxW + 6;
+      const ok = s.p.aprov >= 92.5;
+      const line = `M${it.ax.toFixed(1)} ${it.ay.toFixed(1)}L${it.bx.toFixed(1)} ${it.by.toFixed(1)}L${hx.toFixed(1)} ${it.ty.toFixed(1)}`;
+      return `<g>
+          <path d="${line}" fill="none" stroke="var(--du-border)" stroke-width="1.5"/>
+          <circle cx="${it.ax.toFixed(1)}" cy="${it.ay.toFixed(1)}" r="3" fill="${s.color}"/>
+          <rect x="${boxX}" y="${(it.ty-boxH/2).toFixed(1)}" width="${boxW}" height="${boxH}" rx="9" fill="#faf6f1" stroke="var(--du-border)"/>
+          <circle cx="${boxX+14}" cy="${it.ty.toFixed(1)}" r="6" fill="${s.color}"/>
+          <text x="${boxX+30}" y="${(it.ty-3).toFixed(1)}" class="plaza-pie__name">${escHtml(String(s.p.plaza).toUpperCase().slice(0,16))}</text>
+          <text x="${boxX+30}" y="${(it.ty+13).toFixed(1)}" class="plaza-pie__val ${ok?'is-verde':'is-rojo'}">EC ${s.p.aprov.toFixed(2)}%</text>
+        </g>`;
+    }).join('');
+  }
+  const aria = `Pastel de ${n} plazas con porciones iguales. ` +
+    plazaData.map(p => `${p.plaza} ${p.aprov.toFixed(2)} por ciento`).join(', ') + '.';
+  return `<svg class="plaza-pie ${o.callouts?'plaza-pie--full':'plaza-pie--mini'}" viewBox="0 0 ${o.W} ${o.H}" role="img" aria-label="${escHtml(aria)}">
+      <g>${tops}</g>
+      ${callouts}
+    </svg>`;
+}
+
+// Tooltip para las porciones del pastel por plaza (delegado, sobrevive al
+// re-render del SVG). Muestra plaza + EC% real; en movil aparece al tocar/enfocar
+// la porcion (no depende de hover), ademas de la leyenda HTML siempre visible.
+(function(){
+  let tip;
+  const getTip = () => tip || (tip = document.body.appendChild(
+    Object.assign(document.createElement('div'), { className: 'plaza-pie__tip' })));
+  function move(x, y){
+    const t = tip, pad = 14, w = t.offsetWidth, h = t.offsetHeight;
+    let left = x + pad, top = y - h - pad;
+    if(left + w > innerWidth - 6) left = x - w - pad;
+    if(top < 6) top = y + pad;
+    t.style.left = left + 'px'; t.style.top = top + 'px';
+  }
+  function show(s, x, y){
+    const t = getTip();
+    t.innerHTML = `<strong>${escHtml(s.dataset.plaza||'')}</strong><span>EC ${escHtml(s.dataset.ec||'')}%</span>`;
+    t.style.opacity = '1';
+    move(x, y);
+  }
+  const hide = () => { if(tip) tip.style.opacity = '0'; };
+  const slc = e => e.target.closest && e.target.closest('.plaza-pie__slice');
+  document.addEventListener('mouseover', e => { const s = slc(e); if(s) show(s, e.clientX, e.clientY); });
+  document.addEventListener('mousemove', e => { if(tip && tip.style.opacity === '1' && slc(e)) move(e.clientX, e.clientY); });
+  document.addEventListener('mouseout', e => { if(slc(e)) hide(); });
+  document.addEventListener('focusin', e => { const s = slc(e); if(s){ const r = s.getBoundingClientRect(); show(s, r.left + r.width/2, r.top + r.height/2); } });
+  document.addEventListener('focusout', e => { if(slc(e)) hide(); });
+})();
+
 function renderPlazaGauges(){
+  // Incluye plazas con EC% = 0 real (tienen base por tienda pero ninguna tienda
+  // completa): computePlazaStatsFromRows solo crea entradas con total>0, asi que
+  // filtrar por total -- no por aprov>0 -- cuenta esas plazas en la meta sin
+  // colar plazas sin datos.
   const plazaData = Object.values(PLAZA_STATS_D3)
-    .filter(v => v.aprov > 0)
+    .filter(v => v.total > 0)
     .map(v => ({ plaza: v.plaza, aprov: v.aprov }));
 
   // Respaldo: hoja manual, solo para una plaza que PLAZA_STATS_D3 no traiga
@@ -599,46 +728,62 @@ function renderPlazaGauges(){
 
   plazaData.sort((a,b) => b.aprov - a.aprov);
 
+  const META = 92.5;
+
   if(plazaData.length > 0) {
     const plazaEl = document.getElementById('tabla-plazas');
     if(plazaEl) {
-      const gauges = plazaData.map((p, i) => {
-        const v = Math.max(0, Math.min(100, p.aprov));
-        const meta = 92.5;
-        // Color alineado a la meta (92.5%): verde si cumple, ambar cerca, rojo lejos.
-        const color = p.aprov >= meta ? 'verde' : p.aprov >= 85 ? 'amarillo' : 'rojo';
-        const c = color==='verde'   ? {main:'#1DB954', dark:'#15943f', txt:'#15803D', soft:'rgba(29,185,84,.12)'}
-                : color==='amarillo'? {main:'#E8B004', dark:'#C68A00', txt:'#A87400', soft:'rgba(232,176,4,.14)'}
-                : {main:'#EF4444', dark:'#C0181F', txt:'#C0181F', soft:'rgba(239,68,68,.12)'};
-        const cx=100, cy=104, r=76, sw=15, len=Math.PI*r;
-        const dash=(len*v/100).toFixed(1);
-        const ang=Math.PI*(1 - v/100);
-        const nx=(cx+(r-6)*Math.cos(ang)).toFixed(1), ny=(cy-(r-6)*Math.sin(ang)).toFixed(1);
-        const ma=Math.PI*(1 - meta/100);
-        const m1x=(cx+(r-sw/2-1)*Math.cos(ma)).toFixed(1), m1y=(cy-(r-sw/2-1)*Math.sin(ma)).toFixed(1);
-        const m2x=(cx+(r+sw/2+3)*Math.cos(ma)).toFixed(1), m2y=(cy-(r+sw/2+3)*Math.sin(ma)).toFixed(1);
-        const gid='pz'+i;
-        return `<div class="plaza-gauge" style="flex:0 1 30%;min-width:158px;max-width:240px;display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 8px 12px;border-radius:16px;background:rgba(0,0,0,.02);transition:transform .16s ease,box-shadow .16s ease" title="${escHtml(p.plaza)}: ${p.aprov.toFixed(2)}%">
-          <svg viewBox="0 0 200 128" style="width:100%;max-width:188px;overflow:visible">
-            <defs><linearGradient id="${gid}" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="${c.main}"/><stop offset="1" stop-color="${c.dark}"/></linearGradient></defs>
-            <path d="M${cx-r},${cy} A${r},${r} 0 0 1 ${cx+r},${cy}" fill="none" stroke="#F2E6DE" stroke-width="${sw}" stroke-linecap="round"/>
-            <path d="M${cx-r},${cy} A${r},${r} 0 0 1 ${cx+r},${cy}" fill="none" stroke="url(#${gid})" stroke-width="${sw}" stroke-linecap="round" stroke-dasharray="${dash} ${len.toFixed(1)}" style="transition:stroke-dasharray 1s cubic-bezier(.4,0,.2,1)"/>
-            <line x1="${m1x}" y1="${m1y}" x2="${m2x}" y2="${m2y}" stroke="#3B1918" stroke-width="2" opacity=".5"/>
-            <line x1="${cx}" y1="${cy}" x2="${nx}" y2="${ny}" stroke="#3B1918" stroke-width="3" stroke-linecap="round" style="transition:all 1s cubic-bezier(.4,0,.2,1)"/>
-            <circle cx="${cx}" cy="${cy}" r="7" fill="#fff" stroke="#3B1918" stroke-width="2.5"/>
-            <text x="${cx}" y="92" text-anchor="middle" style="font-family:var(--font-display,sans-serif);font-weight:800;font-size:31px;fill:${c.txt}">${p.aprov.toFixed(1)}<tspan style="font-size:16px" dy="-1">%</tspan></text>
-          </svg>
-          <div style="font-weight:800;font-size:12px;letter-spacing:.04em;color:var(--color-dark);background:${c.soft};padding:4px 14px;border-radius:999px">${escHtml(p.plaza)}</div>
+      const total = plazaData.length;
+      const cumplen = plazaData.filter(p => p.aprov >= META).length;
+
+      // Leyenda (movil) y fuente del title "PLAZA: XX.XX%" que lee la
+      // exportacion a Excel (ver buildExcelSheets). Va solo aqui: asi hay
+      // exactamente una etiqueta con title por plaza, aunque la leyenda se
+      // oculte en desktop (display:none sigue en el DOM para querySelectorAll).
+      const legend = plazaData.map((p,i) => {
+        const color = D3_PLAZA_COLORS[i % D3_PLAZA_COLORS.length];
+        const ok = p.aprov >= META;
+        return `<li class="plaza-legend__item" title="${escHtml(p.plaza)}: ${p.aprov.toFixed(2)}%">
+            <span class="plaza-legend__dot" style="background:${color}"></span>
+            <span class="plaza-legend__name">${escHtml(p.plaza)}</span>
+            <span class="plaza-legend__val ${ok?'is-verde':'is-rojo'}">${p.aprov.toFixed(2)}%</span>
+          </li>`;
+      }).join('');
+
+      const actualizado = (() => {
+        const k = OTRAS_PLAZAS_D3.length ? findKey(OTRAS_PLAZAS_D3[0], ['Actualizado']) : null;
+        const val = k ? String(OTRAS_PLAZAS_D3[0][k]||'').trim() : '';
+        return val ? `<span class="plaza-meta__item plaza-meta__upd">Otras plazas actualizado: ${escHtml(val)}</span>` : '';
+      })();
+
+      const promedio = plazaData.reduce((sum,p) => sum + p.aprov, 0) / total;
+      const plazaBars = plazaData.map((p,i) => {
+        const width = Math.max(0, Math.min(p.aprov, 100)).toFixed(1);
+        const color = D3_PLAZA_COLORS[i % D3_PLAZA_COLORS.length];
+        return `<div class="plaza-summary__bar-row" style="--plaza-color:${color}">
+          <span class="plaza-summary__bar-label" title="${escHtml(p.plaza)}">${escHtml(p.plaza)}</span>
+          <span class="plaza-summary__bar-track"><span class="plaza-summary__bar-fill" style="width:${width}%"></span><span class="plaza-summary__bar-meta" title="Meta ${META}%"></span></span>
+          <strong class="plaza-summary__bar-value">${p.aprov.toFixed(2)}%</strong>
         </div>`;
       }).join('');
+
+      // Pastel plano de porciones iguales: version con etiquetas externas
+      // (desktop) + version compacta (movil, se alterna por CSS) + leyenda.
       plazaEl.innerHTML = `
-        <div style="flex:1;display:flex;align-items:center;justify-content:center;padding:6px 4px">
-          <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:14px 20px;width:100%">${gauges}</div>
+        ${d3BuildPie(plazaData, { callouts:true })}
+        ${d3BuildPie(plazaData, { callouts:false, W:240, H:206, cx:120, cy:93, rx:104, ry:84, explode:3 })}
+        <ul class="plaza-legend">${legend}</ul>
+        <p class="plaza-caption">Cada porción representa una plaza; el porcentaje de la etiqueta es su EC%</p>
+        <div class="plaza-meta">
+          <span class="plaza-meta__item"><span class="plaza-meta__dot"></span>Meta ${META}%</span>
+          <span class="plaza-meta__item">${total} plaza${total===1?'':'s'} · ${cumplen} en meta</span>
+          ${actualizado}
         </div>
-        <div style="display:flex;align-items:center;gap:6px;padding:6px 12px;font-size:11px;color:var(--color-gray)">
-          <span style="display:inline-block;width:2px;height:12px;background:var(--color-ink,#1a1a1a);opacity:.55"></span>🏁 Meta 92.5%
-          ${(() => { const k = OTRAS_PLAZAS_D3.length ? findKey(OTRAS_PLAZAS_D3[0], ['Actualizado']) : null; const v = k ? String(OTRAS_PLAZAS_D3[0][k]||'').trim() : ''; return v ? `<span style="margin-left:auto">Otras plazas actualizado: ${escHtml(v)}</span>` : ''; })()}
-        </div>`;
+        <section class="plaza-summary" aria-label="Lectura del comparativo por plaza">
+          <div class="plaza-summary__head">Lectura del comparativo <span class="plaza-summary__head-note">${cumplen} de ${total} en meta · Promedio ${promedio.toFixed(2)}%</span></div>
+          <div class="plaza-summary__bars" aria-label="Comparativo de las plazas frente a la meta">${plazaBars}</div>
+          <div class="plaza-summary__legend"><span class="plaza-summary__legend-mark"></span>Meta ${META}%</div>
+        </section>`;
     }
   } else {
     const plazaEl = document.getElementById('tabla-plazas');
@@ -797,7 +942,7 @@ function renderEcAt(){
       <div style="font-size:10px;font-weight:700;letter-spacing:1px;color:var(--color-gray);text-transform:uppercase">Avance</div>
       <div style="text-align:right;font-size:10px;font-weight:700;letter-spacing:1px;color:var(--color-gray);text-transform:uppercase">EC %</div>
     </div>
-    <div style="flex:1;display:flex;flex-direction:column;gap:1px">${rows}</div>
+    <div class="ecat-rows" style="flex:1;display:flex;flex-direction:column;gap:1px">${rows}</div>
     <div style="display:flex;align-items:center;gap:6px;padding:10px 14px 4px;font-size:11px;color:var(--color-gray)">
       <span style="display:inline-block;width:2px;height:12px;background:#3B1918;opacity:.45"></span>Meta 95%
     </div>`;

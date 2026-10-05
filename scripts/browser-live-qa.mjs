@@ -76,6 +76,7 @@ try {
   await send('Page.enable');
   await send('Runtime.enable');
   await send('Log.enable');
+  if (action === 'plazafocus') await send('Emulation.setFocusEmulationEnabled', { enabled: true });
   await send('Page.addScriptToEvaluateOnNewDocument', { source: "localStorage.setItem('oxxo_site_unlocked','1')" });
   await send('Emulation.setDeviceMetricsOverride', { width, height: 900, deviceScaleFactor: 1, mobile: false });
   await send('Page.navigate', { url: `http://127.0.0.1:${port}/${name === 'home' ? 'index.html' : `dashboards/${name}.html`}${scopeQuery}` });
@@ -91,6 +92,9 @@ try {
     smart: "() => { const button=document.querySelector('.smart-filter__button'); if(!button) return 'missing smart filter'; button.click(); return {expanded:button.getAttribute('aria-expanded'),menu:button.parentElement?.className}; }",
     selectstore: "() => { const root=document.querySelector('#mi-tienda-select,#mi-asesor-select'); if(!root) return 'missing selector'; const button=root.querySelector('.smart-filter__button'); button?.click(); const option=root.querySelector('.smart-filter__option'); if(!option) return 'missing option'; const value=option.dataset.value; option.click(); return {value,label:root.querySelector('.smart-filter__label')?.textContent}; }",
     chartspace: "() => { const panel=document.querySelector('.vac-grid-main > .panel:first-child'); const chart=panel?.querySelector('.vac-chart'); const actions=document.querySelector('.vac-grid-main > .panel:last-child'); if(!panel||!chart||!actions) return 'missing chart row'; panel.scrollIntoView({block:'start'}); const p=panel.getBoundingClientRect(),c=chart.getBoundingClientRect(),a=actions.getBoundingClientRect(); return {panelHeight:p.height,chartHeight:c.height,actionsHeight:a.height,emptyBelowChart:Math.round(p.bottom-c.bottom),chartCanvasHeight:chart.querySelector('canvas')?.getBoundingClientRect().height}; }",
+    plazachart: "() => { const chart=document.querySelector('#tabla-plazas'); const card=chart?.closest('.card'); if(!chart||!card) return 'missing plaza chart'; card.scrollIntoView({block:'start'}); const c=chart.getBoundingClientRect(),p=card.getBoundingClientRect(),at=document.querySelector('#tabla-ec-at')?.closest('.card')?.getBoundingClientRect(); return {cardWidth:Math.round(p.width),cardHeight:Math.round(p.height),atCardHeight:at&&Math.round(at.height),chartWidth:Math.round(c.width),chartHeight:Math.round(c.height),chartScrollWidth:chart.scrollWidth,chartClientWidth:chart.clientWidth,cardScrollWidth:card.scrollWidth,cardClientWidth:card.clientWidth,text:chart.innerText.slice(0,500)}; }",
+    plazahover: "() => { const pie=[...document.querySelectorAll('.plaza-pie')].find(el=>getComputedStyle(el).display!=='none'); const slice=pie?.querySelector('.plaza-pie__slice'); if(!slice) return 'missing visible pie slice'; slice.scrollIntoView({block:'center'}); const r=slice.getBoundingClientRect(); return {x:Math.round(r.left+r.width/2),y:Math.round(r.top+r.height/2),before:getComputedStyle(slice).transform,plaza:slice.dataset.plaza}; }",
+    plazafocus: "() => { const pie=[...document.querySelectorAll('.plaza-pie')].find(el=>getComputedStyle(el).display!=='none'); const slice=pie?.querySelector('.plaza-pie__slice'); if(!slice) return 'missing visible pie slice'; slice.focus(); return {focused:document.activeElement===slice,plaza:slice.dataset.plaza,tooltip:document.querySelector('.plaza-pie__tip')?.innerText,tooltipOpacity:document.querySelector('.plaza-pie__tip')?.style.opacity}; }",
     chartclick: "() => { const canvas=document.querySelector('#chart-asesores'); const chart=window.Chart?.getChart(canvas); const bar=chart?.getDatasetMeta(0).data[0]; if(!bar) return 'missing chart bar'; canvas.scrollIntoView({block:'center'}); const point=bar.getCenterPoint(),rect=canvas.getBoundingClientRect(); canvas.dispatchEvent(new MouseEvent('click',{bubbles:true,clientX:rect.left+point.x,clientY:rect.top+point.y})); return {clickedBar:true}; }",
     areacolors: "() => ['rh','comercial','administrativo'].map(area => { const button=document.querySelector(`.area-switch__button[data-area=${area}]`); button?.click(); return {area,active:button?.classList.contains('is-active'),pressed:button?.getAttribute('aria-pressed'),bodyArea:document.body.dataset.area,background:button&&getComputedStyle(button).backgroundImage,accent:button&&getComputedStyle(button).getPropertyValue('--area-color').trim()}; })",
     selectregion: "() => { const button=document.querySelector('[data-scope^=\"region|\"]'); if(!button) return 'region unavailable'; button.click(); return {selected:true}; }",
@@ -104,6 +108,13 @@ try {
     if (action === 'chartclick') {
       const modalResult = await send('Runtime.evaluate', { expression: "({modal:document.querySelector('#asesor-modal')?.className||null,advisor:document.querySelector('#asesor-modal-title')?.textContent||null})", returnByValue: true });
       actionResult = { ...actionResult, ...modalResult.result.value };
+    }
+    if (action === 'plazahover' && actionResult?.x != null) {
+      await send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'no-preference' }] });
+      await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: actionResult.x, y: actionResult.y });
+      await delay(350);
+      const hoverResult = await send('Runtime.evaluate', { expression: "(() => { const pie=[...document.querySelectorAll('.plaza-pie')].find(el=>getComputedStyle(el).display!=='none'); const slice=pie?.querySelector('.plaza-pie__slice'); const tip=document.querySelector('.plaza-pie__tip'); const rows=document.querySelector('.ecat-rows'); return {hovered:slice?.matches(':hover'),transform:slice&&getComputedStyle(slice).transform,reducedMotion:matchMedia('(prefers-reduced-motion: reduce)').matches,tx:slice&&getComputedStyle(slice).getPropertyValue('--tx'),tooltip:tip?.innerText,tooltipOpacity:tip&&getComputedStyle(tip).opacity,atRows:rows?.children.length,atOverflow:rows&&getComputedStyle(rows).overflowY,atScrollHeight:rows?.scrollHeight,atClientHeight:rows?.clientHeight}; })()", returnByValue: true });
+      actionResult = { ...actionResult, ...hoverResult.result.value };
     }
   }
   const evaluated = await send('Runtime.evaluate', {
