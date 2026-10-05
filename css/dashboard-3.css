@@ -19,9 +19,8 @@ body.dashboard-3-page .kpi-card__delta.neu { color: var(--du-muted); }
 /* Plaza (izq) y AT (der). Apiladas por defecto (movil/tablet); lado a lado solo
    en >=1200px, donde las etiquetas de las barras siguen legibles. La lista de AT
    muestra sus 12 filas completas (sin scroll interno). En desktop ambas tarjetas
-   igualan altura (align-items:stretch) y el pastel + metadatos se centran
-   verticalmente dentro de la suya (justify-content:center) para que no quede un
-   hueco al pie, sino un margen equilibrado arriba y abajo. */
+   conservan una altura independiente para que el gráfico no herede el espacio
+   vertical de la lista de AT. */
 body.dashboard-3-page #plaza-ec-row { display: grid; grid-template-columns: minmax(0,1fr); gap: 12px; margin-bottom: 12px; }
 body.dashboard-3-page #plaza-ec-row > .card { display: flex; flex-direction: column; margin: 0; }
 body.dashboard-3-page #tabla-plazas,
@@ -70,30 +69,10 @@ body.dashboard-3-page .plaza-meta__item { display: inline-flex; align-items: cen
 body.dashboard-3-page .plaza-meta__dot { width: 10px; height: 10px; border-radius: 999px; background: var(--du-green); }
 body.dashboard-3-page .plaza-meta__upd { flex-basis: 100%; justify-content: center; color: var(--du-muted); font-weight: 600; }
 
-body.dashboard-3-page .plaza-summary { margin-top: 12px; padding: 10px 12px; border: 1px solid var(--du-border); border-radius: 12px; background: var(--du-soft); }
-body.dashboard-3-page .plaza-summary__head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 10px; margin: 0; color: var(--du-muted); font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
-body.dashboard-3-page .plaza-summary__head-note { color: var(--du-text); font-size: 11px; font-weight: 700; letter-spacing: 0; text-transform: none; }
-body.dashboard-3-page .plaza-summary__items { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 8px; }
-body.dashboard-3-page .plaza-summary__item { min-width: 0; padding: 9px 10px; border: 1px solid var(--du-border); border-radius: 10px; background: var(--du-card); }
-body.dashboard-3-page .plaza-summary__label { display: block; overflow: hidden; color: var(--du-muted); font-size: 11px; font-weight: 700; white-space: nowrap; text-overflow: ellipsis; }
-body.dashboard-3-page .plaza-summary__value { display: block; margin-top: 3px; overflow: hidden; color: var(--du-text); font-family: var(--font-display); font-size: 16px; font-weight: 800; white-space: nowrap; text-overflow: ellipsis; }
-body.dashboard-3-page .plaza-summary__note { display: block; margin-top: 2px; overflow: hidden; color: var(--du-muted); font-size: 10.5px; font-weight: 600; white-space: nowrap; text-overflow: ellipsis; }
-body.dashboard-3-page .plaza-summary__bars { display: grid; gap: 6px; margin-top: 8px; padding-top: 9px; border-top: 1px solid var(--du-border); }
-body.dashboard-3-page .plaza-summary__bar-row { display: grid; grid-template-columns: 92px minmax(0,1fr) 58px; align-items: center; gap: 8px; }
-body.dashboard-3-page .plaza-summary__bar-label { overflow: hidden; color: var(--du-text); font-size: 11px; font-weight: 700; white-space: nowrap; text-overflow: ellipsis; }
-body.dashboard-3-page .plaza-summary__bar-track { position: relative; height: 7px; overflow: visible; border-radius: 99px; background: #e9e1da; }
-body.dashboard-3-page .plaza-summary__bar-fill { display: block; height: 100%; border-radius: inherit; background: var(--plaza-color); }
-body.dashboard-3-page .plaza-summary__bar-meta { position: absolute; top: -3px; bottom: -3px; left: 92.5%; width: 2px; border-radius: 2px; background: var(--du-text); opacity: .45; }
-body.dashboard-3-page .plaza-summary__bar-value { color: var(--du-text); font-family: var(--font-display); font-size: 12px; font-weight: 800; text-align: right; }
-body.dashboard-3-page .plaza-summary__legend { display: flex; align-items: center; gap: 6px; margin-top: 8px; color: var(--du-muted); font-size: 10.5px; font-weight: 600; }
-body.dashboard-3-page .plaza-summary__legend-mark { width: 2px; height: 12px; border-radius: 2px; background: var(--du-text); opacity: .45; }
-
 @media (max-width: 699px) {
   body.dashboard-3-page .plaza-bars--full { display: none; }
   body.dashboard-3-page .plaza-bars--mini { display: block; max-width: 320px; }
   body.dashboard-3-page .plaza-legend { display: none; }
-  body.dashboard-3-page .plaza-summary__items { grid-template-columns: repeat(2,minmax(0,1fr)); }
-  body.dashboard-3-page .plaza-summary__bar-row { grid-template-columns: 82px minmax(0,1fr) 54px; gap: 6px; }
   body.dashboard-3-page .plaza-bars__tick { font-size: 9px; }
   body.dashboard-3-page .plaza-bars__name { font-size: 10px; }
   body.dashboard-3-page .plaza-bars__value { font-size: 10px; }
@@ -103,8 +82,8 @@ body.dashboard-3-page .at-row:hover td { background: #faf5f0; }
 body.dashboard-3-page .ecat-row { border-bottom: 1px solid var(--du-border); }
 body.dashboard-3-page .ecat-row:last-child { border-bottom: 0; }
 body.dashboard-3-page .ecat-row:hover { background: #faf5f0; }
-/* En escritorio la tarjeta de AT comparte altura con la de Plaza. Reparte el
-   espacio disponible entre sus 12 filas para que el pie no quede separado. */
+/* En escritorio la tarjeta de AT conserva una altura cómoda para sus 12 filas;
+   la tarjeta de Plaza usa únicamente el espacio que necesita su gráfico. */
 body.dashboard-3-page .ecat-rows { flex: 1 1 auto; }
 body.dashboard-3-page .ecat-row { flex: 1 1 0; min-height: 0; }
 
@@ -165,7 +144,10 @@ body.dashboard-3-page .am-empty-msg { padding: 20px; color: var(--du-muted); tex
    la altura; la tarjeta de plaza la iguala y centra el pastel + metadatos
    (justify-content:center en #tabla-plazas) para repartir el espacio sobrante. */
 @media (min-width: 1200px) {
-  body.dashboard-3-page #plaza-ec-row { grid-template-columns: minmax(0,1.2fr) minmax(0,1fr); align-items: stretch; }
+  body.dashboard-3-page #plaza-ec-row { grid-template-columns: minmax(0,1.2fr) minmax(0,1fr); align-items: start; }
+  body.dashboard-3-page #tabla-ec-at { flex: 0 0 auto; }
+  body.dashboard-3-page .ecat-rows { flex: 0 0 auto; }
+  body.dashboard-3-page .ecat-row { flex: 0 0 auto; min-height: 48px; }
 }
 
 @media (max-width: 560px) {
