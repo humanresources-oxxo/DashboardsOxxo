@@ -17,7 +17,7 @@ body.dashboard-3-page .kpi-card__delta.neg { color: var(--du-red-dark); }
 body.dashboard-3-page .kpi-card__delta.neu { color: var(--du-muted); }
 
 /* Plaza (izq) y AT (der). Apiladas por defecto (movil/tablet); lado a lado solo
-   en >=1200px, donde las etiquetas del pastel siguen legibles. La lista de AT
+   en >=1200px, donde las etiquetas de las barras siguen legibles. La lista de AT
    muestra sus 12 filas completas (sin scroll interno). En desktop ambas tarjetas
    igualan altura (align-items:stretch) y el pastel + metadatos se centran
    verticalmente dentro de la suya (justify-content:center) para que no quede un
@@ -28,40 +28,34 @@ body.dashboard-3-page #tabla-plazas,
 body.dashboard-3-page #tabla-ec-at { display: flex; flex: 1 1 auto; flex-direction: column; min-height: 0; }
 body.dashboard-3-page .d3-fullcard { margin-bottom: 12px; }
 
-/* Aprovechamiento por Plaza: un solo pastel de porciones IGUALES (una por
-   plaza); el EC% real va en la etiqueta, no en el area. Mantiene el lenguaje
-   del dashboard: fondo blanco, bordes suaves y sombra muy ligera. */
+/* Aprovechamiento por Plaza: barras verticales con escala visible desde 85%.
+   Mantiene el lenguaje del dashboard: fondo blanco, bordes suaves y sombra
+   muy ligera. */
 body.dashboard-3-page #tabla-plazas { justify-content: flex-start; gap: 12px; }
-body.dashboard-3-page .plaza-pie { display: block; width: 100%; height: auto; overflow: visible; }
-body.dashboard-3-page .plaza-pie--full { max-width: 760px; margin: 0 auto; }
-body.dashboard-3-page .plaza-pie--mini { display: none; }
-body.dashboard-3-page .plaza-pie__name { fill: var(--du-text); font-family: var(--font-display); font-size: 14px; font-weight: 700; }
-body.dashboard-3-page .plaza-pie__val { font-family: var(--font-display); font-size: 14px; font-weight: 700; }
-body.dashboard-3-page .plaza-pie__val.is-verde { fill: var(--du-green); }
-body.dashboard-3-page .plaza-pie__val.is-rojo { fill: var(--du-red-dark); }
 
-/* Porciones interactivas: al pasar el cursor o enfocar con teclado, la porcion
-   se eleva hacia afuera por su bisectriz (--tx/--ty, equivalente al hoverOffset
-   de Chart.js) y se resalta; el tooltip (JS) muestra plaza + EC% real. El area
-   sigue siendo igual entre porciones. */
-body.dashboard-3-page .plaza-pie__slice { cursor: pointer; transition: transform .18s cubic-bezier(.34,1.3,.64,1), filter .18s ease; }
-body.dashboard-3-page .plaza-pie__slice:hover,
-body.dashboard-3-page .plaza-pie__slice:focus { transform: translate(var(--tx,0), var(--ty,0)); filter: brightness(1.03); }
-body.dashboard-3-page .plaza-pie__slice:focus { outline: none; }
-body.dashboard-3-page .plaza-pie__slice:focus-visible { outline: 3px solid var(--du-accent); outline-offset: 2px; }
-@media (prefers-reduced-motion: reduce) {
-  body.dashboard-3-page .plaza-pie__slice { transition: none; }
-  body.dashboard-3-page .plaza-pie__slice:hover,
-  body.dashboard-3-page .plaza-pie__slice:focus { transform: none; }
-}
-/* Tooltip (se agrega a <body>, que lleva .dashboard-3-page). pointer-events:none
-   evita parpadeo del hover. Estilo igual al tooltip de Chart.js del dashboard. */
-body.dashboard-3-page .plaza-pie__tip { position: fixed; z-index: 60; left: 0; top: 0; pointer-events: none; display: flex; flex-direction: column; gap: 2px; padding: 9px 12px; border: 1px solid var(--du-border); border-radius: 10px; background: #fff; color: var(--du-text); font: 700 12px/1.2 var(--font-body); box-shadow: var(--du-shadow); opacity: 0; transition: opacity .12s ease; }
-body.dashboard-3-page .plaza-pie__tip strong { font-family: var(--font-display); font-size: 14px; font-weight: 800; }
-body.dashboard-3-page .plaza-pie__tip span { color: var(--du-muted); font-weight: 700; }
+/* Barras verticales por plaza: comparan directamente el EC% y conservan la
+   paleta categorica. La escala visible inicia en 85% para dar contraste a las
+   diferencias reales sin deformar el indicador. */
+body.dashboard-3-page .plaza-bars { display: block; width: 100%; height: auto; max-width: 760px; margin: 0 auto; overflow: visible; }
+body.dashboard-3-page .plaza-bars--mini { display: none; }
+body.dashboard-3-page .plaza-bars__grid { stroke: var(--du-border); stroke-width: 1; }
+body.dashboard-3-page .plaza-bars__tick { fill: var(--du-muted); font: 600 11px var(--font-body); }
+body.dashboard-3-page .plaza-bars__axis { stroke: var(--du-text); stroke-width: 1.5; }
+body.dashboard-3-page .plaza-bars__meta { stroke: var(--du-text); stroke-width: 1.5; stroke-dasharray: 4 4; opacity: .55; }
+body.dashboard-3-page .plaza-bars__meta-label { fill: var(--du-muted); font: 700 10px var(--font-body); }
+body.dashboard-3-page .plaza-bars__group { cursor: pointer; outline: none; }
+body.dashboard-3-page .plaza-bars__bar { transition: transform .18s cubic-bezier(.34,1.3,.64,1), filter .18s ease; transform-box: fill-box; transform-origin: center bottom; }
+body.dashboard-3-page .plaza-bars__group:hover .plaza-bars__bar,
+body.dashboard-3-page .plaza-bars__group:focus .plaza-bars__bar { transform: translateY(-4px); filter: brightness(1.04); }
+body.dashboard-3-page .plaza-bars__group:focus-visible { outline: 3px solid var(--du-focus); outline-offset: 3px; }
+body.dashboard-3-page .plaza-bars__value { fill: #fff; font-family: var(--font-display); font-weight: 800; }
+body.dashboard-3-page .plaza-bars__name { fill: var(--du-text); font: 700 12px var(--font-display); }
+body.dashboard-3-page .plaza-chart__tip { position: fixed; z-index: 60; left: 0; top: 0; pointer-events: none; display: flex; flex-direction: column; gap: 2px; padding: 9px 12px; border: 1px solid var(--du-border); border-radius: 10px; background: #fff; color: var(--du-text); font: 700 12px/1.2 var(--font-body); box-shadow: var(--du-shadow); opacity: 0; transition: opacity .12s ease; }
+body.dashboard-3-page .plaza-chart__tip strong { font-family: var(--font-display); font-size: 14px; font-weight: 800; }
+body.dashboard-3-page .plaza-chart__tip span { color: var(--du-muted); font-weight: 700; }
 
-/* Leyenda: oculta en desktop (el pastel ya trae etiquetas), visible en movil.
-   Siempre en el DOM: es la fuente del title que lee la exportacion a Excel. */
+/* Leyenda: permanece en el DOM porque sus title son leidos por la exportacion
+   a Excel; la lectura visible la resuelven las barras y el resumen. */
 body.dashboard-3-page .plaza-legend { display: none; margin: 10px 0 0; padding: 0; list-style: none; }
 body.dashboard-3-page .plaza-legend__item { display: grid; grid-template-columns: auto minmax(0,1fr) auto; align-items: center; gap: 10px; padding: 6px 2px; border-bottom: 1px solid var(--du-border); }
 body.dashboard-3-page .plaza-legend__item:last-child { border-bottom: 0; }
@@ -95,11 +89,14 @@ body.dashboard-3-page .plaza-summary__legend { display: flex; align-items: cente
 body.dashboard-3-page .plaza-summary__legend-mark { width: 2px; height: 12px; border-radius: 2px; background: var(--du-text); opacity: .45; }
 
 @media (max-width: 699px) {
-  body.dashboard-3-page .plaza-pie--full { display: none; }
-  body.dashboard-3-page .plaza-pie--mini { display: block; max-width: 280px; margin: 0 auto; }
-  body.dashboard-3-page .plaza-legend { display: grid; gap: 2px; }
+  body.dashboard-3-page .plaza-bars--full { display: none; }
+  body.dashboard-3-page .plaza-bars--mini { display: block; max-width: 320px; }
+  body.dashboard-3-page .plaza-legend { display: none; }
   body.dashboard-3-page .plaza-summary__items { grid-template-columns: repeat(2,minmax(0,1fr)); }
   body.dashboard-3-page .plaza-summary__bar-row { grid-template-columns: 82px minmax(0,1fr) 54px; gap: 6px; }
+  body.dashboard-3-page .plaza-bars__tick { font-size: 9px; }
+  body.dashboard-3-page .plaza-bars__name { font-size: 10px; }
+  body.dashboard-3-page .plaza-bars__value { font-size: 10px; }
 }
 body.dashboard-3-page .at-row { color: var(--du-text); cursor: pointer; }
 body.dashboard-3-page .at-row:hover td { background: #faf5f0; }
