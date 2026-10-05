@@ -19,8 +19,7 @@ body.dashboard-3-page .kpi-card__delta.neu { color: var(--du-muted); }
 /* Plaza (izq) y AT (der). Apiladas por defecto (movil/tablet); lado a lado solo
    en >=1200px, donde las etiquetas de las barras siguen legibles. La lista de AT
    muestra sus 12 filas completas (sin scroll interno). En desktop ambas tarjetas
-   conservan una altura independiente para que el gráfico no herede el espacio
-   vertical de la lista de AT. */
+   comparten altura y el gráfico usa ese espacio adicional. */
 body.dashboard-3-page #plaza-ec-row { display: grid; grid-template-columns: minmax(0,1fr); gap: 12px; margin-bottom: 12px; }
 body.dashboard-3-page #plaza-ec-row > .card { display: flex; flex-direction: column; margin: 0; }
 body.dashboard-3-page #tabla-plazas,
@@ -82,8 +81,7 @@ body.dashboard-3-page .at-row:hover td { background: #faf5f0; }
 body.dashboard-3-page .ecat-row { border-bottom: 1px solid var(--du-border); }
 body.dashboard-3-page .ecat-row:last-child { border-bottom: 0; }
 body.dashboard-3-page .ecat-row:hover { background: #faf5f0; }
-/* En escritorio la tarjeta de AT conserva una altura cómoda para sus 12 filas;
-   la tarjeta de Plaza usa únicamente el espacio que necesita su gráfico. */
+/* En escritorio las 12 filas de AT se reparten la altura compartida con Plaza. */
 body.dashboard-3-page .ecat-rows { flex: 1 1 auto; }
 body.dashboard-3-page .ecat-row { flex: 1 1 0; min-height: 0; }
 
@@ -144,10 +142,7 @@ body.dashboard-3-page .am-empty-msg { padding: 20px; color: var(--du-muted); tex
    la altura; la tarjeta de plaza la iguala y centra el pastel + metadatos
    (justify-content:center en #tabla-plazas) para repartir el espacio sobrante. */
 @media (min-width: 1200px) {
-  body.dashboard-3-page #plaza-ec-row { grid-template-columns: minmax(0,1.2fr) minmax(0,1fr); align-items: start; }
-  body.dashboard-3-page #tabla-ec-at { flex: 0 0 auto; }
-  body.dashboard-3-page .ecat-rows { flex: 0 0 auto; }
-  body.dashboard-3-page .ecat-row { flex: 0 0 auto; min-height: 48px; }
+  body.dashboard-3-page #plaza-ec-row { grid-template-columns: minmax(0,1.2fr) minmax(0,1fr); align-items: stretch; }
 }
 
 @media (max-width: 560px) {
