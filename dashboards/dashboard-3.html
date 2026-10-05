@@ -586,7 +586,7 @@ const D3_PLAZA_COLORS = ['#d65f6b','#d69b32','#579b75','#568eb9','#8968b9'];
 // + EC%) con lineas guia, repartidas por lado -- version desktop. Sin callouts
 // entrega solo el pastel para movil; la leyenda HTML muestra los valores.
 function d3BuildPie(plazaData, opts){
-  const o = Object.assign({ W:760, H:372, cx:380, cy:184, rx:190, ry:145, explode:5, callouts:false }, opts);
+  const o = Object.assign({ W:760, H:372, cx:380, cy:184, rx:178, ry:145, explode:5, callouts:false }, opts);
   const n = plazaData.length;
   const sliceAng = (Math.PI*2) / n;
   const uid = o.callouts ? 'full' : 'mini';
