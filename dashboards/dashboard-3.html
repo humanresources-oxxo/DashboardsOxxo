@@ -799,17 +799,6 @@ function renderPlazaGauges(){
         return val ? `<span class="plaza-meta__item plaza-meta__upd">Otras plazas actualizado: ${escHtml(val)}</span>` : '';
       })();
 
-      const promedio = plazaData.reduce((sum,p) => sum + p.aprov, 0) / total;
-      const plazaBars = plazaData.map((p,i) => {
-        const width = Math.max(0, Math.min(p.aprov, 100)).toFixed(1);
-        const color = D3_PLAZA_COLORS[i % D3_PLAZA_COLORS.length];
-        return `<div class="plaza-summary__bar-row" style="--plaza-color:${color}">
-          <span class="plaza-summary__bar-label" title="${escHtml(p.plaza)}">${escHtml(p.plaza)}</span>
-          <span class="plaza-summary__bar-track"><span class="plaza-summary__bar-fill" style="width:${width}%"></span><span class="plaza-summary__bar-meta" title="Meta ${META}%"></span></span>
-          <strong class="plaza-summary__bar-value">${p.aprov.toFixed(2)}%</strong>
-        </div>`;
-      }).join('');
-
       // Barras verticales: version amplia para escritorio + version compacta
       // para movil + leyenda oculta que conserva los titles de exportacion.
       plazaEl.innerHTML = `
@@ -820,12 +809,7 @@ function renderPlazaGauges(){
           <span class="plaza-meta__item"><span class="plaza-meta__dot"></span>Meta ${META}%</span>
           <span class="plaza-meta__item">${total} plaza${total===1?'':'s'} · ${cumplen} en meta</span>
           ${actualizado}
-        </div>
-        <section class="plaza-summary" aria-label="Lectura del comparativo por plaza">
-          <div class="plaza-summary__head">Lectura del comparativo <span class="plaza-summary__head-note">${cumplen} de ${total} en meta · Promedio ${promedio.toFixed(2)}%</span></div>
-          <div class="plaza-summary__bars" aria-label="Comparativo de las plazas frente a la meta">${plazaBars}</div>
-          <div class="plaza-summary__legend"><span class="plaza-summary__legend-mark"></span>Meta ${META}%</div>
-        </section>`;
+        </div>`;
     }
   } else {
     const plazaEl = document.getElementById('tabla-plazas');
