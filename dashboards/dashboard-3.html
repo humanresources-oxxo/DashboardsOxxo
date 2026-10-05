@@ -677,7 +677,7 @@ function d3BuildPie(plazaData, opts){
 // La meta se marca con una linea horizontal y cada barra conserva su tooltip y
 // operacion por teclado.
 function d3BuildBars(plazaData, opts){
-  const o = Object.assign({ W:760, H:500, chartX:54, chartW:652, baseY:390, chartH:300, floor:85, callouts:true }, opts);
+  const o = Object.assign({ W:760, H:600, chartX:54, chartW:652, baseY:470, chartH:360, floor:85, callouts:true }, opts);
   const n = plazaData.length;
   const slot = o.chartW / n;
   const barW = Math.min(82, slot * .62);
