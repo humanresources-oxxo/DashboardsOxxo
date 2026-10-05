@@ -773,7 +773,6 @@ function renderPlazaGauges(){
         ${d3BuildPie(plazaData, { callouts:true })}
         ${d3BuildPie(plazaData, { callouts:false, W:240, H:206, cx:120, cy:93, rx:104, ry:84, explode:3 })}
         <ul class="plaza-legend">${legend}</ul>
-        <p class="plaza-caption">Cada porción representa una plaza; el porcentaje de la etiqueta es su EC%</p>
         <div class="plaza-meta">
           <span class="plaza-meta__item"><span class="plaza-meta__dot"></span>Meta ${META}%</span>
           <span class="plaza-meta__item">${total} plaza${total===1?'':'s'} · ${cumplen} en meta</span>
