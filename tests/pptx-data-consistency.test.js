@@ -43,7 +43,7 @@ vm.runInContext(fs.readFileSync(path.join(root, 'js/config.js'), 'utf8'), sandbo
 vm.runInContext(fs.readFileSync(path.join(root, 'js/core.js'), 'utf8'), sandbox);
 
 vm.runInContext(fs.readFileSync(path.join(root,'js/metrics-periods.js'),'utf8'),sandbox);
-for(const [file,api,names] of [['admin-pptx.js','general','kpiD1,kpiD2,kpiD4,kpiD6'],['admin-pptx-rae.js','rae','dataD1,dataD2,dataD3,dataD7,dataD8,dataFocusKpis,raeMonthOption,buildD1,buildD2,buildD2Analysis,buildD3,buildFocusKpis,buildD3StoreListSlides,buildD3ZeroAprovechamiento,buildD3RescateEc,buildD8Capability'],['admin-pptx-asesor.js','advisor','datosAsesorD1,datosAsesorD2']]){
+for(const [file,api,names] of [['admin-pptx.js','general','kpiD1,kpiD2,kpiD4,kpiD6'],['admin-pptx-rae.js','rae','dataD1,dataD2,dataRotationTop10,dataD3,dataD7,dataD8,dataFocusKpis,raeMonthOption,buildD1,buildD2,buildD2Analysis,buildRotationTop10,buildD3,buildFocusKpis,buildD3StoreListSlides,buildD3ZeroAprovechamiento,buildD3RescateEc,buildD8Capability'],['admin-pptx-asesor.js','advisor','datosAsesorD1,datosAsesorD2']]){
  const code=fs.readFileSync(path.join(root,'js',file),'utf8').replace(/\}\)\(\);\s*$/, 'window.'+api+'={'+names+'};})();');vm.runInContext(code,sandbox);
 }
 let fixture=[], fixtureByTab=null;
@@ -96,6 +96,23 @@ sandbox.loadAsesorCatalog=async()=>null;sandbox.OXXO.loadAsesorCatalog=sandbox.l
  assert.ok(!bajasRae.asesores.some(a => /sin asesor/i.test(a.name)));
  assert.equal(bajasRae.heatmap.values[0].values[0],2);
  assert.equal(bajasRae.heatmap.values[1].values[1],1);
+ fixtureByTab={[sandbox.OXXO.SHEETS_CONFIG.TABS.d2]:[
+  {Mes:'2026-01',Fecha:'2026-01-10',Tienda:'OXXO COSTA',Asesor:'Ana',Puesto:'AYUDANTE TIENDA','Div.P.':'B351','Aplica en % de rotación':'Aplica',Rot_Temp:'Si'},
+  {Mes:'2026-02',Fecha:'2026-02-10',Tienda:'OXXO COSTA',Asesor:'Ana',Puesto:'AYUDANTE TIENDA','Div.P.':'B351','Aplica en % de rotación':'Aplica',Rot_Temp:'No'},
+  {Mes:'2026-03',Fecha:'2026-03-10',Tienda:'OXXO ISTMO',Asesor:'Beto',Puesto:'AYUDANTE TIENDA','Div.P.':'B350','Aplica en % de rotación':'Aplica',Rot_Temp:'No'},
+  {Mes:'2026-03',Fecha:'2026-03-11',Tienda:'OXXO ISTMO',Asesor:'Beto',Puesto:'AYUDANTE TIENDA','Div.P.':'B350','Aplica en % de rotación':'No aplica por reingreso',Rot_Temp:'No'},
+  {Mes:'2026-03',Fecha:'2026-03-12',Tienda:'OXXO VALLES',Asesor:'Caro',Puesto:'AYUDANTE TIENDA','Div.P.':'B378','Aplica en % de rotación':'Aplica',Rot_Temp:'No'}]};
+ const rotation=await sandbox.rae.dataRotationTop10();
+ assert.equal(rotation.top10[0].name,'OXXO COSTA');
+ assert.equal(rotation.top10[0].total,2);
+ assert.equal(rotation.top10[0].zone,'COSTA');
+ assert.equal(rotation.totalBajas,4);
+ assert.equal(rotation.zoneTotals.map(item=>item.name).join('|'),'COSTA|ISTMO|VALLES');
+ const rotationDrawn=[];
+ const rotationSlide={background:{},addText(...args){rotationDrawn.push(['text',...args]);},addShape(...args){rotationDrawn.push(['shape',...args]);}};
+ sandbox.rae.buildRotationTop10({addSlide(){return rotationSlide;}},rotation,rotation.sub);
+ assert.ok(rotationDrawn.some(([kind,value])=>kind==='text'&&String(value).includes('Tiendas con mas bajas')));
+ fixtureByTab=null;
  const drawn = [];
  const fakeSlide = { background: {}, addText(...args) { drawn.push(['text', ...args]); }, addShape(...args) { drawn.push(['shape', ...args]); }, addChart(...args) { drawn.push(['chart', ...args]); } };
  sandbox.rae.buildD2Analysis({ ChartType: { pie: 'pie' }, addSlide() { return fakeSlide; } }, bajasRae, bajasRae.sub);
