@@ -237,6 +237,90 @@
     };
   }
 
+  // La rotacion acumulada se calcula sobre todo el historico publicado en D2,
+  // no solo sobre el mes seleccionado. La division de personal es la llave
+  // territorial que separa las tres zonas de Oaxaca solicitadas para la RAE.
+  // B350 = Istmo, B351 = Costa y B378 = Valles.
+  const ROTATION_ZONES = Object.freeze({ B350: 'ISTMO', B351: 'COSTA', B378: 'VALLES' });
+  const ROTATION_ZONE_ORDER = ['COSTA', 'ISTMO', 'VALLES'];
+
+  async function dataRotationTop10(targetMes = ''){
+    const raw = await OXXO.fetchSheetData(OXXO.SHEETS_CONFIG.TABS.d2, { scope: OAXACA_SCOPE });
+    if(!raw || !raw.length) return null;
+    const sample = raw[0];
+    const tiendaKey = findKey(sample, ['Tienda','Unidad org.','Unidad org','Unidad Organizativa','Unidad','Sucursal','Nombre Tienda']);
+    const divisionKey = findKey(sample, ['Div.P.','Div P','Division de personal','División de personal','D.P.']);
+    const applyKey = findKey(sample, ['Aplica en % de rotación','Aplica en % de rotacion','Aplica rotación','Aplica rotacion','Aplica']);
+    const earlyKey = findKey(sample, ['Rot_Temp','Rot. Temprana','Rot Temprana','Conteo bajas temprana']);
+    const asesorKey = findKey(sample, ['Asesor']);
+    const mesKey = findKey(sample, ['Mes']);
+    const fechaKey = findKey(sample, ['Fecha']);
+    if(!tiendaKey || !divisionKey) return null;
+
+    const nonEmptyRows = raw.filter(row => Object.values(row || {}).some(value => String(value ?? '').trim() !== ''));
+    const hasApplyValues = Boolean(applyKey && nonEmptyRows.some(row => String(val(row, applyKey) || '').trim()));
+    const rows = nonEmptyRows.filter(row => {
+      const tienda = String(val(row, tiendaKey) || '').trim();
+      const code = String(val(row, divisionKey) || '').trim().toUpperCase().replace(/\s+/g, '');
+      const month = rowMonthKeyD2(row, mesKey, fechaKey);
+      if(!tienda || !ROTATION_ZONES[code] || OXXO.metricsIsTiendaEntrenamientoOperacionesD2(tienda)) return false;
+      if(targetMes && month && month > targetMes) return false;
+      // Si la base trae la bandera, se respeta para excluir reingresos y bajas
+      // que el ABC marco como fuera de la rotacion. Las publicaciones antiguas
+      // no traen esta columna; en ese caso cada baja historica cuenta una vez.
+      if(hasApplyValues && /NO\s*APLICA|NO\s*APLICA\s*POR/i.test(String(val(row, applyKey) || ''))) return false;
+      return true;
+    });
+    if(!rows.length) return null;
+
+    const groups = new Map();
+    rows.forEach(row => {
+      const tienda = String(val(row, tiendaKey) || '').trim();
+      const code = String(val(row, divisionKey) || '').trim().toUpperCase().replace(/\s+/g, '');
+      const zone = ROTATION_ZONES[code];
+      const key = `${code}|${normText(tienda)}`;
+      if(!groups.has(key)) groups.set(key, { name: tienda, code, zone, total: 0, tempranas: 0, asesores: new Map() });
+      const item = groups.get(key);
+      item.total++;
+      if(/^(SI|1|TRUE|VERDADERO)$/i.test(String(val(row, earlyKey) || '').trim())) item.tempranas++;
+      const asesor = String(val(row, asesorKey) || '').trim();
+      if(asesor) item.asesores.set(asesor, (item.asesores.get(asesor) || 0) + 1);
+    });
+
+    const top10 = [...groups.values()]
+      .map(item => ({
+        name: item.name,
+        code: item.code,
+        zone: item.zone,
+        total: item.total,
+        tempranas: item.tempranas,
+        asesor: [...item.asesores.entries()].sort((a,b) => b[1] - a[1] || a[0].localeCompare(b[0], 'es'))[0]?.[0] || 'Sin asesor',
+      }))
+      .sort((a,b) => b.total - a.total || b.tempranas - a.tempranas || a.name.localeCompare(b.name, 'es'))
+      .slice(0, 10);
+    const zoneTotals = ROTATION_ZONE_ORDER.map(zone => {
+      const zoneRows = rows.filter(row => ROTATION_ZONES[String(val(row, divisionKey) || '').trim().toUpperCase().replace(/\s+/g, '')] === zone);
+      return {
+        name: zone,
+        code: Object.keys(ROTATION_ZONES).find(code => ROTATION_ZONES[code] === zone) || '',
+        bajas: zoneRows.length,
+        tiendas: new Set(zoneRows.map(row => String(val(row, tiendaKey) || '').trim())).size,
+      };
+    });
+    const months = [...new Set(rows.map(row => rowMonthKeyD2(row, mesKey, fechaKey)).filter(Boolean))].sort();
+    const firstMonth = months[0] || '';
+    const lastMonth = months.at(-1) || '';
+    const monthLabel = key => {
+      const match = String(key || '').match(/^(\d{4})-(\d{2})$/);
+      if(!match) return key || 'periodo disponible';
+      return `${MESES[Number(match[2]) - 1] || match[2]} ${match[1]}`;
+    };
+    const period = firstMonth && lastMonth
+      ? (firstMonth === lastMonth ? monthLabel(firstMonth) : `${monthLabel(firstMonth)} - ${monthLabel(lastMonth)}`)
+      : 'historico disponible';
+    return { top10, zoneTotals, totalBajas: rows.length, totalTiendas: groups.size, period, sub: `Acumulado ${period}` };
+  }
+
   async function dataD3(today=new Date()){
     // La RAE es una presentación exclusiva de Plaza Oaxaca. El panel puede
     // conservar un alcance regional de una navegación previa; no debe hacer
@@ -960,6 +1044,60 @@
   }
   function buildD2(pptx, d, dateLabel){ buildPeopleSummary(pptx,d,dateLabel,'Bajas'); }
 
+  function buildRotationTop10(pptx, d, dateLabel){
+    const { slide, text, rect } = editorialSlide(pptx, 'Rotacion acumulada · Top 10', dateLabel);
+    const zoneColors = { COSTA: 'D99B2B', ISTMO: 'B47A3C', VALLES: '5B9B75' };
+    const zoneTextColors = { COSTA: '8A5B00', ISTMO: '74401F', VALLES: '216346' };
+    text('Tiendas con mas bajas acumuladas que aplican a rotacion', .5, 1.94, 8.5, .3, 16, DARK, true);
+    text(`${d.sub} · Division de personal: B350 Istmo, B351 Costa y B378 Valles`, .5, 2.31, 12.2, .24, 10, MUTED);
+
+    const cards = d.zoneTotals || [];
+    const cardW = 2.65;
+    cards.forEach((zone, index) => {
+      const x = .5 + index * (cardW + .16);
+      const color = zoneColors[zone.name] || RED;
+      const textColor = zoneTextColors[zone.name] || RED;
+      slide.addShape('roundRect', { x, y: 2.72, w: cardW, h: .72, rectRadius: .08, fill: { color: WHITE }, line: { color: BORDER, width: 1 } });
+      rect(x, 2.72, .08, .72, color);
+      text(zone.name, x + .2, 2.83, 1.25, .2, 10, textColor, true);
+      text(`${zone.bajas} bajas`, x + .2, 3.08, 1.25, .2, 14, DARK, true);
+      text(`${zone.tiendas} tiendas · ${zone.code}`, x + 1.25, 3.08, 1.18, .2, 8.5, MUTED, false, { align: 'right' });
+    });
+    const totalX = .5 + cards.length * (cardW + .16);
+    const totalW = 12.33 - totalX;
+    slide.addShape('roundRect', { x: totalX, y: 2.72, w: totalW, h: .72, rectRadius: .08, fill: { color: RED }, line: { type: 'none' } });
+    text(d.totalBajas, totalX + .2, 2.81, 1.35, .38, 24, WHITE, true);
+    text('BAJAS ACUMULADAS', totalX + 1.55, 2.84, totalW - 1.75, .2, 10, SUBTLE, true);
+    text(`${d.totalTiendas} tiendas con registro`, totalX + 1.55, 3.1, totalW - 1.75, .18, 9, WHITE);
+
+    const tableX = .5, tableY = 3.72, tableW = 12.33, tableH = 3.05;
+    slide.addShape('roundRect', { x: tableX, y: tableY, w: tableW, h: tableH, rectRadius: .08, fill: { color: WHITE }, line: { color: BORDER, width: 1 } });
+    rect(tableX, tableY, tableW, .38, '5A1115');
+    text('#', tableX + .16, tableY + .12, .28, .14, 8, WHITE, true, { align: 'center' });
+    text('TIENDA', tableX + .62, tableY + .12, 3.1, .14, 8, WHITE, true);
+    text('ZONA', tableX + 3.95, tableY + .12, 1.1, .14, 8, WHITE, true);
+    text('ASESOR', tableX + 5.22, tableY + .12, 3.25, .14, 8, WHITE, true);
+    text('ROTACION ACUMULADA', tableX + 8.65, tableY + .12, 2.3, .14, 8, WHITE, true, { align: 'center' });
+    text('BAJAS', tableX + 11.54, tableY + .12, .6, .14, 8, WHITE, true, { align: 'right' });
+    const items = d.top10 || [];
+    const max = Math.max(1, ...items.map(item => item.total));
+    const rowH = Math.min(.255, (tableH - .48) / Math.max(1, items.length));
+    if(!items.length) text('Sin registros disponibles', tableX + .25, tableY + 1.2, tableW - .5, .3, 14, MUTED, false, { align: 'center' });
+    items.forEach((item, index) => {
+      const y = tableY + .42 + index * rowH;
+      if(index % 2) rect(tableX, y, tableW, rowH, 'FFF8F4');
+      const color = zoneColors[item.zone] || RED;
+      text(String(index + 1).padStart(2, '0'), tableX + .15, y + .06, .3, rowH - .08, 8.5, RED, true, { align: 'center' });
+      text(shortenName(item.name, 34), tableX + .62, y + .06, 3.1, rowH - .08, 9, TEXT, true);
+      text(item.zone, tableX + 3.95, y + .06, 1.1, rowH - .08, 8.5, color, true);
+      text(shortenName(item.asesor, 30), tableX + 5.22, y + .06, 3.25, rowH - .08, 8.8, TEXT);
+      rect(tableX + 8.65, y + rowH * .36, 2.3, .055, 'EDE6DF');
+      rect(tableX + 8.65, y + rowH * .36, 2.3 * item.total / max, .055, color);
+      text(item.total, tableX + 11.54, y + .06, .6, rowH - .08, 9.5, DARK, true, { align: 'right' });
+    });
+    text('El acumulado cuenta las bajas publicadas en Dashboard 2; se excluyen Entrenamiento/Operaciones y registros fuera de rotacion.', .5, 7.04, 12.3, .2, 8.5, MUTED, false, { align: 'right' });
+  }
+
   function buildD2Analysis(pptx, d, dateLabel){
     const {slide,text,rect}=editorialSlide(pptx,'Análisis de bajas',dateLabel);
     const heat = d.heatmap || { edades: [], antiguedades: [], values: [] };
@@ -1298,10 +1436,10 @@
     const {text,rect}=editorialSlide(pptx,'Presentación RAE',dateLabel);
     text('Indicadores de recursos humanos',.5,2.5,11.9,.8,34,DARK,true);
     text('Plaza Oaxaca',.5,3.52,11.9,.5,22,RED,true);
-    const sections=['Vacantes','Bajas','Análisis de bajas','Aprovechamiento','Capacidades','Por módulo','TREO'];
+    const sections=['Vacantes','Bajas','Análisis de bajas','Rotación acumulada','Aprovechamiento','Capacidades','Por módulo','TREO'];
     sections.forEach((label,i)=>{
-      const sectionW = 1.54;
-      const x=.5+i*1.78;
+      const sectionW = 1.38;
+      const x=.5+i*1.56;
       rect(x,5.23,sectionW,.035,i===0?RED:'E5DCD6');
       text('0'+(i+1),x,5.54,sectionW,.45,23,RED,true);
       text(label,x,6.15,sectionW,.4,11,DARK,true);
@@ -1359,6 +1497,7 @@
       { title: 'VACANTES', fetch: () => dataD1(mesD1), build: buildD1 },
       { title: 'BAJAS', fetch: loadBajas, build: buildD2 },
       { title: 'ANÁLISIS DE BAJAS', fetch: loadBajas, build: buildD2Analysis },
+      { title: 'ROTACIÓN ACUMULADA · TOP 10', fetch: () => dataRotationTop10(mesD2), build: buildRotationTop10 },
       { title: 'APROVECHAMIENTO DE ESTRUCTURA', fetch: loadAprovechamiento, build: buildD3 },
       { title: 'TIENDAS SIN EQUIPO COMPLETO (EC)', fetch: loadAprovechamiento, build: buildD3ZeroAprovechamiento },
       { title: 'TIENDAS CON RESCATE EC EN EL MES', fetch: loadAprovechamiento, build: buildD3RescateEc },
