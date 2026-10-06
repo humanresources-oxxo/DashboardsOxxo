@@ -47,6 +47,7 @@ body.dashboard-3-page .plaza-bars__group:hover .plaza-bars__bar,
 body.dashboard-3-page .plaza-bars__group:focus .plaza-bars__bar { transform: translateY(-4px); filter: brightness(1.04); }
 body.dashboard-3-page .plaza-bars__group:focus-visible { outline: 3px solid var(--du-focus); outline-offset: 3px; }
 body.dashboard-3-page .plaza-bars__value { fill: #fff; font-family: var(--font-display); font-weight: 800; }
+body.dashboard-3-page .plaza-bars__value--outside { fill: var(--du-text); }
 body.dashboard-3-page .plaza-bars__name { fill: var(--du-text); font: 700 12px var(--font-display); }
 body.dashboard-3-page .plaza-chart__tip { position: fixed; z-index: 60; left: 0; top: 0; pointer-events: none; display: flex; flex-direction: column; gap: 2px; padding: 9px 12px; border: 1px solid var(--du-border); border-radius: 10px; background: #fff; color: var(--du-text); font: 700 12px/1.2 var(--font-body); box-shadow: var(--du-shadow); opacity: 0; transition: opacity .12s ease; }
 body.dashboard-3-page .plaza-chart__tip strong { font-family: var(--font-display); font-size: 14px; font-weight: 800; }

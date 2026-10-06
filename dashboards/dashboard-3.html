@@ -681,13 +681,20 @@ function d3BuildBars(plazaData, opts){
   const n = plazaData.length;
   const slot = o.chartW / n;
   const barW = Math.min(82, slot * .62);
-  const valueY = v => o.baseY - ((Math.max(o.floor, Math.min(100, v)) - o.floor) / (100 - o.floor)) * o.chartH;
+  // Si una plaza queda debajo de 85%, el piso fijo dejaba la barra con altura
+  // cero aunque el dato sí existiera (por ejemplo, Chontalpa = 84.76%).
+  // Ajustamos el piso al múltiplo de 5 inmediato inferior para conservar el
+  // contraste y mostrar todos los valores del comparativo.
+  const values = plazaData.map(p => Number(p.aprov)).filter(Number.isFinite);
+  const minValue = values.length ? Math.min(...values) : o.floor;
+  const floor = Math.min(o.floor, Math.max(0, Math.floor(minValue / 5) * 5));
+  const valueY = v => o.baseY - ((Math.max(floor, Math.min(100, v)) - floor) / (100 - floor)) * o.chartH;
   const shortName = name => {
     const u = String(name).toUpperCase();
     if(o.callouts) return u;
     return ({'COSTA ISTMO':'COSTA','VILLAHERMOSA':'VILLA','CHONTALPA':'CHONT.'})[u] || u;
   };
-  const ticks = [85, 90, 95, 100].map(v => {
+  const ticks = Array.from({ length: Math.floor((100 - floor) / 5) + 1 }, (_, i) => floor + i * 5).map(v => {
     const y = valueY(v).toFixed(1);
     return `<line x1="${o.chartX}" x2="${o.chartX+o.chartW}" y1="${y}" y2="${y}" class="plaza-bars__grid"/><text x="${o.chartX-10}" y="${(+y+4).toFixed(1)}" class="plaza-bars__tick" text-anchor="end">${v}%</text>`;
   }).join('');
@@ -696,6 +703,11 @@ function d3BuildBars(plazaData, opts){
     const x = o.chartX + slot*i + (slot-barW)/2;
     const y = valueY(p.aprov);
     const h = o.baseY - y;
+    // Un 0% sigue siendo un dato válido. Le damos un marcador mínimo y
+    // colocamos su etiqueta fuera de la barra para que no desaparezca.
+    const visibleH = h > 0 ? h : 8;
+    const valueInside = h >= 28;
+    const valueLabelY = valueInside ? y + 24 : o.baseY - visibleH - 7;
     const color = D3_PLAZA_COLORS[i % D3_PLAZA_COLORS.length];
     const name = shortName(p.plaza);
     const lines = name.split(' ');
@@ -704,8 +716,8 @@ function d3BuildBars(plazaData, opts){
       : escHtml(name);
     const valueSize = o.callouts ? 13 : 11;
     return `<g class="plaza-bars__group" tabindex="0" role="img" aria-label="${escHtml(String(p.plaza).toUpperCase())}, EC ${p.aprov.toFixed(2)} por ciento" data-plaza="${escHtml(String(p.plaza))}" data-ec="${p.aprov.toFixed(2)}">
-        <rect class="plaza-bars__bar" x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barW.toFixed(1)}" height="${h.toFixed(1)}" rx="16" fill="${color}"/>
-        <text class="plaza-bars__value" x="${(x+barW/2).toFixed(1)}" y="${(y+24).toFixed(1)}" font-size="${valueSize}" text-anchor="middle">${p.aprov.toFixed(2)}%</text>
+        <rect class="plaza-bars__bar" x="${x.toFixed(1)}" y="${(o.baseY-visibleH).toFixed(1)}" width="${barW.toFixed(1)}" height="${visibleH.toFixed(1)}" rx="16" fill="${color}"/>
+        <text class="plaza-bars__value${valueInside ? '' : ' plaza-bars__value--outside'}" x="${(x+barW/2).toFixed(1)}" y="${valueLabelY.toFixed(1)}" font-size="${valueSize}" text-anchor="middle">${p.approv.toFixed(2)}%</text>
         <text class="plaza-bars__name" x="${(x+barW/2).toFixed(1)}" y="${(o.baseY+24).toFixed(1)}" text-anchor="middle">${labels}</text>
       </g>`;
   }).join('');
