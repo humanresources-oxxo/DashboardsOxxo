@@ -2613,10 +2613,21 @@ async function metricsD3Rows() {
   if (!raw || !raw.length) return null;
   const estatusKey = metricsFindKey(raw[0], ['Clas Aprov', 'Estatus Con impacto Ausentismo', 'Estatus']);
   const asesorKey = metricsFindKey(raw[0], ['Asesor']);
+  const tiendaKey = metricsFindKey(raw[0], ['Tienda', 'Unidad org']);
+  const crKey = metricsFindKey(raw[0], ['CR TIENDA', 'CR', 'ID Tienda']);
   const fechaKey = metricsFindKey(raw[0], ['Mes Semana', 'Semana', 'Fecha', 'FECHA']);
   const fechas = [...new Set(raw.map(r => String(r[fechaKey] || '').trim()).filter(Boolean))].sort();
   const fecha = fechas.slice(-1)[0] || '';
-  const rows = fecha ? raw.filter(r => String(r[fechaKey] || '').trim() === fecha) : raw;
+  const asesorCatalog = await loadAsesorCatalog();
+  const rows = (fecha ? raw.filter(r => String(r[fechaKey] || '').trim() === fecha) : raw).map(r => {
+    const copy = { ...r };
+    if (asesorKey) copy[asesorKey] = resolveAsesorD1(asesorCatalog, {
+      cr: crKey ? metricsVal(r, crKey) : '',
+      tienda: tiendaKey ? metricsVal(r, tiendaKey) : '',
+      asesor: metricsVal(r, asesorKey)
+    });
+    return copy;
+  });
   return { rows, fecha, asesorKey, estatusKey };
 }
 
@@ -2715,6 +2726,15 @@ async function metricsD7Rows() {
       if (vacantesKey) next[vacantesKey] = vacantes;
       if (difKey) next[difKey] = dif;
       return next;
+    })
+    .map(r => {
+      const copy = { ...r };
+      if (asesorKey) copy[asesorKey] = resolveAsesorD1(asesorCatalog, {
+        cr: metricsVal(r, crKey),
+        tienda: metricsVal(r, tiendaKey),
+        asesor: metricsVal(r, asesorKey)
+      });
+      return copy;
     });
   return { rows, difKey, treoKey, sapKey, activosKey, vacantesKey, asesorKey, tiendaKey };
 }
