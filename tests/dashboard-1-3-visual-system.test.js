@@ -53,3 +53,11 @@ test('las hojas nuevas estan aisladas y no reintroducen vidrio o sombras multica
     assert.doesNotMatch(css, /backdrop-filter|\bglass\b|box-shadow\s*:[^;]*,[^;]*,/i, `${file}: sin vidrio ni sombras apiladas`);
   }
 });
+
+test('D3 mantiene visibles las plazas debajo del piso de la escala', () => {
+  const html = read('dashboards/dashboard-3.html');
+  assert.match(html, /const minValue = values\.length \? Math\.min\(\.\.\.values\) : o\.floor/);
+  assert.match(html, /const floor = Math\.min\(o\.floor, Math\.max\(0, Math\.floor\(minValue \/ 5\) \* 5\)\)/);
+  assert.match(html, /const visibleH = h > 0 \? h : 8/);
+  assert.match(html, /plaza-bars__value--outside/);
+});
