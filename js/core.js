@@ -1840,7 +1840,7 @@ async function loadAsesorCatalogRows() {
   const localPromise = (async () => {
     try {
       const localUrl = siteBasePath() + 'assets/catalogo_asesores.csv';
-      const resp = await fetch(localUrl, { cache: 'default' });
+      const resp = await fetch(localUrl, { cache: 'no-store' });
       if (!resp.ok) return null;
       const rows = parseAsesorCatalogCSV(await resp.text());
       if (rows.length) return rows;
@@ -1855,19 +1855,16 @@ async function loadAsesorCatalogRows() {
   // lectura viva: antes el return inmediato de 5 minutos dejaba ver al AT
   // anterior tras una publicación correcta. Si Apps Script tarda, la caché
   // sigue siendo respaldo para no bloquear el tablero indefinidamente.
+  // CNT es la fuente vigente de responsables; se intenta antes que la hoja viva
+  // y la cache para que una version vieja de Apps Script no la reemplace.
+  const localRows = await localPromise;
+  if (localRows?.length) return buildAsesorCatalog(localRows);
+  if (cachedIsFresh) return buildAsesorCatalog(cloneSheetRows(cached.rows));
   const fastDirect = await Promise.race([
     directPromise,
     new Promise((resolve) => setTimeout(() => resolve(null), 2200))
   ]);
   if (fastDirect?.length) return buildAsesorCatalog(fastDirect);
-  if (cachedIsFresh) return buildAsesorCatalog(cloneSheetRows(cached.rows));
-  const localRows = await localPromise;
-  if (localRows?.length) {
-    // directPromise sigue trabajando y, si responde, deja la version viva en
-    // Cache Storage para la siguiente navegación sin retrasar esta pantalla.
-    void directPromise;
-    return buildAsesorCatalog(localRows);
-  }
   const delayedDirect = await directPromise;
   if (delayedDirect?.length) return buildAsesorCatalog(delayedDirect);
   // Ultimo respaldo: hoja Catalogo_Asesores via gviz (puede venir con
