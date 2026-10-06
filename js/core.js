@@ -693,10 +693,27 @@ function safeFileName(value) {
 
 async function downloadSheetTab(tabName, filename) {
   const name = filename || (safeFileName(tabName) + '-' + timestampForFile() + '.csv');
-  const response = await fetch(buildSheetURL(tabName), { cache: 'no-store' });
-  if (!response.ok) throw new Error('HTTP ' + response.status);
-  const csv = await response.text();
-  downloadBlob(csv, name.endsWith('.csv') ? name : name + '.csv');
+  // Las bases descargables deben llevar la misma correccion asesor-tienda que
+  // la pantalla. Antes se descargaba el CSV crudo de Sheets y, por ejemplo,
+  // OXXO MILITAR seguia apareciendo con Luis Javier aunque el dashboard ya lo
+  // mostrara con Jessica segun el CNT.
+  const rows = await fetchSheetData(tabName, { scoped: false, fresh: true, allowStale: false });
+  if (rows === null) throw new Error('No se pudo leer la base');
+  const sample = rows[0] || {};
+  const asesorKey = metricsFindKeyExact(sample, ['Asesor', 'Asesor AT', 'AT', 'Asesor Comercial']) || metricsFindKey(sample, ['Asesor', 'Asesor AT', 'AT', 'Asesor Comercial']);
+  if (asesorKey) {
+    const catalog = await loadAsesorCatalog();
+    const tiendaKey = metricsFindKeyExact(sample, ['Tienda', 'Unidad org', 'Unidad org.', 'Unidad Organizativa', 'Nombre Tienda']) || metricsFindKey(sample, ['Tienda', 'Unidad org', 'Unidad org.', 'Unidad Organizativa', 'Nombre Tienda']);
+    const crKey = metricsFindKeyExact(sample, ['CR TIENDA', 'CR Tienda', 'CR', 'ID Tienda', 'ID TIENDA']) || metricsFindKey(sample, ['CR TIENDA', 'CR Tienda', 'CR', 'ID Tienda', 'ID TIENDA']);
+    rows.forEach(row => {
+      row[asesorKey] = resolveAsesorD1(catalog, {
+        cr: crKey ? metricsVal(row, crKey) : '',
+        tienda: tiendaKey ? metricsVal(row, tiendaKey) : '',
+        asesor: metricsVal(row, asesorKey)
+      });
+    });
+  }
+  downloadRowsAsCSV(rows, name.endsWith('.csv') ? name : name + '.csv');
 }
 
 function escapeCSVValue(value) {
