@@ -182,6 +182,7 @@
     // metricsD2Rows() que usa la lámina de resumen y el Dashboard 2.
     const sample = rows[0] || {};
     const tiendaKey = findKey(sample, ['Tienda','Unidad org.','Unidad org','Unidad Organizativa','Unidad','Sucursal','Nombre Tienda']);
+    const crKey = findKey(sample, ['CR','CR Tienda','CR TIENDA']);
     const motivoKey = findKey(sample, ['Motivo de baja','Motivo_baja','Motivo','Causa','Causa baja','Baja con causal','Tipo de baja']);
     const detalleBajaKey = findKey(sample, ['Detalle de Baja','Detalle_baja','Detalle baja','Comentarios']);
     const edadKey = findKey(sample, ['Edad']);
@@ -245,21 +246,52 @@
   const ROTATION_ZONE_ORDER = ['COSTA', 'ISTMO', 'VALLES'];
 
   async function dataRotationTop10(targetMes = ''){
-    const raw = await OXXO.fetchSheetData(OXXO.SHEETS_CONFIG.TABS.d2, { scope: OAXACA_SCOPE });
+    const [raw, asesorCatalog] = await Promise.all([
+      OXXO.fetchSheetData(OXXO.SHEETS_CONFIG.TABS.d2, { scope: OAXACA_SCOPE }),
+      OXXO.loadAsesorCatalog(),
+    ]);
     if(!raw || !raw.length) return null;
     const sample = raw[0];
     const tiendaKey = findKey(sample, ['Tienda','Unidad org.','Unidad org','Unidad Organizativa','Unidad','Sucursal','Nombre Tienda']);
+    const crKey = findKey(sample, ['CR','CR Tienda','CR TIENDA']);
     const divisionKey = findKey(sample, ['Div.P.','Div P','Division de personal','División de personal','D.P.']);
     const applyKey = findKey(sample, ['Aplica en % de rotación','Aplica en % de rotacion','Aplica rotación','Aplica rotacion','Aplica']);
     const earlyKey = findKey(sample, ['Rot_Temp','Rot. Temprana','Rot Temprana','Conteo bajas temprana']);
     const asesorKey = findKey(sample, ['Asesor']);
+    const puestoKey = findKey(sample, ['Puesto','Puestos homologados','Descripcion de Posicion']);
+    const medidaKey = findKey(sample, ['Denominacion Medida','Medida','Med.']);
     const mesKey = findKey(sample, ['Mes']);
     const fechaKey = findKey(sample, ['Fecha']);
-    if(!tiendaKey || !divisionKey) return null;
+    if(!tiendaKey || !divisionKey) {
+      const missingColumns = [];
+      if(!tiendaKey) missingColumns.push('Tienda');
+      if(!divisionKey) missingColumns.push('Div.P.');
+      console.warn('[RAE] Rotación acumulada no disponible: faltan columnas', missingColumns);
+      return {
+        unavailable: true,
+        sub: targetMes ? `Corte ${targetMes}` : 'Histórico disponible',
+        reason: `La hoja Dashboard_2_Diario no contiene: ${missingColumns.join(', ')}. Publica nuevamente la base ABC con esas columnas.`,
+        missingColumns,
+      };
+    }
 
     const nonEmptyRows = raw.filter(row => Object.values(row || {}).some(value => String(value ?? '').trim() !== ''));
+    let sourceRows = OXXO.filterValidTiendas(nonEmptyRows, asesorCatalog, tiendaKey, crKey);
+    sourceRows = sourceRows.map(row => {
+      const copy = { ...row };
+      if (asesorKey) OXXO.applyAsesorCatalog(copy, asesorCatalog, { asesorKey, tiendaKey, crKey });
+      return copy;
+    });
+    if (medidaKey) {
+      const bajas = sourceRows.filter(row => OXXO.metricsNormText(OXXO.metricsVal(row, medidaKey)).includes('BAJA'));
+      if (bajas.length) sourceRows = bajas;
+    }
+    if (puestoKey) {
+      const operativos = sourceRows.filter(row => /AYUDANTE|ENCARGADO|LIDER/.test(OXXO.metricsNormText(OXXO.metricsVal(row, puestoKey))));
+      if (operativos.length) sourceRows = operativos;
+    }
     const hasApplyValues = Boolean(applyKey && nonEmptyRows.some(row => String(val(row, applyKey) || '').trim()));
-    const rows = nonEmptyRows.filter(row => {
+    const rows = sourceRows.filter(row => {
       const tienda = String(val(row, tiendaKey) || '').trim();
       const code = String(val(row, divisionKey) || '').trim().toUpperCase().replace(/\s+/g, '');
       const month = rowMonthKeyD2(row, mesKey, fechaKey);
@@ -271,7 +303,12 @@
       if(hasApplyValues && /NO\s*APLICA|NO\s*APLICA\s*POR/i.test(String(val(row, applyKey) || ''))) return false;
       return true;
     });
-    if(!rows.length) return null;
+    if(!rows.length) return {
+      unavailable: true,
+      sub: targetMes ? `Corte ${targetMes}` : 'Histórico disponible',
+      reason: 'No hay registros de rotación para el corte seleccionado.',
+      missingColumns: [],
+    };
 
     const groups = new Map();
     rows.forEach(row => {
@@ -283,7 +320,7 @@
       const item = groups.get(key);
       item.total++;
       if(/^(SI|1|TRUE|VERDADERO)$/i.test(String(val(row, earlyKey) || '').trim())) item.tempranas++;
-      const asesor = String(val(row, asesorKey) || '').trim();
+      const asesor = String(OXXO.resolveAsesorD1(asesorCatalog, { cr: crKey ? val(row, crKey) : '', tienda, asesor: asesorKey ? val(row, asesorKey) : '' }) || 'Sin Asesor Asignado').trim();
       if(asesor) item.asesores.set(asesor, (item.asesores.get(asesor) || 0) + 1);
     });
 
@@ -294,7 +331,7 @@
         zone: item.zone,
         total: item.total,
         tempranas: item.tempranas,
-        asesor: [...item.asesores.entries()].sort((a,b) => b[1] - a[1] || a[0].localeCompare(b[0], 'es'))[0]?.[0] || 'Sin asesor',
+        asesor: [...item.asesores.entries()].sort((a,b) => b[1] - a[1] || a[0].localeCompare(b[0], 'es'))[0]?.[0] || 'Sin Asesor Asignado',
       }))
       .sort((a,b) => b.total - a.total || b.tempranas - a.tempranas || a.name.localeCompare(b.name, 'es'))
       .slice(0, 10);
@@ -922,10 +959,10 @@
     });
   }
 
-  function emptySlide(pptx, title, dateLabel){
+  function emptySlide(pptx, title, dateLabel, detail='No hay información para este corte; no se sustituyó por otro periodo.'){
     const {slide,text}=editorialSlide(pptx,title,dateLabel);
     text('Sin datos disponibles',.5,2.75,11.8,.7,30,DARK,true);
-    text('No hay información para este corte; no se sustituyó por otro periodo.',.5,3.75,11.8,.65,18,MUTED);
+    text(detail,.5,3.75,11.8,.65,18,MUTED);
     return slide;
   }
 
@@ -1536,7 +1573,8 @@
       for(const d of DASHBOARDS){
         try {
           const data = await d.fetch();
-          if(data) d.build(pptx, data, data.sub || 'Corte no informado');
+          if(data?.unavailable) emptySlide(pptx, d.title, dateLabel, data.reason);
+          else if(data) d.build(pptx, data, data.sub || 'Corte no informado');
           else emptySlide(pptx, d.title, dateLabel);
         } catch(e){
           console.error('Error generando slide', d.title, e);

@@ -701,19 +701,17 @@ async function downloadSheetTab(tabName, filename) {
   if (rows === null) throw new Error('No se pudo leer la base');
   const sample = rows[0] || {};
   const asesorKey = metricsFindKeyExact(sample, ['Asesor', 'Asesor AT', 'AT', 'Asesor Comercial']) || metricsFindKey(sample, ['Asesor', 'Asesor AT', 'AT', 'Asesor Comercial']);
+  const tiendaKey = metricsFindKeyExact(sample, ['Tienda', 'Texto breve de unidad organizativa', 'Unidad org', 'Unidad org.', 'Unidad Organizativa', 'Nombre Tienda']);
+  const crKey = metricsFindKeyExact(sample, ['CR TIENDA', 'CR Tienda', 'Cr de tienda', 'CR', 'ID Tienda', 'ID TIENDA']);
+  let outputRows = rows;
   if (asesorKey) {
     const catalog = await loadAsesorCatalog();
-    const tiendaKey = metricsFindKeyExact(sample, ['Tienda', 'Unidad org', 'Unidad org.', 'Unidad Organizativa', 'Nombre Tienda']) || metricsFindKey(sample, ['Tienda', 'Unidad org', 'Unidad org.', 'Unidad Organizativa', 'Nombre Tienda']);
-    const crKey = metricsFindKeyExact(sample, ['CR TIENDA', 'CR Tienda', 'CR', 'ID Tienda', 'ID TIENDA']) || metricsFindKey(sample, ['CR TIENDA', 'CR Tienda', 'CR', 'ID Tienda', 'ID TIENDA']);
-    rows.forEach(row => {
-      row[asesorKey] = resolveAsesorD1(catalog, {
-        cr: crKey ? metricsVal(row, crKey) : '',
-        tienda: tiendaKey ? metricsVal(row, tiendaKey) : '',
-        asesor: metricsVal(row, asesorKey)
-      });
+    outputRows = filterValidTiendas(rows, catalog, tiendaKey, crKey);
+    outputRows.forEach(row => {
+      applyAsesorCatalog(row, catalog, { asesorKey, tiendaKey, crKey });
     });
   }
-  downloadRowsAsCSV(rows, name.endsWith('.csv') ? name : name + '.csv');
+  downloadRowsAsCSV(outputRows, name.endsWith('.csv') ? name : name + '.csv');
 }
 
 function escapeCSVValue(value) {

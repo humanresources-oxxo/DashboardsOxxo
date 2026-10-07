@@ -4,6 +4,7 @@
   const TAB=OXXO.SHEETS_CONFIG.TABS.inventories||'Inventarios';
   const charts={trend:null,types:null,stores:null};
   let records=[];
+  let advisorCatalog=null;
   let filtered=[];
   let currentPage=1;
   let pageSize=25;
@@ -16,6 +17,11 @@
 
   function valueByAlias(row,aliases){
     const lookup=new Map(Object.keys(row||{}).map(key=>[norm(key),row[key]]));
+    for(const alias of aliases){if(lookup.has(norm(alias)))return lookup.get(norm(alias));}
+    return '';
+  }
+  function keyByAlias(row,aliases){
+    const lookup=new Map(Object.keys(row||{}).map(key=>[norm(key),key]));
     for(const alias of aliases){if(lookup.has(norm(alias)))return lookup.get(norm(alias));}
     return '';
   }
@@ -95,8 +101,8 @@
       period,
       cr:String(valueByAlias(row,['CR','Código CR','Codigo CR'])||'').trim(),
       store:String(valueByAlias(row,['Tienda','Nombre Tienda'])||'').trim(),
-      plaza:String(valueByAlias(row,['Plaza'])||'Oaxaca').trim(),
-      advisor:String(valueByAlias(row,['Asesor Comercial','Asesor','AT'])||'Sin asesor').trim(),
+      plaza:OXXO.metricsCanonicalPlazaLabel(String(valueByAlias(row,['Plaza'])||'Oaxaca').trim()),
+      advisor:OXXO.resolveAsesorD1(advisorCatalog,{cr:valueByAlias(row,['CR','Código CR','Codigo CR']),tienda:valueByAlias(row,['Tienda','Nombre Tienda']),asesor:valueByAlias(row,['Asesor Comercial','Asesor','AT'])}) || 'Sin asesor',
       previousDate:parseDate(valueByAlias(row,['Fecha de Inventario Anterior','Fecha Inventario Anterior'])),
       inventoryDate,
       days:parseNumber(valueByAlias(row,['# Días de Inventario','Dias de Inventario','Días de Inventario'])),
@@ -295,10 +301,14 @@
 
   async function init(){
     chartDefaults();bind();
-    const rows=await OXXO.fetchSheetData(TAB);
+    const [rows,catalog]=await Promise.all([OXXO.fetchSheetData(TAB),OXXO.loadAsesorCatalog()]);
+    advisorCatalog=catalog;
     if(rows===null){OXXO.showError('advisor-list','Google Sheets no respondió. Los inventarios no fueron modificados.');$('inventory-cut').innerHTML='<span></span>Sin conexión';return;}
     if(!rows.length){showSetup();return;}
-    records=rows.filter(row=>Object.values(row||{}).some(value=>String(value??'').trim())).map(mapRecord).filter(item=>item.cr||item.store);
+    const tiendaKey=keyByAlias(rows[0],['Tienda','Nombre Tienda']);
+    const crKey=keyByAlias(rows[0],['CR','Código CR','Codigo CR']);
+    const validRows=OXXO.filterValidTiendas(rows,catalog,tiendaKey,crKey);
+    records=validRows.filter(row=>Object.values(row||{}).some(value=>String(value??'').trim())).map(mapRecord).filter(item=>item.cr||item.store);
     if(!records.length){showSetup();return;}
     const periodCounts=records.reduce((map,item)=>{if(item.period)map.set(item.period,(map.get(item.period)||0)+1);return map;},new Map());
     const defaultPeriod=[...periodCounts].sort((a,b)=>b[1]-a[1])[0]?.[0]||'';

@@ -15,6 +15,8 @@
   }
   function prepare(raw, catalog, keys) {
     const rows = OXXO.filterValidTiendas(raw.map(row => ({ ...row })), catalog, keys.tiendaKey, keys.crKey);
+    const plazaKey = OXXO.metricsFindKey(rows[0] || {}, ['Plaza', 'PLAZA']);
+    if (plazaKey) rows.forEach(row => { row[plazaKey] = OXXO.metricsCanonicalPlazaLabel(row[plazaKey]); });
     rows.forEach(row => OXXO.applyAsesorCatalog(row, catalog, keys));
     const monthOf = row => monthKey(val(row, keys.mesKey), val(row, keys.anoKey));
     const weekOf = row => { const raw = String(val(row, keys.semanaKey) || '').trim(); const rank = weekRank(raw); return rank >= 0 ? String(rank) : raw; };

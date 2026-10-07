@@ -19,7 +19,8 @@
   let activeFilter = 'all';
   const sources = () => [
     { area: 'RH', name: 'Vacantes Diarias', tab: tabs().d1, cadence: 'daily', required: [['tienda'], ['puesto', 'tipo puesto', 'posicion']], dates: ['Fecha', 'Mes'] },
-    { area: 'RH', name: 'Bajas Diarias', tab: tabs().d2, cadence: 'daily', required: [['tienda'], ['asesor'], ['fecha', 'mes']], dates: ['Fecha', 'F.Crea', 'Mes'] },
+    { area: 'RH', name: 'Bajas Diarias', tab: tabs().d2, cadence: 'daily', required: [['tienda'], ['asesor'], ['fecha', 'mes'], ['div.p.']], dates: ['Fecha', 'F.Crea', 'Mes'] },
+    { area: 'Gobierno de datos', name: 'CNT · asesor por tienda', tab: OXXO.SHEETS_CONFIG.CATALOG_SHEET || 'Catalogo_Asesores', cadence: 'snapshot', kind: 'advisor-catalog', required: [] },
     { area: 'RH', name: 'Aprovechamiento', tab: tabs().d3, cadence: 'weekly', required: [['tienda'], ['asesor'], ['aprovechamiento estructura']], dates: ['FECHA', 'Fecha'] },
     { area: 'RH', name: 'Tiempo Extra', tab: tabs().s4, cadence: 'monthly', required: [['texto breve de unidad organizativa'], ['cantidad'], ['importe']], monthParts: true },
     { area: 'RH', name: 'Vacaciones', tab: tabs().s5, cadence: 'snapshot', required: [['tienda'], ['nombre'], ['dias restantes']] },
@@ -109,7 +110,32 @@
     const gid = sheetGids[result.tab] || '0';
     return `https://docs.google.com/spreadsheets/d/${encodeURIComponent(id)}/edit#gid=${gid}&range=${encodeURIComponent(result.cell || 'A1')}`;
   }
+  async function inspectAdvisorCatalog(source) {
+    const catalog = await OXXO.loadAsesorCatalog();
+    const rows = Array.isArray(catalog?.rows) ? catalog.rows : [];
+    if (!rows.length) return { ...source, status: 'bad', rows: 0, cut: null, note: 'El CNT no devolvió filas válidas.', action: 'Publica o recupera Catalogo_Asesores antes de actualizar los tableros.' };
+    const crCounts = new Map();
+    rows.forEach((row) => {
+      const cr = String(row.cr || '').trim().toUpperCase();
+      if (cr) crCounts.set(cr, (crCounts.get(cr) || 0) + 1);
+    });
+    const duplicatedCr = [...crCounts.values()].filter((count) => count > 1).length;
+    const status = duplicatedCr ? 'warn' : 'ok';
+    return {
+      ...source,
+      status,
+      rows: rows.length,
+      cut: null,
+      note: duplicatedCr
+        ? `CNT disponible con ${duplicatedCr} CR duplicado${duplicatedCr > 1 ? 's' : ''}.`
+        : `CNT disponible: ${rows.length.toLocaleString('es-MX')} asignaciones válidas por CR.`,
+      action: duplicatedCr
+        ? 'Corrige los CR duplicados en el CNT para evitar que una tienda herede un asesor ambiguo.'
+        : 'Sin acción requerida. Este catálogo es la fuente principal de asesores.'
+    };
+  }
   async function inspect(source) {
+    if (source.kind === 'advisor-catalog') return inspectAdvisorCatalog(source);
     // scoped:false: este diagnostico revisa la salud de la fuente completa,
     // no solo de la plaza activa en el switch de Alcance (que ni siquiera se
     // muestra ya en el panel admin) -- sin esto, filtrar a una sola plaza
