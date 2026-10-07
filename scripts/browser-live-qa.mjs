@@ -98,6 +98,7 @@ try {
     chartclick: "() => { const canvas=document.querySelector('#chart-asesores'); const chart=window.Chart?.getChart(canvas); const bar=chart?.getDatasetMeta(0).data[0]; if(!bar) return 'missing chart bar'; canvas.scrollIntoView({block:'center'}); const point=bar.getCenterPoint(),rect=canvas.getBoundingClientRect(); canvas.dispatchEvent(new MouseEvent('click',{bubbles:true,clientX:rect.left+point.x,clientY:rect.top+point.y})); return {clickedBar:true}; }",
     areacolors: "() => ['rh','comercial','administrativo'].map(area => { const button=document.querySelector(`.area-switch__button[data-area=${area}]`); button?.click(); return {area,active:button?.classList.contains('is-active'),pressed:button?.getAttribute('aria-pressed'),bodyArea:document.body.dataset.area,background:button&&getComputedStyle(button).backgroundImage,accent:button&&getComputedStyle(button).getPropertyValue('--area-color').trim()}; })",
     selectregion: "() => { const button=document.querySelector('[data-scope^=\"region|\"]'); if(!button) return 'region unavailable'; button.click(); return {selected:true}; }",
+    plazatoggle: "() => { const button=document.querySelector('#plazas-scope-toggle'); const ranking=document.querySelector('#tabla-plazas'); if(!button||!ranking) return 'missing plaza toggle'; const before=ranking.innerText; button.click(); return {before,after:ranking.innerText,button:button.textContent.trim()}; }",
   };
   let actionResult = null;
   if (action) {

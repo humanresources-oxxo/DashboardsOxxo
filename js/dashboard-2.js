@@ -90,6 +90,11 @@ let BAJAS_COLS = {};
 // Plazas: por defecto solo muestra la plaza activa (ver renderPlazas).
 let PLAZAS_SHOW_ALL = false;
 let OTRAS_PLAZAS_DATA = [];
+// El tablero principal puede estar filtrado a una plaza. Para que el boton
+// "Ver todas las plazas" tenga datos reales, se conserva una lectura regional
+// separada de Dashboard_2_Diario.
+let REGIONAL_BAJAS_DATA = [];
+let REGIONAL_BAJAS_COLS = null;
 // Meta mensual de bajas por asesor (pestana Compromisos_Bajas: Plaza | Asesor
 // | Compromiso), cargada una vez en initDashboard -- antes vivia hardcodeada
 // como nombres reales en OXXO.SHEETS_CONFIG.BAJAS_COMMITMENTS (config.js,
@@ -1057,7 +1062,7 @@ function renderBajasDashboard(data, cols){
       if(hadFocus) heatmapEl.querySelector('#heatmap-clear')?.focus({ preventScroll: true });
     }
     announceHeatmap();
-    renderPlazas(BASE_BAJAS_DATA, cols);
+    renderPlazasForScope(cols);
     syncD2UI();
     return;
   }
@@ -1145,11 +1150,16 @@ function renderBajasDashboard(data, cols){
   renderChart('chart-tiendas','bar',topTienda.map(x=>OXXO.truncate(x.label,30)),topTienda.map(x=>x.total),{horizontal:true,ranking:true,tickSize:12,label:'Bajas por tienda',suggestedMax:maxTienda + 1,barPercentage:.52,categoryPercentage:.86});
 
   renderDetail(data, cols);
-  renderPlazas(BASE_BAJAS_DATA, cols);
+  renderPlazasForScope(cols);
   renderHeatmapBajas(data, cols);
   document.getElementById('row-count').textContent = `${data.length} bajas`;
   OXXO.updateFooterTime('load-time');
   syncD2UI();
+}
+
+function renderPlazasForScope(fallbackCols){
+  const useRegional = PLAZAS_SHOW_ALL && REGIONAL_BAJAS_DATA.length && REGIONAL_BAJAS_COLS;
+  renderPlazas(useRegional ? REGIONAL_BAJAS_DATA : BASE_BAJAS_DATA, useRegional ? REGIONAL_BAJAS_COLS : fallbackCols);
 }
 
 function renderPlazas(allData, cols) {
@@ -1493,10 +1503,11 @@ async function initDashboard(){
   // Estas cuatro fuentes no dependen entre si. La tabla opcional de
   // denominaciones tambien arranca ya, pero no bloquea el tablero principal.
   const rawDenominacionesPromise = OXXO.fetchSheetData(OXXO.SHEETS_CONFIG.TABS.d2denom);
-  const [raw, asesorCatalog, rawOtras] = await Promise.all([
+  const [raw, asesorCatalog, rawOtras, rawRegional] = await Promise.all([
     OXXO.fetchSheetData(TAB),
     OXXO.loadAsesorCatalog(),
     OXXO.fetchSheetData(OXXO.SHEETS_CONFIG.TABS.d2otras,{scoped:false}),
+    OXXO.fetchSheetData(TAB,{scoped:false}),
     loadCompromisosBajas(),
   ]);
   if(raw === null){ ['kpi-section','tabla-detalle'].forEach(id=>OXXO.showError(id,'No se pudo conectar con Google Sheets.')); return; }
@@ -1531,6 +1542,10 @@ async function initDashboard(){
   RAW_BAJAS_DATA = filasBajas;
   BASE_BAJAS_DATA = data;
   BAJAS_COLS = cols;
+  if(rawRegional && rawRegional.length){
+    REGIONAL_BAJAS_COLS = buildCols(rawRegional);
+    REGIONAL_BAJAS_DATA = filterData(rawRegional, REGIONAL_BAJAS_COLS);
+  }
   if(rawOtras && rawOtras.length) OTRAS_PLAZAS_DATA = rawOtras;
   FILTER_STATE = defaultFilterState(BASE_BAJAS_DATA, BAJAS_COLS);
   OXXO.persistDashboardPeriod(FILTER_STATE.mes || '');
@@ -1541,7 +1556,7 @@ async function initDashboard(){
   document.getElementById('plazas-scope-toggle')?.addEventListener('click', () => {
     if(OXXO.getActiveDataScope().level==='region')return;
     PLAZAS_SHOW_ALL = !PLAZAS_SHOW_ALL;
-    renderPlazas(BASE_BAJAS_DATA, BAJAS_COLS);
+    renderPlazasForScope(BAJAS_COLS);
     updatePanelScopeLabels();
   });
 }

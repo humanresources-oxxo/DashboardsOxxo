@@ -186,7 +186,8 @@ test('Analisis, descargas, modales, denominaciones y lecturas en paralelo se con
   ok(js, /downloadBajasWithContact/);
   ok(js, /OXXO\.renderDownloadButton\('hero-download','d2'/);
   assert.equal((js.match(/OXXO_DIALOGS\.register\(/g) || []).length, 2);
-  ok(js, /const rawDenominacionesPromise = OXXO\.fetchSheetData\(OXXO\.SHEETS_CONFIG\.TABS\.d2denom\);\s*const \[raw, asesorCatalog, rawOtras\] = await Promise\.all\(\[/);
+  ok(js, /const rawDenominacionesPromise = OXXO\.fetchSheetData\(OXXO\.SHEETS_CONFIG\.TABS\.d2denom\);\s*const \[raw, asesorCatalog, rawOtras, rawRegional\] = await Promise\.all\(\[/);
+  ok(js, /OXXO\.fetchSheetData\(TAB,\{scoped:false\}\)/, 'carga una copia regional para el comparativo');
   ok(js, /void rawDenominacionesPromise\.then\(loadDenominaciones\)/, 'denominaciones no bloquea el tablero');
   ok(js, /window\.addEventListener\('oxxo-theme-change'/);
   ok(js, /OXXO\.showError\(id,'No se pudo conectar con Google Sheets\.'\)/);
@@ -203,7 +204,8 @@ test('rotulos de alcance: cada panel declara lo que de verdad usa', () => {
   ok(js, /Solo filtra por mes/);
   // Se llama tras cada render, el toggle de plazas y las denominaciones.
   assert.ok((js.match(/syncD2UI\(\)/g) || []).length >= 3);
-  ok(js, /if\(OXXO\.getActiveDataScope\(\)\.level==='region'\)return;\s*PLAZAS_SHOW_ALL = !PLAZAS_SHOW_ALL;\s*renderPlazas\(BASE_BAJAS_DATA, BAJAS_COLS\);\s*updatePanelScopeLabels\(\);/);
+  ok(js, /if\(OXXO\.getActiveDataScope\(\)\.level==='region'\)return;\s*PLAZAS_SHOW_ALL = !PLAZAS_SHOW_ALL;\s*renderPlazasForScope\(BAJAS_COLS\);\s*updatePanelScopeLabels\(\);/);
+  ok(js, /REGIONAL_BAJAS_DATA = filterData\(rawRegional, REGIONAL_BAJAS_COLS\)/, 'el comparativo regional usa las mismas reglas de bajas');
 });
 
 test('compromisos regionales suman las metas de todas las plazas sin duplicar la vista individual', () => {
