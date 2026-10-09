@@ -19,7 +19,7 @@
   let activeFilter = 'all';
   const sources = () => [
     { area: 'RH', name: 'Vacantes Diarias', tab: tabs().d1, cadence: 'daily', required: [['tienda'], ['puesto', 'tipo puesto', 'posicion']], dates: ['Fecha', 'Mes'] },
-    { area: 'RH', name: 'Bajas Diarias', tab: tabs().d2, cadence: 'daily', required: [['tienda'], ['asesor'], ['fecha', 'mes'], ['div.p.', 'div p', 'division de personal', 'division personal', 'd.p.']], dates: ['Fecha', 'F.Crea', 'Mes'] },
+    { area: 'RH', name: 'Bajas Diarias', tab: tabs().d2, cadence: 'daily', required: [['tienda'], ['asesor'], ['fecha', 'mes'], ['div.p.', 'div p', 'division de personal', 'division personal', 'div de personal', 'divisional personal']], dates: ['Fecha', 'F.Crea', 'Mes'] },
     { area: 'Gobierno de datos', name: 'CNT · asesor por tienda', tab: OXXO.SHEETS_CONFIG.CATALOG_SHEET || 'Catalogo_Asesores', cadence: 'snapshot', kind: 'advisor-catalog', required: [] },
     { area: 'RH', name: 'Aprovechamiento', tab: tabs().d3, cadence: 'weekly', required: [['tienda'], ['asesor'], ['aprovechamiento estructura']], dates: ['FECHA', 'Fecha'] },
     { area: 'RH', name: 'Tiempo Extra', tab: tabs().s4, cadence: 'monthly', required: [['texto breve de unidad organizativa'], ['cantidad'], ['importe']], monthParts: true },
