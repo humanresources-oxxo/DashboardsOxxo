@@ -1737,8 +1737,9 @@ async function loadTiendaCatalog() {
   return tiendaCatalogPromise;
 }
 
-// Catalogo_Asesores sigue resolviendo responsables; Catalogo_Tiendas,
-// reconstruido desde TREO, decide si una tienda esta dada de baja.
+// Catalogo_Asesores sigue resolviendo responsables desde el CNT. Catalogo_Tiendas,
+// normalmente reconstruido desde TREO, es un catalogo auxiliar para reconocer
+// bajas explicitas; no es la lista completa de tiendas operativas.
 // Si temporalmente ninguna de las dos fuentes responde, se falla abierto para
 // no desaparecer tiendas por una intermitencia de red.
 //

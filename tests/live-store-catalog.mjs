@@ -86,6 +86,6 @@ const ausentes = [...currentStores.values()].filter(store => !(
 const claves = tienda => sandbox.OXXO.normalizeCatalogTienda(tienda);
 const clavesPreapertura = new Set(preaperturas.map(claves));
 ausentes.filter(store => !clavesPreapertura.has(claves(store.tienda))).forEach(store => assert.equal(valid(store.tienda, store.cr), true, `tienda de D1 ausente del catalogo debe seguir aceptada: ${store.tienda}`));
-if (ausentes.length) console.warn(`[diagnostico] ${ausentes.length} tiendas del ultimo corte D1 aun no estan en TREO/catalogo: ${ausentes.map(item => item.tienda).join(', ')}`);
+if (ausentes.length) console.warn(`[diagnostico] ${ausentes.length} tiendas del ultimo corte D1 aun no estan en TREO/catalogo auxiliar; se conservan porque D1 es la fotografia operativa vigente: ${ausentes.map(item => item.tienda).join(', ')}`);
 
 console.log({ source: catalog.source, tiendas: catalog.byCr.size, plazas, periodoD1: latest.mes, tiendasD1: currentStores.size, inactivasRechazadas: inactivas.length, ausentesEnCatalogo: ausentes.length });

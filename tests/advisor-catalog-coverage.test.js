@@ -28,7 +28,11 @@ test('los periodos compartidos canonizan la plaza antes de agrupar', () => {
 
 test('el diagnóstico admin vigila el CNT y la columna de división de RAE', () => {
   const quality = read('js/admin-data-quality.js');
+  const rae = read('js/admin-pptx-rae.js');
   assert.match(quality, /kind: 'advisor-catalog'/, 'Administración revisa el CNT');
   assert.match(quality, /inspectAdvisorCatalog\(/, 'Administración valida filas y CR duplicados');
-  assert.match(quality, /\['div\.p\.'\]/, 'Administración detecta si RAE pierde Div.P.');
+  assert.match(quality, /\['div\.p\.',\s*'div p',\s*'division de personal'/, 'Administración acepta aliases de Div.P.');
+  assert.match(quality, /TREO - catalogo auxiliar/, 'TREO se identifica como catálogo auxiliar');
+  assert.match(rae, /'Div\. P\.'/);
+  assert.match(rae, /'División personal'/);
 });
