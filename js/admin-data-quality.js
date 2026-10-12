@@ -19,13 +19,13 @@
   let activeFilter = 'all';
   const sources = () => [
     { area: 'RH', name: 'Vacantes Diarias', tab: tabs().d1, cadence: 'daily', required: [['tienda'], ['puesto', 'tipo puesto', 'posicion']], dates: ['Fecha', 'Mes'] },
-    { area: 'RH', name: 'Bajas Diarias', tab: tabs().d2, cadence: 'daily', required: [['tienda'], ['asesor'], ['fecha', 'mes'], ['div.p.']], dates: ['Fecha', 'F.Crea', 'Mes'] },
+    { area: 'RH', name: 'Bajas Diarias', tab: tabs().d2, cadence: 'daily', required: [['tienda'], ['asesor'], ['fecha', 'mes'], ['div.p.', 'div p', 'division de personal', 'division personal', 'div de personal', 'divisional personal']], dates: ['Fecha', 'F.Crea', 'Mes'] },
     { area: 'Gobierno de datos', name: 'CNT · asesor por tienda', tab: OXXO.SHEETS_CONFIG.CATALOG_SHEET || 'Catalogo_Asesores', cadence: 'snapshot', kind: 'advisor-catalog', required: [] },
     { area: 'RH', name: 'Aprovechamiento', tab: tabs().d3, cadence: 'weekly', required: [['tienda'], ['asesor'], ['aprovechamiento estructura']], dates: ['FECHA', 'Fecha'] },
     { area: 'RH', name: 'Tiempo Extra', tab: tabs().s4, cadence: 'monthly', required: [['texto breve de unidad organizativa'], ['cantidad'], ['importe']], monthParts: true },
     { area: 'RH', name: 'Vacaciones', tab: tabs().s5, cadence: 'snapshot', required: [['tienda'], ['nombre'], ['dias restantes']] },
     { area: 'RH', name: 'Ausentismos', tab: tabs().s6, cadence: 'monthly', required: [['tienda'], ['denominacion'], ['dias']], monthParts: true },
-    { area: 'RH', name: 'TREO', tab: tabs().s7, cadence: 'snapshot', required: [['tienda'], ['asesor'], ['estructura sap']] },
+    { area: 'RH', name: 'TREO - catalogo auxiliar', tab: tabs().s7, cadence: 'snapshot', required: [['tienda'], ['asesor'], ['estructura sap']] },
     { area: 'RH', name: 'Capacidades', tab: tabs().d8, cadence: 'snapshot', required: [['unidad org'], ['empleados'], ['asesor correcto', 'asesor']] },
     { area: 'RH', name: 'Personal FLEX', tab: tabs().d10, cadence: 'weekly', required: [['tienda'], ['asesor'], ['fecha']], dates: ['Fecha'] },
     { area: 'RH', name: 'Cumplimiento de Marcajes', tab: tabs().d11, cadence: 'snapshot', required: [['tienda'], ['asesor'], ['semana'], ['cumpl reg total']] },

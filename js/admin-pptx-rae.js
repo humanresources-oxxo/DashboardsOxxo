@@ -4,6 +4,7 @@
   // dashboards y presentaciones nunca vuelvan a divergir. Aqui solo se
   // referencian esas funciones \u2014 nada de esto se reimplementa.
   const findKey = OXXO.metricsFindKey;
+  const findExactKey = OXXO.metricsFindKeyExact || findKey;
   const findDataKey = OXXO.metricsFindDataKey;
   const val = OXXO.metricsVal;
   const num = OXXO.metricsNum;
@@ -254,7 +255,7 @@
     const sample = raw[0];
     const tiendaKey = findKey(sample, ['Tienda','Unidad org.','Unidad org','Unidad Organizativa','Unidad','Sucursal','Nombre Tienda']);
     const crKey = findKey(sample, ['CR','CR Tienda','CR TIENDA']);
-    const divisionKey = findKey(sample, ['Div.P.','Div P','Division de personal','División de personal','D.P.']);
+    const divisionKey = findExactKey(sample, ['Div.P.','Div P','Div. P.','Division de personal','División de personal','División personal','Division personal','Div. de Personal','Divisional Personal','D.P.']);
     const applyKey = findKey(sample, ['Aplica en % de rotación','Aplica en % de rotacion','Aplica rotación','Aplica rotacion','Aplica']);
     const earlyKey = findKey(sample, ['Rot_Temp','Rot. Temprana','Rot Temprana','Conteo bajas temprana']);
     const asesorKey = findKey(sample, ['Asesor']);
