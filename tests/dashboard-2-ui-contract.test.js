@@ -263,7 +263,7 @@ test('css aislado: todo bajo body.dashboard-2-page, pocos !important, sin vidrio
 });
 
 // ── Paridad de cifras: se ejecuta js/dashboard-2.js con un DOM minimo ─────────────
-function cargarD2() {
+function cargarD2(esAdminUnit = () => false) {
   const elementos = {};
   const crear = id => {
     const e = { id, innerHTML: '', textContent: '', dataset: {}, style: {}, hidden: false, children: [],
@@ -290,7 +290,7 @@ function cargarD2() {
     getActiveStoreStatus: () => 'operativas', matchesScopeValue: () => true,
     restoreDashboardPeriod: (_d, ultimo) => ultimo, persistDashboardPeriod() {},
     truncate: (s, n = 25) => (s && s.length > n ? s.slice(0, n) + '…' : s || ''),
-    metricsIsTiendaEntrenamientoOperacionesD2: () => false, updateFooterTime() {},
+    metricsIsTiendaEntrenamientoOperacionesD2: t => esAdminUnit(t), updateFooterTime() {},
     ensureChartReady: () => false, getChartThemeColors: () => ({ text: '#000', tooltipBg: '#000', grid: '#ccc' }),
   };
   const ventana = { matchMedia: () => ({ matches: false, addEventListener() {} }), addEventListener() {}, OXXO };
@@ -301,7 +301,9 @@ function cargarD2() {
     FILTER_STATE = defaultFilterState(BASE_BAJAS_DATA, BAJAS_COLS);
     SELECTED_ASESORES = defaultAsesorSelection(BASE_BAJAS_DATA, BAJAS_COLS);
     renderBajasDashboard(applyUserFilters(BASE_BAJAS_DATA, BAJAS_COLS), BAJAS_COLS);
-    return { kpi: document.getElementById('kpi-section').innerHTML, heat: document.getElementById('heatmap-bajas').innerHTML };
+    return { kpi: document.getElementById('kpi-section').innerHTML, heat: document.getElementById('heatmap-bajas').innerHTML,
+      compromiso: document.getElementById('tabla-compromiso').innerHTML, detalle: document.getElementById('tabla-detalle').innerHTML,
+      asesores: asesorOptionsList(BASE_BAJAS_DATA, BAJAS_COLS) };
   }, heatSpeak, heatTextColor, d2MonthShort, kpiCardHTML };`;
   vm.runInContext(js + exponer, contexto, { filename: 'js/dashboard-2.js' });
   return contexto.__d2;
@@ -352,4 +354,40 @@ test('ayudas del mapa: rangos hablados y texto legible sobre cualquier relleno',
   assert.equal(d2.heatTextColor(1), '#fff');
   assert.equal(d2.d2MonthShort('2026-09'), 'Sep 2026');
   assert.equal(d2.d2MonthShort(''), 'Todos los meses');
+});
+
+// Entrenamiento/Operaciones son unidades administrativas: sus bajas son reales
+// y siguen contando en el total, pero no son "Sin asesor asignado" (eso es una
+// tienda operativa real sin AT vigente). Deben verse como dos buckets distintos.
+test('Entrenamiento / Operaciones es un bucket propio, separado de Sin asesor asignado', () => {
+  const fila = (asesor, tienda) => ({ Mes: '2026-09', Asesor: asesor, Tienda: tienda, Puesto: 'Ayudante Tienda', Temporalidad: '0 - 45 días', 'Rot. Temp.': 'No', Edad: '25', Plaza: 'Oaxaca' });
+  const esAdmin = t => /^(ENTRENAMIENTO OAXACA|OPERACIONES )/.test(String(t || '').toUpperCase());
+  const filas = [
+    fila('Sin Asesor Asignado', 'ENTRENAMIENTO OAXACA'),
+    fila('Sin Asesor Asignado', 'ENTRENAMIENTO OAXACA II'),
+    fila('Ana Perez', 'OPERACIONES 1 OAXACA'),            // unidad admin: manda la tienda, no el asesor crudo
+    fila('Sin Asesor Asignado', 'OXXO TIENDA REAL'),       // tienda operativa sin AT vigente
+    fila('Ana Perez', 'OXXO UNO'),
+    fila('Ana Perez', 'OXXO UNO'),
+  ];
+  const { kpi, compromiso, detalle, asesores } = cargarD2(esAdmin).run(filas);
+
+  // Totales intactos: las seis bajas siguen contando.
+  assert.equal((kpi.match(/kpi-card__value">6</) || []).length, 1, 'el total no cambia');
+
+  // Filtro de asesor: los dos buckets existen por separado y van al final.
+  assert.deepEqual(Array.from(asesores), ['Ana Perez', 'SIN ASESOR ASIGNADO', 'Entrenamiento / Operaciones']);
+
+  // Tabla compromiso vs resultado: una fila por bucket, con su conteo y meta 0.
+  const celdas = [...compromiso.matchAll(/<td>([^<]*)<\/td>\s*<td class="num"><span class="pill [^"]*">(\d+)</g)].map(m => [m[1], Number(m[2])]);
+  const porNombre = Object.fromEntries(celdas);
+  assert.equal(porNombre['Entrenamiento / Operaciones'], 3);
+  assert.equal(porNombre['Sin asesor asignado'], 1);
+  assert.ok(!/Sin asesor asignado<\/td>\s*<td class="num"><span class="pill [^"]*">4</.test(compromiso), 'no se fusionan los dos buckets');
+
+  // Ranking de asesores y detalle muestran la etiqueta nueva, no "Sin asesor asignado".
+  const tarjetaAsesor = kpi.match(/data-kpi="asesor"[\s\S]*?<\/div><\/div>/)?.[0] || '';
+  ok(tarjetaAsesor, /Entrenamiento \/ Operaciones/);
+  assert.ok(detalle.includes('Entrenamiento / Operaciones'), 'el detalle etiqueta la unidad administrativa');
+  assert.ok(detalle.includes('Sin asesor asignado'), 'el detalle conserva el bucket sin asesor de tienda real');
 });

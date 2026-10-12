@@ -104,7 +104,10 @@ function isAbandono(r){ return norm(r.detalle).toLowerCase() === 'abandono de tr
 function esRotTemprana(r){ return norm(r.rotTemp).toLowerCase() === 'si'; }
 
 // Orden lógico de los buckets de Temporalidad tal como vienen en el Excel de Bajas.
-const ORDEN_TEMPORALIDAD = ['0 - 45 días','46 - 90 días','3 - 6 meses','6 - 12 meses','> 1 año'];
+// Mismo rotulo que js/dashboard-2.js (ASESOR_BUCKETS): unidades
+// administrativas de Entrenamiento/Operaciones, no un asesor real.
+const ENTRENAMIENTO_OPS = 'Entrenamiento / Operaciones';
+const ORDEN_TEMPORALIDAD =['0 - 45 días','46 - 90 días','3 - 6 meses','6 - 12 meses','> 1 año'];
 function ordenTemporalidad(t){ const i = ORDEN_TEMPORALIDAD.indexOf(t); return i === -1 ? 99 : i; }
 
 function pctFmt(n){ return (Number(n)||0).toFixed(1) + '%'; }
@@ -289,7 +292,7 @@ function generarPlanAutomatico(data){
 
   const porAsesorTotal = {};
   data.forEach(r => { const a = norm(r.asesor) || 'Sin asesor'; porAsesorTotal[a] = (porAsesorTotal[a]||0) + 1; });
-  const asesoresOrdenados = Object.entries(porAsesorTotal).filter(([a]) => a !== 'Sin asesor').sort((a,b)=>b[1]-a[1]);
+  const asesoresOrdenados = Object.entries(porAsesorTotal).filter(([a]) => a !== 'Sin asesor' && a !== ENTRENAMIENTO_OPS).sort((a,b)=>b[1]-a[1]);
   if(asesoresOrdenados.length && asesoresOrdenados[0][1] / total >= 0.2){
     const nombres = asesoresOrdenados.filter(([,n]) => n/total >= 0.15).map(([a]) => a).join(', ');
     plan.push({Hallazgo:`${nombres} concentran una parte alta de las bajas del periodo`, Accion:'Revisar con estos asesores su cartera de tiendas: perfil de contratación, proceso de selección y frecuencia de seguimiento a nuevo ingreso', Responsable:'Gerente RH + Asesores', Plazo:'3 semanas', Indicador:'Igualar % de bajas de su cartera al promedio de plaza', Prioridad:'Media'});
@@ -370,7 +373,9 @@ async function init(){
     .filter(r => OXXO.isTiendaValid(asesorCatalog, r['Tienda'], r['CR']))
     .filter(r => String(r['Asesor']||'').trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]/g,'') !== 'timoteoantonioperez')
     .map(r => ({
-      asesor: String(r['Asesor']||'').trim(),
+      // Mismo bucket visible que dashboard-2.html: Entrenamiento/Operaciones
+      // son unidades administrativas, no un asesor sin asignar.
+      asesor: OXXO.metricsIsTiendaEntrenamientoOperacionesD2(r['Tienda']) ? ENTRENAMIENTO_OPS : String(r['Asesor']||'').trim(),
       tienda: String(r['Tienda']||'').trim(),
       temporalidad: String(r['Temporalidad']||'').trim(),
       rotTemp: String(r['Rot_Temp']||'').trim(),

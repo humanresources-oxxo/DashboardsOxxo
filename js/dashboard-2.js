@@ -104,22 +104,44 @@ let FILTER_STATE = {};
 let SELECTED_ASESORES = null; // array de asesores seleccionados (multi-select)
 
 const SIN_ASESOR = 'SIN ASESOR ASIGNADO';
+// Entrenamiento y Operaciones son unidades administrativas, no tiendas
+// operativas: sus bajas son reales y siguen contando en los totales, pero no
+// son "Sin asesor asignado" (eso es una tienda real que hoy no tiene AT
+// vigente). Se agrupan en su propio bucket visible para no mezclar dos cosas
+// distintas ni inventarle dueño a nadie. El dato crudo no se toca: esto es
+// solo la etiqueta con la que se agrupa y se muestra.
+const ENTRENAMIENTO_OPS = 'Entrenamiento / Operaciones';
+// Buckets que no son personas: van al final de los selectores, sin meta
+// individual en la tabla de compromiso y fuera del roster de asesores.
+const ASESOR_BUCKETS = [SIN_ASESOR, ENTRENAMIENTO_OPS];
+const ASESOR_BUCKET_LABELS = new Map([
+  [cleanKey(SIN_ASESOR), 'Sin asesor asignado'],
+  [cleanKey(ENTRENAMIENTO_OPS), ENTRENAMIENTO_OPS],
+]);
+function isAsesorBucket(name){ return ASESOR_BUCKET_LABELS.has(cleanKey(name)); }
 function getAsesorValue(row, cols){
+  if(OXXO.metricsIsTiendaEntrenamientoOperacionesD2(val(row, cols, 'tienda', ''))) return ENTRENAMIENTO_OPS;
   const raw = String(val(row, cols, 'asesor', '') || '').trim();
   if(!raw) return SIN_ASESOR;
   const c = cleanText(raw);
   if(c.includes('SIN ASESOR') || c.includes('NO ASIGNADO')) return SIN_ASESOR;
   return raw;
 }
+// Etiqueta para rankings, tablas y modal: el bucket con su nombre legible,
+// el resto con el nombre tal cual viene del catalogo.
+function asesorDisplay(row, cols){
+  const v = getAsesorValue(row, cols);
+  return ASESOR_BUCKET_LABELS.get(cleanKey(v)) || v;
+}
 function asesorOptionsList(data, cols){
   const set = new Set(data.map(r => getAsesorValue(r, cols)));
-  const arr = [...set].filter(v => v !== SIN_ASESOR).sort((a,b)=>a.localeCompare(b,'es'));
-  if(set.has(SIN_ASESOR)) arr.push(SIN_ASESOR);
+  const arr = [...set].filter(v => !isAsesorBucket(v)).sort((a,b)=>a.localeCompare(b,'es'));
+  ASESOR_BUCKETS.forEach(v => { if(set.has(v)) arr.push(v); });
   return arr;
 }
 function defaultAsesorSelection(data, cols){
-  // Arranca con TODOS los asesores, incluido "Sin asesor asignado" (bajas de
-  // tiendas de Entrenamiento y Operaciones). Antes esas quedaban fuera por
+  // Arranca con TODOS los buckets, incluidos "Sin asesor asignado" y
+  // "Entrenamiento / Operaciones". Antes esas bajas quedaban fuera por
   // defecto y la tarjeta "Total Bajas" no era el total: eran bajas reales que
   // no aparecian en ningun KPI y nada en pantalla lo decia. Se sigue pudiendo
   // des-seleccionar a mano desde el filtro de asesor.
@@ -481,7 +503,7 @@ function filterData(data, cols){
     if(operativos.length) rows = operativos;
   }
   // Se conservan Entrenamiento y Operaciones para que sus bajas aparezcan
-  // bajo "Sin asesor asignado" y en el detalle. Se excluyen únicamente del
+  // bajo "Entrenamiento / Operaciones" y en el detalle. Se excluyen únicamente del
   // ranking de tiendas, porque no son tiendas operativas; sí cuentan en el
   // total de su plaza para que todos los totales permanezcan sincronizados.
   return rows;
@@ -642,7 +664,7 @@ function compromisoRoster(cols){
   const roster=new Map();
   source.forEach(row=>{
     const name=getAsesorValue(row,cols);
-    if(!name||name===SIN_ASESOR)return;
+    if(!name||isAsesorBucket(name))return;
     roster.set(cleanKey(name),name);
   });
   // Oaxaca ya tenía metas configuradas incluso para asesores con cero bajas.
@@ -672,21 +694,20 @@ function renderCompromiso(data, cols){
   const configuredByKey=new Map(Object.entries(commitmentConfig.values).map(([name,value])=>[cleanKey(name),Number(value)||0]));
   let totalBajas = 0;
   let totalComp = 0;
-  const sinAsesorId=cleanKey(SIN_ASESOR);
   const roster=compromisoRoster(cols);
   // No hay una meta individual para estas bajas, pero se listan con meta 0
   // para que la suma de esta tabla sea exactamente el total filtrado.
-  if(counts[sinAsesorId]) roster.set(sinAsesorId,SIN_ASESOR);
+  ASESOR_BUCKETS.forEach(name=>{ const id=cleanKey(name); if(counts[id]) roster.set(id,name); });
   const sorted = [...roster].map(([id,full])=>({
-    id,full,nombre:id===sinAsesorId?'Sin asesor asignado':shortAsesorName(full),bajas:counts[id]||0,
-    comp:id===sinAsesorId?0:(configuredByKey.has(id)?configuredByKey.get(id):commitmentConfig.defaultValue)
+    id,full,nombre:ASESOR_BUCKET_LABELS.get(id)||shortAsesorName(full),bajas:counts[id]||0,
+    comp:ASESOR_BUCKET_LABELS.has(id)?0:(configuredByKey.has(id)?configuredByKey.get(id):commitmentConfig.defaultValue)
   })).sort((a,b) => b.bajas - a.bajas || a.full.localeCompare(b.full, 'es'));
   const rows = sorted.map(item => {
     const bajas = item.bajas;
     const desfase = bajas - item.comp;
     totalBajas += bajas;
     totalComp += item.comp;
-    return `<tr${item.id===sinAsesorId?' class="compromiso-sin-asesor"':''}>
+    return `<tr${ASESOR_BUCKET_LABELS.has(item.id)?' class="compromiso-sin-asesor"':''}>
       <td>${item.nombre}</td>
       <td class="num"><span class="pill ${compPillClass(bajas)}">${bajas}</span></td>
       <td class="num">${item.comp}</td>
@@ -717,6 +738,7 @@ let DET_DATA = [], DET_COLS = null;
 let DET_SORT = { col:'mes', dir:'desc' };
 function detValue(r, cols, key){
   if(key==='mes') return monthKeyFromRow(r,cols) || '';
+  if(key==='asesor') return asesorDisplay(r,cols);
   if(key==='puesto') return normalizePuesto(val(r,cols,key));
   if(key==='motivo') return val(r,cols,'detalle') || normalizeMotivo(val(r,cols,key));
   if(key==='temporalidad') return getTemporalidad(r,cols);
@@ -834,7 +856,7 @@ function openBajaModal(idx){
   document.getElementById('baja-title').textContent = val(r,cols,'empleado','Colaborador');
   document.getElementById('baja-body').innerHTML = `
     <div class="baja-kpis">
-      <div class="baja-kpi"><div class="v">${escHtml(val(r,cols,'asesor','—'))}</div><div class="l">Asesor</div></div>
+      <div class="baja-kpi"><div class="v">${escHtml(asesorDisplay(r,cols)||'—')}</div><div class="l">Asesor</div></div>
       <div class="baja-kpi"><div class="v">${escHtml(val(r,cols,'tienda','—'))}</div><div class="l">Tienda</div></div>
       <div class="baja-kpi"><div class="v">${escHtml(normalizeMotivo(val(r,cols,'motivo')))}</div><div class="l">Motivo</div></div>
     </div>
@@ -1071,7 +1093,7 @@ function renderBajasDashboard(data, cols){
   const byPuesto = countBy(data, r=>normalizePuesto(val(r,cols,'puesto')));
   const byMotivo = countBy(data, r=>normalizeMotivo(val(r,cols,'motivo')));
   const byTemp = countBy(data, r=>getTemporalidad(r,cols));
-  const byAsesor = countBy(data, r=>val(r,cols,'asesor','Sin asesor'));
+  const byAsesor = countBy(data, r=>asesorDisplay(r,cols));
   const tiendasOperativasData = data.filter(r =>
     !OXXO.metricsIsTiendaEntrenamientoOperacionesD2(val(r, cols, 'tienda'))
   );
