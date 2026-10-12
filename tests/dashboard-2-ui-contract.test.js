@@ -365,7 +365,7 @@ test('Entrenamiento / Operaciones es un bucket propio, separado de Sin asesor as
   const filas = [
     fila('Sin Asesor Asignado', 'ENTRENAMIENTO OAXACA'),
     fila('Sin Asesor Asignado', 'ENTRENAMIENTO OAXACA II'),
-    fila('Ana Perez', 'OPERACIONES 1 OAXACA'),            // unidad admin: manda la tienda, no el asesor crudo
+    fila('Ana Perez', 'OPERACIONES 1 OAXACA'),            // unidad admin CON AT real: manda la persona
     fila('Sin Asesor Asignado', 'OXXO TIENDA REAL'),       // tienda operativa sin AT vigente
     fila('Ana Perez', 'OXXO UNO'),
     fila('Ana Perez', 'OXXO UNO'),
@@ -381,13 +381,14 @@ test('Entrenamiento / Operaciones es un bucket propio, separado de Sin asesor as
   // Tabla compromiso vs resultado: una fila por bucket, con su conteo y meta 0.
   const celdas = [...compromiso.matchAll(/<td>([^<]*)<\/td>\s*<td class="num"><span class="pill [^"]*">(\d+)</g)].map(m => [m[1], Number(m[2])]);
   const porNombre = Object.fromEntries(celdas);
-  assert.equal(porNombre['Entrenamiento / Operaciones'], 3);
+  assert.equal(porNombre['Entrenamiento / Operaciones'], 2, 'solo las unidades admin SIN asesor caen al bucket');
   assert.equal(porNombre['Sin asesor asignado'], 1);
+  assert.equal(porNombre['Ana Perez'], 3, 'la baja de OPERACIONES con AT real cuenta para esa persona');
   assert.ok(!/Sin asesor asignado<\/td>\s*<td class="num"><span class="pill [^"]*">4</.test(compromiso), 'no se fusionan los dos buckets');
 
   // Ranking de asesores y detalle muestran la etiqueta nueva, no "Sin asesor asignado".
   const tarjetaAsesor = kpi.match(/data-kpi="asesor"[\s\S]*?<\/div><\/div>/)?.[0] || '';
-  ok(tarjetaAsesor, /Entrenamiento \/ Operaciones/);
+  ok(tarjetaAsesor, /Ana Perez/, 'el tope es la persona real, no el bucket');
   assert.ok(detalle.includes('Entrenamiento / Operaciones'), 'el detalle etiqueta la unidad administrativa');
   assert.ok(detalle.includes('Sin asesor asignado'), 'el detalle conserva el bucket sin asesor de tienda real');
 });

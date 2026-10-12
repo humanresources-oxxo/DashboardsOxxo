@@ -120,8 +120,25 @@ assert.equal(OXXO.resolveAsesorD1(catalogoVacio, { cr: '50B07', tienda: 'OXXO Ba
 // Una tienda que tampoco tiene asesor en el catalogo de tiendas sigue sin
 // dueno: no se inventa una persona.
 assert.equal(OXXO.resolveAsesorD1(catalogoVacio, { cr: '50B08', tienda: 'OXXO Sin Dueno OAX', asesor: '' }), 'Sin Asesor Asignado');
-// Entrenamiento/Operaciones son unidades administrativas: nunca heredan asesor.
+// Entrenamiento/Operaciones son unidades administrativas: no heredan asesor por
+// CR ni por reasignacion de tienda, pero tampoco pierden al AT real que traiga
+// la fila (ni al que el catalogo registre para esa misma unidad).
 assert.equal(OXXO.resolveAsesorD1(catalogoVacio, { cr: '50B07', tienda: 'Entrenamiento Oaxaca II', asesor: '' }), 'Sin Asesor Asignado');
+assert.equal(OXXO.resolveAsesorD1(catalogoVacio, { cr: '50B07', tienda: 'Operaciones 1 Oaxaca', asesor: 'Ana Perez' }), 'Ana Perez');
+const catalogoUnidadAdmin = {
+  loaded: true, rows: [], byCr: new Map(),
+  byTienda: new Map([[OXXO.normalizeCatalogTienda('Entrenamiento Oaxaca II'), { asesor: 'Ruben Cruz', region: 'TABASCO', plaza: 'Plaza Oaxaca', zona: '' }]]),
+  storeCatalog: storeCatalogConAsesor
+};
+assert.equal(OXXO.resolveAsesorD1(catalogoUnidadAdmin, { tienda: 'Entrenamiento Oaxaca II', asesor: '' }), 'Ruben Cruz');
+const catalogoUnidadSinAT = {
+  loaded: true, rows: [], byCr: new Map(),
+  byTienda: new Map([[OXXO.normalizeCatalogTienda('Operaciones 2 Oaxaca'), { asesor: 'Sin Asesor Asignado', region: 'TABASCO', plaza: 'Plaza Oaxaca', zona: '' }]]),
+  storeCatalog: storeCatalogConAsesor
+};
+assert.equal(OXXO.resolveAsesorD1(catalogoUnidadSinAT, { tienda: 'Operaciones 2 Oaxaca', asesor: 'Timoteo Antonio Perez' }), 'Timoteo Antonio Perez');
+// Una tienda OXXO normal sigue igual: catalogo primero, crudo despues.
+assert.equal(OXXO.resolveAsesorD1(catalogoVacio, { tienda: 'OXXO Bajas OAX', asesor: 'Ana Perez' }), 'Ana Perez');
 // Una asignacion buena del catalogo principal manda sobre el respaldo.
 const catalogoPrincipal = {
   loaded: true, rows: [], byCr: new Map(),
