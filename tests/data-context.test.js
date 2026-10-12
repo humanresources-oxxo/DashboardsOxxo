@@ -108,6 +108,28 @@ assert.equal(OXXO.isTiendaValid({ storeCatalog }, 'OXXO Papaya VSA'), true);
 assert.equal(OXXO.isTiendaValid({ storeCatalog }, 'OXXO Centro', '50I34'), true);
 OXXO.setActiveStoreStatus('Operativas');
 
+// Bajas de Dashboard 2 sin asesor en el catalogo principal: el dueno actual de
+// la tienda segun Catalogo_Tiendas/TREO cubre el hueco, en vez de dejar la baja
+// como "Sin Asesor Asignado" y perderla del ranking por asesor.
+const storeCatalogConAsesor = OXXO.buildTiendaCatalog([
+  { CR: '50-B07', Tienda: 'OXXO Bajas OAX', Region: 'TABASCO', Plaza: 'Plaza Oaxaca', Asesor: 'Laura Dominguez', ACTIVA: 'SI' },
+  { CR: '50-B08', Tienda: 'OXXO Sin Dueno OAX', Region: 'TABASCO', Plaza: 'Plaza Oaxaca', Asesor: '', ACTIVA: 'SI' }
+]);
+const catalogoVacio = { loaded: true, rows: [], byCr: new Map(), byTienda: new Map(), storeCatalog: storeCatalogConAsesor };
+assert.equal(OXXO.resolveAsesorD1(catalogoVacio, { cr: '50B07', tienda: 'OXXO Bajas OAX', asesor: '' }), 'Laura Dominguez');
+// Una tienda que tampoco tiene asesor en el catalogo de tiendas sigue sin
+// dueno: no se inventa una persona.
+assert.equal(OXXO.resolveAsesorD1(catalogoVacio, { cr: '50B08', tienda: 'OXXO Sin Dueno OAX', asesor: '' }), 'Sin Asesor Asignado');
+// Entrenamiento/Operaciones son unidades administrativas: nunca heredan asesor.
+assert.equal(OXXO.resolveAsesorD1(catalogoVacio, { cr: '50B07', tienda: 'Entrenamiento Oaxaca II', asesor: '' }), 'Sin Asesor Asignado');
+// Una asignacion buena del catalogo principal manda sobre el respaldo.
+const catalogoPrincipal = {
+  loaded: true, rows: [], byCr: new Map(),
+  byTienda: new Map([[OXXO.normalizeCatalogTienda('OXXO Bajas OAX'), { asesor: 'Ruben Cruz', region: 'TABASCO', plaza: 'Plaza Oaxaca', zona: '' }]]),
+  storeCatalog: storeCatalogConAsesor
+};
+assert.equal(OXXO.resolveAsesorD1(catalogoPrincipal, { cr: '50B07', tienda: 'OXXO Bajas OAX', asesor: '' }), 'Ruben Cruz');
+
 // Control de Ausentismo es una fuente exclusiva de Oaxaca: una plaza recibida
 // por URL o conservada en la sesion no debe cambiar su alcance.
 documentStub.documentElement.dataset = {
@@ -272,4 +294,4 @@ const d3RescueDates = normalizers.rowsFromMatrix([
 assert.equal(d3RescueDates.rows[0]['Fecha maxima rescate EC'], '2026-10-05');
 assert.equal(d3RescueDates.rows[0]['Fecha maxima rescate TC'], '2026-09-28');
 
-console.log('data-context, alcance regional, periodos, catalogo de tiendas y avisos: 46 pruebas correctas');
+console.log('data-context, alcance regional, periodos, catalogo de tiendas y avisos: 50 pruebas correctas');

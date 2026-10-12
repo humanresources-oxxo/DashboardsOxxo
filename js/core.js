@@ -2002,6 +2002,21 @@ async function loadReasignaciones() {
   })();
   return reasignacionesPromise;
 }
+// Respaldo desde Catalogo_Tiendas (normalmente reconstruido desde TREO):
+// cuando el catalogo principal de asesores no deja un AT usable para la
+// tienda de una baja, el dueno actual de esa tienda segun el catalogo de
+// tiendas resuelve el hueco. Solo cuenta un asesor real y dentro del alcance
+// activo: nunca se inventa una persona.
+function lookupStoreCatalogAsesor(catalog, cr, tienda) {
+  const stores = catalog?.storeCatalog;
+  if (!stores || !stores.byCr || !stores.byTienda) return '';
+  const crKey = normalizeCatalogCr(cr);
+  const tiendaKey = normalizeCatalogTienda(tienda);
+  const hit = (crKey && stores.byCr.get(crKey)) || (tiendaKey && stores.byTienda.get(tiendaKey));
+  if (!hit || metricsIsSinAsesorD1(hit.asesor)) return '';
+  if (!rowMatchesDataScope({ Region: hit.region, Plaza: hit.plaza, Zona: hit.zona })) return '';
+  return renameMergedAsesor(hit.asesor);
+}
 function lookupReasignacion(catalog, cr, tienda) {
   const r = catalog?.reasignaciones;
   if (!r) return '';
@@ -2032,8 +2047,10 @@ function esTiendaDeAnadelia(cr, tienda) {
 // Regla general (todos los dashboards): toda tienda sin un AT vigente en el
 // catalogo se atribuye a quien la haya heredado en la pestana Reasignaciones
 // del Sheet (panel admin); si nadie la reasigno ahi, se usa el snapshot fijo
-// de Anadelia como respaldo; si tampoco aplica, se deja como "Sin Asesor
-// Asignado" tal cual, sin inventarle dueño a nadie. Las unidades de
+// de Anadelia como respaldo; si tampoco aplica, se usa el asesor que el
+// catalogo de tiendas (Catalogo_Tiendas/TREO) registre para esa tienda; y si
+// ahi tampoco hay nadie, se deja como "Sin Asesor Asignado" tal cual, sin
+// inventarle dueño a nadie. Las unidades de
 // Entrenamiento/Operaciones (no son tiendas operativas reales) siempre se
 // quedan con su propio "Sin Asesor Asignado", sin pasar por nada de esto.
 function resolveAsesorD1(catalog, { cr='', tienda='', asesor='' } = {}) {
@@ -2042,7 +2059,8 @@ function resolveAsesorD1(catalog, { cr='', tienda='', asesor='' } = {}) {
   if (!metricsIsSinAsesorD1(resolved)) return resolved;
   const heredero = lookupReasignacion(catalog, cr, tienda);
   if (heredero) return heredero;
-  return esTiendaDeAnadelia(cr, tienda) ? 'Timoteo Antonio Perez' : 'Sin Asesor Asignado';
+  if (esTiendaDeAnadelia(cr, tienda)) return 'Timoteo Antonio Perez';
+  return lookupStoreCatalogAsesor(catalog, cr, tienda) || 'Sin Asesor Asignado';
 }
 // Todos los consumidores de catalogo (Dashboard 4, 6, 8, etc.) pasan por
 // resolveAsesorD1 para heredar la regla de arriba, no solo el renombre
