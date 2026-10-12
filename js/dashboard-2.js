@@ -119,13 +119,15 @@ const ASESOR_BUCKET_LABELS = new Map([
   [cleanKey(ENTRENAMIENTO_OPS), ENTRENAMIENTO_OPS],
 ]);
 function isAsesorBucket(name){ return ASESOR_BUCKET_LABELS.has(cleanKey(name)); }
+// El bucket solo entra cuando NO hay asesor real: una baja de Entrenamiento u
+// Operaciones que si trae AT (crudo o resuelto por catalogo en initDashboard)
+// se agrupa bajo esa persona, como cualquier otra. El nombre de la unidad
+// administrativa por si solo no manda.
 function getAsesorValue(row, cols){
-  if(OXXO.metricsIsTiendaEntrenamientoOperacionesD2(val(row, cols, 'tienda', ''))) return ENTRENAMIENTO_OPS;
   const raw = String(val(row, cols, 'asesor', '') || '').trim();
-  if(!raw) return SIN_ASESOR;
-  const c = cleanText(raw);
-  if(c.includes('SIN ASESOR') || c.includes('NO ASIGNADO')) return SIN_ASESOR;
-  return raw;
+  const c = raw ? cleanText(raw) : '';
+  if(raw && !c.includes('SIN ASESOR') && !c.includes('NO ASIGNADO')) return raw;
+  return OXXO.metricsIsTiendaEntrenamientoOperacionesD2(val(row, cols, 'tienda', '')) ? ENTRENAMIENTO_OPS : SIN_ASESOR;
 }
 // Etiqueta para rankings, tablas y modal: el bucket con su nombre legible,
 // el resto con el nombre tal cual viene del catalogo.

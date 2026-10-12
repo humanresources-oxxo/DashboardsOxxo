@@ -2051,10 +2051,24 @@ function esTiendaDeAnadelia(cr, tienda) {
 // catalogo de tiendas (Catalogo_Tiendas/TREO) registre para esa tienda; y si
 // ahi tampoco hay nadie, se deja como "Sin Asesor Asignado" tal cual, sin
 // inventarle dueño a nadie. Las unidades de
-// Entrenamiento/Operaciones (no son tiendas operativas reales) siempre se
-// quedan con su propio "Sin Asesor Asignado", sin pasar por nada de esto.
+// Entrenamiento/Operaciones (no son tiendas operativas reales) no pasan por
+// esas herencias: se quedan con el asesor real que traiga la fila o con el que
+// el catalogo registre para ESA unidad, y solo si no hay ninguno quedan como
+// "Sin Asesor Asignado".
 function resolveAsesorD1(catalog, { cr='', tienda='', asesor='' } = {}) {
-  if (metricsIsTiendaEntrenamientoOperacionesD2(tienda)) return 'Sin Asesor Asignado';
+  if (metricsIsTiendaEntrenamientoOperacionesD2(tienda)) {
+    // El nombre de la unidad administrativa por si solo NO borra al asesor: si
+    // la fila trae un AT real, o el catalogo registra uno para esa unidad, ese
+    // manda. Solo se busca por NOMBRE de unidad, no por CR: el CR de una fila
+    // de Entrenamiento/Operaciones no es el de una tienda, y las herencias de
+    // tienda (Reasignaciones / respaldo Anadelia) son de tiendas reales.
+    // No se usan herencias ni CR aqui: solo catalogo por nombre o dato crudo.
+    const real = resolveAsesor(catalog, { tienda, asesor });
+    if (!metricsIsSinAsesorD1(real)) return real;
+    const crudo = renameMergedAsesor(asesor);
+    if (!metricsIsSinAsesorD1(crudo)) return crudo;
+    return lookupStoreCatalogAsesor(catalog, '', tienda) || 'Sin Asesor Asignado';
+  }
   const resolved = resolveAsesor(catalog, { cr, tienda, asesor });
   if (!metricsIsSinAsesorD1(resolved)) return resolved;
   const heredero = lookupReasignacion(catalog, cr, tienda);
