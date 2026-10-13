@@ -1,6 +1,6 @@
 // Contrato del velocímetro de "Alineación Global" (dashboard 7): la cifra grande y su
 // etiqueta son la Cobertura de estructura (Activos ÷ TREO), mientras que los conteos
-// Alineada / Subir / Bajar siguen saliendo de 'Dif SAP vs Est Optima Final'.
+// Alineada / Subir / Bajar salen de 'Movimiento Inicial' (r.mov).
 const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
@@ -43,9 +43,9 @@ new vm.Script(source, { filename: 'dashboards/dashboard-7.html' }).runInContext(
 
 // 7 activos de 10 TREO = 70% de cobertura; 1 alineada / 1 por subir / 1 por bajar.
 context.data = [
-  { dif: 0, est_final: 4, empleados: 4 },
-  { dif: 2, est_final: 4, empleados: 2 },
-  { dif: -1, est_final: 2, empleados: 1 },
+  { mov: 'Alineada', dif: 0, est_final: 4, empleados: 4 },
+  { mov: 'Subir', dif: 2, est_final: 4, empleados: 2 },
+  { mov: 'Bajar', dif: -1, est_final: 2, empleados: 1 },
 ];
 new vm.Script('renderDonut(data)').runInContext(context);
 

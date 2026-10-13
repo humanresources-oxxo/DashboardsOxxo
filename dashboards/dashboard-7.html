@@ -346,11 +346,30 @@ function repairMojibake(s){
   } catch (e) { return str; }
 }
 
+// La columna 'Movimiento Inicial' es la clasificacion oficial de la plaza: se normaliza a
+// Alineada / Subir / Bajar y manda sobre el calculo numerico. Solo cuando viene vacia o con
+// un texto desconocido se cae al signo de 'Dif SAP vs Est Optima Final'.
+function normalizeMov(raw){
+  const k = cleanKey(raw);
+  if(!k) return '';
+  // ponytail: solo los tres valores que trae la hoja; cualquier otro texto cae al fallback
+  // numerico, que es el comportamiento seguro si algun dia aparece una etiqueta nueva.
+  if(k.includes('alinead')) return 'Alineada';
+  if(k.includes('subir')) return 'Subir';
+  if(k.includes('bajar')) return 'Bajar';
+  return '';
+}
+function movDesdeDif(dif){
+  const d = Number(dif)||0;
+  return d === 0 ? 'Alineada' : d > 0 ? 'Subir' : 'Bajar';
+}
+
 function normalizeRow(row){
   const estSap = pickField(row, ['est_sap','est sap','est. sap','estructura sap','sap']);
   const estFinal = pickField(row, ['est_final','est final','est. final p2','est final p2','estructura final','final p2','estructura final p2 jun ago','estructura propuesta treo p2 jun ago']);
   const difRaw = pickField(row, ['dif','diferencia','diff','dif sap vs est optima final']);
   const difCalc = difRaw || String((Number(estFinal)||0) - (Number(estSap)||0));
+  const movTexto = normalizeMov(pickField(row, ['movimiento inicial','movimiento','mov']));
   return {
     plaza: pickField(row, ['plaza','dashboard 7 liberacion de estructuras plaza oaxaca plaza']) || '10VHT Oaxaca',
     zona: pickField(row, ['zona']),
@@ -363,11 +382,10 @@ function normalizeRow(row){
     empleados: pickField(row, ['empleados','empleados activos','plantilla','plantilla sap']),
     vacantes: pickField(row, ['vacantes','vacante']),
     dif: difCalc,
-    // 'mov' se deriva del calculo numerico exacto (Dif SAP vs Est Optima Final), no del texto
-    // libre 'Movimiento Inicial': verificado que ese texto no coincide con el numero en 54 de
-    // 256 tiendas (21%), lo que hacia que la tabla/filtro/recomendaciones de accion
-    // contradijeran los KPIs y la grafica de Alineacion Global (que ya usaban el numero).
-    mov: (Number(difCalc)||0) === 0 ? 'Alineada' : (Number(difCalc)||0) > 0 ? 'Subir' : 'Bajar',
+    mov: movTexto || movDesdeDif(difCalc),
+    // 'texto' = clasificacion oficial de la hoja (se conserva tal cual); 'calculo' = derivada
+    // del dif, por lo que si la estructura diaria cambia el dif tambien se recalcula.
+    mov_src: movTexto ? 'texto' : 'calculo',
     est_final: estFinal,
     turnos: pickField(row, ['turnos','turno']),
     antiguedad: pickField(row, ['antiguedad','antigüedad']) || 'Madura',
@@ -458,12 +476,11 @@ function setKpiFilter(kpi){
 // Render KPIs
 function renderKPIs(data){
   const total = data.length;
-  // Alineacion Global se basa en 'Dif SAP vs Est Optima Final' (comparacion numerica exacta),
-  // no en la etiqueta de texto 'Movimiento Inicial' (que puede recomendar Subir/Bajar por
-  // otras razones operativas aunque el numero ya este en 0).
-  const alineadas = data.filter(r=>(Number(r.dif)||0)===0).length;
-  const subir     = data.filter(r=>(Number(r.dif)||0)>0).length;
-  const bajar     = data.filter(r=>(Number(r.dif)||0)<0).length;
+  // Los conteos salen de r.mov (columna 'Movimiento Inicial' normalizada, con fallback al dif
+  // numerico), el mismo criterio que la tabla, los filtros y los rankings.
+  const alineadas = data.filter(r=>r.mov==='Alineada').length;
+  const subir     = data.filter(r=>r.mov==='Subir').length;
+  const bajar     = data.filter(r=>r.mov==='Bajar').length;
   const vacantes  = data.reduce((s,r)=>s+(Number(r.vacantes)||0), 0);
   const pct = total > 0 ? Math.round(alineadas/total*100) : 0;
   // Posiciones netas (magnitud, no solo conteo de tiendas): cuánto hay que agregar/liberar en total.
@@ -493,7 +510,7 @@ function renderKPIs(data){
       <div class="kpi-card__icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg></div>
     </div>
     <div class="kpi-card verde ${ACTIVE_KPI==='Alineada' ? 'active' : ''}" role="button" tabindex="0" onclick="setKpiFilter('Alineada')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();setKpiFilter('Alineada')}">
-      <div class="kpi-card__label">Alineadas ✔<span class="info-tip" tabindex="0" onclick="event.stopPropagation()" data-tip="Tiendas donde 'Dif SAP vs Est Optima Final' = 0 (SAP ya coincide exactamente con el objetivo TREO)."></span></div>
+      <div class="kpi-card__label">Alineadas ✔<span class="info-tip" tabindex="0" onclick="event.stopPropagation()" data-tip="Tiendas marcadas como 'Alineada' en la columna 'Movimiento Inicial' de la hoja; si viene vacía se usa 'Dif SAP vs Est Optima Final' = 0."></span></div>
       <div class="kpi-card__value">${alineadas}</div>
       <div class="kpi-card__delta pos">${pct}% del total</div>
       <div class="kpi-card__icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg></div>
@@ -505,13 +522,13 @@ function renderKPIs(data){
       <div class="kpi-card__icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></div>
     </div>
     <div class="kpi-card naranja ${ACTIVE_KPI==='Subir' ? 'active' : ''}" role="button" tabindex="0" onclick="setKpiFilter('Subir')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();setKpiFilter('Subir')}">
-      <div class="kpi-card__label">Por Subir ▲<span class="info-tip" tabindex="0" onclick="event.stopPropagation()" data-tip="Tiendas donde Est_Final P2 es mayor que Est_SAP: requieren agregar posiciones."></span></div>
+      <div class="kpi-card__label">Por Subir ▲<span class="info-tip" tabindex="0" onclick="event.stopPropagation()" data-tip="Tiendas marcadas como 'Subir' en 'Movimiento Inicial': requieren agregar posiciones."></span></div>
       <div class="kpi-card__value">${subir}</div>
       <div class="kpi-card__delta neu">+${posSubir} posiciones a agregar</div>
       <div class="kpi-card__icon"><svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg></div>
     </div>
     <div class="kpi-card rojo ${ACTIVE_KPI==='Bajar' ? 'active' : ''}" role="button" tabindex="0" onclick="setKpiFilter('Bajar')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();setKpiFilter('Bajar')}">
-      <div class="kpi-card__label">Por Bajar ▼<span class="info-tip" tabindex="0" onclick="event.stopPropagation()" data-tip="Tiendas donde Est_Final P2 es menor que Est_SAP: requieren liberar posiciones."></span></div>
+      <div class="kpi-card__label">Por Bajar ▼<span class="info-tip" tabindex="0" onclick="event.stopPropagation()" data-tip="Tiendas marcadas como 'Bajar' en 'Movimiento Inicial': requieren liberar posiciones."></span></div>
       <div class="kpi-card__value">${bajar}</div>
       <div class="kpi-card__delta neg">−${posBajar} posiciones a liberar</div>
       <div class="kpi-card__icon"><svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline><polyline points="17 18 23 18 23 12"></polyline></svg></div>
@@ -534,13 +551,13 @@ function renderKPIs(data){
 // Render Velocímetro de Alineación Global
 function renderDonut(data){
   const total = data.length || 1;
-  // Mismo criterio que renderKPIs: Dif SAP vs Est Optima Final, no la etiqueta de texto.
-  const alineadas = data.filter(r=>(Number(r.dif)||0)===0).length;
-  const subir     = data.filter(r=>(Number(r.dif)||0)>0).length;
-  const bajar     = data.filter(r=>(Number(r.dif)||0)<0).length;
+  // Mismo criterio que renderKPIs: r.mov ('Movimiento Inicial' normalizado).
+  const alineadas = data.filter(r=>r.mov==='Alineada').length;
+  const subir     = data.filter(r=>r.mov==='Subir').length;
+  const bajar     = data.filter(r=>r.mov==='Bajar').length;
   // La cifra grande del velocimetro es la Cobertura de estructura (Activos / TREO), no el
   // % de alineacion: es la metrica que la plaza acciona. Los segmentos del arco y los
-  // conteos Alineada / Subir / Bajar siguen basandose en 'Dif SAP vs Est Optima Final'.
+  // conteos Alineada / Subir / Bajar se basan en 'Movimiento Inicial' (r.mov).
   const sumTreoGauge = data.reduce((s,r)=>s+(Number(r.est_final)||0),0);
   const sumActGauge  = data.reduce((s,r)=>s+(Number(r.empleados)||0),0);
   const cobertura = sumTreoGauge>0 ? Math.round(sumActGauge/sumTreoGauge*100) : 0;
@@ -968,7 +985,8 @@ function applyEstructuraDiaria(r, estructura){
     empleados: String(activos),
     vacantes: String(vacantes),
     dif: String(dif),
-    mov: dif === 0 ? 'Alineada' : (dif > 0 ? 'Subir' : 'Bajar')
+    // La clasificacion textual de 'Movimiento Inicial' no se sobrescribe con TREO-SAP.
+    mov: r.mov_src === 'texto' ? r.mov : movDesdeDif(dif)
   };
 }
 // ─────────────────────────────────────────────────────────
