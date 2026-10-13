@@ -578,18 +578,14 @@ function renderDonut(data){
   // Mini-resumen de acción en el espacio entre el gauge y las tarjetas.
   const sum = document.getElementById('align-summary');
   if(sum){
-    const sumTreo = data.reduce((s,r)=>s+(Number(r.est_final)||0),0);
-    const sumAct  = data.reduce((s,r)=>s+(Number(r.empleados)||0),0);
-    const cob = sumTreo>0 ? Math.round(sumAct/sumTreo*100) : 0;
-    const cobCol = cob>=98?'#138c3e':cob>=90?'#B8860B':'#C0393B';
     const posSubir = data.reduce((s,r)=>{const d=Number(r.dif)||0; return s+(d>0?d:0);},0);
     const posBajar = data.reduce((s,r)=>{const d=Number(r.dif)||0; return s+(d<0?-d:0);},0);
     const neto = posSubir - posBajar;
     const subdot   = data.filter(r=>(Number(r.empleados)||0) < (Number(r.est_final)||0)).length;
     const sobredot = data.filter(r=>(Number(r.empleados)||0) > (Number(r.est_final)||0)).length;
     const item=(l,v,c)=>`<div class="align-sum__item"><span class="align-sum__lbl">${l}</span><span class="align-sum__val" style="color:${c||'var(--color-dark)'}">${v}</span></div>`;
+    // La Cobertura ya es la cifra grande del velocímetro; aquí no se repite.
     sum.innerHTML =
-      item('Cobertura', cob+'%', cobCol) +
       item('Neto', (neto>0?'+':'')+neto, neto>0?'#B85000':neto<0?'#138c3e':'var(--color-gray)') +
       item('Faltan', subdot, subdot>0?'#C0393B':'#138c3e') +
       item('Sobran', sobredot, sobredot>0?'#B85000':'#138c3e');
