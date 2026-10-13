@@ -78,4 +78,12 @@ assert(!summary.includes('70%'), 'el resumen no debe repetir el % de cobertura')
 });
 assert(summary.includes('>+1<'), 'Neto debe ser +1 (2 por subir - 1 por bajar)');
 
+// Contrato de layout: el tamaño del gauge lo decide el CSS (para que crezca con el alto
+// de la tarjeta), no un max-width incrustado en el SVG.
+assert(!svg.includes('max-width'), 'el SVG del gauge no debe fijar su propio max-width');
+const css = fs.readFileSync(path.join(root, 'css', 'dashboard-7.css'), 'utf8');
+assert(css.includes('#align-gauge { display: flex; flex: 1.6 1 auto;'), '#align-gauge debe crecer con el alto disponible');
+assert(css.includes('#align-gauge > svg { max-width: 320px;'), 'el CSS debe dimensionar el SVG del gauge');
+assert(css.includes('.side-panel .stat-grid { flex: 1 1 auto; }'), 'las tarjetas de movimiento deben repartir el espacio restante');
+
 console.log('dashboard 7: el velocímetro expone la cobertura como cifra principal');
