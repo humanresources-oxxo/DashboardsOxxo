@@ -78,12 +78,15 @@ assert(!summary.includes('70%'), 'el resumen no debe repetir el % de cobertura')
 });
 assert(summary.includes('>+1<'), 'Neto debe ser +1 (2 por subir - 1 por bajar)');
 
-// Contrato de layout: el tamaño del gauge lo decide el CSS (para que crezca con el alto
-// de la tarjeta), no un max-width incrustado en el SVG.
+// Contrato de layout: el tamaño del gauge lo decide el CSS, no un max-width incrustado en
+// el SVG; y la tarjeta queda compacta (alto natural) en vez de estirarse al alto de la
+// tabla, que es lo que abría huecos verticales entre gauge, resumen y métricas.
 assert(!svg.includes('max-width'), 'el SVG del gauge no debe fijar su propio max-width');
 const css = fs.readFileSync(path.join(root, 'css', 'dashboard-7.css'), 'utf8');
-assert(css.includes('#align-gauge { display: flex; flex: 1.6 1 auto;'), '#align-gauge debe crecer con el alto disponible');
-assert(css.includes('#align-gauge > svg { max-width: 320px;'), 'el CSS debe dimensionar el SVG del gauge');
-assert(css.includes('.side-panel .stat-grid { flex: 1 1 auto; }'), 'las tarjetas de movimiento deben repartir el espacio restante');
+assert(css.includes('#align-gauge > svg { max-width: 340px;'), 'el CSS debe dimensionar el SVG del gauge');
+assert(/\.side-panel \{[^}]*align-self: start;/.test(css), 'el panel lateral no debe estirarse al alto de la tabla');
+assert(!/#align-gauge \{[^}]*flex:/.test(css), 'el gauge no debe crecer para rellenar la tarjeta');
+assert(!css.includes('.side-panel .stat-grid { flex: 1 1 auto; }'), 'las métricas no deben estirarse para rellenar la tarjeta');
+assert(css.includes('.side-panel .donut-wrap { gap: 10px; }'), 'los huecos verticales de la tarjeta deben quedar compactos');
 
 console.log('dashboard 7: el velocímetro expone la cobertura como cifra principal');
