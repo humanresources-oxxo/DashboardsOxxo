@@ -34,8 +34,14 @@ for (const m of html.matchAll(/\[\s*'[^']*'\s*,\s*'[^']*'\s*,\s*'(dashboards\/[^
 assert.equal(rutasTarjetas.size, 15, `La portada debe tener 15 tarjetas, se encontraron ${rutasTarjetas.size}`);
 const estaticas = [...pagina.matchAll(/class="card__title" href="([^"]+\.html)"/g)].length;
 assert.equal(estaticas, 11, 'Recursos Humanos debe conservar 11 tarjetas');
-const conteos = [...pagina.matchAll(/class="stat__n">(\d+)</g)].map(m => Number(m[1]));
-assert.deepEqual(conteos, [11, 2, 2], 'Los contadores por area deben ser RH 11, Comercial 2, Administrativo 2');
+// El hero ya no lleva el resumen de conteos por area: la navegacion y las 15
+// tarjetas son la unica fuente de cobertura.
+assert.doesNotMatch(pagina, /class="stats?"|class="stat__[nl]"/, 'la portada no debe traer las tarjetas de resumen del hero');
+assert.doesNotMatch(estilos, /^\.stats?\{|\.stat__[nl]\{/m, 'el CSS del hero no debe conservar reglas de .stats/.stat');
+for (const area of ['rh', 'comercial', 'administrativo']) {
+  assert.match(pagina, new RegExp(`class="area-switch__button[^"]*" type="button" data-area="${area}"`),
+    `debe seguir el boton de navegacion de ${area}`);
+}
 
 // Toda tarjeta debe poder resolver su fecha.
 const sinClave = [...rutasTarjetas].filter(r => !rutasMapeadas.has(r)).sort();
