@@ -68,7 +68,14 @@ assert.strictEqual(elements['mix-baj'].textContent, 1);
   assert(svg.includes(`stroke="${color}"`), `falta el segmento ${color}`);
 });
 
-// El mini-resumen conserva su propio cálculo de cobertura.
-assert(elements['align-summary'].innerHTML.includes('70%'), 'el resumen conserva la cobertura');
+// El mini-resumen ya no repite la cobertura (eso lo muestra la cifra grande del gauge),
+// pero sí conserva las métricas de movimiento: Neto, Faltan y Sobran.
+const summary = elements['align-summary'].innerHTML;
+assert(!summary.includes('Cobertura'), 'el resumen no debe repetir la etiqueta Cobertura');
+assert(!summary.includes('70%'), 'el resumen no debe repetir el % de cobertura');
+['Neto', 'Faltan', 'Sobran'].forEach(label => {
+  assert(summary.includes(`>${label}<`), `falta la métrica ${label} en el resumen`);
+});
+assert(summary.includes('>+1<'), 'Neto debe ser +1 (2 por subir - 1 por bajar)');
 
 console.log('dashboard 7: el velocímetro expone la cobertura como cifra principal');
