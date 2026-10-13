@@ -103,6 +103,16 @@ test('D11 adopta el sistema blanco: sin lienzo rojo, degradado de héroe ni vidr
   assert.match(css, /var\(--du-/, 'usa tokens del canon');
 });
 
+test('D11 cierra la fila de KPIs: seis tarjetas en un solo renglón de escritorio', () => {
+  // El canon reparte los KPIs en 5 columnas y D11 publica 6: sin este override
+  // la sexta tarjeta caía sola en un renglón aparte.
+  const css = read('css/dashboard-11.css');
+  assert.match(css, /@media \(min-width: 1200px\) \{[^@]*\.kpis \{ grid-template-columns: repeat\(6,/,
+    'D11: seis KPIs en una fila desde 1200px');
+  const html = read('dashboards/dashboard-11.html');
+  assert.equal((html.match(/\+kpi\(|=kpi\(/g) || []).length, 6, 'D11 sigue pintando exactamente seis KPIs');
+});
+
 test('se preservan los contratos de DOM (IDs, data-* y handlers) que consume el JS', () => {
   const d4 = read('dashboards/dashboard-4.html');
   for (const id of ['kpi-section', 'ranking-container', 'tabla-detalle', 'te-asesor-modal', 'filter-banner']) {

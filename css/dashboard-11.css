@@ -17,9 +17,18 @@ body.dashboard-11-page {
   --mark-blue: #176d98;
 }
 
+/* Héroe compacto: el canon dimensiona para un titular suelto, pero aquí el
+   bloque carga eyebrow + título + bajada + los filtros, y en escritorio se
+   comía casi media pantalla antes del primer dato. Se recorta el aire sin
+   tocar el sistema visual (misma tarjeta blanca, mismo borde y sombra). */
+body.dashboard-11-page .hero { gap: 10px; padding: 14px 18px; }
+body.dashboard-11-page .hero h1 { font-size: clamp(1.7rem, 5vw, 2.1rem); }
+body.dashboard-11-page .hero p { margin-top: 3px; }
+body.dashboard-11-page .hero .vac-filters { padding: 12px; gap: 10px; }
+
 /* Eyebrow del héroe (el canon no lo trae). */
 body.dashboard-11-page .hero-eyebrow {
-  margin-bottom: 6px; color: var(--du-red-dark);
+  margin-bottom: 3px; color: var(--du-red-dark);
   font-size: 11px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase;
 }
 body.dashboard-11-page #hero-download { display: flex; min-width: 0; }
@@ -46,7 +55,7 @@ body.dashboard-11-page .insights {
   padding: 0; border: 0; background: transparent; box-shadow: none;
 }
 body.dashboard-11-page .insight {
-  display: flex; align-items: flex-start; gap: 12px; padding: 14px 16px;
+  display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px;
   border: 1px solid var(--du-border); border-radius: var(--du-radius);
   background: var(--du-card); box-shadow: var(--du-shadow);
 }
@@ -62,7 +71,7 @@ body.dashboard-11-page .table-tools { display: flex; flex-wrap: wrap; align-item
 body.dashboard-11-page .result-count { color: var(--du-muted); font-size: 12px; font-weight: 700; }
 
 /* Anillo de mezcla (dona por semáforo) — geometría + colores de dato. */
-body.dashboard-11-page .mix { display: grid; grid-template-columns: 180px minmax(0, 1fr); gap: 22px; align-items: center; flex: 1; }
+body.dashboard-11-page .mix { display: grid; grid-template-columns: 180px minmax(0, 1fr); gap: 22px; align-items: stretch; flex: 1; }
 body.dashboard-11-page .ring {
   position: relative; width: 180px; height: 180px; margin: auto; border-radius: 50%;
   background: conic-gradient(var(--mark-green) 0 var(--p1), var(--mark-yellow) var(--p1) var(--p2), var(--mark-orange) var(--p2) var(--p3), var(--mark-red) var(--p3) 100%);
@@ -72,14 +81,14 @@ body.dashboard-11-page .ring::after { content: ""; position: absolute; inset: 40
 body.dashboard-11-page .ring-center { position: absolute; inset: 0; z-index: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; }
 body.dashboard-11-page .ring-center b { font-family: var(--font-display); font-size: 2.4rem; line-height: 1; color: var(--du-text); }
 body.dashboard-11-page .ring-center span { color: var(--du-muted); font-size: 9px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
-body.dashboard-11-page .legend { display: flex; flex-direction: column; gap: 8px; }
+body.dashboard-11-page .legend { display: flex; flex-direction: column; justify-content: center; gap: 8px; }
 body.dashboard-11-page .legend-row { display: grid; grid-template-columns: 11px minmax(0, 1fr) auto 34px; gap: 9px; align-items: center; padding: 8px 10px; border: 1px solid var(--du-border); border-radius: 10px; background: var(--du-soft); font-size: 12px; }
 body.dashboard-11-page .legend-row i { width: 10px; height: 10px; border-radius: 3px; background: var(--c); }
 body.dashboard-11-page .legend-row b { font-family: var(--font-display); font-size: 15px; }
 body.dashboard-11-page .legend-row em { font-style: normal; text-align: right; font-size: 10px; font-weight: 800; color: var(--du-muted); }
 
 /* Ranking por asesor — barra escalada con marca de referencia (dato). */
-body.dashboard-11-page .advisor-list { display: flex; flex: 1; flex-direction: column; gap: 8px; min-height: 0; max-height: 344px; overflow: auto; padding-right: 6px; }
+body.dashboard-11-page .advisor-list { display: flex; flex: 1; flex-direction: column; gap: 8px; min-height: 0; max-height: 264px; overflow: auto; padding-right: 6px; }
 body.dashboard-11-page .advisor { display: flex; flex-direction: column; gap: 7px; padding: 10px 12px; border: 1px solid var(--du-border); border-radius: 12px; background: var(--du-soft); }
 body.dashboard-11-page .advisor-top { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
 body.dashboard-11-page .advisor-name { min-width: 0; overflow: hidden; font-size: 12px; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
@@ -101,7 +110,7 @@ body.dashboard-11-page .quality { color: var(--du-red-dark); font-weight: 800; }
 
 /* Estado de carga y footer propios. */
 body.dashboard-11-page .state { display: grid; place-items: center; min-height: 180px; color: var(--du-muted); font-weight: 700; text-align: center; }
-body.dashboard-11-page .dash-footer { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; margin-top: 16px; padding: 14px 4px; color: var(--du-muted); font-size: 12px; }
+body.dashboard-11-page .dash-footer { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; margin-top: 12px; padding: 10px 4px; color: var(--du-muted); font-size: 12px; }
 body.dashboard-11-page .dash-footer__update { display: flex; align-items: center; gap: 7px; }
 body.dashboard-11-page .dash-footer__update-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--du-green); }
 
@@ -115,6 +124,17 @@ body.dashboard-11-page .dash-footer__update-dot { width: 9px; height: 9px; borde
 }
 @media (min-width: 1024px) {
   body.dashboard-11-page .hero .vac-filters { grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(240px, 1.1fr); }
+  /* El canon pasa a 5 columnas y D11 publica 6 KPIs: la sexta caía sola en un
+     renglón aparte. 3+3 mientras no caben seis, y seis en una fila cuando sí.
+     Mismo criterio que Dashboard 14, que también publica seis. */
+  body.dashboard-11-page .kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (min-width: 1200px) {
+  body.dashboard-11-page .kpis { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  /* A seis por fila la tarjeta mide ~230px: el valor del canon (2.9rem) se
+     desbordaba con cifras como "+12.2 pts". */
+  body.dashboard-11-page .kpi-card { min-height: 112px; }
+  body.dashboard-11-page .kpi-card__value { font-size: 2.1rem; }
 }
 @media (max-width: 720px) {
   body.dashboard-11-page .insights { grid-template-columns: 1fr; }
