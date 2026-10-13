@@ -21,13 +21,14 @@ body.dashboard-7-page :is(#dist-antiguedad,#dist-concepto) { display: flex; flex
 body.dashboard-7-page #tot-estructura { flex: 1 1 auto; margin-top: 4px; }
 body.dashboard-7-page #tot-bar { margin-top: 14px; }
 body.dashboard-7-page #dist-concepto { max-height: 280px; overflow: auto; }
-body.dashboard-7-page .side-panel { display: flex; flex-direction: column; align-self: start; gap: 12px; min-width: 0; }
-body.dashboard-7-page .side-panel > .card { display: flex; flex-direction: column; margin: 0; }
-/* ponytail: la tarjeta toma su alto natural en vez de estirarse al alto de la tabla; el
-   sobrante ya no se reparte como huecos verticales alrededor del gauge. */
-body.dashboard-7-page .side-panel .donut-wrap { gap: 10px; }
-body.dashboard-7-page #align-gauge { display: flex; align-items: center; justify-content: center; width: 100%; }
-body.dashboard-7-page #align-gauge > svg { max-width: 340px; }
+body.dashboard-7-page .side-panel { display: flex; flex-direction: column; align-self: stretch; gap: 12px; min-width: 0; }
+body.dashboard-7-page .side-panel > .card { display: flex; flex: 1 1 auto; flex-direction: column; margin: 0; }
+/* ponytail: la tarjeta cubre el alto de la fila (sin hueco externo) y el sobrante queda como
+   un centrado del bloque completo, no repartido en huecos entre gauge, resumen y metricas;
+   el gauge no crece con flex, su tamano lo fija el max-width/max-height del SVG. */
+body.dashboard-7-page .side-panel .donut-wrap { flex: 1 1 auto; justify-content: center; gap: 10px; min-height: 0; }
+body.dashboard-7-page #align-gauge { display: flex; flex: 0 0 auto; align-items: center; justify-content: center; width: 100%; }
+body.dashboard-7-page #align-gauge > svg { width: 100%; max-width: 260px; max-height: 170px; }
 body.dashboard-7-page .align-sum { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 8px; margin: 0; }
 body.dashboard-7-page .align-sum__item { display: flex; align-items: center; justify-content: center; gap: 2px; min-width: 0; flex-direction: column; padding: 7px 8px; border: 1px solid var(--du-border); border-radius: 10px; background: var(--du-soft); }
 body.dashboard-7-page .align-sum__lbl { color: var(--du-muted); font-size: 11px; font-weight: 700; }
