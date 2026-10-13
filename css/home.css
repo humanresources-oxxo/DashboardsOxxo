@@ -99,21 +99,25 @@ a:hover{color:var(--red-dk)}
 /* ── Hero ───────────────────────────────────────────── */
 .hero{
   position:relative;overflow:hidden;display:flex;align-items:center;
-  width:var(--shell);min-height:250px;margin:12px auto 0;padding:34px clamp(24px,5vw,52px);
+  width:var(--shell);min-height:clamp(250px,24vw,390px);margin:12px auto 0;padding:34px clamp(24px,5vw,52px);
   border:1px solid rgba(255,255,255,.68);border-radius:32px;
   box-shadow:0 .5px 0 rgba(255,255,255,.9) inset,0 1px 2px rgba(112,45,28,.05),0 8px 20px rgba(112,45,28,.08);
   background-color:#52000a;
   background-image:
     linear-gradient(90deg,rgba(128,8,15,.80) 0%,rgba(194,16,27,.52) 42%,rgba(214,0,11,.08) 68%,rgba(82,0,0,.18) 100%),
     url("../assets/banner-septiembre-mexico.webp");
-  background-repeat:no-repeat,no-repeat;background-size:auto,cover;background-position:0 0,center 78%;
+  /* El banner mide 2062x763 (2.70:1) y los personajes ocupan el 26%-86% de su
+     alto. La altura del hero sigue al ancho (~24vw) para que "cover" nunca les
+     corte la cabeza, y el 55% vertical centra esa franja. */
+  background-repeat:no-repeat,no-repeat;background-size:auto,cover;background-position:0 0,center 55%;
 }
 .hero::after{
   content:"";position:absolute;inset:0;pointer-events:none;
   background:linear-gradient(120deg,rgba(255,255,255,.18),transparent 24% 78%,rgba(255,255,255,.10));
 }
 .hero__inner{position:relative;z-index:1;display:grid;grid-template-columns:minmax(0,1fr);width:100%}
-.hero__copy{max-width:780px}
+/* El 48% mantiene el texto fuera de la mitad derecha, donde van los personajes. */
+.hero__copy{max-width:min(780px,48%)}
 .hero__badge{
   display:inline-flex;align-items:center;padding:6px 13px;margin-bottom:16px;border-radius:20px;
   background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.34);
@@ -335,7 +339,21 @@ body[data-area="rh"] .group .card::after{color:var(--red)}
   .topbar{top:10px;margin-top:10px;padding:9px 12px;border-radius:18px;gap:10px}
   .brand__mark{width:76px;height:36px}.brand__mark img{width:100%;height:auto}.brand__name{font-size:18px}.brand__sub{display:none}
   .topbar__actions{gap:6px}.pill--live{display:none}.btn{padding:9px 12px;font-size:12px}
-  .hero{min-height:320px;border-radius:22px;background-position:64% center}.hero__inner{padding:30px 24px;align-items:flex-start}.hero__title{font-size:clamp(2.8rem,14vw,4rem)}
+  /* Movil: el banner es demasiado panoramico para recortarlo a lo ancho, asi que
+     se escala al 58% del alto (los tres personajes caben completos) y se ancla
+     abajo a la derecha. El degradado pasa a vertical para que el titulo quede
+     legible arriba sin taparles la cara. */
+  .hero{
+    min-height:470px;border-radius:22px;align-items:flex-start;
+    background-image:
+      linear-gradient(180deg,rgba(128,8,15,.93) 0%,rgba(150,10,18,.62) 44%,rgba(82,0,0,.06) 68%),
+      url("../assets/banner-septiembre-mexico.webp");
+    background-size:auto,auto 58%;background-position:0 0,right bottom;
+  }
+  .hero__inner{padding:0;align-items:flex-start}
+  .hero__copy{max-width:none}
+  .hero__title{font-size:clamp(2.2rem,9.5vw,3rem);margin-bottom:12px}
+  .hero__lede{font-size:15px}
   .area-switch{margin:16px auto 28px}.area-switch__button{font-size:12px;letter-spacing:0;text-transform:none;padding:10px 4px;gap:5px}.area-switch__icon{width:26px;height:26px}
   .group{margin:0 auto 30px}.group__head{align-items:flex-start}.group__count{display:none}.grid{grid-template-columns:1fr;gap:12px}.card{min-height:0}.access__grid{grid-template-columns:1fr}.foot{margin-top:22px}
 }
