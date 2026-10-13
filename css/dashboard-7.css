@@ -21,14 +21,17 @@ body.dashboard-7-page :is(#dist-antiguedad,#dist-concepto) { display: flex; flex
 body.dashboard-7-page #tot-estructura { flex: 1 1 auto; margin-top: 4px; }
 body.dashboard-7-page #tot-bar { margin-top: 14px; }
 body.dashboard-7-page #dist-concepto { max-height: 280px; overflow: auto; }
-body.dashboard-7-page .side-panel { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
-body.dashboard-7-page .side-panel > .card { display: flex; flex: 1 1 auto; flex-direction: column; margin: 0; }
-body.dashboard-7-page .side-panel .donut-wrap { flex: 1 1 auto; justify-content: space-evenly; }
-body.dashboard-7-page #align-gauge { display: flex; justify-content: center; width: 100%; padding: 6px 0 4px; }
-body.dashboard-7-page .align-sum { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 8px; margin: 2px 0; }
-body.dashboard-7-page .align-sum__item { display: flex; align-items: center; justify-content: center; gap: 2px; min-width: 0; flex-direction: column; padding: 6px 8px; border: 1px solid var(--du-border); border-radius: 10px; background: var(--du-soft); }
+body.dashboard-7-page .side-panel { display: flex; flex-direction: column; align-self: start; gap: 12px; min-width: 0; }
+body.dashboard-7-page .side-panel > .card { display: flex; flex-direction: column; margin: 0; }
+/* ponytail: la tarjeta toma su alto natural en vez de estirarse al alto de la tabla; el
+   sobrante ya no se reparte como huecos verticales alrededor del gauge. */
+body.dashboard-7-page .side-panel .donut-wrap { gap: 10px; }
+body.dashboard-7-page #align-gauge { display: flex; align-items: center; justify-content: center; width: 100%; }
+body.dashboard-7-page #align-gauge > svg { max-width: 340px; }
+body.dashboard-7-page .align-sum { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 8px; margin: 0; }
+body.dashboard-7-page .align-sum__item { display: flex; align-items: center; justify-content: center; gap: 2px; min-width: 0; flex-direction: column; padding: 7px 8px; border: 1px solid var(--du-border); border-radius: 10px; background: var(--du-soft); }
 body.dashboard-7-page .align-sum__lbl { color: var(--du-muted); font-size: 11px; font-weight: 700; }
-body.dashboard-7-page .align-sum__val { color: var(--du-text); font-family: var(--font-display); font-size: 1.25rem; font-weight: 800; }
+body.dashboard-7-page .align-sum__val { color: var(--du-text); font-family: var(--font-display); font-size: 1.4rem; font-weight: 800; }
 body.dashboard-7-page .dbar-row { display: grid; grid-template-columns: minmax(70px,110px) minmax(0,1fr) 44px; align-items: center; gap: 8px; margin: 6px 0; }
 body.dashboard-7-page .dbar-lbl { color: var(--du-text); font-size: 13px; font-weight: 700; }
 body.dashboard-7-page .dbar-bg { height: 14px; overflow: hidden; border-radius: 999px; background: #f0e8e0; }
@@ -58,8 +61,9 @@ body.dashboard-7-page .rank-bar-bg { height: 6px; margin-top: 4px; overflow: hid
 body.dashboard-7-page .rank-bar-fill { height: 100%; border-radius: inherit; transition: width .7s ease; }
 body.dashboard-7-page .rank-val { color: var(--du-text); font-family: var(--font-display); font-size: 15px; font-weight: 800; text-align: right; white-space: nowrap; }
 body.dashboard-7-page :is(#rank-subir,#rank-bajar,#rank-brecha) { max-height: 280px; overflow: auto; padding-right: 6px; }
-body.dashboard-7-page .stat-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 8px; margin-top: 8px; }
-body.dashboard-7-page .stat-card { display: flex; min-width: 0; min-height: 92px; flex-direction: column; align-items: center; justify-content: center; padding: 10px; border-radius: 10px; background: #f3ede7; text-align: center; }
+body.dashboard-7-page .stat-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 8px; margin-top: 0; }
+body.dashboard-7-page .side-panel .stat-card { min-height: 78px; padding: 8px; }
+body.dashboard-7-page .stat-card { display: flex; min-width: 0; min-height: 92px; max-height: 150px; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 10px; border-radius: 10px; background: #f3ede7; text-align: center; }
 body.dashboard-7-page .stat-card.s { background: #e6f5ec; }
 body.dashboard-7-page .stat-card.subir { background: #fff3d6; }
 body.dashboard-7-page .stat-card.b { background: #fbe9ea; }
@@ -74,7 +78,7 @@ body.dashboard-7-page .pag { display: flex; align-items: center; flex-wrap: wrap
 body.dashboard-7-page .pag button { min-height: 36px; padding: 6px 12px; border: 1px solid var(--du-border); border-radius: 8px; background: #fff; color: var(--du-red-dark); font: 700 12px var(--font-body); cursor: pointer; }
 body.dashboard-7-page .pag button:hover:not(:disabled) { border-color: var(--du-red); }
 body.dashboard-7-page .pag button:disabled { opacity: .45; cursor: not-allowed; }
-body.dashboard-7-page .donut-wrap { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+body.dashboard-7-page .donut-wrap { display: flex; flex-direction: column; align-items: stretch; gap: 12px; }
 body.dashboard-7-page .donut-container { position: relative; width: 140px; height: 140px; }
 body.dashboard-7-page svg.donut { transform: rotate(-90deg); }
 body.dashboard-7-page .donut-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }

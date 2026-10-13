@@ -561,7 +561,7 @@ function renderDonut(data){
     const ang=Math.PI*(1 - v/100);  // aguja en el % de cobertura (misma métrica que la cifra grande)
     const nx=(cx+(r-12)*Math.cos(ang)).toFixed(1), ny=(cy-(r-12)*Math.sin(ang)).toFixed(1);
     el.innerHTML = `
-      <svg viewBox="0 0 200 132" style="width:100%;max-width:230px;overflow:visible">
+      <svg viewBox="0 0 200 132" style="width:100%;overflow:visible">
         <path d="${arc}" fill="none" stroke="var(--color-border)" stroke-width="15" stroke-linecap="round"/>
         ${segPaths}
         <line x1="${cx}" y1="${cy}" x2="${nx}" y2="${ny}" stroke="#3B1918" stroke-width="3.5" stroke-linecap="round" style="transition:all .9s ease"/>
