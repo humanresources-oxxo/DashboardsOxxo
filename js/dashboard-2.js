@@ -704,11 +704,13 @@ function renderCompromiso(data, cols){
     id,full,nombre:ASESOR_BUCKET_LABELS.get(id)||shortAsesorName(full),bajas:counts[id]||0,
     comp:ASESOR_BUCKET_LABELS.has(id)?0:(configuredByKey.has(id)?configuredByKey.get(id):commitmentConfig.defaultValue)
   })).sort((a,b) => b.bajas - a.bajas || a.full.localeCompare(b.full, 'es'));
-  const rows = sorted.map(item => {
+  sorted.forEach(item => { totalBajas += item.bajas; totalComp += item.comp; });
+  // Solo se listan (y grafican) los asesores que si tuvieron bajas; el pie
+  // sigue sumando el roster completo, asi que la meta de la plaza no cambia.
+  const visibles = sorted.filter(item => item.bajas > 0);
+  const rows = visibles.map(item => {
     const bajas = item.bajas;
     const desfase = bajas - item.comp;
-    totalBajas += bajas;
-    totalComp += item.comp;
     return `<tr${ASESOR_BUCKET_LABELS.has(item.id)?' class="compromiso-sin-asesor"':''}>
       <td>${item.nombre}</td>
       <td class="num"><span class="pill ${compPillClass(bajas)}">${bajas}</span></td>
@@ -723,7 +725,7 @@ function renderCompromiso(data, cols){
       <tbody>${rows}</tbody>
       <tfoot><tr><td>PLAZA</td><td class="num">${totalBajas}</td><td class="num">${totalComp}</td><td class="num">${totalDesfase}</td></tr></tfoot>
     </table></div>`;
-  renderChart('chart-asesores','bar',sorted.map(item=>OXXO.truncate(item.nombre,28)),sorted.map(item=>item.bajas),{horizontal:true,ranking:true,tickSize:12,label:'Bajas por asesor'});
+  renderChart('chart-asesores','bar',visibles.map(item=>OXXO.truncate(item.nombre,28)),visibles.map(item=>item.bajas),{horizontal:true,ranking:true,tickSize:12,label:'Bajas por asesor'});
 }
 
 // Tabla de detalle de bajas: columnas reducidas (lo esencial para escanear rápido).
