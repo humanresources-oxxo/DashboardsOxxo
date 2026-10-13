@@ -295,7 +295,10 @@ function cargarD2(esAdminUnit = () => false) {
   };
   const ventana = { matchMedia: () => ({ matches: false, addEventListener() {} }), addEventListener() {}, OXXO };
   const contexto = vm.createContext({ document: documento, window: ventana, OXXO, OXXO_DIALOGS: { register: () => ({ open() {}, close() {} }), bindRows() {} }, console });
-  const exponer = `\n;globalThis.__d2 = { run(rows) {
+  const exponer = `\n;globalThis.__d2 = { run(rows, metas) {
+    const graficas = {};
+    renderChart = (id, _tipo, labels, values) => { graficas[id] = { labels, values }; };
+    if(metas) COMPROMISOS_BY_PLAZA = metas;
     const cols = buildCols(rows);
     RAW_BAJAS_DATA = rows; BASE_BAJAS_DATA = filterData(rows, cols); BAJAS_COLS = cols;
     FILTER_STATE = defaultFilterState(BASE_BAJAS_DATA, BAJAS_COLS);
@@ -303,7 +306,7 @@ function cargarD2(esAdminUnit = () => false) {
     renderBajasDashboard(applyUserFilters(BASE_BAJAS_DATA, BAJAS_COLS), BAJAS_COLS);
     return { kpi: document.getElementById('kpi-section').innerHTML, heat: document.getElementById('heatmap-bajas').innerHTML,
       compromiso: document.getElementById('tabla-compromiso').innerHTML, detalle: document.getElementById('tabla-detalle').innerHTML,
-      asesores: asesorOptionsList(BASE_BAJAS_DATA, BAJAS_COLS) };
+      asesores: asesorOptionsList(BASE_BAJAS_DATA, BAJAS_COLS), graficas };
   }, heatSpeak, heatTextColor, d2MonthShort, kpiCardHTML };`;
   vm.runInContext(js + exponer, contexto, { filename: 'js/dashboard-2.js' });
   return contexto.__d2;
@@ -391,4 +394,34 @@ test('Entrenamiento / Operaciones es un bucket propio, separado de Sin asesor as
   ok(tarjetaAsesor, /Ana Perez/, 'el tope es la persona real, no el bucket');
   assert.ok(detalle.includes('Entrenamiento / Operaciones'), 'el detalle etiqueta la unidad administrativa');
   assert.ok(detalle.includes('Sin asesor asignado'), 'el detalle conserva el bucket sin asesor de tienda real');
+});
+
+// La tabla y el ranking son un tablero de trabajo: un AT con meta configurada
+// pero cero bajas solo mete ruido. El pie sigue sumando su meta.
+test('compromiso y ranking omiten a los asesores con cero bajas sin mover los totales', () => {
+  const fila = (asesor, tienda) => ({ Mes: '2026-09', Asesor: asesor, Tienda: tienda, Puesto: 'Ayudante Tienda', Temporalidad: '0 - 45 días', 'Rot. Temp.': 'No', Edad: '25', Plaza: 'Oaxaca' });
+  const esAdmin = t => /^ENTRENAMIENTO /.test(String(t || '').toUpperCase());
+  const metas = new Map([['Oaxaca', { 'Ana Perez': 2, 'Zoe Fantasma': 5 }]]);
+  const filas = [
+    fila('Ana Perez', 'OXXO UNO'), fila('Ana Perez', 'OXXO UNO'), fila('Ana Perez', 'OXXO DOS'),
+    fila('Sin Asesor Asignado', 'OXXO TIENDA REAL'),
+    fila('Sin Asesor Asignado', 'ENTRENAMIENTO OAXACA'),
+  ];
+  const { compromiso, graficas } = cargarD2(esAdmin).run(filas, metas);
+
+  const celdas = [...compromiso.matchAll(/<td>([^<]*)<\/td>\s*<td class="num"><span class="pill [^"]*">(\d+)</g)].map(m => [m[1], Number(m[2])]);
+  assert.deepEqual(celdas, [['Ana Perez', 3], ['Entrenamiento / Operaciones', 1], ['Sin asesor asignado', 1]],
+    'solo filas con bajas, en el mismo orden');
+  no(compromiso, /Zoe Fantasma/, 'el AT configurado con cero bajas no aparece');
+
+  // Pie intacto: 5 bajas contra 7 de meta (Ana 2 + Zoe 5; los buckets no tienen meta).
+  ok(compromiso, /<tfoot><tr><td>PLAZA<\/td><td class="num">5<\/td><td class="num">7<\/td><td class="num">-2<\/td>/);
+
+  // Ranking horizontal: mismas entradas que la tabla, sin barras en cero.
+  const ranking = graficas['chart-asesores'];
+  assert.deepEqual([...ranking.labels], ['Ana Perez', 'Entrenamiento / Operaciones', 'Sin asesor asignado']);
+  assert.deepEqual([...ranking.values], [3, 1, 1]);
+
+  // El cuerpo se queda vacio (no se inventa estado vacio) si nadie tuviera bajas.
+  ok(js, /<tbody>\$\{rows\}<\/tbody>/);
 });
