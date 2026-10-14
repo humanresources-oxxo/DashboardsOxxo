@@ -139,15 +139,15 @@
     </section>
     <section class="admin-card" id="contact-directory-section" style="margin-top:18px">
       <h2>Directorio privado de contacto · Bajas</h2>
-      <p style="color:#7a4a42;font-size:13px;font-weight:650;margin:0 0 16px">Carga la plantilla operativa para habilitar la descarga protegida de teléfonos. El sistema extrae únicamente <strong>N° personal</strong> y <strong>Teléfono</strong>; RFC, CURP, IMSS, domicilio y las demás columnas no se guardan.</p>
+      <p style="color:var(--ap-muted);font-size:13px;font-weight:600;margin:0 0 16px">Carga la plantilla operativa para habilitar la descarga protegida de teléfonos. El sistema extrae únicamente <strong>N° personal</strong> y <strong>Teléfono</strong>; RFC, CURP, IMSS, domicilio y las demás columnas no se guardan.</p>
       <div class="admin-actions" style="align-items:center">
         <input class="admin-input" type="file" id="contact-directory-file" accept=".xlsx,.xls,.xlsm,.csv" style="max-width:420px" />
         <button class="admin-btn primary" type="button" id="contact-directory-publish" disabled>Actualizar directorio privado</button>
       </div>
       <div class="helper-box" id="contact-directory-status" style="margin-top:12px">Selecciona una plantilla operativa con N° personal y Teléfono.</div>
-      <div style="margin-top:18px;padding-top:16px;border-top:1px solid #efe0dc">
+      <div style="margin-top:18px;padding-top:16px;border-top:1px solid var(--ap-border)">
         <h3 style="margin:0 0 6px;font-size:14px">Sacar el directorio del archivo publicado</h3>
-        <p style="color:#7a4a42;font-size:13px;font-weight:650;margin:0 0 12px">El directorio debe vivir en una hoja de cálculo aparte y sin publicar. Si quedó dentro del archivo publicado, esta acción mueve los contactos al archivo privado y <strong>borra la pestaña expuesta</strong>. Se puede ejecutar varias veces sin riesgo.</p>
+        <p style="color:var(--ap-muted);font-size:13px;font-weight:600;margin:0 0 12px">El directorio debe vivir en una hoja de cálculo aparte y sin publicar. Si quedó dentro del archivo publicado, esta acción mueve los contactos al archivo privado y <strong>borra la pestaña expuesta</strong>. Se puede ejecutar varias veces sin riesgo.</p>
         <div class="admin-actions" style="align-items:center">
           <button class="admin-btn" type="button" id="contact-directory-migrate">Mover y limpiar</button>
         </div>
@@ -156,15 +156,15 @@
     </section>
     <section class="admin-card hidden" id="manual-entry-section" style="margin-top:18px">
       <h2>Bajas otras plazas · Respaldo manual</h2>
-      <p style="color:#7a4a42;font-size:13px;font-weight:650;margin:0 0 16px">Esto ya se calcula solo al publicar la base de arriba (Bajas diarias) desde el Excel ABC. Usa este formulario solo si necesitas corregir una plaza a mano. Al publicar se ordenan automáticamente de mayor a menor y aparecen en el ranking del Dashboard 2.</p>
+      <p style="color:var(--ap-muted);font-size:13px;font-weight:600;margin:0 0 16px">Esto ya se calcula solo al publicar la base de arriba (Bajas diarias) desde el Excel ABC. Usa este formulario solo si necesitas corregir una plaza a mano. Al publicar se ordenan automáticamente de mayor a menor y aparecen en el ranking del Dashboard 2.</p>
       <div class="table-wrap" style="margin-bottom:16px;max-height:none">
         <table class="preview-table" id="manual-input-table">
           <thead><tr><th>Plaza</th><th>Bajas del mes</th></tr></thead>
           <tbody>
-            <tr><td style="font-weight:800">Chontalpa</td><td><input class="admin-input" style="padding:8px 12px;width:120px" type="number" min="0" placeholder="0" data-plaza="Chontalpa" /></td></tr>
-            <tr><td style="font-weight:800">Villahermosa</td><td><input class="admin-input" style="padding:8px 12px;width:120px" type="number" min="0" placeholder="0" data-plaza="Villahermosa" /></td></tr>
-            <tr><td style="font-weight:800">Costa Istmo</td><td><input class="admin-input" style="padding:8px 12px;width:120px" type="number" min="0" placeholder="0" data-plaza="Costa Istmo" /></td></tr>
-            <tr><td style="font-weight:800">Tuxtla</td><td><input class="admin-input" style="padding:8px 12px;width:120px" type="number" min="0" placeholder="0" data-plaza="Tuxtla" /></td></tr>
+            <tr><td style="font-weight:700">Chontalpa</td><td><input class="admin-input" style="padding:8px 12px;width:120px" type="number" min="0" placeholder="0" data-plaza="Chontalpa" /></td></tr>
+            <tr><td style="font-weight:700">Villahermosa</td><td><input class="admin-input" style="padding:8px 12px;width:120px" type="number" min="0" placeholder="0" data-plaza="Villahermosa" /></td></tr>
+            <tr><td style="font-weight:700">Costa Istmo</td><td><input class="admin-input" style="padding:8px 12px;width:120px" type="number" min="0" placeholder="0" data-plaza="Costa Istmo" /></td></tr>
+            <tr><td style="font-weight:700">Tuxtla</td><td><input class="admin-input" style="padding:8px 12px;width:120px" type="number" min="0" placeholder="0" data-plaza="Tuxtla" /></td></tr>
           </tbody>
         </table>
       </div>
@@ -174,15 +174,15 @@
     </section>
     <section class="admin-card hidden" id="manual-entry-d3-section" style="margin-top:18px">
       <h2>Aprovechamiento otras plazas · Respaldo manual</h2>
-      <p style="color:#7a4a42;font-size:13px;font-weight:650;margin:0 0 16px">Esto ya se calcula solo al publicar la base de arriba (Estructura) desde la hoja "PLAZAS" del Excel. Usa este formulario solo si necesitas corregir una plaza a mano (0–100). Al publicar se ordenan automáticamente y aparecen en el ranking del Dashboard 3.</p>
+      <p style="color:var(--ap-muted);font-size:13px;font-weight:600;margin:0 0 16px">Esto ya se calcula solo al publicar la base de arriba (Estructura) desde la hoja "PLAZAS" del Excel. Usa este formulario solo si necesitas corregir una plaza a mano (0–100). Al publicar se ordenan automáticamente y aparecen en el ranking del Dashboard 3.</p>
       <div class="table-wrap" style="margin-bottom:16px;max-height:none">
         <table class="preview-table" id="manual-input-d3">
           <thead><tr><th>Plaza</th><th>Aprovechamiento (%)</th></tr></thead>
           <tbody>
-            <tr><td style="font-weight:800">TUXTLA</td><td><input class="admin-input" style="padding:8px 12px;width:140px" type="number" min="0" max="100" step="0.01" placeholder="ej. 79.2" data-plaza="TUXTLA" /></td></tr>
-            <tr><td style="font-weight:800">ISTMO</td><td><input class="admin-input" style="padding:8px 12px;width:140px" type="number" min="0" max="100" step="0.01" placeholder="ej. 91.0" data-plaza="ISTMO" /></td></tr>
-            <tr><td style="font-weight:800">VILLAHERMOSA</td><td><input class="admin-input" style="padding:8px 12px;width:140px" type="number" min="0" max="100" step="0.01" placeholder="ej. 75.8" data-plaza="VILLAHERMOSA" /></td></tr>
-            <tr><td style="font-weight:800">CHONTALPA</td><td><input class="admin-input" style="padding:8px 12px;width:140px" type="number" min="0" max="100" step="0.01" placeholder="ej. 88.4" data-plaza="CHONTALPA" /></td></tr>
+            <tr><td style="font-weight:700">TUXTLA</td><td><input class="admin-input" style="padding:8px 12px;width:140px" type="number" min="0" max="100" step="0.01" placeholder="ej. 79.2" data-plaza="TUXTLA" /></td></tr>
+            <tr><td style="font-weight:700">ISTMO</td><td><input class="admin-input" style="padding:8px 12px;width:140px" type="number" min="0" max="100" step="0.01" placeholder="ej. 91.0" data-plaza="ISTMO" /></td></tr>
+            <tr><td style="font-weight:700">VILLAHERMOSA</td><td><input class="admin-input" style="padding:8px 12px;width:140px" type="number" min="0" max="100" step="0.01" placeholder="ej. 75.8" data-plaza="VILLAHERMOSA" /></td></tr>
+            <tr><td style="font-weight:700">CHONTALPA</td><td><input class="admin-input" style="padding:8px 12px;width:140px" type="number" min="0" max="100" step="0.01" placeholder="ej. 88.4" data-plaza="CHONTALPA" /></td></tr>
           </tbody>
         </table>
       </div>
@@ -192,7 +192,7 @@
     </section>
     <section class="admin-card hidden" id="manual-entry-d2plan-section" style="margin-top:18px">
       <h2>Plan de Acción · Análisis de Bajas (captura mensual)</h2>
-      <p style="color:#7a4a42;font-size:13px;font-weight:650;margin:0 0 16px">Captura el plan de acción del mes (hallazgo, acción propuesta, responsable, plazo, indicador de éxito y prioridad). Se muestra en la página "Análisis de Bajas" del Dashboard 2. Agrega o quita filas según necesites.</p>
+      <p style="color:var(--ap-muted);font-size:13px;font-weight:600;margin:0 0 16px">Captura el plan de acción del mes (hallazgo, acción propuesta, responsable, plazo, indicador de éxito y prioridad). Se muestra en la página "Análisis de Bajas" del Dashboard 2. Agrega o quita filas según necesites.</p>
       <div class="table-wrap" style="margin-bottom:16px;max-height:none">
         <table class="preview-table" id="manual-input-d2plan">
           <thead><tr><th style="min-width:220px">Hallazgo</th><th style="min-width:220px">Acción</th><th>Responsable</th><th>Plazo</th><th>Indicador de éxito</th><th>Prioridad</th></tr></thead>
@@ -220,14 +220,14 @@
       <div class="preview-head"><h2>3. Vista previa</h2><div class="preview-meta" id="preview-meta">0 filas</div></div>
       <div class="table-wrap">
         <table class="preview-table" id="preview-table">
-          <tbody><tr><td style="padding:28px;text-align:center;color:#7a4a42">Aun no hay datos para mostrar.</td></tr></tbody>
+          <tbody><tr><td style="padding:28px;text-align:center;color:var(--ap-muted)">Aun no hay datos para mostrar.</td></tr></tbody>
         </table>
       </div>
     </section>
     </section>
     <section class="admin-tabpanel hidden" id="tabpanel-calidad" role="tabpanel">
       <section class="admin-card">
-        <div class="preview-head"><div><h2>Salud de las fuentes</h2><p style="color:#7a4a42;font-size:13px;font-weight:650;margin:4px 0 0">Revisa disponibilidad, volumen, encabezados críticos y vigencia de las bases conectadas.</p></div><button class="admin-btn primary" type="button" id="quality-refresh-btn">Ejecutar diagnóstico</button></div>
+        <div class="preview-head"><div><h2>Salud de las fuentes</h2><p style="color:var(--ap-muted);font-size:13px;font-weight:600;margin:4px 0 0">Revisa disponibilidad, volumen, encabezados críticos y vigencia de las bases conectadas.</p></div><button class="admin-btn primary" type="button" id="quality-refresh-btn">Ejecutar diagnóstico</button></div>
         <div class="quality-summary" id="quality-summary">
           <div class="quality-kpi"><span>Fuentes</span><strong>—</strong></div><div class="quality-kpi ok"><span>Correctas</span><strong>—</strong></div><div class="quality-kpi warn"><span>Atención</span><strong>—</strong></div><div class="quality-kpi bad"><span>Errores</span><strong>—</strong></div>
         </div>
@@ -239,7 +239,7 @@
     </section>
     <section class="admin-tabpanel hidden" id="tabpanel-bitacora" role="tabpanel">
       <section class="admin-card">
-        <div class="preview-head"><div><h2>Control operativo y respaldos</h2><p style="color:#7a4a42;font-size:13px;font-weight:650;margin:4px 0 0">Consulta el estado de cada base y restaura cualquiera de sus cinco respaldos más recientes.</p></div><button class="admin-btn primary" type="button" id="audit-refresh-btn">Actualizar resumen</button></div>
+        <div class="preview-head"><div><h2>Control operativo y respaldos</h2><p style="color:var(--ap-muted);font-size:13px;font-weight:600;margin:4px 0 0">Consulta el estado de cada base y restaura cualquiera de sus cinco respaldos más recientes.</p></div><button class="admin-btn primary" type="button" id="audit-refresh-btn">Actualizar resumen</button></div>
         <div class="admin-overview-summary" id="admin-overview-summary"><div class="overview-kpi"><span>Bases monitoreadas</span><strong>—</strong></div><div class="overview-kpi ok"><span>Con respaldo</span><strong>—</strong></div><div class="overview-kpi"><span>Respaldos vigentes</span><strong>—</strong></div><div class="overview-kpi"><span>Por revisar</span><strong>—</strong></div></div>
         <div class="backup-history"><div class="backup-history__head"><div><h3>Respaldos disponibles</h3><p id="backup-history-note">Se conservan automáticamente los cinco más recientes por base.</p></div><select class="admin-select backup-history__filter" id="backup-sheet-filter"><option value="all">Todos los dashboards</option></select></div><div class="backup-history-list" id="backup-history-list"><div class="backup-empty">Consulta el resumen para cargar los respaldos.</div></div></div>
         <h3 class="audit-section-title">Estado de las bases</h3>
@@ -251,7 +251,7 @@
     </section>
     <section class="admin-tabpanel hidden" id="tabpanel-mapa" role="tabpanel">
       <section class="admin-card">
-        <div class="preview-head"><div><h2>Mapa del sistema y flujo de datos</h2><p style="color:#7a4a42;font-size:13px;font-weight:650;margin:4px 0 0">Consulta de dónde viene cada dato, cómo se transforma y en qué pantallas termina.</p></div><span class="admin-pill" style="background:#fff4f2;color:#c91822;border-color:#ffd1ce">Plaza Oaxaca</span></div>
+        <div class="preview-head"><div><h2>Mapa del sistema y flujo de datos</h2><p style="color:var(--ap-muted);font-size:13px;font-weight:600;margin:4px 0 0">Consulta de dónde viene cada dato, cómo se transforma y en qué pantallas termina.</p></div><span class="admin-pill" style="background:var(--ap-tint-red);color:var(--ap-red-dark);border-color:var(--ap-border)">Plaza Oaxaca</span></div>
         <div class="system-map-flow" aria-label="Flujo general del sistema">
           <article class="system-map-stage"><div><span>01 · Origen</span><strong>Excel y captura directa</strong><small>Archivos operativos de RH, Comercial y Administrativo; PromosD100 se edita directo en Sheets.</small></div><em>Datos de entrada</em></article><div class="system-map-arrow" aria-hidden="true">›</div>
           <article class="system-map-stage"><div><span>02 · Validación</span><strong>Panel Admin</strong><small>Detecta hojas, normaliza columnas, filtra Plaza Oaxaca y valida filas antes de publicar.</small></div><em>Control de calidad</em></article><div class="system-map-arrow" aria-hidden="true">›</div>
@@ -259,25 +259,25 @@
           <article class="system-map-stage"><div><span>04 · Fuente central</span><strong>Google Sheets</strong><small>Cada indicador vive en una pestaña estable; catálogo, reasignaciones y avisos se comparten.</small></div><em>Fuente oficial</em></article><div class="system-map-arrow" aria-hidden="true">›</div>
           <article class="system-map-stage"><div><span>05 · Consumo</span><strong>Portal de dashboards</strong><small>Core.js consulta las hojas, aplica filtros y alimenta dashboards, Mi Tienda, Mi Dashboard y exportaciones.</small></div><em>Lectura automática</em></article>
         </div>
-        <div class="system-map-toolbar"><div><h2 style="margin:0;font-size:1.35rem">Conexiones por dashboard</h2><p style="margin:3px 0 0;color:#80665f;font-size:11px;font-weight:650">Selecciona una fuente para ver su ruta completa.</p></div><div class="system-map-filters" role="group" aria-label="Filtrar conexiones por área"><button class="system-map-filter active" type="button" data-map-filter="all">Todas</button><button class="system-map-filter" type="button" data-map-filter="rh">Recursos Humanos</button><button class="system-map-filter" type="button" data-map-filter="comercial">Comercial</button><button class="system-map-filter" type="button" data-map-filter="administrativo">Administrativo</button></div></div>
+        <div class="system-map-toolbar"><div><h2 style="margin:0;font-size:1.35rem">Conexiones por dashboard</h2><p style="margin:3px 0 0;color:var(--ap-muted);font-size:11px;font-weight:600">Selecciona una fuente para ver su ruta completa.</p></div><div class="system-map-filters" role="group" aria-label="Filtrar conexiones por área"><button class="system-map-filter active" type="button" data-map-filter="all">Todas</button><button class="system-map-filter" type="button" data-map-filter="rh">Recursos Humanos</button><button class="system-map-filter" type="button" data-map-filter="comercial">Comercial</button><button class="system-map-filter" type="button" data-map-filter="administrativo">Administrativo</button></div></div>
         <div class="system-map-grid" id="system-map-grid" aria-live="polite"></div>
         <div class="system-map-detail">
-          <section class="system-map-route" id="system-map-route" aria-live="polite"><span class="admin-eyebrow" style="color:#c91822">Ruta seleccionada</span><h2 id="system-map-route-title" style="margin:6px 0 0">Selecciona un dashboard</h2><p id="system-map-route-copy" style="margin:6px 0 0;color:#705750;font-size:12px;font-weight:650">Aquí verás el origen, la hoja central y los consumidores de cada dato.</p><div class="system-map-route__path" id="system-map-route-path"></div></section>
+          <section class="system-map-route" id="system-map-route" aria-live="polite"><span class="admin-eyebrow" style="color:var(--ap-red-dark)">Ruta seleccionada</span><h2 id="system-map-route-title" style="margin:6px 0 0">Selecciona un dashboard</h2><p id="system-map-route-copy" style="margin:6px 0 0;color:var(--ap-muted);font-size:12px;font-weight:600">Aquí verás el origen, la hoja central y los consumidores de cada dato.</p><div class="system-map-route__path" id="system-map-route-path"></div></section>
           <div class="system-map-facts" id="system-map-facts"><div class="system-map-fact"><span>Hoja central</span><strong>—</strong></div><div class="system-map-fact"><span>Actualización</span><strong>—</strong></div><div class="system-map-fact"><span>Modo de carga</span><strong>—</strong></div><div class="system-map-fact"><span>Consumidores</span><strong>—</strong></div></div>
         </div>
-        <h2 style="margin:24px 0 5px;font-size:1.35rem">Conexiones compartidas</h2><p style="margin:0;color:#80665f;font-size:11px;font-weight:650">Estas fuentes atraviesan varios dashboards y mantienen consistente la información.</p>
+        <h2 style="margin:24px 0 5px;font-size:1.35rem">Conexiones compartidas</h2><p style="margin:0;color:var(--ap-muted);font-size:11px;font-weight:600">Estas fuentes atraviesan varios dashboards y mantienen consistente la información.</p>
         <div class="system-map-shared"><article><strong>Catálogo de asesores</strong><span>Relaciona CR y tienda con el asesor vigente; evita repetir ese dato en cada base.</span></article><article><strong>Reasignaciones</strong><span>Sustituye temporalmente al asesor del catálogo en todas las pantallas que usan tienda o CR.</span></article><article><strong>Configuración</strong><span>Centraliza pestañas, plaza, fechas de actualización y la URL de Apps Script.</span></article><article><strong>Avisos del sistema</strong><span>La consola publica mensajes globales, por área o dashboard sin alterar sus datos.</span></article></div>
       </section>
     </section>
     <section class="admin-tabpanel hidden" id="tabpanel-consola" role="tabpanel">
       <div class="console-layout">
         <section class="admin-card">
-          <div class="preview-head"><div><h2>Estado operativo</h2><p style="color:#7a4a42;font-size:13px;font-weight:650;margin:4px 0 0">Revisa qué fuentes están vigentes y cuáles necesitan atención.</p></div><button class="admin-btn primary" type="button" id="console-refresh-btn">Actualizar estado</button></div>
+          <div class="preview-head"><div><h2>Estado operativo</h2><p style="color:var(--ap-muted);font-size:13px;font-weight:600;margin:4px 0 0">Revisa qué fuentes están vigentes y cuáles necesitan atención.</p></div><button class="admin-btn primary" type="button" id="console-refresh-btn">Actualizar estado</button></div>
           <div class="console-summary" id="console-summary"><div class="console-kpi"><span>Fuentes</span><strong>—</strong></div><div class="console-kpi ok"><span>Correctas</span><strong>—</strong></div><div class="console-kpi warn"><span>Atención</span><strong>—</strong></div><div class="console-kpi bad"><span>Críticas</span><strong>—</strong></div></div>
           <div class="table-wrap" style="max-height:520px"><table class="preview-table"><thead><tr><th>Área / dashboard</th><th>Estado</th><th>Última publicación</th><th>Registros</th></tr></thead><tbody id="console-health-body"><tr><td colspan="4" class="quality-empty">Abre esta sección para consultar el estado.</td></tr></tbody></table></div>
         </section>
         <section class="admin-card">
-          <div class="preview-head"><div><h2>Avisos en tiempo real</h2><p style="color:#7a4a42;font-size:13px;font-weight:650;margin:4px 0 0">Publica mantenimiento, incidencias o mensajes informativos sin modificar los dashboards.</p></div></div>
+          <div class="preview-head"><div><h2>Avisos en tiempo real</h2><p style="color:var(--ap-muted);font-size:13px;font-weight:600;margin:4px 0 0">Publica mantenimiento, incidencias o mensajes informativos sin modificar los dashboards.</p></div></div>
           <form id="console-notice-form" class="console-form">
             <input type="hidden" id="console-notice-id" />
             <label><span class="admin-label">Tipo</span><select class="admin-select" id="console-notice-type"><option value="info">Informativo</option><option value="warn">Atención</option><option value="critical">Crítico</option></select></label>
@@ -297,7 +297,7 @@
     <section class="admin-tabpanel hidden" id="tabpanel-presentaciones" role="tabpanel">
     <section class="admin-card">
       <h2>Presentación Foro Bienestar Días Martes</h2>
-      <p style="color:#7a4a42;font-size:13px;font-weight:650;margin:0 0 16px">Genera un .pptx con el indicador principal de cada dashboard, tomado en vivo de Google Sheets (Vacantes, Bajas, Aprovechamiento, Tiempo Extra, Ausentismos y Alineación TREO).</p>
+      <p style="color:var(--ap-muted);font-size:13px;font-weight:600;margin:0 0 16px">Genera un .pptx con el indicador principal de cada dashboard, tomado en vivo de Google Sheets (Vacantes, Bajas, Aprovechamiento, Tiempo Extra, Ausentismos y Alineación TREO).</p>
       <div class="admin-actions">
         <button class="admin-btn primary" type="button" id="generate-pptx-btn"><svg class="icon-inline" viewBox="0 0 24 24" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>Generar Presentación Foro Bienestar Días Martes</button>
       </div>
@@ -305,18 +305,18 @@
     </section>
     <section class="admin-card" style="margin-top:18px">
       <h2>Presentación RAE</h2>
-      <p style="color:#7a4a42;font-size:13px;font-weight:650;margin:0 0 16px">Genera un .pptx con la estructura del Reporte de Análisis Ejecutivo: KPI principal, gráfica de dona por categoría y ranking por Asesor/Plaza para cada dashboard, tomado en vivo de Google Sheets.</p>
+      <p style="color:var(--ap-muted);font-size:13px;font-weight:600;margin:0 0 16px">Genera un .pptx con la estructura del Reporte de Análisis Ejecutivo: KPI principal, gráfica de dona por categoría y ranking por Asesor/Plaza para cada dashboard, tomado en vivo de Google Sheets.</p>
       <div class="admin-actions" style="align-items:center;gap:12px;flex-wrap:wrap">
-        <label for="pptx-rae-mes" style="font-size:12px;font-weight:800;color:#7a4a42">Mes de Vacantes/Bajas:</label>
+        <label for="pptx-rae-mes" style="font-size:12px;font-weight:700;color:var(--ap-muted)">Mes de Vacantes/Bajas:</label>
         <select id="pptx-rae-mes" style="min-width:180px"><option value="">Más reciente</option></select>
         <button class="admin-btn primary" type="button" id="generate-pptx-rae-btn"><svg class="icon-inline" viewBox="0 0 24 24" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>Generar Presentación RAE</button>
       </div>
-      <p style="color:#a08076;font-size:11.5px;font-weight:600;margin:8px 0 0">Vacantes y Bajas se agrupan por mes de carga; si ya se subió un mes nuevo y quieres una presentación del mes anterior, selecciónalo aquí. Aprovechamiento y TREO siempre usan la última foto disponible en Sheets (no acumulan histórico).</p>
+      <p style="color:var(--ap-muted);font-size:11.5px;font-weight:600;margin:8px 0 0">Vacantes y Bajas se agrupan por mes de carga; si ya se subió un mes nuevo y quieres una presentación del mes anterior, selecciónalo aquí. Aprovechamiento y TREO siempre usan la última foto disponible en Sheets (no acumulan histórico).</p>
       <div class="helper-box" id="pptx-rae-status" style="margin-top:12px"></div>
     </section>
     <section class="admin-card" style="margin-top:18px">
       <h2>Presentación por Asesor</h2>
-      <p style="color:#7a4a42;font-size:13px;font-weight:650;margin:0 0 16px">Elige un asesor y genera un .pptx con sus datos: Vacantes, Bajas, Aprovechamiento y TREO, tomados en vivo de Google Sheets (mismas reglas ya verificadas de las otras presentaciones).</p>
+      <p style="color:var(--ap-muted);font-size:13px;font-weight:600;margin:0 0 16px">Elige un asesor y genera un .pptx con sus datos: Vacantes, Bajas, Aprovechamiento y TREO, tomados en vivo de Google Sheets (mismas reglas ya verificadas de las otras presentaciones).</p>
       <div class="admin-actions" style="align-items:center;gap:12px">
         <select class="admin-select" id="select-asesor" style="min-width:280px"><option value="">Cargando asesores…</option></select>
         <button class="admin-btn primary" type="button" id="generate-pptx-asesor-btn"><svg class="icon-inline" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>Generar Presentación del Asesor</button>
@@ -327,7 +327,7 @@
     <section class="admin-tabpanel hidden" id="tabpanel-excels" role="tabpanel">
     <section class="admin-card">
       <h2>Indicadores ATs</h2>
-      <p style="color:#7a4a42;font-size:13px;font-weight:650;margin:0 0 16px">Descarga el Excel de Indicadores por AT con Aprovechamiento de estructura, Vacantes en estructura y Alineación de estructura actualizados en vivo desde Google Sheets (mismos datos que Vacantes/Aprovechamiento/TREO). El resto de los indicadores (NPS, Ausentismo, Rotación, % Apego) se conservan tal cual para llenarse a mano.</p>
+      <p style="color:var(--ap-muted);font-size:13px;font-weight:600;margin:0 0 16px">Descarga el Excel de Indicadores por AT con Aprovechamiento de estructura, Vacantes en estructura y Alineación de estructura actualizados en vivo desde Google Sheets (mismos datos que Vacantes/Aprovechamiento/TREO). El resto de los indicadores (NPS, Ausentismo, Rotación, % Apego) se conservan tal cual para llenarse a mano.</p>
       <div class="admin-actions">
         <button class="admin-btn primary" type="button" id="generate-indicadores-btn"><svg class="icon-inline" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>Generar Indicadores ATs</button>
       </div>
@@ -337,11 +337,11 @@
     <section class="admin-tabpanel hidden" id="tabpanel-reasignaciones" role="tabpanel">
     <section class="admin-card">
       <h2>Reasignaciones · Tiendas sin asesor vigente</h2>
-      <p style="color:#7a4a42;font-size:13px;font-weight:650;margin:0 0 16px">Cuando un asesor deja la empresa, sus tiendas quedan "Sin Asesor Asignado" en el catálogo hasta que se les asigne un AT nuevo. Mientras tanto, agrega aquí quién las cubre para que todos los dashboards (Mi Tienda, Mi Dashboard, reportes, etc.) muestren lo mismo — sin esperar a que alguien edite código. Los cambios no aplican hasta que le des <strong>Publicar</strong>.</p>
+      <p style="color:var(--ap-muted);font-size:13px;font-weight:600;margin:0 0 16px">Cuando un asesor deja la empresa, sus tiendas quedan "Sin Asesor Asignado" en el catálogo hasta que se les asigne un AT nuevo. Mientras tanto, agrega aquí quién las cubre para que todos los dashboards (Mi Tienda, Mi Dashboard, reportes, etc.) muestren lo mismo — sin esperar a que alguien edite código. Los cambios no aplican hasta que le des <strong>Publicar</strong>.</p>
     </section>
     <section class="admin-card" style="margin-top:18px">
       <h2>Asignación masiva</h2>
-      <p style="color:#7a4a42;font-size:13px;font-weight:650;margin:0 0 12px">Tiendas que hoy salen "Sin Asesor Asignado" en el catálogo y todavía no tienen reasignación. Marca las que le tocan a un mismo asesor entrante (ej. todas las de alguien que acaba de salir) y agrégalas juntas en vez de escribirlas una por una.</p>
+      <p style="color:var(--ap-muted);font-size:13px;font-weight:600;margin:0 0 12px">Tiendas que hoy salen "Sin Asesor Asignado" en el catálogo y todavía no tienen reasignación. Marca las que le tocan a un mismo asesor entrante (ej. todas las de alguien que acaba de salir) y agrégalas juntas en vez de escribirlas una por una.</p>
       <div class="admin-actions" style="margin-bottom:10px">
         <button class="admin-btn" type="button" id="reas-bulk-select-all">Seleccionar todas</button>
         <button class="admin-btn" type="button" id="reas-bulk-select-none">Ninguna</button>
@@ -349,7 +349,7 @@
       <div class="table-wrap" id="reas-huerfanas-wrap" style="margin-bottom:14px;max-height:280px">
         <table class="preview-table">
           <thead><tr><th style="width:30px"></th><th>Tienda</th><th>CR</th></tr></thead>
-          <tbody id="reas-huerfanas-list"><tr><td colspan="3" style="padding:16px;text-align:center;color:#9b6b60">Cargando…</td></tr></tbody>
+          <tbody id="reas-huerfanas-list"><tr><td colspan="3" style="padding:16px;text-align:center;color:var(--ap-muted)">Cargando…</td></tr></tbody>
         </table>
       </div>
       <div class="admin-actions" style="align-items:center;gap:10px">

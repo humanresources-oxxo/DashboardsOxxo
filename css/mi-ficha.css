@@ -44,7 +44,7 @@ body.rh-unified .mt-hero .hero-badge.is-error{background:#fbe9ea;border-color:#e
 .empty-state{background:#fff;border:1px solid var(--du-border);border-radius:var(--du-radius);padding:40px 24px;text-align:center;color:var(--mt-muted);box-shadow:var(--du-shadow)}
 .empty-state .big{font-size:2.4rem;margin-bottom:10px}
 .empty-state h2{font-family:var(--font-display);color:var(--mt-ink);margin:0 0 6px}
-.mt-state-action{margin-top:16px;cursor:pointer;border:0;border-radius:11px;padding:10px 18px;background:#C1101B;color:#fff;font-family:inherit;font-size:12px;font-weight:800;box-shadow:0 8px 20px rgba(193,16,27,.2)}
+.mt-state-action{margin-top:16px;cursor:pointer;border:0;border-radius:10px;padding:10px 18px;background:#C1101B;color:#fff;font-family:inherit;font-size:12px;font-weight:800;box-shadow:var(--du-shadow)}
 .mt-state-action:hover{background:#A80E18}
 
 /* ── Ficha: una sola tarjeta ──────────────────────────────
@@ -162,7 +162,7 @@ body.rh-unified .mt-hero .hero-badge.is-error{background:#fbe9ea;border-color:#e
 .mt-glossary summary::after{content:'+';margin-left:auto;color:#C1101B;font-size:16px}.mt-glossary[open] summary::after{content:'−'}
 .mt-glossary summary span{color:var(--mt-muted);font-size:9.5px;font-weight:650}
 .mt-glossary__grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;padding:0 18px 14px}
-.mt-glossary article{border:1px solid var(--mt-line);border-radius:11px;background:#fff;padding:10px}.mt-glossary article strong{font-size:10.5px;color:var(--mt-ink)}.mt-glossary article p{margin:4px 0 0;color:var(--mt-muted);font-size:9.5px;font-weight:600;line-height:1.4}
+.mt-glossary article{border:1px solid var(--mt-line);border-radius:10px;background:#fff;padding:10px}.mt-glossary article strong{font-size:10.5px;color:var(--mt-ink)}.mt-glossary article p{margin:4px 0 0;color:var(--mt-muted);font-size:9.5px;font-weight:600;line-height:1.4}
 
 /* Paneles por dashboard */
 .ficha__grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(304px,1fr));align-items:start;gap:12px;padding:14px 16px 18px}
@@ -176,7 +176,7 @@ body.rh-unified .mt-hero .hero-badge.is-error{background:#fbe9ea;border-color:#e
 .mi-section.is-loading,.mi-section.is-source-error{display:block;overflow:hidden;position:relative}
 .mi-section.is-loading>:not(.mi-section-head),.mi-section.is-source-error>:not(.mi-section-head){display:none!important}
 .mi-section.is-loading::after{content:'';display:block;height:108px;border-radius:12px;background:linear-gradient(100deg,rgba(130,54,38,.055) 20%,rgba(255,255,255,.88) 42%,rgba(130,54,38,.055) 64%);background-size:220% 100%;animation:mtSkeleton 1.15s ease-in-out infinite}
-.mi-section.is-source-error::after{content:attr(data-source-message);display:flex;align-items:center;min-height:72px;padding:13px;border:1px solid rgba(239,68,68,.18);border-radius:11px;background:var(--mt-bad-bg);color:var(--mt-bad);font-size:10.5px;font-weight:700;line-height:1.45}
+.mi-section.is-source-error::after{content:attr(data-source-message);display:flex;align-items:center;min-height:72px;padding:13px;border:1px solid rgba(239,68,68,.18);border-radius:10px;background:var(--mt-bad-bg);color:var(--mt-bad);font-size:10.5px;font-weight:700;line-height:1.45}
 @keyframes mtSkeleton{0%{background-position:100% 0}100%{background-position:-120% 0}}
 @media(prefers-reduced-motion:reduce){.mi-section.is-loading::after{animation:none;background:rgba(130,54,38,.055)}}
 .mi-section-head{display:flex;align-items:center;gap:9px;margin-bottom:11px}
@@ -191,7 +191,7 @@ body.rh-unified .mt-hero .hero-badge.is-error{background:#fbe9ea;border-color:#e
 .mi-badge--cut strong{font-size:9.5px;letter-spacing:.025em}
 .mi-badge--cut.is-current{background:rgba(21,101,192,.07);border-color:rgba(21,101,192,.13);color:var(--mt-info)}
 
-.mt-signal{display:flex;align-items:center;gap:9px;margin-bottom:9px;padding:9px 10px;border:1px solid transparent;border-radius:11px}
+.mt-signal{display:flex;align-items:center;gap:9px;margin-bottom:9px;padding:9px 10px;border:1px solid transparent;border-radius:10px}
 .mt-signal__icon{width:23px;height:23px;flex:0 0 23px;display:grid;place-items:center;border-radius:8px;font-size:11px;font-weight:900;background:rgba(255,255,255,.7)}
 .mt-signal strong,.mt-signal small{display:block;line-height:1.25}
 .mt-signal strong{font-size:10.5px}
@@ -199,7 +199,7 @@ body.rh-unified .mt-hero .hero-badge.is-error{background:#fbe9ea;border-color:#e
 .mt-signal--low{color:var(--mt-ok);background:var(--mt-ok-bg);border-color:rgba(29,185,84,.2)}
 .mt-signal--medium{color:var(--mt-warn);background:var(--mt-warn-bg);border-color:rgba(242,165,43,.28)}
 .mt-signal--high{color:var(--mt-bad);background:var(--mt-bad-bg);border-color:rgba(239,68,68,.24)}
-.mt-trend{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:9px;padding:9px 10px;border-radius:11px;border:1px solid var(--mt-line);background:var(--du-soft)}
+.mt-trend{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:9px;padding:9px 10px;border-radius:10px;border:1px solid var(--mt-line);background:var(--du-soft)}
 .mt-trend div>span,.mt-trend div>strong,.mt-trend small{display:block}
 .mt-trend div>span{color:var(--mt-muted);font-size:8.5px;font-weight:850;letter-spacing:.055em;text-transform:uppercase}
 .mt-trend div>strong{margin-top:2px;color:var(--mt-ink);font-family:var(--font-display);font-size:1rem}.mt-trend strong i{margin-left:5px;font-family:var(--font-body);font-size:9.5px;font-style:normal}
@@ -236,10 +236,10 @@ body.rh-unified .mt-hero .hero-badge.is-error{background:#fbe9ea;border-color:#e
 .mi-barlist__row{display:grid;grid-template-columns:minmax(58px,1fr) minmax(52px,1.7fr) 34px;align-items:center;gap:8px}
 .mi-barlist__label{font-size:10.5px;font-weight:700;color:var(--mt-ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mi-barlist__track{height:6px;border-radius:999px;background:rgba(130,54,38,.09);overflow:hidden}
-.mi-barlist__fill{height:100%;border-radius:999px;background:linear-gradient(90deg,#E85A60,#C0181F)}
-.mi-barlist__fill.azul{background:linear-gradient(90deg,#4A90D9,#12608F)}
-.mi-barlist__fill.naranja{background:linear-gradient(90deg,#F2A52B,#B87400)}
-.mi-barlist__fill.verde{background:linear-gradient(90deg,#3ECF6D,#12813F)}
+.mi-barlist__fill{height:100%;border-radius:999px;background:var(--mt-bad)}
+.mi-barlist__fill.azul{background:var(--mt-info)}
+.mi-barlist__fill.naranja{background:var(--mt-warn)}
+.mi-barlist__fill.verde{background:var(--mt-ok)}
 .mi-barlist__value{font-size:10.5px;font-weight:800;color:var(--mt-ink);text-align:right;font-variant-numeric:tabular-nums}
 
 .mi-detail{margin-top:4px;border-top:1px solid var(--mt-line);padding-top:4px}
@@ -396,7 +396,7 @@ body.mi-modal-open{overflow:hidden}
 }
 
 @media(max-width:480px){
-  .ficha{border-radius:15px}
+  .ficha{border-radius:var(--du-radius)}
   .ficha__head{padding:15px 14px}
   .ficha__head-top{align-items:flex-start;flex-direction:column}
   .ficha__status{white-space:normal}
@@ -408,7 +408,7 @@ body.mi-modal-open{overflow:hidden}
   .ficha__alertas{padding:10px 12px}
   .chip{width:100%;border-radius:10px;padding:8px 10px}
   .ficha__grid{gap:10px;padding:10px}
-  .mi-section{padding:12px 11px;border-radius:12px}
+  .mi-section{padding:12px 11px;border-radius:var(--du-radius)}
   .mi-section-head{align-items:flex-start}
   .mi-badge--cut{max-width:46%;white-space:normal;text-align:right}
   .mi-month{min-height:44px}
@@ -474,7 +474,7 @@ body.mi-modal-open{overflow:hidden}
    Vive junto al buscador de la ficha. Los colores son los mismos tokens de
    semaforo que usan las secciones (--mt-ok / --mt-warn / --mt-bad), para que
    una tienda en verde aqui se vea igual de verde al abrir su ficha. */
-.mt-rank-btn{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--mt-line);border-radius:12px;padding:9px 13px;background:rgba(255,255,255,.72);color:var(--mt-ink);font-family:inherit;font-size:12.5px;font-weight:800;cursor:pointer;transition:background .15s ease,border-color .15s ease}
+.mt-rank-btn{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--mt-line);border-radius:12px;padding:9px 13px;background:#fff;color:var(--mt-ink);font-family:inherit;font-size:12.5px;font-weight:800;cursor:pointer;transition:background .15s ease,border-color .15s ease}
 .mt-rank-btn svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2.1;stroke-linecap:round}
 .mt-rank-btn:hover:not(:disabled){background:#fff;border-color:rgba(130,54,38,.28)}
 .mt-rank-btn:focus-visible{outline:2px solid var(--color-primary,#D91F2D);outline-offset:2px}
