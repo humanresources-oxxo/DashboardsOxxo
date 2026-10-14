@@ -64,3 +64,11 @@ test('D3 mantiene visibles las plazas debajo del piso de la escala', () => {
   assert.match(html, /const visibleH = h > 0 \? h : 8/);
   assert.match(html, /plaza-bars__value--outside/);
 });
+
+test('D1 oculta el badge de filtros activos sin tocar el componente compartido', () => {
+  const css = read('css/dashboard-1.css');
+  assert.match(css, /body\.dashboard-1-page \.rh-filter-summary-badge \{ display: none; \}/);
+  // El componente compartido sigue montandose para los demas dashboards.
+  assert.match(read('js/rh-filter-summary.js'), /rh-filter-summary-badge/);
+  assert.match(read('dashboards/dashboard-1.html'), /rh-filter-summary\.js/);
+});

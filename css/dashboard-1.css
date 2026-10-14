@@ -27,7 +27,10 @@ body.dashboard-1-page .hero :is(.oxxo-scope-switch__opt,.oxxo-store-status__opt)
 body.dashboard-1-page .hero .oxxo-scope-switch__dot { display: none; }
 
 body.dashboard-1-page .filter-panel .vac-filters { grid-template-columns: minmax(0,1fr); }
-body.dashboard-1-page .filter-panel .rh-filter-summary-badge { align-self: end; }
+/* El badge de filtros activos (punto rojo + "N activo") se oculta en D1: los
+   contadores de cada select ya dicen lo mismo. El componente compartido sigue
+   intacto para los demas dashboards. */
+body.dashboard-1-page .rh-filter-summary-badge { display: none; }
 
 /* La caja "Filtros y acciones" trae 2 botones apilados (vs. 1 control en las
    demas), lo que la hace mas alta y, con align-items:end en .vac-filters,
