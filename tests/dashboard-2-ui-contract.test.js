@@ -425,3 +425,19 @@ test('compromiso y ranking omiten a los asesores con cero bajas sin mover los to
   // El cuerpo se queda vacio (no se inventa estado vacio) si nadie tuviera bajas.
   ok(js, /<tbody>\$\{rows\}<\/tbody>/);
 });
+
+// Inicio, Excel, PNG y el selector de tablero comparten el canon de la barra
+// superior (blanco, contorno, rojo solo en el texto). Regresion de la pildora
+// roja compacta que traian Excel/PNG.
+test('controles de la barra superior: mismo canon que los demas tableros', () => {
+  const bloque = re => css.match(re)?.[0] || '';
+  const inicio = bloque(/body\.dashboard-2-page \.topbar__back \{[^}]*\}/);
+  const exportar = bloque(/body\.dashboard-2-page \.d2-export \.png-export-ui \{[^}]*\}/);
+  ok(inicio, /min-height: var\(--du-target\)/);
+  for (const patron of [/min-height: var\(--du-target\)/, /font-size: 14px/, /font-weight: 700/, /letter-spacing: normal/, /font-family: inherit/]) {
+    ok(exportar, patron, `Excel/PNG fuera del canon: ${patron}`);
+  }
+  no(exportar, /background:\s*var\(--du-red/, 'Excel/PNG no llevan relleno rojo');
+  // El selector de tablero mantiene el control de 38px y radio 10px del canon.
+  ok(css, /\.hr-dashboard-switcher__control \{[^}]*min-height: 38px[^}]*border-radius: 10px/);
+});
