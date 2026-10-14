@@ -114,14 +114,16 @@ body.dashboard-2-page .hr-dashboard-switcher__control:focus-within { border-colo
 body.dashboard-2-page .hr-dashboard-switcher__control svg { width: 16px; height: 16px; flex: 0 0 16px; fill: none; stroke: var(--du-red-dark); stroke-width: 2; stroke-linecap: round; }
 body.dashboard-2-page .hr-dashboard-switcher select { width: 100%; min-width: 0; height: 36px; padding: 0 24px 0 0; border: 0; border-radius: 0; background: transparent; color: var(--du-text); font: 700 13px/1 var(--font-body); cursor: pointer; }
 body.dashboard-2-page .d2-export { position: relative; display: flex; align-items: center; }
-body.dashboard-2-page .d2-export__toggle { display: none; }
+body.dashboard-2-page .d2-export__toggle { display: none; font-family: inherit; font-size: 14px; font-weight: 700; }
 body.dashboard-2-page .d2-export__menu { display: flex; align-items: center; gap: 8px; }
 /* Botones Excel/PNG creados por core.js: en <=480 css/global.css los oculta
    con !important; aqui se reponen dentro del menu. */
+/* Mismas medidas y tipografia que "Inicio" (.topbar__back): el canon no tiene
+   pildora roja ni variante compacta para Excel/PNG. */
 body.dashboard-2-page .d2-export .png-export-ui {
   display: inline-flex !important; align-items: center; justify-content: center;
-  min-height: 40px; min-width: 64px; padding: 0 14px;
-  font-size: 13px; font-weight: 800; letter-spacing: .06em;
+  min-height: var(--du-target); min-width: 64px; padding: 0 14px;
+  font-family: inherit; font-size: 14px; font-weight: 700; letter-spacing: normal;
 }
 @media (max-width: 767px) {
   body.dashboard-2-page .topbar__back,
