@@ -38,6 +38,12 @@ assert.equal(estaticas, 11, 'Recursos Humanos debe conservar 11 tarjetas');
 // tarjetas son la unica fuente de cobertura.
 assert.doesNotMatch(pagina, /class="stats?"|class="stat__[nl]"/, 'la portada no debe traer las tarjetas de resumen del hero');
 assert.doesNotMatch(estilos, /^\.stats?\{|\.stat__[nl]\{/m, 'el CSS del hero no debe conservar reglas de .stats/.stat');
+// El hero tampoco lleva el parrafo secundario: el badge y el titulo son toda la copia.
+assert.doesNotMatch(pagina, /hero__lede/, 'la portada no debe traer el parrafo hero__lede');
+assert.doesNotMatch(pagina, /indicadores clave|actualizados directamente desde Google Sheets/i, 'el texto del parrafo secundario debe estar fuera de la portada');
+assert.doesNotMatch(estilos, /\.hero__lede/, 'el CSS no debe conservar reglas de .hero__lede');
+assert.match(pagina, /<p class="hero__badge">Monitoreo en tiempo real<\/p>/, 'el badge debe seguir en el hero');
+assert.match(pagina, /<h1 class="hero__title">Torre de <em>Control<\/em><\/h1>/, 'el titulo debe seguir en el hero');
 for (const area of ['rh', 'comercial', 'administrativo']) {
   assert.match(pagina, new RegExp(`class="area-switch__button[^"]*" type="button" data-area="${area}"`),
     `debe seguir el boton de navegacion de ${area}`);

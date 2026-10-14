@@ -124,11 +124,10 @@ a:hover{color:var(--red-dk)}
   color:#fff;font-size:12px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;
 }
 .hero__title{
-  font-family:Archivo,var(--sf-d);font-weight:800;color:#fff;margin-bottom:18px;
+  font-family:Archivo,var(--sf-d);font-weight:800;color:#fff;margin-bottom:0;
   font-size:clamp(2.7rem,4.8vw,4.35rem);line-height:.95;letter-spacing:-.035em;
 }
 .hero__title em{font-style:normal;color:#fff4d7}
-.hero__lede{max-width:560px;font-size:17px;font-weight:500;line-height:1.55;color:rgba(255,255,255,.88);text-wrap:pretty}
 
 /* ── Estado accesible de las fuentes ─────────────────── */
 .home-summary--sr-only{
@@ -352,8 +351,7 @@ body[data-area="rh"] .group .card::after{color:var(--red)}
   }
   .hero__inner{padding:0;align-items:flex-start}
   .hero__copy{max-width:none}
-  .hero__title{font-size:clamp(2.2rem,9.5vw,3rem);margin-bottom:12px}
-  .hero__lede{font-size:15px}
+  .hero__title{font-size:clamp(2.2rem,9.5vw,3rem)}
   .area-switch{margin:16px auto 28px}.area-switch__button{font-size:12px;letter-spacing:0;text-transform:none;padding:10px 4px;gap:5px}.area-switch__icon{width:26px;height:26px}
   .group{margin:0 auto 30px}.group__head{align-items:flex-start}.group__count{display:none}.grid{grid-template-columns:1fr;gap:12px}.card{min-height:0}.access__grid{grid-template-columns:1fr}.foot{margin-top:22px}
 }
