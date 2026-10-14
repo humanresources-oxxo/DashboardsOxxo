@@ -49,7 +49,7 @@ body.dashboard-9-analisis-page .bc-rank-val small { display: block; color: #1a8f
 body.dashboard-9-analisis-page .bc-finding {
   margin-bottom: 16px; padding: 16px 18px;
   border: 1px solid rgba(123, 31, 162, .18); border-radius: var(--du-radius);
-  background: linear-gradient(135deg, rgba(123, 31, 162, .06), rgba(123, 31, 162, .02));
+  background: rgba(123, 31, 162, .05);
   color: var(--du-text); font-size: 13px; line-height: 1.6;
 }
 body.dashboard-9-analisis-page .bc-finding strong { color: #7b1fa2; }

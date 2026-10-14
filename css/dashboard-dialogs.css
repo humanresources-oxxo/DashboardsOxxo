@@ -16,7 +16,7 @@ html.oxxo-dialog-open body { overflow: hidden; }
 /* El foco entra al contenedor por programa; el anillo se reserva a los
    controles internos. */
 .oxxo-dialog:focus { outline: none; }
-.oxxo-dialog :focus-visible { outline: 2px solid #f71926; outline-offset: 2px; }
+.oxxo-dialog :focus-visible { outline: 2px solid var(--du-red, #d91f2d); outline-offset: 2px; }
 
 /* Boton nativo dentro de la primera celda de una fila accionable: se ve como
    el texto de la celda. */
@@ -29,7 +29,7 @@ button.row-action {
   transform: none !important; text-shadow: none !important;
   font-family: inherit !important; font-size: inherit !important; font-weight: inherit !important; line-height: inherit !important;
 }
-.row-action:focus-visible { outline: 2px solid #f71926; outline-offset: 2px; border-radius: 4px; }
+.row-action:focus-visible { outline: 2px solid var(--du-red, #d91f2d); outline-offset: 2px; border-radius: 4px; }
 tr[data-row-action]:focus-within { background: rgba(247, 25, 38, .06); }
 
 @media (max-width: 760px) {
