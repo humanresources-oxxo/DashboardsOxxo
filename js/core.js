@@ -1866,23 +1866,17 @@ async function loadAsesorCatalogRows() {
     }
     return null;
   })();
-  // El catálogo se puede actualizar desde el panel mientras alguien tiene un
-  // dashboard abierto. Por eso aun con caché vigente se intenta primero la
-  // lectura viva: antes el return inmediato de 5 minutos dejaba ver al AT
-  // anterior tras una publicación correcta. Si Apps Script tarda, la caché
-  // sigue siendo respaldo para no bloquear el tablero indefinidamente.
-  // CNT es la fuente vigente de responsables; se intenta antes que la hoja viva
-  // y la cache para que una version vieja de Apps Script no la reemplace.
+  // Precedencia: hoja viva > csv versionado > cache fresca > gviz. El catalogo
+  // se edita desde el panel admin y debe quedar vivo de inmediato en el sitio;
+  // el csv y la cache son fotos y pueden traer el AT anterior tras una
+  // publicacion correcta. La espera por la hoja viva ya esta acotada por el
+  // timeout de 6s de fetchCatalogRowsDirect, y los respaldos corren en
+  // paralelo, asi que al caer en ellos ya estan resueltos.
+  const directRows = await directPromise;
+  if (directRows?.length) return buildAsesorCatalog(directRows);
   const localRows = await localPromise;
   if (localRows?.length) return buildAsesorCatalog(localRows);
   if (cachedIsFresh) return buildAsesorCatalog(cloneSheetRows(cached.rows));
-  const fastDirect = await Promise.race([
-    directPromise,
-    new Promise((resolve) => setTimeout(() => resolve(null), 2200))
-  ]);
-  if (fastDirect?.length) return buildAsesorCatalog(fastDirect);
-  const delayedDirect = await directPromise;
-  if (delayedDirect?.length) return buildAsesorCatalog(delayedDirect);
   // Ultimo respaldo: hoja Catalogo_Asesores via gviz (puede venir con
   //    filas fusionadas para esta hoja en particular; solo se llega aqui si
   //    fallaron los dos anteriores).
@@ -3268,6 +3262,7 @@ window.OXXO = {
   downloadRowsAsCSV,
   handleDownloadButton,
   loadAsesorCatalog,
+  loadAsesorCatalogRows,
   loadTiendaCatalog,
   buildTiendaCatalog,
   loadReasignaciones,
