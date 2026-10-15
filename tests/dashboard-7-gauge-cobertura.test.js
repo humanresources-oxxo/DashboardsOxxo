@@ -1,6 +1,8 @@
-// Contrato del velocímetro de "Alineación Global" (dashboard 7): la cifra grande y su
-// etiqueta son la Cobertura de estructura (Activos ÷ TREO), mientras que los conteos
-// Alineada / Subir / Bajar salen de 'Movimiento Inicial' (r.mov).
+// Contrato del velocímetro de "Alineación Global" (dashboard 7): la cifra grande es el conteo
+// de tiendas alineadas (r.mov === 'Alineada') con la etiqueta 'tiendas alineadas', y la aguja
+// apunta al % de alineación (alineadas ÷ total). Los conteos Alineada / Subir / Bajar y sus
+// segmentos salen de la misma columna 'Movimiento Inicial' (r.mov); la Cobertura de estructura
+// (Activos ÷ TREO) se queda en su tarjeta KPI, fuera del velocímetro.
 const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
@@ -41,7 +43,7 @@ const context = vm.createContext({
 
 new vm.Script(source, { filename: 'dashboards/dashboard-7.html' }).runInContext(context);
 
-// 7 activos de 10 TREO = 70% de cobertura; 1 alineada / 1 por subir / 1 por bajar.
+// 1 alineada de 3 tiendas = 33% de alineación; 1 por subir / 1 por bajar.
 context.data = [
   { mov: 'Alineada', dif: 0, est_final: 4, empleados: 4 },
   { mov: 'Subir', dif: 2, est_final: 4, empleados: 2 },
@@ -50,15 +52,17 @@ context.data = [
 new vm.Script('renderDonut(data)').runInContext(context);
 
 const svg = elements['align-gauge'].innerHTML;
-assert(svg.includes('>70%</text>'), 'la cifra grande del gauge debe ser la cobertura (70%)');
-assert(svg.includes('>cobertura</text>'), 'la etiqueta del gauge debe decir "cobertura"');
-assert(!svg.includes('>33%</text>'), 'el gauge ya no debe mostrar el % de alineación');
-assert(!svg.includes('>alineadas</text>'), 'el gauge ya no debe etiquetarse "alineadas"');
+const cifra = svg.match(/font-size:34px[^>]*>([^<]*)<\/text>/);
+assert(cifra, 'no se encontró la cifra grande del gauge');
+assert.strictEqual(cifra[1], '1', 'la cifra grande del gauge debe ser el conteo de alineadas (1)');
+assert(svg.includes('>tiendas alineadas</text>'), 'la etiqueta del gauge debe decir "tiendas alineadas"');
+assert(!svg.includes('>cobertura</text>'), 'el gauge ya no debe etiquetarse "cobertura"');
+assert(!svg.includes('>70%</text>'), 'el gauge ya no debe mostrar el % de cobertura');
 
-// La aguja sigue a la métrica mostrada: 70% -> ángulo 0.3π, x≈100+68·cos(0.3π)=140.0
+// La aguja sigue al % de alineación: 33% -> ángulo 0.67π, x≈100+68·cos(0.67π)=65.4
 const needle = svg.match(/<line x1="100" y1="100" x2="([\d.]+)" y2="([\d.]+)"/);
 assert(needle, 'no se encontró la aguja del velocímetro');
-assert.strictEqual(needle[1], '140.0', 'la aguja debe apuntar al % de cobertura');
+assert.strictEqual(needle[1], '65.4', 'la aguja debe apuntar al % de alineación');
 
 // Los conteos de movimiento y sus segmentos no cambian.
 assert.strictEqual(elements['mix-ali'].textContent, 1);
@@ -90,4 +94,4 @@ assert(/#align-gauge \{[^}]*flex: 0 0 auto;/.test(css), 'el gauge no debe crecer
 assert(!css.includes('.side-panel .stat-grid { flex: 1 1 auto; }'), 'las métricas no deben estirarse para rellenar la tarjeta');
 assert(/\.side-panel \.donut-wrap \{[^}]*justify-content: center;[^}]*gap: 10px;/.test(css), 'el contenido de la tarjeta debe centrarse con huecos compactos');
 
-console.log('dashboard 7: el velocímetro expone la cobertura como cifra principal');
+console.log('dashboard 7: el velocímetro expone las tiendas alineadas como cifra principal');

@@ -127,7 +127,7 @@
 
       <!-- Alineación Global (velocímetro + mix de movimiento) -->
       <div class="card alignment-card">
-        <div class="card-head"><div class="card-title"><svg class="icon-inline" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>Alineación Global<span class="info-tip" tabindex="0" data-tip="Velocímetro con la Cobertura de estructura (Activos ÷ TREO) y la distribución del movimiento (Alineada / Subir / Bajar) de las tiendas filtradas."></span></div></div>
+        <div class="card-head"><div class="card-title"><svg class="icon-inline" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>Alineación Global<span class="info-tip" tabindex="0" data-tip="Velocímetro con el número de tiendas alineadas (aguja en su % sobre el total) y la distribución del movimiento (Alineada / Subir / Bajar) de las tiendas filtradas."></span></div></div>
         <div class="donut-wrap">
           <div id="align-gauge">
             <div class="state-box"><div class="spinner"></div></div>
@@ -555,16 +555,14 @@ function renderDonut(data){
   const alineadas = data.filter(r=>r.mov==='Alineada').length;
   const subir     = data.filter(r=>r.mov==='Subir').length;
   const bajar     = data.filter(r=>r.mov==='Bajar').length;
-  // La cifra grande del velocimetro es la Cobertura de estructura (Activos / TREO), no el
-  // % de alineacion: es la metrica que la plaza acciona. Los segmentos del arco y los
-  // conteos Alineada / Subir / Bajar se basan en 'Movimiento Inicial' (r.mov).
-  const sumTreoGauge = data.reduce((s,r)=>s+(Number(r.est_final)||0),0);
-  const sumActGauge  = data.reduce((s,r)=>s+(Number(r.empleados)||0),0);
-  const cobertura = sumTreoGauge>0 ? Math.round(sumActGauge/sumTreoGauge*100) : 0;
+  // La cifra grande del velocimetro es el conteo de tiendas alineadas (r.mov === 'Alineada') y
+  // la aguja marca ese mismo dato en porcentaje (alineadas / total), asi el velocimetro queda
+  // internamente consistente. La Cobertura de estructura (Activos / TREO) vive en su KPI.
+  const pctAlineadas = Math.round(alineadas/total*100);
 
   const el = document.getElementById('align-gauge');
   if(el){
-    const v=Math.max(0,Math.min(100,cobertura));
+    const v=Math.max(0,Math.min(100,pctAlineadas));
     const cx=100, cy=100, r=80, len=Math.PI*r;
     const arc=`M${cx-r},${cy} A${r},${r} 0 0 1 ${cx+r},${cy}`;
     // Segmentos proporcionales sobre el semicírculo (igual que la dona, pero en velocímetro)
@@ -575,7 +573,7 @@ function renderDonut(data){
       const p=`<path d="${arc}" fill="none" stroke="${s.c}" stroke-width="15" stroke-linecap="butt" stroke-dasharray="${segLen.toFixed(1)} ${len.toFixed(1)}" stroke-dashoffset="-${off.toFixed(1)}" style="transition:stroke-dasharray .9s ease,stroke-dashoffset .9s ease"/>`;
       off+=segLen; return p;
     }).join('');
-    const ang=Math.PI*(1 - v/100);  // aguja en el % de cobertura (misma métrica que la cifra grande)
+    const ang=Math.PI*(1 - v/100);  // aguja en el % de alineación (misma métrica que la cifra grande)
     const nx=(cx+(r-12)*Math.cos(ang)).toFixed(1), ny=(cy-(r-12)*Math.sin(ang)).toFixed(1);
     el.innerHTML = `
       <svg viewBox="0 0 200 132" style="width:100%;overflow:visible">
@@ -583,8 +581,8 @@ function renderDonut(data){
         ${segPaths}
         <line x1="${cx}" y1="${cy}" x2="${nx}" y2="${ny}" stroke="#3B1918" stroke-width="3.5" stroke-linecap="round" style="transition:all .9s ease"/>
         <circle cx="${cx}" cy="${cy}" r="7" fill="#3B1918"/>
-        <text x="${cx}" y="78" text-anchor="middle" style="font-family:var(--font-display,sans-serif);font-weight:800;font-size:34px;fill:${cobertura>=98?'#138c3e':cobertura>=90?'#B8860B':'#C0393B'}">${cobertura}%</text>
-        <text x="${cx}" y="95" text-anchor="middle" style="font-size:12px;fill:var(--color-gray);font-weight:600">cobertura</text>
+        <text x="${cx}" y="78" text-anchor="middle" style="font-family:var(--font-display,sans-serif);font-weight:800;font-size:34px;fill:${pctAlineadas>=98?'#138c3e':pctAlineadas>=90?'#B8860B':'#C0393B'}">${alineadas}</text>
+        <text x="${cx}" y="95" text-anchor="middle" style="font-size:12px;fill:var(--color-gray);font-weight:600">tiendas alineadas</text>
       </svg>`;
   }
 
