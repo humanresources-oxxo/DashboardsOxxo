@@ -153,10 +153,14 @@ body.dashboard-11-page .rank-head { margin: 0 0 8px; font-size: 11px; font-weigh
 body.dashboard-11-page .rank-head--top { color: var(--mark-green); }
 body.dashboard-11-page .rank-head--bottom { color: var(--mark-red); }
 body.dashboard-11-page .rank-list { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; list-style: none; counter-reset: rank; }
-body.dashboard-11-page .rank-row { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; gap: 4px 10px; align-items: baseline; padding: 10px 12px; border: 1px solid var(--du-border); border-radius: 12px; background: var(--du-soft); counter-increment: rank; }
+body.dashboard-11-page .rank-row { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 7px 10px; align-items: start; padding: 10px 12px; border: 1px solid var(--du-border); border-radius: 12px; background: var(--du-soft); counter-increment: rank; }
 body.dashboard-11-page .rank-row::before { content: counter(rank); color: var(--du-muted); font-family: var(--font-display); font-size: 14px; font-weight: 800; }
-body.dashboard-11-page .rank-name { min-width: 0; overflow: hidden; font-size: 12px; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
+body.dashboard-11-page .rank-row-main { grid-column: 2 / -1; display: flex; align-items: baseline; justify-content: space-between; gap: 10px; min-width: 0; }
+body.dashboard-11-page .rank-name { min-width: 0; overflow: hidden; flex: 1 1 auto; font-size: 12px; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
 body.dashboard-11-page .rank-score { color: var(--tone, var(--du-text)); font-family: var(--font-display); font-size: 17px; font-weight: 800; line-height: 1; }
+body.dashboard-11-page .rank-progress { grid-column: 2 / -1; position: relative; height: 8px; border-radius: 999px; background: #e9e3df; }
+body.dashboard-11-page .rank-progress__fill { display: block; height: 100%; border-radius: inherit; background: var(--tone, var(--du-text)); }
+body.dashboard-11-page .rank-progress__target { position: absolute; top: -3px; width: 2px; height: 14px; border-radius: 2px; background: var(--du-text); transform: translateX(-1px); }
 body.dashboard-11-page .rank-meta { grid-column: 2 / -1; display: flex; flex-wrap: wrap; gap: 4px 10px; color: var(--du-muted); font-size: 11px; font-weight: 700; }
 body.dashboard-11-page .rank-goal { color: var(--tone, var(--du-text)); }
 body.dashboard-11-page .rank-list .state { min-height: 80px; }

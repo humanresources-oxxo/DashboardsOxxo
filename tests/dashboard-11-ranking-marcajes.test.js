@@ -164,6 +164,9 @@ test('renderRank pinta los dos paneles, los totales y deja la definicion visible
   const top = nodo('rank-top').innerHTML, bottom = nodo('rank-bottom').innerHTML;
   assert.match(top, /Asesor L/);
   assert.match(top, /56%/);
+  assert.match(top, /rank-progress/);
+  assert.match(top, /Meta 61% · faltan 5 pts/);
+  assert.match(top, /aria-label="Actual 56%, meta 61%"/);
   assert.match(bottom, /Asesor A/);
   assert.match(bottom, /12%/);
   assert.doesNotMatch(bottom, /Asesor L/, 'ningun nombre del top se repite en el bottom');
