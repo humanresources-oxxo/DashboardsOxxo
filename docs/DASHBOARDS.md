@@ -90,6 +90,8 @@ Sin pagina propia: la pestaña `Dashboard_10_FLEX` alimenta **Mi Tienda**.
 
 Entradas, salidas y cumplimiento total por tienda, asesor y plaza de la Region Tabasco (tiendas por debajo de 50% resaltadas).
 
+Panel "Asesores con mas y menos marcajes": top 5 y bottom 5 por indice de marcajes = promedio de `% Cumpl Reg Entradas` mas promedio de `% Cumpl Reg Salidas` de las tiendas del asesor (escala 0-200 puntos). La fuente (`Ranking por Tienda`) no publica conteos absolutos de marcajes, solo porcentajes; la definicion queda impresa en la pagina.
+
 ## Dashboard 12 - Enfoque del lider
 
 `dashboards/dashboard-12.html` · scripts RH + `dashboard-dialogs.js`

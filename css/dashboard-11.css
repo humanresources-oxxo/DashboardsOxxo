@@ -142,3 +142,24 @@ body.dashboard-11-page .dash-footer__update-dot { width: 9px; height: 9px; borde
   body.dashboard-11-page .ring { width: 166px; height: 166px; }
   body.dashboard-11-page .hide-mobile { display: none; }
 }
+
+/* Extremos de marcajes (top 5 / bottom 5 por asesor): dos columnas con las
+   mismas fichas del ranking de asesores, mas la definicion del indice visible
+   en el encabezado para que la cifra en puntos se pueda auditar. */
+body.dashboard-11-page .rank { margin-bottom: 12px; }
+body.dashboard-11-page .rank-def { max-width: 70ch; margin-top: 4px; color: var(--du-muted); font-size: 12px; line-height: 1.4; }
+body.dashboard-11-page .rank-cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+body.dashboard-11-page .rank-head { margin: 0 0 8px; font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+body.dashboard-11-page .rank-head--top { color: var(--mark-green); }
+body.dashboard-11-page .rank-head--bottom { color: var(--mark-red); }
+body.dashboard-11-page .rank-list { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; list-style: none; counter-reset: rank; }
+body.dashboard-11-page .rank-row { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; gap: 4px 10px; align-items: baseline; padding: 10px 12px; border: 1px solid var(--du-border); border-radius: 12px; background: var(--du-soft); counter-increment: rank; }
+body.dashboard-11-page .rank-row::before { content: counter(rank); color: var(--du-muted); font-family: var(--font-display); font-size: 14px; font-weight: 800; }
+body.dashboard-11-page .rank-name { min-width: 0; overflow: hidden; font-size: 12px; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
+body.dashboard-11-page .rank-score { color: var(--tone, var(--du-text)); font-family: var(--font-display); font-size: 17px; font-weight: 800; line-height: 1; }
+body.dashboard-11-page .rank-meta { grid-column: 2 / -1; color: var(--du-muted); font-size: 11px; font-weight: 700; }
+body.dashboard-11-page .rank-list .state { min-height: 80px; }
+
+@media (max-width: 720px) {
+  body.dashboard-11-page .rank-cols { grid-template-columns: 1fr; }
+}
