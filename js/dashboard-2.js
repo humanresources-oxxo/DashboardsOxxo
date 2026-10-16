@@ -521,6 +521,24 @@ function chartReady(canvas){
   console.warn('Chart.js no esta disponible.');
   return false;
 }
+function rankingGradientColors(values){
+  const palette = ['#19AD63', '#F6B73C', '#D91F2D'];
+  const nums = values.map(value => Number(value) || 0);
+  const min = Math.min(...nums, 0);
+  const max = Math.max(...nums, 0);
+  const span = max - min;
+  const blend = (from, to, amount) => {
+    const hex = value => value.match(/\w\w/g).map(part => parseInt(part, 16));
+    const a = hex(from), b = hex(to);
+    return `rgb(${a.map((part, i) => Math.round(part + (b[i] - part) * amount)).join(',')})`;
+  };
+  return nums.map(value => {
+    const ratio = span ? (value - min) / span : .5;
+    return ratio <= .5
+      ? blend(palette[0], palette[1], ratio * 2)
+      : blend(palette[1], palette[2], (ratio - .5) * 2);
+  });
+}
 function renderChart(canvasId, type, labels, values, opts={}){
   const canvas = document.getElementById(canvasId); if(!canvas) return;
     if(!chartReady(canvas)) return;
@@ -736,7 +754,7 @@ function renderCompromiso(data, cols){
     </table></div>`;
   // Mismo recorte que la tabla: rojo el grupo de mas bajas, verde el de menos.
   renderChart('chart-asesores','bar',ranking.map(item=>OXXO.truncate(item.nombre,28)),ranking.map(item=>item.bajas),{horizontal:true,ranking:true,tickSize:12,label:'Bajas por asesor',
-    colors: parte ? ranking.map((_,i)=>i<parte?'#D91F2D':'#19AD63') : undefined});
+    colors: rankingGradientColors(ranking.map(item=>item.bajas))});
 }
 
 // Tabla de detalle de bajas: columnas reducidas (lo esencial para escanear rápido).

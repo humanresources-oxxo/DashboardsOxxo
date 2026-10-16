@@ -467,6 +467,8 @@ test('ranking de asesores: top 5 y bottom 5 con el mismo corte en tabla y grafic
   const ranking = graficas['chart-asesores'];
   assert.deepEqual([...ranking.labels], celdas.map(([n]) => n));
   assert.deepEqual([...ranking.values], celdas.map(([, n]) => n));
+  ok(js, /function rankingGradientColors\(values\)/, 'la grafica de asesores define el degradado por nivel de bajas');
+  ok(js, /colors: rankingGradientColors\(ranking\.map\(item=>item\.bajas\)\)/, 'la grafica de asesores usa el degradado');
 
   // Separador del corte con estilo propio.
   ok(css, /\.compromiso-table tbody tr\.compromiso-grupo td \{/);
