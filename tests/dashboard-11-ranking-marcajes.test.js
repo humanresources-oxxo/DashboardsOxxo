@@ -176,4 +176,5 @@ test('la pagina publica la seccion y la definicion del indice de marcajes', () =
     assert.ok(definicion.includes(pieza), `la definicion visible debe mencionar ${pieza}`);
   }
   assert.match(html, /renderMix\(\);renderAdvisors\(\);renderRank\(\);renderTable\(\)/, 'renderRank corre en cada render');
+  assert.match(html, /BASE=validData\.filter\(r=>String\(val\(r,COL\.tienda\)\|\|''\)\.trim\(\)&&esAsesorDeLaPlaza\(r\)\)/, 'todo D11 respeta el catalogo vigente');
 });
