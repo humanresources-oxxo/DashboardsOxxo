@@ -25,9 +25,9 @@ const COLUMNAS = {
 
 // COL y VIEW son `let` del script: en un vm esas ligaduras no quedan en el
 // global, asi que se expone un puente desde el MISMO ambito lexico.
-const puente = '\nglobalThis.__d11={get COL(){return COL},set COL(v){COL=v},get VIEW(){return VIEW},set VIEW(v){VIEW=v}};';
+const puente = '\nglobalThis.__d11={get COL(){return COL},set COL(v){COL=v},get VIEW(){return VIEW},set VIEW(v){VIEW=v},setCatalogoAsesores,esAsesorDeLaPlaza,loadRoster};';
 
-function cargar() {
+function cargar(commitmentRows = []) {
   const nodos = new Map();
   const nodo = id => {
     if (!nodos.has(id)) nodos.set(id, { id, innerHTML: '', textContent: '', value: '', addEventListener() {}, style: { setProperty() {} } });
@@ -50,7 +50,7 @@ function cargar() {
       matchesScopeValue: () => false,
       renderDownloadButton() {},
       updateFooterTime() {},
-      fetchSheetData: async () => [],
+      fetchSheetData: async () => commitmentRows,
     },
   });
   new vm.Script(inline + puente, { filename: 'dashboards/dashboard-11.html' }).runInContext(contexto);
@@ -130,6 +130,21 @@ test('empates deterministas por nombre y asesores sin marcaje legible fuera del 
   // Un solo registro legible si cuenta: la suma usa el que exista.
   const medio = marcajes([{ ...fila('Medio', 90, 0), '% Cumpl Reg Salidas': '' }]);
   assert.equal(medio[0].index, 90);
+});
+
+test('el catalogo vigente excluye a un asesor que quedo en Compromisos_Bajas', async () => {
+  const { contexto, marcajes } = cargar([
+    { Plaza: 'Plaza Oaxaca', Asesor: 'Sofia Caridad Jimenez Gomez', Compromiso: 8 },
+    { Plaza: 'Plaza Oaxaca', Asesor: 'Asesor Vigente', Compromiso: 4 },
+  ]);
+  contexto.__d11.setCatalogoAsesores({ rows: [{ asesor: 'Asesor Vigente', plaza: 'Oaxaca' }] });
+  await contexto.__d11.loadRoster();
+  assert.equal(contexto.__d11.esAsesorDeLaPlaza({ Plaza: 'Oaxaca', Asesor: 'Sofia Caridad Jimenez Gomez' }), false);
+  const lista = marcajes([
+    fila('Sofia Caridad Jimenez Gomez', 99, 99),
+    fila('Asesor Vigente', 80, 80),
+  ]);
+  assert.deepEqual(lista.map(x => x.name), ['Asesor Vigente']);
 });
 
 test('renderRank pinta los dos paneles, los totales y deja la definicion visible', () => {

@@ -56,6 +56,22 @@ let BASE=[],VIEW=[],COL={},WEEK='SEMANA ACTUAL';
 // nombres; si no hay roster para esa plaza todavia, no se filtra nada (mismo
 // comportamiento que antes).
 let ROSTER_BY_PLAZA=new Map();
+// El roster de Compromisos_Bajas conserva metas y puede ir atrasado respecto
+// del catalogo vigente. El catalogo es la autoridad para decidir que nombres
+// pueden aparecer en los paneles de asesores de D11.
+let CATALOG_ADVISORS_BY_PLAZA=new Map();
+function setCatalogoAsesores(catalog){
+  const byPlaza=new Map();
+  const rows=Array.isArray(catalog?.rows)?catalog.rows:[];
+  rows.forEach(row=>{
+    const asesor=norm(row.asesor||row['Asesor']||'');
+    const plaza=String(row.plaza||row['Plaza']||'').trim();
+    if(!asesor||!plaza)return;
+    if(!byPlaza.has(plaza))byPlaza.set(plaza,new Set());
+    byPlaza.get(plaza).add(asesor);
+  });
+  CATALOG_ADVISORS_BY_PLAZA=byPlaza;
+}
 async function loadRoster(){
   const sheetName=OXXO.SHEETS_CONFIG.COMMITMENTS_SHEET;
   if(!sheetName)return;
@@ -111,9 +127,21 @@ function rosterDePlaza(nombrePlaza){
   ROSTER_CACHE.set(clave,encontrado);
   return encontrado;
 }
+function catalogoDePlaza(nombrePlaza){
+  const clave=String(nombrePlaza||'').trim();
+  for(const [plaza,asesores] of CATALOG_ADVISORS_BY_PLAZA){
+    if(OXXO.matchesScopeValue(clave,'plaza',{level:'plaza',plaza})||norm(plaza)===norm(clave)
+       ||norm(clave).includes(norm(plaza))||norm(plaza).includes(norm(clave)))return asesores;
+  }
+  return null;
+}
 // true = la fila la firma un AT formal de SU plaza (o esa plaza aun no tiene
-// roster, en cuyo caso no se filtra nada, igual que antes).
+// roster, en cuyo caso no se filtra nada, igual que antes). Si hay catalogo
+// vigente para la plaza, este filtro gana sobre Compromisos_Bajas para evitar
+// que un asesor dado de baja vuelva a aparecer solo porque su meta quedo vieja.
 function esAsesorDeLaPlaza(row){
+  const catalogo=catalogoDePlaza(val(row,COL.plaza));
+  if(catalogo)return catalogo.has(norm(val(row,COL.asesor)||''));
   const roster=rosterDePlaza(val(row,COL.plaza));
   if(!roster)return true;
   return roster.has(norm(val(row,COL.asesor)||''));
@@ -176,7 +204,7 @@ loadRoster().then(()=>{if(!BASE.length)return;
   if(cambioElFiltro){render();return;}
   VIEW=filtered();renderAdvisors();
 }).catch(()=>{});
-const data=await OXXO.fetchSheetData(OXXO.SHEETS_CONFIG.TABS.d11);if(data===null)throw new Error('No se pudo conectar con Google Sheets');if(!data.length){document.getElementById('kpi-section').innerHTML='<div class="state">La hoja todavía no tiene datos publicados.</div>';return}const h=data[0];COL={semana:key(h,['Semana','Fecha']),zona:key(h,['Zona']),region:key(h,['Region']),plaza:key(h,['Plaza']),asesor:key(h,['Asesor']),tienda:key(h,['Tienda']),cr:key(h,['CR','CR Tienda','CR TIENDA']),entradas:key(h,['% Cumpl Reg Entradas']),salidas:key(h,['% Cumpl Reg Salidas']),total:key(h,['% Cumpl Reg Total']),status:key(h,['Estatus']),quality:key(h,['Alerta Calidad'])};const asesorCatalog=await OXXO.loadAsesorCatalog();const validData=OXXO.filterValidTiendas(data,asesorCatalog,COL.tienda,COL.cr);validData.forEach(row=>{OXXO.applyAsesorCatalog(row,asesorCatalog,{asesorKey:COL.asesor,tiendaKey:COL.tienda,crKey:COL.cr});if(COL.plaza)row[COL.plaza]=OXXO.metricsCanonicalPlazaLabel(row[COL.plaza]);});BASE=validData.filter(r=>String(val(r,COL.tienda)||'').trim());WEEK=String(val(BASE[0]||{},COL.semana)||'SEMANA ACTUAL').toUpperCase();const scope=OXXO.getActiveDataScope?.();document.getElementById('corte-badge').textContent=`⟳ ${WEEK} · ${scope?.level==='region'?'Región Tabasco':scope?.plaza||'Plaza seleccionada'}`;poblarSelectAsesores();render();OXXO.updateFooterTime('load-time')}catch(error){console.error('[D11]',error);document.getElementById('kpi-section').innerHTML=`<div class="state"><div><strong>No se pudo cargar el tablero.</strong><br><button class="action" type="button" data-oxxo-retry style="margin-top:12px">Reintentar</button></div></div>`}}
+const data=await OXXO.fetchSheetData(OXXO.SHEETS_CONFIG.TABS.d11);if(data===null)throw new Error('No se pudo conectar con Google Sheets');if(!data.length){document.getElementById('kpi-section').innerHTML='<div class="state">La hoja todavía no tiene datos publicados.</div>';return}const h=data[0];COL={semana:key(h,['Semana','Fecha']),zona:key(h,['Zona']),region:key(h,['Region']),plaza:key(h,['Plaza']),asesor:key(h,['Asesor']),tienda:key(h,['Tienda']),cr:key(h,['CR','CR Tienda','CR TIENDA']),entradas:key(h,['% Cumpl Reg Entradas']),salidas:key(h,['% Cumpl Reg Salidas']),total:key(h,['% Cumpl Reg Total']),status:key(h,['Estatus']),quality:key(h,['Alerta Calidad'])};const asesorCatalog=await OXXO.loadAsesorCatalog();setCatalogoAsesores(asesorCatalog);const validData=OXXO.filterValidTiendas(data,asesorCatalog,COL.tienda,COL.cr);validData.forEach(row=>{OXXO.applyAsesorCatalog(row,asesorCatalog,{asesorKey:COL.asesor,tiendaKey:COL.tienda,crKey:COL.cr});if(COL.plaza)row[COL.plaza]=OXXO.metricsCanonicalPlazaLabel(row[COL.plaza]);});BASE=validData.filter(r=>String(val(r,COL.tienda)||'').trim());WEEK=String(val(BASE[0]||{},COL.semana)||'SEMANA ACTUAL').toUpperCase();const scope=OXXO.getActiveDataScope?.();document.getElementById('corte-badge').textContent=`⟳ ${WEEK} · ${scope?.level==='region'?'Región Tabasco':scope?.plaza||'Plaza seleccionada'}`;poblarSelectAsesores();render();OXXO.updateFooterTime('load-time')}catch(error){console.error('[D11]',error);document.getElementById('kpi-section').innerHTML=`<div class="state"><div><strong>No se pudo cargar el tablero.</strong><br><button class="action" type="button" data-oxxo-retry style="margin-top:12px">Reintentar</button></div></div>`}}
 ['filtro-asesor','filtro-estatus'].forEach(id=>document.getElementById(id).addEventListener('change',render));document.getElementById('filtro-tienda').addEventListener('input',render);document.getElementById('limpiar').addEventListener('click',()=>{document.getElementById('filtro-asesor').value='';document.getElementById('filtro-estatus').value='';document.getElementById('filtro-tienda').value='';render()});document.addEventListener('DOMContentLoaded',initDashboard);
 window.buildExcelSheets=async()=>[{name:'KPIs',rows:OXXO.scrapeKpiCards('kpi-section')},{name:'Detalle por tienda',rows:OXXO.scrapeHtmlTable('#detail-table')}];
 </script>
