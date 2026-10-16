@@ -147,6 +147,19 @@ test('el catalogo vigente excluye a un asesor que quedo en Compromisos_Bajas', a
   assert.deepEqual(lista.map(x => x.name), ['Asesor Vigente']);
 });
 
+test('D11 no trata Sin Asesor como un asesor valido aunque venga en el catalogo', () => {
+  const { contexto, marcajes } = cargar();
+  contexto.__d11.setCatalogoAsesores({ rows: [
+    { asesor: 'Sin Asesor Asignado', plaza: 'Oaxaca' },
+    { asesor: 'Asesor Vigente', plaza: 'Oaxaca' },
+  ] });
+  assert.equal(contexto.__d11.esAsesorDeLaPlaza({ Plaza: 'Oaxaca', Asesor: 'Sin Asesor Asignado' }), false);
+  assert.deepEqual(marcajes([
+    fila('Sin Asesor Asignado', 100, 100),
+    fila('Asesor Vigente', 80, 80),
+  ]).map(x => x.name), ['Asesor Vigente']);
+});
+
 test('renderRank pinta los dos paneles, los totales y deja la definicion visible', () => {
   const { contexto, nodo } = cargar();
   contexto.__d11.VIEW = DOCE;

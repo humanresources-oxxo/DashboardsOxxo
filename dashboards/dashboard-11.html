@@ -61,6 +61,10 @@ let ROSTER_BY_PLAZA=new Map();
 // pueden aparecer en los paneles de asesores de D11.
 let CATALOG_ADVISORS_BY_PLAZA=new Map();
 let CATALOG_ADVISORS_ALL=new Set();
+function esAsesorCatalogo(asesor){
+  const key=norm(asesor);
+  return Boolean(key)&&!key.startsWith('sin asesor');
+}
 function setCatalogoAsesores(catalog){
   const byPlaza=new Map();
   const all=new Set();
@@ -68,7 +72,7 @@ function setCatalogoAsesores(catalog){
   rows.forEach(row=>{
     const asesor=norm(row.asesor||row['Asesor']||'');
     const plaza=String(row.plaza||row['Plaza']||'').trim();
-    if(!asesor)return;
+    if(!esAsesorCatalogo(asesor))return;
     all.add(asesor);
     if(!plaza)return;
     if(!byPlaza.has(plaza))byPlaza.set(plaza,new Set());
