@@ -157,7 +157,8 @@ body.dashboard-11-page .rank-row { display: grid; grid-template-columns: 22px mi
 body.dashboard-11-page .rank-row::before { content: counter(rank); color: var(--du-muted); font-family: var(--font-display); font-size: 14px; font-weight: 800; }
 body.dashboard-11-page .rank-name { min-width: 0; overflow: hidden; font-size: 12px; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
 body.dashboard-11-page .rank-score { color: var(--tone, var(--du-text)); font-family: var(--font-display); font-size: 17px; font-weight: 800; line-height: 1; }
-body.dashboard-11-page .rank-meta { grid-column: 2 / -1; color: var(--du-muted); font-size: 11px; font-weight: 700; }
+body.dashboard-11-page .rank-meta { grid-column: 2 / -1; display: flex; flex-wrap: wrap; gap: 4px 10px; color: var(--du-muted); font-size: 11px; font-weight: 700; }
+body.dashboard-11-page .rank-goal { color: var(--tone, var(--du-text)); }
 body.dashboard-11-page .rank-list .state { min-height: 80px; }
 
 @media (max-width: 720px) {

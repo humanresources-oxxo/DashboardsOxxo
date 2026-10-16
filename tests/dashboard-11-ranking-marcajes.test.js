@@ -91,6 +91,8 @@ test('top 5 y bottom 5 salen de la misma lista ordenada, sin repetir nombres', (
   assert.equal(stores, DOCE.length, 'los totales del encabezado cuadran con las filas de la vista');
   assert.deepEqual(top.map(x => x.name), ['Asesor L', 'Asesor K', 'Asesor J', 'Asesor I', 'Asesor H']);
   assert.deepEqual(top.map(x => x.total), [56, 52, 48, 44, 40]);
+  assert.deepEqual(top.map(x => x.meta), [61, 57, 53, 49, 45]);
+  assert.equal(top[0].gap, 5);
   assert.deepEqual(bottom.map(x => x.name), ['Asesor A', 'Asesor B', 'Asesor C', 'Asesor D', 'Asesor E']);
   assert.deepEqual(bottom.map(x => x.total), [12, 16, 20, 24, 28]);
   const nombres = [...top, ...bottom].map(x => x.name);
@@ -179,7 +181,7 @@ test('la pagina publica la seccion y la definicion del cumplimiento total', () =
     assert.match(html, new RegExp(`\\bid="${id}"`), `falta id="${id}"`);
   }
   const definicion = html.match(/id="rank-def"[^>]*>([^<]+)</)[1];
-  for (const pieza of ['% Cumpl Reg Total']) {
+  for (const pieza of ['% Cumpl Reg Total', 'Meta siguiente', '+5 puntos porcentuales']) {
     assert.ok(definicion.includes(pieza), `la definicion visible debe mencionar ${pieza}`);
   }
   assert.match(html, /Top 5 · mayor cumplimiento/);

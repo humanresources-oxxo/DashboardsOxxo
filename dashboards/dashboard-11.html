@@ -35,7 +35,7 @@
     <article class="card"><div class="card-head"><div class="card-title">Cumplimiento por asesor</div><span class="card-chip">Menor promedio primero</span></div><div class="advisor-list" id="advisor-list"><div class="state">Calculando asesores…</div></div></article>
   </section>
   <section class="card rank" id="rank-section" aria-label="Asesores con mayor y menor cumplimiento total">
-    <div class="card-head table-tools"><div><div class="card-title">Asesores con mayor y menor cumplimiento total</div><div class="rank-def" id="rank-def">Cumplimiento total = promedio del % Cumpl Reg Total de las tiendas del asesor.</div></div><span class="card-chip" id="rank-chip">—</span></div>
+    <div class="card-head table-tools"><div><div class="card-title">Asesores con mayor y menor cumplimiento total</div><div class="rank-def" id="rank-def">Cumplimiento total = promedio del % Cumpl Reg Total de las tiendas del asesor. Meta siguiente = actual +5 puntos porcentuales, con tope de 100%.</div></div><span class="card-chip" id="rank-chip">—</span></div>
     <div class="rank-cols">
       <div class="rank-col"><h3 class="rank-head rank-head--top">Top 5 · mayor cumplimiento</h3><ol class="rank-list" id="rank-top"><li class="state">Calculando…</li></ol></div>
       <div class="rank-col"><h3 class="rank-head rank-head--bottom">Bottom 5 · menor cumplimiento</h3><ol class="rank-list" id="rank-bottom"><li class="state">Calculando…</li></ol></div>
@@ -184,7 +184,7 @@ document.getElementById('advisor-list').innerHTML=list.length?list.map(x=>{const
 // Cumplimiento total por asesor: cada extremo se ordena por el promedio del
 // % Cumpl Reg Total de sus tiendas, que es la métrica que se muestra en D11.
 function cumplimientoTotalPorAsesor(rows){const groups=new Map();rows.filter(esAsesorDeLaPlaza).forEach(r=>{const a=val(r,COL.asesor)||'Sin asesor';if(!groups.has(a))groups.set(a,[]);groups.get(a).push(r)});
- return [...groups].map(([name,filas])=>({name,total:average(filas,COL.total),stores:filas.length}))
+ return [...groups].map(([name,filas])=>{const total=average(filas,COL.total),meta=Number.isFinite(total)?Math.min(100,total+5):null;return{name,total,meta,gap:Number.isFinite(meta)?Math.max(0,meta-total):null,stores:filas.length}})
 // Sin un solo cumplimiento total legible no hay nada que rankear: el asesor
 // queda fuera de los dos extremos en vez de fingir cero.
  .filter(x=>x.total!==null)
@@ -195,7 +195,7 @@ function cumplimientoTotalPorAsesor(rows){const groups=new Map();rows.filter(esA
 // se repite entre paneles.
 function rankCumplimientoTotal(list,size=5){const top=list.slice(0,size),vistos=new Set(top.map(x=>x.name));const bottom=list.slice().reverse().filter(x=>!vistos.has(x.name)).slice(0,size);return{top,bottom,total:list.length,stores:list.reduce((n,x)=>n+x.stores,0)}}
 function renderRank(){const{top,bottom,total,stores}=rankCumplimientoTotal(cumplimientoTotalPorAsesor(VIEW));document.getElementById('rank-chip').textContent=`${total} asesores · ${stores} tiendas`;
-const pinta=(id,items)=>{document.getElementById(id).innerHTML=items.length?items.map(x=>`<li class="rank-row" style="--tone:${STATUS_COLOR[statusOf(x.total)]}"><span class="rank-name">${escapeHtml(x.name)}</span><span class="rank-score">${pctText(x.total)}</span><span class="rank-meta">${x.stores} tiendas</span></li>`).join(''):'<li class="state">Sin asesores con estos filtros.</li>'};
+const pinta=(id,items)=>{document.getElementById(id).innerHTML=items.length?items.map(x=>{const meta=x.total>=100?'Meta alcanzada':`Meta siguiente ${pctText(x.meta)} · +${x.gap.toFixed(1).replace('.0','')} pts`;return`<li class="rank-row" style="--tone:${STATUS_COLOR[statusOf(x.total)]}"><span class="rank-name">${escapeHtml(x.name)}</span><span class="rank-score">${pctText(x.total)}</span><span class="rank-meta"><span>${x.stores} tiendas</span><span class="rank-goal">${meta}</span></span></li>`}).join(''):'<li class="state">Sin asesores con estos filtros.</li>'};
 pinta('rank-top',top);pinta('rank-bottom',bottom)}
 function renderTable(){const sorted=VIEW.slice().sort((a,b)=>(pct(val(a,COL.total))??999)-(pct(val(b,COL.total))??999));document.getElementById('result-count').textContent=`${sorted.length} registros`;document.querySelector('#detail-table tbody').innerHTML=sorted.length?sorted.map(r=>{const total=pct(val(r,COL.total)),status=statusOf(total),[bg,fg]=tone(status),quality=String(val(r,COL.quality)||'').trim()||([COL.entradas,COL.salidas,COL.total].some(c=>(pct(val(r,c))??0)>100.001)?'Revisar >100%':'');return`<tr><td class="store"><strong>${escapeHtml(val(r,COL.tienda)||'—')}</strong><small>${escapeHtml(WEEK)}</small></td><td>${escapeHtml(val(r,COL.asesor)||'—')}</td><td>${escapeHtml(val(r,COL.plaza)||'—')}</td><td class="pct">${pctText(pct(val(r,COL.entradas)))}</td><td class="pct">${pctText(pct(val(r,COL.salidas)))}</td><td class="pct">${pctText(total)}</td><td><span class="status" style="--bg:${bg};--fg:${fg}">${status}</span></td><td class="quality hide-mobile">${quality?`<span class="quality">${escapeHtml(quality)}</span>`:'—'}</td></tr>`}).join(''):'<tr><td colspan="8"><div class="state">No hay tiendas que coincidan con los filtros.</div></td></tr>'}
 async function initDashboard(){try{OXXO.renderDownloadButton('hero-download','d11');
