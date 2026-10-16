@@ -441,3 +441,33 @@ test('controles de la barra superior: mismo canon que los demas tableros', () =>
   // El selector de tablero mantiene el control de 38px y radio 10px del canon.
   ok(css, /\.hr-dashboard-switcher__control \{[^}]*min-height: 38px[^}]*border-radius: 10px/);
 });
+
+// Con muchos asesores la tabla y el ranking solo muestran los 5 de mas bajas y
+// los 5 de menos: 10 filas como tope, sin duplicados y con el pie intacto.
+test('ranking de asesores: top 5 y bottom 5 con el mismo corte en tabla y grafica', () => {
+  const fila = asesor => ({ Mes: '2026-09', Asesor: asesor, Tienda: 'OXXO UNO', Puesto: 'Ayudante Tienda', Temporalidad: '0 - 45 días', 'Rot. Temp.': 'No', Edad: '25', Plaza: 'Oaxaca' });
+  const conteos = [['Ana Nueve', 9], ['Beto Ocho', 8], ['Carla Siete', 7], ['Dario Seis', 6], ['Elsa Cinco', 5],
+    ['Fito Tres', 3], ['Gina Dos', 2], ['Hugo Dos', 2], ['Iris Dos', 2], ['Juan Uno', 1], ['Kiko Uno', 1], ['Lola Uno', 1]];
+  const filas = conteos.flatMap(([nombre, n]) => Array.from({ length: n }, () => fila(nombre)));
+  assert.equal(filas.length, 47, 'el fixture son 47 bajas');
+
+  const { compromiso, graficas } = cargarD2().run(filas);
+  const celdas = [...compromiso.matchAll(/<td>([^<]*)<\/td>\s*<td class="num"><span class="pill [^"]*">(\d+)</g)].map(m => [m[1], Number(m[2])]);
+  assert.deepEqual(celdas, [['Ana Nueve', 9], ['Beto Ocho', 8], ['Carla Siete', 7], ['Dario Seis', 6], ['Elsa Cinco', 5],
+    ['Hugo Dos', 2], ['Iris Dos', 2], ['Juan Uno', 1], ['Kiko Uno', 1], ['Lola Uno', 1]], 'solo los 5 de arriba y los 5 de abajo');
+  assert.equal(new Set(celdas.map(([n]) => n)).size, celdas.length, 'sin asesores repetidos');
+  no(compromiso, /Fito Tres|Gina Dos/, 'los del medio quedan fuera');
+  ok(compromiso, /compromiso-grupo"><td colspan="4">Top 5 · más bajas/);
+  ok(compromiso, /compromiso-grupo"><td colspan="4">Top 5 · menos bajas/);
+
+  // Pie con el total real: 47 bajas, no la suma de las 10 filas visibles.
+  ok(compromiso, /<tfoot><tr><td>PLAZA<\/td><td class="num">47</);
+
+  // La grafica usa exactamente el mismo corte que la tabla.
+  const ranking = graficas['chart-asesores'];
+  assert.deepEqual([...ranking.labels], celdas.map(([n]) => n));
+  assert.deepEqual([...ranking.values], celdas.map(([, n]) => n));
+
+  // Separador del corte con estilo propio.
+  ok(css, /\.compromiso-table tbody tr\.compromiso-grupo td \{/);
+});

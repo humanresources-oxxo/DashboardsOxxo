@@ -708,7 +708,11 @@ function renderCompromiso(data, cols){
   // Solo se listan (y grafican) los asesores que si tuvieron bajas; el pie
   // sigue sumando el roster completo, asi que la meta de la plaza no cambia.
   const visibles = sorted.filter(item => item.bajas > 0);
-  const rows = visibles.map(item => {
+  // Ranking acotado: los 5 de mas bajas y los 5 de menos. Con 10 o menos
+  // visibles se listan todos tal cual, asi nadie aparece en los dos grupos.
+  const parte = visibles.length > 10 ? 5 : 0;
+  const ranking = parte ? [...visibles.slice(0, parte), ...visibles.slice(-parte)] : visibles;
+  const filaHTML = item => {
     const bajas = item.bajas;
     const desfase = bajas - item.comp;
     return `<tr${ASESOR_BUCKET_LABELS.has(item.id)?' class="compromiso-sin-asesor"':''}>
@@ -717,7 +721,12 @@ function renderCompromiso(data, cols){
       <td class="num">${item.comp}</td>
       <td class="num desfase ${desfase <= 0 ? 'pos' : 'neg'}">${desfase}</td>
     </tr>`;
-  }).join('');
+  };
+  const grupoHTML = texto => `<tr class="compromiso-grupo"><td colspan="4">${texto}</td></tr>`;
+  const rows = parte
+    ? grupoHTML(`Top ${parte} · más bajas`) + ranking.slice(0, parte).map(filaHTML).join('')
+      + grupoHTML(`Top ${parte} · menos bajas`) + ranking.slice(parte).map(filaHTML).join('')
+    : ranking.map(filaHTML).join('');
   const totalDesfase = totalBajas - totalComp;
   document.getElementById('tabla-compromiso').innerHTML = `
     <div class="d2-scroll" data-scroll-label="Compromiso contra resultado por asesor"><table class="compromiso-table">
@@ -725,7 +734,9 @@ function renderCompromiso(data, cols){
       <tbody>${rows}</tbody>
       <tfoot><tr><td>PLAZA</td><td class="num">${totalBajas}</td><td class="num">${totalComp}</td><td class="num">${totalDesfase}</td></tr></tfoot>
     </table></div>`;
-  renderChart('chart-asesores','bar',visibles.map(item=>OXXO.truncate(item.nombre,28)),visibles.map(item=>item.bajas),{horizontal:true,ranking:true,tickSize:12,label:'Bajas por asesor'});
+  // Mismo recorte que la tabla: rojo el grupo de mas bajas, verde el de menos.
+  renderChart('chart-asesores','bar',ranking.map(item=>OXXO.truncate(item.nombre,28)),ranking.map(item=>item.bajas),{horizontal:true,ranking:true,tickSize:12,label:'Bajas por asesor',
+    colors: parte ? ranking.map((_,i)=>i<parte?'#D91F2D':'#19AD63') : undefined});
 }
 
 // Tabla de detalle de bajas: columnas reducidas (lo esencial para escanear rápido).
