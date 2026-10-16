@@ -60,7 +60,8 @@ test('D3 mantiene visibles las plazas debajo del piso de la escala', () => {
   assert.match(html, /Number\.isFinite\(aprov\)/);
   assert.match(html, /const ec = Number\.isFinite\(Number\(p\?\.aprov\)\) \? Number\(p\.aprov\) : 0/);
   assert.match(html, /const minValue = values\.length \? Math\.min\(\.\.\.values\) : o\.floor/);
-  assert.match(html, /const floor = Math\.min\(o\.floor, Math\.max\(0, Math\.floor\(minValue \/ 5\) \* 5\)\)/);
+  // Piso dinamico: siempre 5 puntos debajo del minimo, sin tope fijo en 85.
+  assert.match(html, /const floor = Math\.min\(90, Math\.max\(0, Math\.floor\(\(minValue - 5\) \/ 5\) \* 5\)\)/);
   assert.match(html, /const visibleH = h > 0 \? h : 8/);
   assert.match(html, /plaza-bars__value--outside/);
 });
