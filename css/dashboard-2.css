@@ -515,8 +515,6 @@ body.dashboard-2-page .compromiso-table .desfase.pos { color: #157a49; font-weig
 body.dashboard-2-page .compromiso-table .desfase.neg { color: #c4262e; font-weight: 800; }
 body.dashboard-2-page .compromiso-table tfoot td { background: #f8f3ee; border-top: 2px solid var(--du-text); border-bottom: 0; color: var(--du-text); font-weight: 800; }
 body.dashboard-2-page .compromiso-table tfoot td.num { text-align: center; }
-/* Separador del ranking top/bottom: solo aparece cuando la tabla se recorta. */
-body.dashboard-2-page .compromiso-table tbody tr.compromiso-grupo td { background: #f2e9e1; color: #6b4a3d; font-size: .72rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
 body.dashboard-2-page .table-wrapper { max-width: 100%; border: 0; border-radius: 0; background: transparent; }
 @media (min-width: 768px) { body.dashboard-2-page .d2-panel--detalle .table-wrapper { max-height: 560px; overflow: auto; } }
 @media (max-width: 767px) {

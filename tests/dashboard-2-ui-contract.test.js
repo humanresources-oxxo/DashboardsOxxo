@@ -291,14 +291,16 @@ function cargarD2(esAdminUnit = () => false) {
     restoreDashboardPeriod: (_d, ultimo) => ultimo, persistDashboardPeriod() {},
     truncate: (s, n = 25) => (s && s.length > n ? s.slice(0, n) + '…' : s || ''),
     metricsIsTiendaEntrenamientoOperacionesD2: t => esAdminUnit(t), updateFooterTime() {},
+    resolveAsesorD1: (_catalogo, { asesor }) => String(asesor || '').trim(),
     ensureChartReady: () => false, getChartThemeColors: () => ({ text: '#000', tooltipBg: '#000', grid: '#ccc' }),
   };
   const ventana = { matchMedia: () => ({ matches: false, addEventListener() {} }), addEventListener() {}, OXXO };
   const contexto = vm.createContext({ document: documento, window: ventana, OXXO, OXXO_DIALOGS: { register: () => ({ open() {}, close() {} }), bindRows() {} }, console });
-  const exponer = `\n;globalThis.__d2 = { run(rows, metas) {
+  const exponer = `\n;globalThis.__d2 = { run(rows, metas, catalogo) {
     const graficas = {};
     renderChart = (id, _tipo, labels, values) => { graficas[id] = { labels, values }; };
     if(metas) COMPROMISOS_BY_PLAZA = metas;
+    ASESOR_CATALOG = catalogo || null;
     const cols = buildCols(rows);
     RAW_BAJAS_DATA = rows; BASE_BAJAS_DATA = filterData(rows, cols); BAJAS_COLS = cols;
     FILTER_STATE = defaultFilterState(BASE_BAJAS_DATA, BAJAS_COLS);
@@ -396,9 +398,9 @@ test('Entrenamiento / Operaciones es un bucket propio, separado de Sin asesor as
   assert.ok(detalle.includes('Sin asesor asignado'), 'el detalle conserva el bucket sin asesor de tienda real');
 });
 
-// La tabla y el ranking son un tablero de trabajo: un AT con meta configurada
-// pero cero bajas solo mete ruido. El pie sigue sumando su meta.
-test('compromiso y ranking omiten a los asesores con cero bajas sin mover los totales', () => {
+// La tabla es el tablero de seguimiento de la plaza: un AT con meta y cero
+// bajas tambien se lista (su desfase a favor es informacion, no ruido).
+test('compromiso y ranking listan a los asesores con cero bajas sin mover los totales', () => {
   const fila = (asesor, tienda) => ({ Mes: '2026-09', Asesor: asesor, Tienda: tienda, Puesto: 'Ayudante Tienda', Temporalidad: '0 - 45 días', 'Rot. Temp.': 'No', Edad: '25', Plaza: 'Oaxaca' });
   const esAdmin = t => /^ENTRENAMIENTO /.test(String(t || '').toUpperCase());
   const metas = new Map([['Oaxaca', { 'Ana Perez': 2, 'Zoe Fantasma': 5 }]]);
@@ -410,17 +412,18 @@ test('compromiso y ranking omiten a los asesores con cero bajas sin mover los to
   const { compromiso, graficas } = cargarD2(esAdmin).run(filas, metas);
 
   const celdas = [...compromiso.matchAll(/<td>([^<]*)<\/td>\s*<td class="num"><span class="pill [^"]*">(\d+)</g)].map(m => [m[1], Number(m[2])]);
-  assert.deepEqual(celdas, [['Ana Perez', 3], ['Entrenamiento / Operaciones', 1], ['Sin asesor asignado', 1]],
-    'solo filas con bajas, en el mismo orden');
-  no(compromiso, /Zoe Fantasma/, 'el AT configurado con cero bajas no aparece');
+  assert.deepEqual(celdas, [['Ana Perez', 3], ['Entrenamiento / Operaciones', 1], ['Sin asesor asignado', 1], ['Zoe Fantasma', 0]],
+    'el AT configurado con cero bajas se lista al final');
 
   // Pie intacto: 5 bajas contra 7 de meta (Ana 2 + Zoe 5; los buckets no tienen meta).
   ok(compromiso, /<tfoot><tr><td>PLAZA<\/td><td class="num">5<\/td><td class="num">7<\/td><td class="num">-2<\/td>/);
+  // La fila de Zoe muestra su meta y el desfase a favor.
+  ok(compromiso, /<td>Zoe Fantasma<\/td>\s*<td class="num"><span class="pill good">0<\/span><\/td>\s*<td class="num">5<\/td>\s*<td class="num desfase pos">-5<\/td>/);
 
-  // Ranking horizontal: mismas entradas que la tabla, sin barras en cero.
+  // Ranking horizontal: mismas entradas que la tabla, incluida la barra en cero.
   const ranking = graficas['chart-asesores'];
-  assert.deepEqual([...ranking.labels], ['Ana Perez', 'Entrenamiento / Operaciones', 'Sin asesor asignado']);
-  assert.deepEqual([...ranking.values], [3, 1, 1]);
+  assert.deepEqual([...ranking.labels], ['Ana Perez', 'Entrenamiento / Operaciones', 'Sin asesor asignado', 'Zoe Fantasma']);
+  assert.deepEqual([...ranking.values], [3, 1, 1, 0]);
 
   // El cuerpo se queda vacio (no se inventa estado vacio) si nadie tuviera bajas.
   ok(js, /<tbody>\$\{rows\}<\/tbody>/);
@@ -442,9 +445,9 @@ test('controles de la barra superior: mismo canon que los demas tableros', () =>
   ok(css, /\.hr-dashboard-switcher__control \{[^}]*min-height: 38px[^}]*border-radius: 10px/);
 });
 
-// Con muchos asesores la tabla y el ranking solo muestran los 5 de mas bajas y
-// los 5 de menos: 10 filas como tope, sin duplicados y con el pie intacto.
-test('ranking de asesores: top 5 y bottom 5 con el mismo corte en tabla y grafica', () => {
+// Sin recortes: la tabla y el ranking listan a todo el roster, ordenado por
+// bajas, sin duplicados y con el pie sumando el total real.
+test('ranking de asesores: tabla y grafica listan el roster completo, sin recorte', () => {
   const fila = asesor => ({ Mes: '2026-09', Asesor: asesor, Tienda: 'OXXO UNO', Puesto: 'Ayudante Tienda', Temporalidad: '0 - 45 días', 'Rot. Temp.': 'No', Edad: '25', Plaza: 'Oaxaca' });
   const conteos = [['Ana Nueve', 9], ['Beto Ocho', 8], ['Carla Siete', 7], ['Dario Seis', 6], ['Elsa Cinco', 5],
     ['Fito Tres', 3], ['Gina Dos', 2], ['Hugo Dos', 2], ['Iris Dos', 2], ['Juan Uno', 1], ['Kiko Uno', 1], ['Lola Uno', 1]];
@@ -453,23 +456,38 @@ test('ranking de asesores: top 5 y bottom 5 con el mismo corte en tabla y grafic
 
   const { compromiso, graficas } = cargarD2().run(filas);
   const celdas = [...compromiso.matchAll(/<td>([^<]*)<\/td>\s*<td class="num"><span class="pill [^"]*">(\d+)</g)].map(m => [m[1], Number(m[2])]);
-  assert.deepEqual(celdas, [['Ana Nueve', 9], ['Beto Ocho', 8], ['Carla Siete', 7], ['Dario Seis', 6], ['Elsa Cinco', 5],
-    ['Hugo Dos', 2], ['Iris Dos', 2], ['Juan Uno', 1], ['Kiko Uno', 1], ['Lola Uno', 1]], 'solo los 5 de arriba y los 5 de abajo');
+  assert.deepEqual(celdas, conteos, 'los 12 asesores, ordenados por bajas');
   assert.equal(new Set(celdas.map(([n]) => n)).size, celdas.length, 'sin asesores repetidos');
-  no(compromiso, /Fito Tres|Gina Dos/, 'los del medio quedan fuera');
-  ok(compromiso, /compromiso-grupo"><td colspan="4">Top 5 · más bajas/);
-  ok(compromiso, /compromiso-grupo"><td colspan="4">Top 5 · menos bajas/);
+  no(compromiso, /compromiso-grupo/, 'sin separadores de recorte');
 
-  // Pie con el total real: 47 bajas, no la suma de las 10 filas visibles.
+  // Pie con el total real: 47 bajas.
   ok(compromiso, /<tfoot><tr><td>PLAZA<\/td><td class="num">47</);
 
-  // La grafica usa exactamente el mismo corte que la tabla.
+  // La grafica usa exactamente la misma lista que la tabla.
   const ranking = graficas['chart-asesores'];
   assert.deepEqual([...ranking.labels], celdas.map(([n]) => n));
   assert.deepEqual([...ranking.values], celdas.map(([, n]) => n));
   ok(js, /function rankingGradientColors\(values\)/, 'la grafica de asesores define el degradado por nivel de bajas');
   ok(js, /colors: rankingGradientColors\(ranking\.map\(item=>item\.bajas\)\)/, 'la grafica de asesores usa el degradado');
+});
 
-  // Separador del corte con estilo propio.
-  ok(css, /\.compromiso-table tbody tr\.compromiso-grupo td \{/);
+// El roster sale del Catalogo_Asesores vigente, no de los datos: un AT activo
+// de la plaza se lista con 0 bajas, y las tiendas marcadas no activas no
+// aportan nombres. Los buckets y el pie no cambian.
+test('compromiso: el roster incluye a los asesores vigentes del catalogo con cero bajas', () => {
+  const fila = (asesor, tienda) => ({ Mes: '2026-09', Asesor: asesor, Tienda: tienda, Puesto: 'Ayudante Tienda', Temporalidad: '0 - 45 días', 'Rot. Temp.': 'No', Edad: '25', Plaza: 'Oaxaca' });
+  const catalogo = { byTienda: new Map([
+    ['OXXO UNO', { asesor: 'Ana Perez', tienda: 'OXXO UNO', plaza: 'Oaxaca', activa: true }],
+    ['OXXO TRES', { asesor: 'Beto Sin Bajas', tienda: 'OXXO TRES', plaza: 'Oaxaca', activa: true }],
+    ['OXXO CERRADA', { asesor: 'Carla Cerrada', tienda: 'OXXO CERRADA', plaza: 'Oaxaca', activa: false }],
+    ['OXXO HUERFANA', { asesor: 'Sin Asesor Asignado', tienda: 'OXXO HUERFANA', plaza: 'Oaxaca', activa: true }],
+  ]) };
+  const { compromiso, graficas } = cargarD2().run([fila('Ana Perez', 'OXXO UNO'), fila('Ana Perez', 'OXXO UNO')], null, catalogo);
+
+  const celdas = [...compromiso.matchAll(/<td>([^<]*)<\/td>\s*<td class="num"><span class="pill [^"]*">(\d+)</g)].map(m => [m[1], Number(m[2])]);
+  assert.deepEqual(celdas, [['Ana Perez', 2], ['Beto S.B.', 0]], 'el AT vigente sin bajas se lista; la tienda no activa y el bucket no');
+  assert.deepEqual([...graficas['chart-asesores'].values], [2, 0]);
+
+  // Totales intactos: 2 bajas contra la meta default (4) de los dos del roster.
+  ok(compromiso, /<tfoot><tr><td>PLAZA<\/td><td class="num">2<\/td><td class="num">8<\/td><td class="num">-6<\/td>/);
 });

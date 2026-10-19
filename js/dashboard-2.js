@@ -86,6 +86,10 @@ let BASE_BAJAS_DATA = [];
 // existen de verdad -- ver uniqueFilterOptions.
 let RAW_BAJAS_DATA = [];
 let BAJAS_COLS = {};
+// Catalogo_Asesores ya cargado en initDashboard. Se conserva para armar el
+// roster de la tabla de compromiso: ahi el catalogo manda sobre los datos, asi
+// un AT vigente sin bajas en el mes igual se lista (con 0).
+let ASESOR_CATALOG = null;
 // Boton local "Ver todas las plazas" del panel Ranking/Comparativo de
 // Plazas: por defecto solo muestra la plaza activa (ver renderPlazas).
 let PLAZAS_SHOW_ALL = false;
@@ -678,10 +682,37 @@ function compromisoConfigForScope(){
   return {defaultValue:Number(OXXO.SHEETS_CONFIG.BAJAS_COMMITMENTS_DEFAULT)||0,values};
 }
 
+// Asesores vigentes del catalogo dentro del alcance activo. Una entrada por
+// tienda del catalogo (byTienda ya trae plaza y activa resueltas); se descartan
+// las tiendas marcadas como no activas y los buckets que no son personas.
+// ponytail: "vigente" = tienda activa en el catalogo. No se cruza el estado
+// preapertura/todas de tiendas; si hace falta, filtrar aqui con isTiendaValid.
+function catalogAsesorRoster(){
+  const roster=new Map();
+  const byTienda=ASESOR_CATALOG&&ASESOR_CATALOG.byTienda;
+  if(!byTienda||typeof byTienda.forEach!=='function')return roster;
+  const scope=OXXO.getActiveDataScope();
+  byTienda.forEach(item=>{
+    if(item.activa===false)return;
+    if(!OXXO.matchesScopeValue(item.plaza||'','plaza',scope))return;
+    // Mismo resolvedor que usan las bajas (aplica el renombre Anadelia ->
+    // Timoteo), asi el nombre del roster y el de los conteos coinciden.
+    const name=OXXO.resolveAsesorD1
+      ? OXXO.resolveAsesorD1(ASESOR_CATALOG,{tienda:item.tienda,asesor:item.asesor})
+      : String(item.asesor||'').trim();
+    if(!name||isAsesorBucket(name)||cleanText(name).includes('SIN ASESOR'))return;
+    roster.set(cleanKey(name),name);
+  });
+  return roster;
+}
+
 function compromisoRoster(cols){
   const month=FILTER_STATE.mes||latestMonthKey(BASE_BAJAS_DATA,cols);
   const source=month?BASE_BAJAS_DATA.filter(row=>monthKeyFromRow(row,cols)===month):BASE_BAJAS_DATA;
-  const roster=new Map();
+  // El catalogo vigente es la base del roster: todo AT activo de la plaza se
+  // lista aunque no tenga bajas en el mes. Los datos y las metas solo agregan
+  // nombres que el catalogo no traiga (p.ej. un AT que ya salio pero tuvo bajas).
+  const roster=catalogAsesorRoster();
   source.forEach(row=>{
     const name=getAsesorValue(row,cols);
     if(!name||isAsesorBucket(name))return;
@@ -723,13 +754,10 @@ function renderCompromiso(data, cols){
     comp:ASESOR_BUCKET_LABELS.has(id)?0:(configuredByKey.has(id)?configuredByKey.get(id):commitmentConfig.defaultValue)
   })).sort((a,b) => b.bajas - a.bajas || a.full.localeCompare(b.full, 'es'));
   sorted.forEach(item => { totalBajas += item.bajas; totalComp += item.comp; });
-  // Solo se listan (y grafican) los asesores que si tuvieron bajas; el pie
-  // sigue sumando el roster completo, asi que la meta de la plaza no cambia.
-  const visibles = sorted.filter(item => item.bajas > 0);
-  // Ranking acotado: los 5 de mas bajas y los 5 de menos. Con 10 o menos
-  // visibles se listan todos tal cual, asi nadie aparece en los dos grupos.
-  const parte = visibles.length > 10 ? 5 : 0;
-  const ranking = parte ? [...visibles.slice(0, parte), ...visibles.slice(-parte)] : visibles;
+  // Tabla y grafica listan el roster completo del catalogo vigente, incluidos
+  // los AT con 0 bajas: esa fila (bajas 0 vs su compromiso) es justo la que
+  // muestra el desfase a favor. El pie no cambia: ya sumaba todo el roster.
+  const ranking = sorted;
   const filaHTML = item => {
     const bajas = item.bajas;
     const desfase = bajas - item.comp;
@@ -740,11 +768,7 @@ function renderCompromiso(data, cols){
       <td class="num desfase ${desfase <= 0 ? 'pos' : 'neg'}">${desfase}</td>
     </tr>`;
   };
-  const grupoHTML = texto => `<tr class="compromiso-grupo"><td colspan="4">${texto}</td></tr>`;
-  const rows = parte
-    ? grupoHTML(`Top ${parte} · más bajas`) + ranking.slice(0, parte).map(filaHTML).join('')
-      + grupoHTML(`Top ${parte} · menos bajas`) + ranking.slice(parte).map(filaHTML).join('')
-    : ranking.map(filaHTML).join('');
+  const rows = ranking.map(filaHTML).join('');
   const totalDesfase = totalBajas - totalComp;
   document.getElementById('tabla-compromiso').innerHTML = `
     <div class="d2-scroll" data-scroll-label="Compromiso contra resultado por asesor"><table class="compromiso-table">
@@ -752,7 +776,7 @@ function renderCompromiso(data, cols){
       <tbody>${rows}</tbody>
       <tfoot><tr><td>PLAZA</td><td class="num">${totalBajas}</td><td class="num">${totalComp}</td><td class="num">${totalDesfase}</td></tr></tfoot>
     </table></div>`;
-  // Mismo recorte que la tabla: rojo el grupo de mas bajas, verde el de menos.
+  // Misma lista que la tabla: el degradado va de rojo (mas bajas) a verde (0).
   renderChart('chart-asesores','bar',ranking.map(item=>OXXO.truncate(item.nombre,28)),ranking.map(item=>item.bajas),{horizontal:true,ranking:true,tickSize:12,label:'Bajas por asesor',
     colors: rankingGradientColors(ranking.map(item=>item.bajas))});
 }
@@ -1567,6 +1591,7 @@ async function initDashboard(){
   ]);
   if(raw === null){ ['kpi-section','tabla-detalle'].forEach(id=>OXXO.showError(id,'No se pudo conectar con Google Sheets.')); return; }
   if(!raw.length){ ['kpi-section','tabla-detalle'].forEach(id=>OXXO.showEmpty(id)); return; }
+  ASESOR_CATALOG = asesorCatalog;
   const cols = buildCols(raw);
   // NO se descarta ninguna fila por el nombre de su asesor. Hasta aqui habia
   // un filter que borraba toda baja cuyo Asesor fuera Timoteo Antonio Perez:
