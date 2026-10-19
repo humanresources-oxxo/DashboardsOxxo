@@ -351,6 +351,20 @@ sandbox.loadAsesorCatalog=async()=>null;sandbox.OXXO.loadAsesorCatalog=sandbox.l
   {Plaza:'Oaxaca',Tienda:'OXXO A',FECHA:'2026-09-21','Estatus Con impacto Ausentismo':'Equipo Completo','Aprovechamiento Estructura':95},
   {Plaza:'Oaxaca',Tienda:'OXXO B',FECHA:'2026-09-21','Estatus Con impacto Ausentismo':'Equipo Completo','Aprovechamiento Estructura':95}]};
  const multi=await sandbox.rae.dataD3(new Date(2026,8,28));
+ // (6b) Mismo asesor escrito distinto (mayusculas/acentos) = UNA sola fila del
+ // ranking, con el nombre canonico del Catalogo_Asesores.
+ fixtureByTab={[sandbox.OXXO.SHEETS_CONFIG.TABS.d3]:[
+  {Plaza:'Oaxaca',Tienda:'OXXO A','CR TIENDA':'50AAA',Asesor:'MIRNA MARTINEZ LORENZO',FECHA:'2026-09-22','Estatus Con impacto Ausentismo':'Equipo Completo','Aprovechamiento Estructura':95},
+  {Plaza:'Oaxaca',Tienda:'OXXO B','CR TIENDA':'50BBB',Asesor:'mirna martínez lorenzo',FECHA:'2026-09-22','Estatus Con impacto Ausentismo':'Tienda Crítica','Aprovechamiento Estructura':0}]};
+ const dupCatalog={loaded:true,rows:[{asesor:'Mirna Martinez Lorenzo',tienda:'OXXO Z',cr:'50ZZZ'}],byCr:new Map(),byTienda:new Map(),reasignaciones:{byCr:new Map(),byTienda:new Map()}};
+ const loadCatalogBeforeDup=sandbox.OXXO.loadAsesorCatalog;
+ sandbox.OXXO.loadAsesorCatalog=async()=>dupCatalog;
+ const dup=await sandbox.rae.dataD3(new Date(2026,8,22));
+ const mirnas=dup.rankingAll.filter(x=>/mirna/i.test(x.name));
+ assert.equal(mirnas.length,1);
+ assert.equal(mirnas[0].name,'Mirna Martinez Lorenzo');
+ assert.equal(Number(mirnas[0].value.toFixed(1)),50.0);
+ sandbox.OXXO.loadAsesorCatalog=loadCatalogBeforeDup;
  assert.equal(Number(multi.pct.toFixed(1)),50.0);   // KPI principal = corte reciente
  const mOax=multi.plazas.find(p=>/oaxaca/i.test(p.name));
  assert.equal(Number(mOax.value.toFixed(1)),75.0);  // gauge por plaza = todas las fechas

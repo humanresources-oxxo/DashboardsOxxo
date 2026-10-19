@@ -462,9 +462,11 @@
     if(ecPorAtKey && atKey){
       visible.forEach(r => {
         const ecVal = normPct(val(r, ecPorAtKey));
-        const atName = String(OXXO.resolveAsesorD1(asesorCatalog, {
+        // Misma llave normalizada (advisorKey) que el agrupado por asesor de
+        // abajo, para que el cruce no falle por capitalizacion ni acentos.
+        const atName = advisorKey(OXXO.resolveAsesorD1(asesorCatalog, {
           cr: val(r, crKey), tienda: val(r, tiendaKey), asesor: val(r, atKey)
-        }) || '').trim().toUpperCase();
+        }));
         if(!(ecVal > 0) || !atName) return;
         if(!ecByAt.has(atName)) ecByAt.set(atName, { sum: 0, n: 0 });
         const acc = ecByAt.get(atName);
@@ -477,25 +479,38 @@
     // Asignado" en el respaldo EC%, mezcladas con nombres de personas
     // reales. No afecta al cruce por 'ecByAt' de arriba, que agrupa por la
     // columna 'AT' (un concepto distinto a 'Asesor').
+    // El mismo asesor llega con distinta capitalizacion/acentos segun la base
+    // de origen ("MIRNA MARTINEZ LORENZO" vs "Mirna Martinez Lorenzo"), y
+    // agrupar por el texto crudo lo partia en dos filas del ranking. Se
+    // agrupa por advisorKey (identidad normalizada, la misma llave que usa la
+    // tabla de Enfoque) y se muestra el nombre canonico del Catalogo_Asesores
+    // cuando la persona existe ahi.
+    const canonicalAsesor = new Map();
+    (asesorCatalog?.rows || []).forEach(row => {
+      const canon = String(row?.asesor || '').trim();
+      const key = advisorKey(canon);
+      if(key && !canonicalAsesor.has(key)) canonicalAsesor.set(key, canon);
+    });
     const byAsesor = new Map();
     rows.forEach(r => {
       const name = String(OXXO.resolveAsesorD1(asesorCatalog, { cr: val(r, crKey), tienda: val(r, tiendaKey), asesor: val(r, asesorKey) }) || '').trim();
-      if(!name) return;
+      const key = advisorKey(name);
+      if(!key) return;
       // "Sin Asesor Asignado" no es una persona: son las tiendas sin AT
       // vigente que resolveAsesorD1 no pudo reatribuir (Entrenamiento y
       // Operaciones). Agrupadas encabezaban el ranking con 100%, presentadas
       // como el mejor AT de la plaza arriba de todas las personas reales.
-      if(normText(name).replace(/[^A-Z]/g, '').includes('SINASESOR')) return;
-      if(!byAsesor.has(name)) byAsesor.set(name, { total: 0, completas: 0 });
-      const acc = byAsesor.get(name);
+      if(key.includes('SINASESOR')) return;
+      if(!byAsesor.has(key)) byAsesor.set(key, { name: canonicalAsesor.get(key) || name, total: 0, completas: 0 });
+      const acc = byAsesor.get(key);
       acc.total++;
       if(clasifica(r) === 'completas') acc.completas++;
     });
     const rankingAll = [...byAsesor.entries()]
-      .map(([name, v]) => {
-        const ecAt = ecByAt.get(name.trim().toUpperCase());
+      .map(([key, v]) => {
+        const ecAt = ecByAt.get(key);
         const ec = v.total > 0 ? v.completas / v.total : 0;
-        return { name, value: ecAt ? ecAt.sum / ecAt.n : ec * 100, hasData: !!ecAt || v.total > 0 };
+        return { name: v.name, value: ecAt ? ecAt.sum / ecAt.n : ec * 100, hasData: !!ecAt || v.total > 0 };
       })
       .sort((a,b) => b.value - a.value || a.name.localeCompare(b.name, 'es'));
     const ranking = rankingAll.filter(x => x.hasData).slice(0, 15);
