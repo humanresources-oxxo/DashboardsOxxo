@@ -26,7 +26,7 @@ El sitio es estatico: cada HTML carga CSS y JS directo desde el repo (sin bundle
 1. `js/site-lock.js` (con `defer`, mas un snippet en linea que oculta la pagina hasta decidir).
 2. **`js/config.js` -> `js/core.js`**: siempre en este orden. `config.js` es obligatorio: `core.js` no trae configuracion de respaldo y falla sin `window.OXXO_CONFIG`.
 3. Modulos de la pagina: `metrics-periods.js`, `dashboard-dialogs.js`, `home.js`, `mi-ficha-ui.js`, `inventarios.js`, etc. Los scripts en linea de cada tablero van al final.
-4. CSS: `global.css` primero; despues (segun la pagina) `dashboard-skin.css`, `floating-filter-layout.css`, `rh-dashboard-refresh.css`, `rh-table-tools.css`, `rh-filter-summary.css` y **`dashboard-dialogs.css` al final**. Cada stylesheet se enlaza una sola vez por pagina.
+4. CSS: `global.css` primero; despues (segun la pagina) `rh-table-tools.css`, `rh-filter-summary.css`, el canon `dashboard-rh-unified.css`, la hoja propia `dashboard-N.css` y **`dashboard-dialogs.css` al final** (D2 cierra con su propia hoja, justo despues de la de dialogos). Cada stylesheet se enlaza una sola vez por pagina. Toda pagina que consume el canon declara `rh-unified` en su `<body>`.
 
 Cada archivo compartido lleva una cabecera que indica que paginas lo consumen.
 
@@ -75,4 +75,4 @@ Cada tablero conserva sus funciones `openXModal()/closeXModal()` como adaptadore
 ## Que no mover todavia
 
 - No partir `js/core.js`, `apps-script/admin-upload.gs`, los generadores PPTX del admin ni la logica embebida dentro de cada `dashboard-*.html` sin una prueba visual y de metricas clara: es codigo funcional y muy conectado a la UI.
-- El CSS compartido usa `!important` de forma extensa (`dashboard-skin.css`, `floating-filter-layout.css`, `rh-dashboard-refresh.css`): hacer cambios aditivos y acotados, no limpiezas de cascada.
+- `css/floating-filter-layout.css` y `css/rh-dashboard-refresh.css` quedaron sin consumidores: solo guardan los contratos responsive que fija `tests/accessibility-contract.test.js`. No agregar reglas ahi; lo visual va en `dashboard-rh-unified.css` o en la hoja de la pagina.

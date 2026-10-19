@@ -5,49 +5,31 @@
    Hoja unica de Dashboard 2: se carga AL FINAL y todo va bajo
    body.dashboard-2-page, asi que no toca a los demas tableros.
 
-   Canon visual: los mismos tokens --du-* y la misma densidad de
-   css/dashboard-rh-unified.css (body.rh-unified). No se duplica ese canon por
-   clase, se declaran aqui los tokens y los componentes propios de D2
-   (d2-*, filtros, mapa de calor, denominaciones) con ese mismo lenguaje:
-   tarjeta blanca, borde de 1 px, radio --du-radius, una sola sombra suave.
-   Sin vidrio (backdrop-filter), sin lienzo rojo, sin sombras multicapa.
+   Canon visual: D2 opta a css/dashboard-rh-unified.css con la clase
+   "rh-unified" en su <body>, igual que el resto de los tableros. De ahi salen
+   los tokens --du-*, el lienzo y los componentes compartidos; aqui solo viven
+   los propios de D2 (d2-*, filtros, mapa de calor, denominaciones) con ese
+   mismo lenguaje: tarjeta blanca, borde de 1 px, radio --du-radius, una sola
+   sombra suave. Sin vidrio (backdrop-filter), sin lienzo rojo, sin sombras
+   multicapa.
 
-   css/dashboard-skin.css, css/floating-filter-layout.css y
-   css/rh-dashboard-refresh.css quedaron sin reglas: los !important que esta
-   hoja usaba para taparlas ya no existen. Los pocos que quedan solo enfrentan
-   a css/global.css o al selector de alcance de js/core.js, marcados en cada
+   Ya no se cargan css/dashboard-skin.css, css/floating-filter-layout.css ni
+   css/rh-dashboard-refresh.css: los !important que esta hoja usaba para
+   taparlas ya no existen. Los pocos que quedan solo enfrentan a
+   css/global.css o al selector de alcance de js/core.js, marcados en cada
    caso.
 
    Breakpoints (unicos): 360, 480, 768, 1024, 1280.
    ========================================================== */
 
-/* Tokens del canon (identicos a body.rh-unified) + los dos propios de D2. */
+/* Los tokens --du-*, el lienzo y el box-sizing los pone body.rh-unified
+   (css/dashboard-rh-unified.css): aqui solo lo propio de D2. */
 body.dashboard-2-page {
-  --du-bg: #f7f4f0;
-  --du-card: #ffffff;
-  --du-soft: #faf6f1;
-  --du-border: #ded6cf;
-  --du-text: #2a1c19;
-  --du-muted: #6f625d;
-  --du-red: #d91f2d;
-  --du-red-dark: #a91f26;
-  --du-orange: #c25a00;
-  --du-gold: #a87c00;
-  --du-green: #157a49;
-  --du-focus: #12608f;
-  --du-radius: 14px;
-  --du-shadow: 0 2px 8px rgba(45, 20, 18, .08);
-  --du-target: 44px;
   --d2-gutter: 12px;
   --d2-chart-h: 320px;
-  min-width: 0;
-  background: var(--du-bg);
-  color: var(--du-text);
-  font-family: var(--font-body);
   font-size: 16px;
   line-height: 1.45;
 }
-body.dashboard-2-page *, body.dashboard-2-page *::before, body.dashboard-2-page *::after { box-sizing: border-box; }
 
 /* ── Utilidades ─────────────────────────────────────────── */
 body.dashboard-2-page .d2-sr {
@@ -522,7 +504,9 @@ body.dashboard-2-page #tabla-denominaciones .tbl td {
 }
 body.dashboard-2-page .compromiso-table tbody tr:nth-child(even) td { background: #fcfaf7; }
 body.dashboard-2-page .compromiso-table .num { text-align: center; font-weight: 700; }
-body.dashboard-2-page .compromiso-table .pill { display: inline-flex; justify-content: center; min-width: 32px; padding: 2px 8px; border-radius: 8px; color: #fff; font-weight: 800; }
+/* min-height/font-size: la pildora del canon mide 28 px y 12 px; en esta tabla
+   va al ras del texto de la celda, como antes de optar a rh-unified. */
+body.dashboard-2-page .compromiso-table .pill { display: inline-flex; justify-content: center; min-width: 32px; min-height: 0; padding: 2px 8px; border-radius: 8px; color: #fff; font-size: inherit; font-weight: 800; }
 body.dashboard-2-page .compromiso-table .pill.good { background: #157a49; }
 body.dashboard-2-page .compromiso-table .pill.mid { background: #f2c94c; color: #2a1c19; }
 body.dashboard-2-page .compromiso-table .pill.warn { background: #c25a00; }

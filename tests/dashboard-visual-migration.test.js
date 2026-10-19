@@ -5,7 +5,7 @@ const path = require('node:path');
 
 const root = path.resolve(__dirname, '..');
 const migrated = [
-  'dashboard-1', 'dashboard-3', 'dashboard-4', 'dashboard-5',
+  'dashboard-1', 'dashboard-2', 'dashboard-3', 'dashboard-4', 'dashboard-5',
   'dashboard-6', 'dashboard-7', 'dashboard-8', 'dashboard-9',
   'dashboard-11', 'dashboard-12', 'dashboard-13', 'dashboard-14',
   'dashboard-2-analisis', 'dashboard-9-analisis',

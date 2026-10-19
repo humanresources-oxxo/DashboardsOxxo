@@ -50,7 +50,8 @@ DashboardsOxxo/
 - `js/home.js` + `css/home.css`: portada.
 - `js/admin.js` y `js/admin/*`: validacion de Excel y publicacion al Apps Script.
 - `apps-script/admin-upload.gs`: Web App que recibe datos del panel admin y actualiza Google Sheets.
-- `css/dashboard-skin.css`, `css/floating-filter-layout.css`, `css/rh-dashboard-refresh.css`: tema y layout compartido de dashboards.
+- `css/dashboard-rh-unified.css`: canon visual compartido de los dashboards (`body.rh-unified`).
+- `css/floating-filter-layout.css`, `css/rh-dashboard-refresh.css`: restos de las capas legadas; solo conservan los contratos responsive de filtros y tablas.
 
 ## Flujo de datos
 
