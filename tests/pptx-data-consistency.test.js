@@ -43,7 +43,7 @@ vm.runInContext(fs.readFileSync(path.join(root, 'js/config.js'), 'utf8'), sandbo
 vm.runInContext(fs.readFileSync(path.join(root, 'js/core.js'), 'utf8'), sandbox);
 
 vm.runInContext(fs.readFileSync(path.join(root,'js/metrics-periods.js'),'utf8'),sandbox);
-for(const [file,api,names] of [['admin-pptx.js','general','kpiD1,kpiD2,kpiD4,kpiD6'],['admin-pptx-rae.js','rae','dataD1,dataD2,dataRotationTop10,dataD3,dataD7,dataD8,dataFocusKpis,raeMonthOption,buildD1,buildD2,buildD2Analysis,buildRotationTop10,buildD3,buildFocusKpis,buildD3StoreListSlides,buildD3ZeroAprovechamiento,buildD3RescateEc,buildD8Capability'],['admin-pptx-asesor.js','advisor','datosAsesorD1,datosAsesorD2']]){
+for(const [file,api,names] of [['admin-pptx.js','general','kpiD1,kpiD2,kpiD4,kpiD6'],['admin-pptx-rae.js','rae','dataD1,dataD2,dataRotationTop10,dataD3,dataD7,dataD8,dataFocusKpis,raeMonthOption,buildD1,buildD2,buildD2Analysis,buildRotationTop10,buildD3,buildFocusKpis,buildD3StoreListSlides,buildD3ZeroAprovechamiento,buildD3RescateEc,buildD8,buildD8Capability,buildDashboardList'],['admin-pptx-asesor.js','advisor','datosAsesorD1,datosAsesorD2']]){
  const code=fs.readFileSync(path.join(root,'js',file),'utf8').replace(/\}\)\(\);\s*$/, 'window.'+api+'={'+names+'};})();');vm.runInContext(code,sandbox);
 }
 let fixture=[], fixtureByTab=null;
@@ -158,6 +158,28 @@ sandbox.loadAsesorCatalog=async()=>null;sandbox.OXXO.loadAsesorCatalog=sandbox.l
  assert.equal(capacidades.cercaSiempre.asesores[0].name,'Beto');
  assert.equal(capacidades.capacidades.length,2);
  assert.equal(capacidades.capacidades.find(item=>item.label==='Código de Ética').asesores.length,2);
+ // Capacidades es UNA sola lamina: resumen general por curso + matriz por AT.
+ assert.equal(capacidades.cursos.map(c=>`${c.label}|${c.aplicables}|${c.completadas}|${c.pct}`).join(' / '),'Módulo Cerca Siempre|2|1|50 / Código de Ética|2|2|100');
+ // Ranking de mayor a menor cumplimiento total, con todos los AT validos.
+ assert.equal(capacidades.matriz.map(item=>item.name).join('|'),'Ana|Beto');
+ assert.equal(capacidades.matriz[0].cursos.map(c=>c.pct).join('|'),'100|100');
+ assert.equal(capacidades.matriz[1].cursos.map(c=>c.pct).join('|'),'0|100');
+ assert.equal(capacidades.matriz[0].pct,100);
+ assert.equal(capacidades.matriz[1].pct,50);
+ const capacidadesSlides=[], capacidadesDrawn=[];
+ sandbox.rae.buildD8({addSlide(){const slide={background:{},addText(...args){capacidadesDrawn.push(['text',...args]);},addShape(...args){capacidadesDrawn.push(['shape',...args]);}};capacidadesSlides.push(slide);return slide;}},capacidades,'Corte vigente');
+ assert.equal(capacidadesSlides.length,1);
+ const capacidadesTextos=capacidadesDrawn.filter(([kind])=>kind==='text').map(([,value])=>String(value));
+ assert.ok(capacidadesTextos.includes('Resumen general por curso'));
+ assert.ok(capacidadesTextos.some(value=>value.startsWith('Ranking por AT')));
+ assert.ok(capacidadesTextos.includes('Total general'));
+ assert.ok(capacidadesTextos.includes('Módulo Cerca Siempre')&&capacidadesTextos.includes('Código de Ética'));
+ assert.ok(capacidadesTextos.includes('1. Ana')&&capacidadesTextos.includes('2. Beto'));
+ // Ya no hay laminas por modulo: una unica entrada de Capacidades.
+ const listaRae=sandbox.rae.buildDashboardList('','',new Date());
+ assert.equal(listaRae.filter(item=>/CAPACIDAD/i.test(item.title)).length,1);
+ assert.ok(!listaRae.some(item=>/M.DULO/i.test(item.title)));
+ assert.ok(!fs.readFileSync(path.join(root,'js/admin-pptx-rae.js'),'utf8').includes('buildD8Capabilities'));
  const capabilitySlides=[];
  sandbox.rae.buildD8Capability({addSlide(){const slide={background:{},addText(){},addShape(){}};capabilitySlides.push(slide);return slide;}},{...capacidades.cercaSiempre,asesores:Array.from({length:12},(_,i)=>({name:'Asesor '+i,pct:60,pendientes:2}))},'Corte vigente');
  assert.equal(capabilitySlides.length,1);

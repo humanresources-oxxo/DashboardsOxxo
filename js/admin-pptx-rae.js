@@ -667,6 +667,33 @@
       };
     });
     const cercaSiempre = capacidades.find(item => capKey(item.label).includes('cercasiempre')) || null;
+    // La lamina de Capacidades es una sola: la matriz AT x curso se calcula
+    // aqui, sobre las mismas filas y el mismo capValue() que stats, para que el
+    // resumen general y el ranking por AT no puedan divergir del tablero.
+    const cursos = stats.map(item => ({ key: item.key, label: item.label, aplicables: item.aplic, completadas: item.comp, pct: item.pct || 0 }));
+    const porAt = new Map();
+    rows.forEach(row => {
+      const name = String(val(row, asesorKey) || 'Sin Asesor Asignado').trim();
+      if(!porAt.has(name)) porAt.set(name, { name, aplic: 0, comp: 0, cursos: cursos.map(() => ({ aplic: 0, comp: 0 })) });
+      const acc = porAt.get(name);
+      cursos.forEach((curso, index) => {
+        const value = capValue(row, curso.key);
+        if(value === null) return;
+        acc.cursos[index].aplic++;
+        acc.aplic++;
+        if(value >= 1){ acc.cursos[index].comp++; acc.comp++; }
+      });
+    });
+    const matriz = [...porAt.values()]
+      .filter(item => item.aplic && !normText(item.name).replace(/[^A-Z]/g,'').includes('SINASESOR'))
+      .map(item => ({
+        name: item.name,
+        aplicables: item.aplic,
+        completadas: item.comp,
+        pct: item.aplic ? item.comp / item.aplic * 100 : 0,
+        cursos: item.cursos.map(cell => ({ aplicables: cell.aplic, completadas: cell.comp, pct: cell.aplic ? cell.comp / cell.aplic * 100 : null })),
+      }))
+      .sort((a, b) => b.pct - a.pct || a.name.localeCompare(b.name, 'es'));
     return {
       sub: 'Corte vigente', empleados, tiendas, pct: aplic ? comp / aplic * 100 : 0,
       completadas: comp, aplicables: aplic,
@@ -674,6 +701,8 @@
       asesores: asesores.slice(0, 10),
       cercaSiempre,
       capacidades,
+      cursos,
+      matriz,
     };
   }
 
@@ -1300,33 +1329,69 @@
     });
   }
 
+  const capColor = pct => pct >= 80 ? GREEN : (pct >= 50 ? GOLD : RED);
+
+  // Una sola lamina: arriba el resumen general por curso (aplicables,
+  // completadas, cumplimiento) y abajo el ranking por AT con un curso por
+  // columna mas el total general, de mayor a menor cumplimiento total.
   function buildD8(pptx, d, dateLabel){
     const {text,rect}=editorialSlide(pptx,'Capacidades 2026',dateLabel);
-    text(d.pct.toFixed(1)+'%',.5,1.98,3.85,.9,56,d.pct>=80?GREEN:(d.pct>=50?GOLD:RED),true);
-    text('CUMPLIMIENTO GLOBAL',.53,2.98,3.7,.28,11,DARK,true);
-    text(OXXO.formatNum(d.completadas)+' de '+OXXO.formatNum(d.aplicables)+' certificaciones aplicables',.53,3.34,3.7,.28,11,MUTED);
-    text('Cobertura del corte',.53,3.92,3.7,.3,15,DARK,true);
-    text(OXXO.formatNum(d.empleados),.53,4.32,1.15,.55,28,DARK,true);
-    text('empleados',1.72,4.47,1.5,.24,11,MUTED);
-    text(OXXO.formatNum(d.tiendas),.53,5.02,1.15,.55,28,DARK,true);
-    text('tiendas',1.72,5.17,1.5,.24,11,MUTED);
-    text('Certificaciones prioritarias',.53,5.86,3.55,.28,14,DARK,true);
-    (d.criticas||[]).forEach((item,i)=>{
-      const y=6.2+i*.22;
-      text((i+1)+'. '+shortenName(item.label,29),.53,y,2.65,.2,10);
-      text(item.pct.toFixed(1)+'%',3.05,y,.8,.2,10,item.pct>=80?GREEN:(item.pct>=50?GOLD:RED),true,{align:'right'});
+    const cursos=d.cursos||[], matriz=d.matriz||[];
+    text(d.pct.toFixed(1)+'%',.5,1.76,1.95,.5,26,capColor(d.pct),true);
+    text('CUMPLIMIENTO GLOBAL',2.55,1.78,2.4,.22,10,DARK,true);
+    text(OXXO.formatNum(d.completadas)+' de '+OXXO.formatNum(d.aplicables)+' certificaciones aplicables · '+OXXO.formatNum(d.empleados)+' empleados · '+OXXO.formatNum(d.tiendas)+' tiendas',2.55,2.02,10.25,.22,10,MUTED);
+    if(!cursos.length){ text('Sin certificaciones aplicables en el corte',.5,3,11.9,.5,16,MUTED); return; }
+
+    // Mismo reticulado para las dos tablas: columna de etiqueta + un curso por
+    // columna + total general, asi el resumen y el ranking se leen alineados.
+    const x=.5, labelW=2.6, cols=cursos.length+1;
+    const colW=(12.33-labelW)/cols;
+    const headerLabels=cursos.map(curso=>curso.label).concat('Total general');
+    const headerRow=(y,h,first)=>{
+      rect(x,y,labelW,h,'CC0000');
+      text(first,x+.08,y+h/2-.13,labelW-.16,.26,9.5,WHITE,true,{breakLine:false});
+      headerLabels.forEach((label,i)=>{
+        rect(x+labelW+i*colW,y,colW,h,i===cursos.length?'CC0000':'E30613');
+        text(label,x+labelW+i*colW+.05,y+.06,colW-.1,h-.12,8.5,WHITE,true,{align:'center'});
+      });
+    };
+
+    text('Resumen general por curso',.5,2.3,6,.26,13,DARK,true);
+    headerRow(2.56,.42,'Curso');
+    const resumen=[
+      ['Aplicables', curso=>OXXO.formatNum(curso.aplicables), DARK],
+      ['Completadas', curso=>OXXO.formatNum(curso.completadas), DARK],
+      ['Cumplimiento', curso=>curso.pct.toFixed(1)+'%', null],
+    ];
+    const totales=[OXXO.formatNum(d.aplicables),OXXO.formatNum(d.completadas),d.pct.toFixed(1)+'%'];
+    resumen.forEach(([label,format,color],i)=>{
+      const y=3.0+i*.24;
+      if(i%2) rect(x,y,12.33,.24,'F7F1EC');
+      text(label,x+.08,y+.03,labelW-.16,.2,9.5,TEXT,false,{breakLine:false});
+      cursos.forEach((curso,j)=>{
+        text(format(curso),x+labelW+j*colW+.05,y+.03,colW-.1,.2,9.5,color||capColor(curso.pct),color?false:true,{align:'center'});
+      });
+      text(totales[i],x+labelW+cursos.length*colW+.05,y+.03,colW-.1,.2,9.5,i===2?capColor(d.pct):DARK,true,{align:'center'});
     });
-    rect(4.4,1.97,.015,4.86,'E5DCD6');
-    text('Asesores con mayor necesidad',4.8,2.02,6.2,.35,18,DARK,true);
-    text('Cumplimiento de certificaciones',10.1,2.08,2.7,.25,10,MUTED,false,{align:'right'});
-    const items=d.asesores||[], rowH=Math.min(.42,4.15/Math.max(1,items.length));
-    if(!items.length) text('Sin registros disponibles',4.8,2.8,7,.5,15,MUTED);
-    items.forEach((item,i)=>{
-      const y=2.62+i*rowH, color=item.pct>=80?GREEN:(item.pct>=50?GOLD:RED);
-      text(shortenName(item.name,30),4.8,y,4.1,rowH*.84,items.length>8?10:11,TEXT);
-      rect(9.2,y+rowH*.31,2.45,.07,'EDE6DF');
-      if(item.pct>0) rect(9.2,y+rowH*.31,2.45*Math.min(item.pct,100)/100,.07,color);
-      text(item.pct.toFixed(1)+'%',11.8,y,.95,rowH*.84,11,DARK,true,{align:'right'});
+
+    text('Ranking por AT · cumplimiento total de mayor a menor',.5,3.84,8,.26,13,DARK,true);
+    headerRow(4.1,.42,'Asesor de tienda');
+    if(!matriz.length){ text('Sin AT con certificaciones aplicables en el corte',.5,5.1,11.9,.4,15,MUTED); return; }
+    // ponytail: una sola lamina a altura fija lee hasta ~14 AT con texto
+    // legible (filas de .17in, 7.5pt); si la plaza pasa de ahi, paginar el
+    // ranking en varias laminas en vez de seguir encogiendo la fila.
+    const top=4.56, avail=6.92-top;
+    const rowH=Math.min(.26,avail/matriz.length);
+    const size=rowH<.19?7.5:rowH<.23?8.5:9.5;
+    matriz.forEach((item,i)=>{
+      const y=top+i*rowH;
+      if(i%2) rect(x,y,12.33,rowH,'F7F1EC');
+      text((i+1)+'. '+shortenName(item.name,30),x+.08,y,labelW-.16,rowH,size,TEXT,false,{breakLine:false});
+      item.cursos.forEach((cell,j)=>{
+        const value=cell.pct===null?'—':cell.pct.toFixed(0)+'%';
+        text(value,x+labelW+j*colW+.05,y,colW-.1,rowH,size,cell.pct===null?MUTED:capColor(cell.pct),false,{align:'center',breakLine:false});
+      });
+      text(item.pct.toFixed(1)+'%',x+labelW+item.cursos.length*colW+.05,y,colW-.1,rowH,size,capColor(item.pct),true,{align:'center',breakLine:false});
     });
   }
 
@@ -1365,12 +1430,6 @@
       text(item.pct.toFixed(1)+'%',10.98,y,.8,rowH*.84,11,itemColor,true,{align:'right'});
       text(item.pendientes+' pend.',11.86,y,.9,rowH*.84,10,MUTED,false,{align:'right'});
     });
-  }
-
-  function buildD8Capabilities(pptx, d, dateLabel){
-    const capacidades=d.capacidades||[];
-    if(!capacidades.length){ emptySlide(pptx,'Capacidades por módulo',dateLabel); return; }
-    capacidades.forEach(capacidad=>buildD8Capability(pptx,capacidad,dateLabel));
   }
 
   function focusCellColor(metric, value){
@@ -1474,7 +1533,7 @@
     const {text,rect}=editorialSlide(pptx,'Presentación RAE',dateLabel);
     text('Indicadores de recursos humanos',.5,2.5,11.9,.8,34,DARK,true);
     text('Plaza Oaxaca',.5,3.52,11.9,.5,22,RED,true);
-    const sections=['Vacantes','Bajas','Análisis de bajas','Rotación acumulada','Aprovechamiento','Capacidades','Por módulo','TREO'];
+    const sections=['Vacantes','Bajas','Análisis de bajas','Rotación acumulada','Aprovechamiento','Capacidades','TREO'];
     sections.forEach((label,i)=>{
       const sectionW = 1.38;
       const x=.5+i*1.56;
@@ -1523,8 +1582,6 @@
   // RAE reúne Vacantes, Bajas, Aprovechamiento, Capacidades y TREO. Tiempo
   // Extra/Vacaciones/Ausentismos se mantienen fuera de esta presentación.
   function buildDashboardList(mesD1, mesD2, today){
-    let capacidadesPromise;
-    const loadCapacidades = () => capacidadesPromise || (capacidadesPromise = dataD8());
     let bajasPromise;
     const loadBajas = () => bajasPromise || (bajasPromise = dataD2(mesD2));
     let focusPromise;
@@ -1540,8 +1597,7 @@
       { title: 'TIENDAS SIN EQUIPO COMPLETO (EC)', fetch: loadAprovechamiento, build: buildD3ZeroAprovechamiento },
       { title: 'TIENDAS CON RESCATE EC EN EL MES', fetch: loadAprovechamiento, build: buildD3RescateEc },
       { title: 'KPI DE ENFOQUE 2026', fetch: loadFocus, build: buildFocusKpis },
-      { title: 'CAPACIDADES 2026', fetch: loadCapacidades, build: buildD8 },
-      { title: 'CAPACIDADES POR MÓDULO', fetch: loadCapacidades, build: buildD8Capabilities },
+      { title: 'CAPACIDADES 2026', fetch: dataD8, build: buildD8 },
       { title: 'TREO · ESTRUCTURA', fetch: dataD7, build: buildD7 },
     ];
   }
