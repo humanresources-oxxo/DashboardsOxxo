@@ -858,33 +858,6 @@ body {
 .data-table { font-size: 12px; }
 .data-table thead th { padding: 9px 10px; }
 .data-table tbody td { padding: 9px 10px; }
-.insight-row {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
-  margin-bottom: 18px;
-}
-.insight-card {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  padding: 14px 16px;
-  box-shadow: var(--shadow-card);
-}
-.insight-card__label {
-  font-size: 11px;
-  color: var(--color-gray);
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  font-weight: 700;
-  margin-bottom: 5px;
-}
-.insight-card__text {
-  font-family: var(--font-display);
-  color: var(--color-dark);
-  font-size: 1.15rem;
-  font-weight: 800;
-}
 .layout-vacantes {
   display: grid;
   grid-template-columns: minmax(0, 1.35fr) minmax(340px, .85fr);
@@ -972,7 +945,6 @@ body {
   .layout-te__bottom,
   .layout-vacaciones__bottom,
   .layout-ausentismos__bottom { grid-template-columns: 1fr; }
-  .insight-row { grid-template-columns: 1fr; }
 }
 @media (max-width: 680px) {
   .dashboard-page { padding: 14px; }

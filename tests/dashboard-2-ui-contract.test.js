@@ -76,18 +76,15 @@ test('D2 usa el canon visual unificado y un solo css propio; sin capas legadas n
   ok(html, /<body class="hr-dashboard dashboard-2-page rh-unified"/);
 });
 
-test('el riel de insights se apaga solo con data-rh-insights="false" y la navegacion no depende de ello', () => {
-  ok(html, /<body[^>]*data-rh-insights="false"/);
-  const crear = enhancements.slice(enhancements.indexOf('function createInsights()'), enhancements.indexOf('function renderInsights'));
-  ok(crear, /rhInsights === 'false'\) return null/);
-  const init = enhancements.slice(enhancements.indexOf('function init()'));
-  assert.ok(init.indexOf('createNavigation()') < init.indexOf('createInsights()'), 'la navegacion se crea antes y sin condicion');
-  no(enhancements.slice(enhancements.indexOf('function createNavigation()'), enhancements.indexOf('function createInsights()')), /rhInsights/);
-  // Otros tableros siguen mostrando su riel: ninguno mas declara el opt-out.
-  for (const otro of fs.readdirSync(path.join(raiz, 'dashboards')).filter(n => n.endsWith('.html') && n !== 'dashboard-2.html')) {
-    no(leer(`dashboards/${otro}`), /data-rh-insights/, `${otro} conserva sus insights`);
+test('ningun tablero monta el riel de Lectura rapida y la navegacion no depende de el', () => {
+  no(enhancements, /hr-insights|createInsights|renderInsights/);
+  ok(enhancements, /function createNavigation\(\)/);
+  ok(enhancements.slice(enhancements.indexOf('function init()')), /createNavigation\(\);/);
+  for (const archivo of fs.readdirSync(path.join(raiz, 'dashboards')).filter(n => n.endsWith('.html'))) {
+    no(leer(`dashboards/${archivo}`), /hr-insights|data-rh-insights|id="insights"|Lectura r[áa]pida|Prioridades del tablero/, `${archivo} aun monta el riel de insights`);
   }
 });
+
 
 test('las cuatro tarjetas KPI comparten estructura y el nombre accesible no se trunca', () => {
   for (const kpi of ['todos', 'asesor', 'tienda', 'rotTemp']) ok(js, new RegExp(`kpi:'${kpi}'`));

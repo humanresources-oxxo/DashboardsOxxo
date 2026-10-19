@@ -203,19 +203,6 @@ body.rh-unified .spinner { width: 28px; height: 28px; border: 3px solid var(--du
 body.rh-unified .foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-top: 12px; padding-top: 14px; border-top: 1px solid var(--du-border); color: var(--du-muted); font-size: 12px; }
 body.rh-unified .foot-dot { display: inline-block; width: 8px; height: 8px; margin-right: 6px; border-radius: 50%; background: var(--du-green); box-shadow: none; }
 
-body.rh-unified .hr-insights { margin: 0 0 12px; padding: 12px 14px; border: 1px solid var(--du-border); border-radius: var(--du-radius); background: var(--du-card); box-shadow: var(--du-shadow); }
-body.rh-unified .hr-insights__head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 12px; margin-bottom: 8px; }
-body.rh-unified .hr-insights__eyebrow { margin-right: 5px; color: var(--du-red-dark); font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
-body.rh-unified .hr-insights__head strong { color: var(--du-text); font-size: 14px; }
-body.rh-unified .hr-insights__freshness { color: var(--du-muted); font-size: 12px; }
-body.rh-unified .hr-insights__grid { display: grid; grid-template-columns: minmax(0,1fr); gap: 8px; }
-body.rh-unified .hr-insight { display: grid; grid-template-columns: 8px minmax(0,1fr); gap: 8px; align-items: start; padding: 9px 10px; border-radius: 10px; background: var(--du-soft); }
-body.rh-unified .hr-insight__dot { width: 8px; height: 8px; margin-top: 5px; border-radius: 50%; background: var(--du-red); }
-body.rh-unified .hr-insight--success .hr-insight__dot { background: var(--du-green); }
-body.rh-unified .hr-insight--warning .hr-insight__dot { background: var(--du-gold); }
-body.rh-unified .hr-insight strong { display: block; color: var(--du-text); font-size: 13px; }
-body.rh-unified .hr-insight p { margin: 2px 0 0; color: var(--du-muted); font-size: 12px; line-height: 1.35; }
-
 body.rh-unified .am-overlay {
   position: fixed; z-index: 1000; inset: 0; display: none; align-items: center; justify-content: center;
   padding: 16px; overflow: auto; background: rgba(42,28,25,.58); overscroll-behavior: contain;
@@ -239,7 +226,6 @@ body.rh-unified .am-kpi__lbl { margin-top: 4px; color: var(--du-muted); font-siz
   body.rh-unified .kpis { grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; }
   body.rh-unified .kpi-card { min-height: 118px; padding: 16px 16px 16px 18px; }
   body.rh-unified .card { padding: 18px; }
-  body.rh-unified .hr-insights__grid { grid-template-columns: repeat(3,minmax(0,1fr)); }
 }
 
 @media (min-width: 1024px) {

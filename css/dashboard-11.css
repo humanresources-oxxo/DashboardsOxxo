@@ -47,22 +47,6 @@ body.dashboard-11-page .kpis > .state .action {
 }
 body.dashboard-11-page .kpis > .state .action:hover { border-color: var(--du-red); }
 
-/* Lectura rápida: la sección conserva la clase hr-insights (reclama el slot para
-   que rh-dashboard-enhancements.js no inyecte un riel duplicado), pero D11 pinta
-   sus propias tarjetas .insight, así que se neutraliza el marco del canon. */
-body.dashboard-11-page .insights {
-  display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 0 0 12px;
-  padding: 0; border: 0; background: transparent; box-shadow: none;
-}
-body.dashboard-11-page .insight {
-  display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px;
-  border: 1px solid var(--du-border); border-radius: var(--du-radius);
-  background: var(--du-card); box-shadow: var(--du-shadow);
-}
-body.dashboard-11-page .insight-dot { flex: 0 0 auto; width: 10px; height: 10px; margin-top: 4px; border-radius: 50%; background: var(--tone, var(--du-red)); }
-body.dashboard-11-page .insight strong { font-size: 13px; color: var(--du-text); }
-body.dashboard-11-page .insight p { margin: 4px 0 0; color: var(--du-muted); font-size: 12px; line-height: 1.4; }
-
 /* Layout de dos columnas (mezcla + ranking). */
 body.dashboard-11-page .layout { display: grid; grid-template-columns: minmax(0, .78fr) minmax(0, 1.22fr); gap: 12px; margin-bottom: 12px; }
 body.dashboard-11-page .layout > .card { display: flex; flex-direction: column; }
@@ -137,7 +121,6 @@ body.dashboard-11-page .dash-footer__update-dot { width: 9px; height: 9px; borde
   body.dashboard-11-page .kpi-card__value { font-size: 2.1rem; }
 }
 @media (max-width: 720px) {
-  body.dashboard-11-page .insights { grid-template-columns: 1fr; }
   body.dashboard-11-page .mix { grid-template-columns: 1fr; }
   body.dashboard-11-page .ring { width: 166px; height: 166px; }
   body.dashboard-11-page .hide-mobile { display: none; }

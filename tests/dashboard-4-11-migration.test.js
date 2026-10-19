@@ -125,10 +125,7 @@ test('se preservan los contratos de DOM (IDs, data-* y handlers) que consume el 
   assert.match(d4, /js\/dashboard-dialogs\.js/, 'D4 conserva el controlador de diálogos');
 
   const d11 = read('dashboards/dashboard-11.html');
-  for (const id of ['kpi-section', 'detail-table', 'advisor-list', 'mix-ring', 'insights']) {
+  for (const id of ['kpi-section', 'detail-table', 'advisor-list', 'mix-ring']) {
     assert.match(d11, new RegExp(`id="${id}"`), `D11 conserva #${id}`);
   }
-  // La sección de insights mantiene la clase hr-insights: reclama el slot para que
-  // rh-dashboard-enhancements.js no inyecte un riel duplicado.
-  assert.match(d11, /class="insights hr-insights"/, 'D11 conserva insights hr-insights');
 });

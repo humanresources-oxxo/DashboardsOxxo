@@ -304,7 +304,7 @@ function esTiendaNueva(r){
 // las tiendas nuevas (la fuente publica un serial de fecha corrupto que se
 // convierte en cientos de dias) y los meses ya finalizados. La tabla de
 // detalle ya las marcaba aparte con su badge, pero el KPI "Vacante mas
-// antigua", el insight de Lectura rapida y los promedios/maximos/semaforo de
+// antigua" y los promedios/maximos/semaforo de
 // "Vacantes por Asesor - Dias" si las sumaban: en Oaxaca SEM sep-26, 6 filas
 // de 59 con 641 dias inflaban el promedio general de 11.4 a 75.4 dias y
 // hacian que el KPI reportara 641 dias cuando la vacante realmente mas
@@ -1319,8 +1319,8 @@ function renderOverview(allData){
   const encargados=allData.filter(r=>r.tipo==='Encargado').length;
   const ayudantes=allData.filter(r=>r.tipo==='Ayudante').length;
   // Solo filas con antiguedad real: una tienda nueva trae un numero grande
-  // que no es antiguedad y hacia que este KPI (y el insight de Lectura
-  // rapida, que lo lee de la tarjeta) reportara cientos de dias falsos.
+  // que no es antiguedad y hacia que este KPI reportara cientos de dias
+  // falsos.
   const conAntiguedad=allData.filter(r=>!sinAntiguedadReal(r));
   const maxDias=Math.max(...conAntiguedad.map(r=>Number(r.dias)||0),0);
   const tiendaAntigua=conAntiguedad.find(r=>(Number(r.dias)||0)===maxDias)?.tienda||'—';
