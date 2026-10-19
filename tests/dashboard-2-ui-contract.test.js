@@ -50,13 +50,16 @@ test('conserva todos los IDs que consumen scripts compartidos, filtros y descarg
   ok(js, /id="filter-\$\{key\}"/);
 });
 
-test('un solo css (despues de dashboard-dialogs) y un solo js propio; sin css ni logica embebidos', () => {
+test('D2 usa el canon visual unificado y un solo css propio; sin capas legadas ni logica embebida', () => {
   const hojas = [...html.matchAll(/<link[^>]+rel="stylesheet"[^>]+href="([^"?]+)/g)].map(m => m[1]);
   assert.equal(hojas.filter(h => h === '../css/dashboard-2.css').length, 1);
   assert.equal(hojas[hojas.length - 1], '../css/dashboard-2.css');
   assert.equal(hojas[hojas.length - 2], '../css/dashboard-dialogs.css');
-  for (const compartida of ['global', 'dashboard-skin', 'floating-filter-layout', 'rh-dashboard-refresh', 'rh-table-tools', 'rh-filter-summary']) {
+  for (const compartida of ['global', 'dashboard-rh-unified', 'rh-table-tools', 'rh-filter-summary']) {
     assert.ok(hojas.includes(`../css/${compartida}.css`), `sigue cargando ${compartida}.css`);
+  }
+  for (const legacy of ['dashboard-skin', 'floating-filter-layout', 'rh-dashboard-refresh']) {
+    assert.ok(!hojas.includes(`../css/${legacy}.css`), `D2 ya no carga ${legacy}.css`);
   }
   // Solo queda el estilo del candado (arranque de site-lock), nada de D2.
   const estilos = [...html.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/g)].map(m => m[1]);
@@ -70,7 +73,7 @@ test('un solo css (despues de dashboard-dialogs) y un solo js propio; sin css ni
   const finales = orden.slice(orden.indexOf('config.js'));
   assert.deepEqual(finales, ['config.js', 'core.js', 'dashboard-dialogs.js', 'dashboard-2.js']);
   assert.equal(orden.filter(n => n === 'dashboard-2.js').length, 1);
-  ok(html, /<body class="hr-dashboard dashboard-2-page"/);
+  ok(html, /<body class="hr-dashboard dashboard-2-page rh-unified"/);
 });
 
 test('el riel de insights se apaga solo con data-rh-insights="false" y la navegacion no depende de ello', () => {

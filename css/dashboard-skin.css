@@ -1,4 +1,4 @@
-/* Consumido por: dashboard-2 (solo conserva el <link>; hoja sin reglas).
+/* Hoja retirada; no la consume ningun dashboard.
    ==========================================================
    DASHBOARD SKIN — RETIRADA
 
@@ -7,7 +7,7 @@
    ultimo consumidor, Dashboard 2, ahora lleva su canon en css/dashboard-2.css
    (mismos tokens --du-*, sin degradados, sin vidrio, sin sombras multicapa).
 
-   El <link> sigue en dashboards/dashboard-2.html (y su contrato lo exige), por
-   eso el archivo existe vacio en lugar de borrarse. No agregar reglas aqui:
+   El archivo existe vacio en lugar de borrarse para conservar compatibilidad con
+   instalaciones antiguas. No agregar reglas aqui:
    lo que toque a Dashboard 2 va en css/dashboard-2.css.
    ========================================================== */
