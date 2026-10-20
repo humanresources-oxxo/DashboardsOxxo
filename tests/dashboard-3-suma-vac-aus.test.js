@@ -135,28 +135,34 @@ run(`DET_SEARCH = ''; renderDetalle('', 'critica');`);
 assert.strictEqual(run('DET_SORT.col'), 'ausent');
 assert(!elements['tabla-detalle'].innerHTML.includes('data-sort="sumaVacAus"'));
 
-// Verde solo con suma < 13 y AUSENTISMOS exactamente 0; 13 neutro; > 13 sigue rojo.
+// > 13 rojo; <= 13 verde con AUSENTISMOS exactamente 0, amarillo con AUSENTISMOS > 0.
 const rowAus = (tienda, sumaVacAus, aus) => ({ ...row(tienda, 'Equipo Incompleto', sumaVacAus), ausent: aus || 0, ausentNullable: aus });
 context.TEST_ROWS = [
-  rowAus('V12A0', 12, 0), rowAus('V12A1', 12, 1), rowAus('V13A0', 13, 0), rowAus('V14A0', 14, 0),
-  rowAus('V0A0', 0, 0), rowAus('VNULL', null, 0), rowAus('V12ANULL', 12, null),
+  rowAus('V12A0', 12, 0), rowAus('V12A1', 12, 1), rowAus('V13A0', 13, 0), rowAus('V13A2', 13, 2),
+  rowAus('V14A0', 14, 0), rowAus('V14A3', 14, 3), rowAus('V0A0', 0, 0), rowAus('VNULL', null, 0),
+  rowAus('V12ANULL', 12, null), rowAus('V13ANULL', 13, null),
   { ...rowAus('V12CRIT', 12, 0), estatus: 'Tienda Crítica' },
 ];
 run(`DETALLE_DATA = TEST_ROWS; DET_SORT = { col:'ausent', dir:'desc' }; renderDetalle('', 'incompleto');`);
 const verde = t => trOf(t).includes('row-ausvac-baja');
+const amarillo = t => trOf(t).includes('row-ausvac-media');
+const rojo = t => trOf(t).includes('row-ausvac-alta');
 assert(verde('V12A0') && trOf('V12A0').includes('<span class="ausvac-baja">12</span>'), '12 con 0 ausentismos en verde');
-assert(trOf('V12A0').includes('(menor a 13 sin ausentismos)'), 'texto accesible verde');
+assert(trOf('V12A0').includes('(13 o menos sin ausentismos)'), 'texto accesible verde');
+assert(verde('V13A0') && !amarillo('V13A0') && !rojo('V13A0'), '13 con 0 ausentismos en verde');
 assert(verde('V0A0'), '0 con 0 ausentismos en verde');
-assert(!verde('V12A1') && !trOf('V12A1').includes('ausvac-'), '12 con 1 ausentismo sin marca');
-assert(!verde('V13A0') && !trOf('V13A0').includes('ausvac-'), '13 sin verde ni rojo');
-assert(!verde('V14A0') && trOf('V14A0').includes('row-ausvac-alta'), '14 rojo, nunca verde');
-assert(!verde('VNULL') && !trOf('VNULL').includes('ausvac-'), 'suma nula sin verde');
-assert(!verde('V12ANULL'), 'AUSENTISMOS vacio no cuenta como 0');
+assert(amarillo('V12A1') && trOf('V12A1').includes('<span class="ausvac-media">12</span>') && !verde('V12A1'), '12 con ausentismos en amarillo');
+assert(amarillo('V13A2') && !verde('V13A2') && !rojo('V13A2'), '13 con ausentismos en amarillo');
+assert(trOf('V13A2').includes('(13 o menos con ausentismos)'), 'texto accesible amarillo');
+assert(rojo('V14A0') && !verde('V14A0') && !amarillo('V14A0'), '14 sin ausentismos rojo');
+assert(rojo('V14A3') && !amarillo('V14A3'), '14 con ausentismos rojo');
+assert(!trOf('VNULL').includes('ausvac-'), 'suma nula sin marca');
+assert(!trOf('V12ANULL').includes('ausvac-') && !trOf('V13ANULL').includes('ausvac-'), 'AUSENTISMOS vacio sin marca');
 assert(!trOf('V12CRIT'), 'critica queda fuera del filtro incompleto');
 run(`renderDetalle('', '')`);
-assert(!elements['tabla-detalle'].innerHTML.includes('ausvac-baja'), 'sin filtro no hay verde');
+assert(!/ausvac-(baja|media)/.test(elements['tabla-detalle'].innerHTML), 'sin filtro no hay verde ni amarillo');
 run(`renderDetalle('', 'critica')`);
-assert(trOf('V12CRIT').includes('row-critica') && !verde('V12CRIT'), 'row-critica intacta');
+assert(trOf('V12CRIT').includes('row-critica') && !trOf('V12CRIT').includes('ausvac-'), 'row-critica intacta');
 
 // Las tiendas originales salen en rojo con su valor EP, no con FC.
 context.TEST_ROWS = sumas(original).map((v, i) => row(original[i].Tienda, 'Equipo Incompleto', v));

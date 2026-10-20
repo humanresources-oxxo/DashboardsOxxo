@@ -91,8 +91,12 @@ body.dashboard-3-page #tabla-detalle .tbl-wrap { max-height: 560px; }
 body.dashboard-3-page #tabla-at .tbl { min-width: 780px; }
 body.dashboard-3-page #tabla-detalle .tbl { min-width: 980px; }
 body.dashboard-3-page .total-row td { border-top: 2px solid var(--du-text); background: #f8f3ee !important; font-weight: 800; }
-/* Equipo Incompleto con Suma Vacante/Ausentismo < 13 y AUSENTISMOS = 0: fila y valor en verde
-   (#157a49 sobre #e3f4ea = 4.7:1). Antes de row-critica para que critica conserve su rojo. */
+/* Equipo Incompleto con Suma Vacante/Ausentismo <= 13: verde con AUSENTISMOS = 0
+   (#157a49 sobre #e3f4ea = 4.7:1), amarillo con AUSENTISMOS > 0 (#7a4f00 sobre #fff3c4 = 6.4:1).
+   Antes de row-critica para que critica conserve su rojo. */
+body.dashboard-3-page .row-ausvac-media td { background: #fff3c4 !important; }
+body.dashboard-3-page .row-ausvac-media td:first-child { box-shadow: inset 4px 0 0 #b7791f; }
+body.dashboard-3-page .ausvac-media { color: #7a4f00; font-weight: 800; }
 body.dashboard-3-page .row-ausvac-baja td { background: #e3f4ea !important; }
 body.dashboard-3-page .row-ausvac-baja td:first-child { box-shadow: inset 4px 0 0 var(--du-green); }
 body.dashboard-3-page .ausvac-baja { color: var(--du-green, #157a49); font-weight: 800; }
