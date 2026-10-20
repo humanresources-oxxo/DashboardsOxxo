@@ -94,7 +94,7 @@ body.dashboard-3-page .total-row td { border-top: 2px solid var(--du-text); back
 body.dashboard-3-page .row-critica td { background: #fff6f6 !important; }
 body.dashboard-3-page .row-critica td:first-child { box-shadow: inset 4px 0 0 var(--du-red); }
 /* Equipo Incompleto con Suma Vacante/Ausentismo > 13: fila y valor en rojo. */
-body.dashboard-3-page .row-ausvac-alta td { background: #fff6f6 !important; }
+body.dashboard-3-page .row-ausvac-alta td { background: #ffdcdc !important; }
 body.dashboard-3-page .row-ausvac-alta td:first-child { box-shadow: inset 4px 0 0 var(--du-red); }
 body.dashboard-3-page .ausvac-alta { color: var(--du-red-dark, #a3121f); font-weight: 800; }
 body.dashboard-3-page .text-right { text-align: right; }
