@@ -247,7 +247,8 @@ const ALIASES_DET = {
 // Base vieja sin EP: se reconstruye con estas dos columnas exactas. "Vacante"
 // (singular, vacante actual) y "AUSENTIMO O VACANTE AL DIA" (FC) NO cuentan.
 const SUMA_VAC_AUS_PARTES = { aus:'AUSENTISMOS', vac:'Vacantes' };
-// Umbral del detalle con Equipo Incompleto: estrictamente mayor a 13 se marca en rojo.
+// Umbral del detalle con Equipo Incompleto: estrictamente mayor a 13 se marca en rojo;
+// estrictamente menor a 13 con AUSENTISMOS = 0 se marca en verde; 13 queda neutro.
 const SUMA_VAC_AUS_LIMITE = 13;
 // Si 'tienda' cayo sobre la misma columna que 'cr' (ej. con encabezados corruptos tipo
 // "_buffer_ CR TIENDA" apareciendo antes que "_buffer_ Tienda" en el orden de columnas,
@@ -544,6 +545,7 @@ async function initDashboard(){
         cr:       String(gv(r,md,'cr', gv(r,map,'cr',''))).trim(),
         estructura:gn(r,md,'estructura'),
         ausent:   gn(r,md,'ausent'),
+        ausentNullable: gnNullable(r,md,'ausent'),
         vacante:  gn(r,md,'vacante'),
         vacLider: gn(r,md,'vacLider'),
         vacEnc:   gn(r,md,'vacEnc'),
@@ -1393,6 +1395,9 @@ function renderDetalle(asesorSel, estatusSel){
   const showSumaVacAus = estatusSel==='incompleto';
   if(!showSumaVacAus && DET_SORT.col==='sumaVacAus') DET_SORT = { col:'ausent', dir:'desc' };
   const sumaVacAusAlta = r => showSumaVacAus && r.sumaVacAus!=null && r.sumaVacAus>SUMA_VAC_AUS_LIMITE;
+  // Verde: suma valida < 13 y AUSENTISMOS exactamente 0 (vacio/invalido no cuenta como 0).
+  const sumaVacAusBaja = r => showSumaVacAus && !sumaVacAusAlta(r) && Number.isFinite(r.sumaVacAus)
+    && r.sumaVacAus<SUMA_VAC_AUS_LIMITE && r.ausentNullable===0;
 
   const aprovTienda = r => (r.aprov>=92.5 ? 100 : 0);
   const vacTot = r => (r.vacLider||0)+(r.vacEnc||0)+(r.vacAyu||0);
@@ -1433,10 +1438,11 @@ function renderDetalle(asesorSel, estatusSel){
   const dias = v => { const n = Number(v); if(!isFinite(n)) return '—'; const txt = (Math.round(n*10)/10).toString(); return `<span style="color:${n<=0?'var(--semaforo-verde)':'var(--color-ink,#181112)'};font-weight:600">${txt}</span>`; };
   const rows = d.map(r=>{
     const alta = sumaVacAusAlta(r);
+    const baja = sumaVacAusBaja(r);
     const sumaVacAusCell = !showSumaVacAus ? '' : r.sumaVacAus==null
       ? '<td class="text-center"><span aria-label="Sin dato">—</span></td>'
-      : `<td class="text-center"><span class="${alta?'ausvac-alta':''}">${r.sumaVacAus}</span>${alta?`<span class="sr-only"> (mayor a ${SUMA_VAC_AUS_LIMITE})</span>`:''}</td>`;
-    return `<tr class="det-row${isCritica(r.estatus)?' row-critica':''}${alta?' row-ausvac-alta':''}" data-tienda="${escHtml(String(r.tienda))}" style="cursor:pointer" title="Ver detalle de ${escHtml(String(r.tienda))}">
+      : `<td class="text-center"><span class="${alta?'ausvac-alta':baja?'ausvac-baja':''}">${r.sumaVacAus}</span>${alta?`<span class="sr-only"> (mayor a ${SUMA_VAC_AUS_LIMITE})</span>`:baja?`<span class="sr-only"> (menor a ${SUMA_VAC_AUS_LIMITE} sin ausentismos)</span>`:''}</td>`;
+    return `<tr class="det-row${isCritica(r.estatus)?' row-critica':''}${alta?' row-ausvac-alta':''}${baja?' row-ausvac-baja':''}" data-tienda="${escHtml(String(r.tienda))}" style="cursor:pointer" title="Ver detalle de ${escHtml(String(r.tienda))}">
       <td style="font-weight:600">${escHtml(r.tienda)} <span style="color:var(--color-gray);font-size:11px">🔍</span></td>
       ${hasAsesor?`<td title="${escHtml(String(r.asesor))}">${escHtml(shortName(r.asesor))}</td>`:''}
       <td class="text-center">${r.estructura||'—'}</td>

@@ -135,6 +135,29 @@ run(`DET_SEARCH = ''; renderDetalle('', 'critica');`);
 assert.strictEqual(run('DET_SORT.col'), 'ausent');
 assert(!elements['tabla-detalle'].innerHTML.includes('data-sort="sumaVacAus"'));
 
+// Verde solo con suma < 13 y AUSENTISMOS exactamente 0; 13 neutro; > 13 sigue rojo.
+const rowAus = (tienda, sumaVacAus, aus) => ({ ...row(tienda, 'Equipo Incompleto', sumaVacAus), ausent: aus || 0, ausentNullable: aus });
+context.TEST_ROWS = [
+  rowAus('V12A0', 12, 0), rowAus('V12A1', 12, 1), rowAus('V13A0', 13, 0), rowAus('V14A0', 14, 0),
+  rowAus('V0A0', 0, 0), rowAus('VNULL', null, 0), rowAus('V12ANULL', 12, null),
+  { ...rowAus('V12CRIT', 12, 0), estatus: 'Tienda Crítica' },
+];
+run(`DETALLE_DATA = TEST_ROWS; DET_SORT = { col:'ausent', dir:'desc' }; renderDetalle('', 'incompleto');`);
+const verde = t => trOf(t).includes('row-ausvac-baja');
+assert(verde('V12A0') && trOf('V12A0').includes('<span class="ausvac-baja">12</span>'), '12 con 0 ausentismos en verde');
+assert(trOf('V12A0').includes('(menor a 13 sin ausentismos)'), 'texto accesible verde');
+assert(verde('V0A0'), '0 con 0 ausentismos en verde');
+assert(!verde('V12A1') && !trOf('V12A1').includes('ausvac-'), '12 con 1 ausentismo sin marca');
+assert(!verde('V13A0') && !trOf('V13A0').includes('ausvac-'), '13 sin verde ni rojo');
+assert(!verde('V14A0') && trOf('V14A0').includes('row-ausvac-alta'), '14 rojo, nunca verde');
+assert(!verde('VNULL') && !trOf('VNULL').includes('ausvac-'), 'suma nula sin verde');
+assert(!verde('V12ANULL'), 'AUSENTISMOS vacio no cuenta como 0');
+assert(!trOf('V12CRIT'), 'critica queda fuera del filtro incompleto');
+run(`renderDetalle('', '')`);
+assert(!elements['tabla-detalle'].innerHTML.includes('ausvac-baja'), 'sin filtro no hay verde');
+run(`renderDetalle('', 'critica')`);
+assert(trOf('V12CRIT').includes('row-critica') && !verde('V12CRIT'), 'row-critica intacta');
+
 // Las tiendas originales salen en rojo con su valor EP, no con FC.
 context.TEST_ROWS = sumas(original).map((v, i) => row(original[i].Tienda, 'Equipo Incompleto', v));
 run(`DETALLE_DATA = TEST_ROWS; DET_SORT = { col:'sumaVacAus', dir:'desc' }; renderDetalle('', 'incompleto');`);
