@@ -240,12 +240,15 @@ const ALIASES_DET = {
   diferencia:['Diferencia'],
   ausRestEC: ['Numero de ausentismos restantes para EC'],
   ausRestTC: ['Numero de ausentismos restantes para TC'],
-  // Metrica propia del reporte: NO es AUSENTISMOS + Vacante. El Excel trae el
-  // typo "AUSENTIMO"; ambos se aceptan solo por coincidencia exacta.
-  ausVacDia: ['AUSENTISMO O VACANTE AL DIA','AUSENTIMO O VACANTE AL DIA'],
+  // Columna EP de Medicion = SUMA AUSENTISMOS (DE) + Vacantes acumuladas (EK).
+  // Solo coincidencia exacta (ver buildMapDet).
+  sumaVacAus:['Suma Vacante/Ausentismo'],
 };
+// Base vieja sin EP: se reconstruye con estas dos columnas exactas. "Vacante"
+// (singular, vacante actual) y "AUSENTIMO O VACANTE AL DIA" (FC) NO cuentan.
+const SUMA_VAC_AUS_PARTES = { aus:'AUSENTISMOS', vac:'Vacantes' };
 // Umbral del detalle con Equipo Incompleto: estrictamente mayor a 13 se marca en rojo.
-const AUS_VAC_DIA_LIMITE = 13;
+const SUMA_VAC_AUS_LIMITE = 13;
 // Si 'tienda' cayo sobre la misma columna que 'cr' (ej. con encabezados corruptos tipo
 // "_buffer_ CR TIENDA" apareciendo antes que "_buffer_ Tienda" en el orden de columnas,
 // el alias 'Tienda' matchea "CR TIENDA" primero por substring), se busca otra columna que
@@ -266,10 +269,13 @@ function buildMapDet(data){
   m.fechaRescEC=findSpecificHeader(s,ALIASES_DET.fechaRescEC);
   m.fechaRescTC=findSpecificHeader(s,ALIASES_DET.fechaRescTC);
   // Solo coincidencia exacta: el parcial de findKey cruzaria "Vacante" con
-  // "AUSENTISMO O VACANTE AL DIA" cuando una base vieja no trae la columna.
-  const ausVacAliases=ALIASES_DET.ausVacDia.map(cleanKey);
-  m.ausVacDia=Object.keys(s).find(k=>ausVacAliases.includes(cleanKey(k)))||null;
-  ['ausent','vacante'].forEach(k=>{ if(m[k] && m[k]===m.ausVacDia) m[k]=null; });
+  // "Suma Vacante/Ausentismo" o con "AUSENTIMO O VACANTE AL DIA".
+  const exacta=al=>Object.keys(s).find(k=>al.map(cleanKey).includes(cleanKey(k)))||null;
+  m.sumaVacAus=exacta(ALIASES_DET.sumaVacAus);
+  m.sumaVacAusAus=m.sumaVacAus?null:exacta([SUMA_VAC_AUS_PARTES.aus]);
+  m.sumaVacAusVac=m.sumaVacAus?null:exacta([SUMA_VAC_AUS_PARTES.vac]);
+  const derivadas=[m.sumaVacAus,exacta(['AUSENTISMO O VACANTE AL DIA','AUSENTIMO O VACANTE AL DIA'])];
+  ['ausent','vacante'].forEach(k=>{ if(m[k] && derivadas.includes(m[k])) m[k]=null; });
   fixTiendaCrCollision(s,m);
   return m;
 }
@@ -279,6 +285,13 @@ function gnNullable(row,map,k){
   if(!raw) return null;
   const v = /^-?\d+,\d{1,2}$/.test(raw) ? raw.replace(',','.') : raw.replace(/,/g,'');
   const n=Number(v);return Number.isFinite(n)?n:null;
+}
+// EP si la columna existe (vacia/invalida -> null); si no, AUSENTISMOS + Vacantes
+// exactas, null si falta cualquiera de las dos.
+function sumaVacAusOf(row,map){
+  if(map.sumaVacAus) return gnNullable(row,map,'sumaVacAus');
+  const a=gnNullable(row,map,'sumaVacAusAus'), v=gnNullable(row,map,'sumaVacAusVac');
+  return a==null||v==null?null:a+v;
 }
 
 function findSpecificHeader(row,aliases){
@@ -557,7 +570,7 @@ async function initDashboard(){
         diferencia:gn(r,md,'diferencia'),
         ausRestEC: gn(r,md,'ausRestEC'),
         ausRestTC: gn(r,md,'ausRestTC'),
-        ausVacDia: gnNullable(r,md,'ausVacDia'),
+        sumaVacAus: sumaVacAusOf(r,md),
       })).filter(r=>r.tienda);
     DETALLE_DATA.forEach(r => {
       r.asesor = OXXO.resolveAsesorD1(asesorCatalog, { cr:r.cr, tienda:r.tienda, asesor:r.asesor }).toUpperCase();
@@ -1377,9 +1390,9 @@ function renderDetalle(asesorSel, estatusSel){
   const q = String(DET_SEARCH||'').trim().toLowerCase();
   if(q) d = d.filter(r=>String(r.tienda||'').toLowerCase().includes(q));
   // La columna solo existe mientras el filtro de Equipo Incompleto esta activo.
-  const showAusVac = estatusSel==='incompleto';
-  if(!showAusVac && DET_SORT.col==='ausVacDia') DET_SORT = { col:'ausent', dir:'desc' };
-  const ausVacAlta = r => showAusVac && r.ausVacDia!=null && r.ausVacDia>AUS_VAC_DIA_LIMITE;
+  const showSumaVacAus = estatusSel==='incompleto';
+  if(!showSumaVacAus && DET_SORT.col==='sumaVacAus') DET_SORT = { col:'ausent', dir:'desc' };
+  const sumaVacAusAlta = r => showSumaVacAus && r.sumaVacAus!=null && r.sumaVacAus>SUMA_VAC_AUS_LIMITE;
 
   const aprovTienda = r => (r.aprov>=92.5 ? 100 : 0);
   const vacTot = r => (r.vacLider||0)+(r.vacEnc||0)+(r.vacAyu||0);
@@ -1404,7 +1417,7 @@ function renderDetalle(asesorSel, estatusSel){
     if(c==='desglose'){ va=vacTot(a); vb=vacTot(b); }
     else if(c==='aprov'){ va=aprovTienda(a); vb=aprovTienda(b); }
     else if(c==='fechaRescEC'||c==='fechaRescTC'){ va=rescueDateValue(a[c]); vb=rescueDateValue(b[c]); }
-    else if(c==='ausVacDia'){
+    else if(c==='sumaVacAus'){
       // Sin dato siempre al final, en cualquier direccion.
       if(a[c]==null||b[c]==null) return (a[c]==null)-(b[c]==null);
       va=a[c]; vb=b[c];
@@ -1419,24 +1432,24 @@ function renderDetalle(asesorSel, estatusSel){
 
   const dias = v => { const n = Number(v); if(!isFinite(n)) return '—'; const txt = (Math.round(n*10)/10).toString(); return `<span style="color:${n<=0?'var(--semaforo-verde)':'var(--color-ink,#181112)'};font-weight:600">${txt}</span>`; };
   const rows = d.map(r=>{
-    const alta = ausVacAlta(r);
-    const ausVacCell = !showAusVac ? '' : r.ausVacDia==null
+    const alta = sumaVacAusAlta(r);
+    const sumaVacAusCell = !showSumaVacAus ? '' : r.sumaVacAus==null
       ? '<td class="text-center"><span aria-label="Sin dato">—</span></td>'
-      : `<td class="text-center"><span class="${alta?'ausvac-alta':''}">${r.ausVacDia}</span>${alta?`<span class="sr-only"> (mayor a ${AUS_VAC_DIA_LIMITE})</span>`:''}</td>`;
+      : `<td class="text-center"><span class="${alta?'ausvac-alta':''}">${r.sumaVacAus}</span>${alta?`<span class="sr-only"> (mayor a ${SUMA_VAC_AUS_LIMITE})</span>`:''}</td>`;
     return `<tr class="det-row${isCritica(r.estatus)?' row-critica':''}${alta?' row-ausvac-alta':''}" data-tienda="${escHtml(String(r.tienda))}" style="cursor:pointer" title="Ver detalle de ${escHtml(String(r.tienda))}">
       <td style="font-weight:600">${escHtml(r.tienda)} <span style="color:var(--color-gray);font-size:11px">🔍</span></td>
       ${hasAsesor?`<td title="${escHtml(String(r.asesor))}">${escHtml(shortName(r.asesor))}</td>`:''}
       <td class="text-center">${r.estructura||'—'}</td>
       <td class="text-center">${r.ausent||0}</td>
       <td class="text-center">${r.vacante||0}</td>
-      ${ausVacCell}
+      ${sumaVacAusCell}
       <td class="text-center">${rescueDate(r.fechaRescTC)}</td>
       <td class="text-center">${rescueDate(r.fechaRescEC)}</td>
       <td class="text-center"><span style="font-weight:800;color:${aprovTienda(r)===100?'var(--semaforo-verde)':'var(--semaforo-rojo)'}">${aprovTienda(r)}%</span></td>
     </tr>`;
   }).join('');
 
-  const ncols = (hasAsesor ? 8 : 7) + (showAusVac ? 1 : 0);
+  const ncols = (hasAsesor ? 8 : 7) + (showSumaVacAus ? 1 : 0);
   document.getElementById('tabla-detalle').innerHTML = `
     <div class="tbl-wrap"><table class="tbl" id="tbl-detalle" data-rh-tools data-rh-search="false" data-rh-sort="false" data-rh-page-size="15">
       <thead><tr>
@@ -1445,7 +1458,7 @@ function renderDetalle(asesorSel, estatusSel){
         <th style="${thS};text-align:center" data-sort="estructura">Estructura<br>Diaria${arrowD('estructura')}</th>
         <th style="${thS};text-align:center" data-sort="ausent">Ausentismos${arrowD('ausent')}</th>
         <th style="${thS};text-align:center" data-sort="vacante">Vacantes${arrowD('vacante')}</th>
-        ${showAusVac?`<th style="${thS};text-align:center" data-sort="ausVacDia" title="Tiendas con más de ${AUS_VAC_DIA_LIMITE} se marcan en rojo">Ausentismo o<br>vacante al día${arrowD('ausVacDia')}</th>`:''}
+        ${showSumaVacAus?`<th style="${thS};text-align:center" data-sort="sumaVacAus" title="Tiendas con más de ${SUMA_VAC_AUS_LIMITE} se marcan en rojo">Suma Vacante/<br>Ausentismo${arrowD('sumaVacAus')}</th>`:''}
         <th style="${thS};text-align:center" data-sort="fechaRescTC">Fecha máxima<br>de rescate TC${arrowD('fechaRescTC')}</th>
         <th style="${thS};text-align:center" data-sort="fechaRescEC">Fecha máxima<br>de rescate EC${arrowD('fechaRescEC')}</th>
         <th style="${thS};text-align:center" data-sort="aprov">Aprov.${arrowD('aprov')}</th>
