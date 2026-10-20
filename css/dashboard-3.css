@@ -100,12 +100,14 @@ body.dashboard-3-page .ausvac-media { color: #7a4f00; font-weight: 800; }
 body.dashboard-3-page .row-ausvac-baja td { background: #e3f4ea !important; }
 body.dashboard-3-page .row-ausvac-baja td:first-child { box-shadow: inset 4px 0 0 var(--du-green); }
 body.dashboard-3-page .ausvac-baja { color: var(--du-green, #157a49); font-weight: 800; }
-body.dashboard-3-page .row-critica td { background: #fff6f6 !important; }
-body.dashboard-3-page .row-critica td:first-child { box-shadow: inset 4px 0 0 var(--du-red); }
 /* Equipo Incompleto con Suma Vacante/Ausentismo > 13: fila y valor en rojo. */
 body.dashboard-3-page .row-ausvac-alta td { background: #ffdcdc !important; }
 body.dashboard-3-page .row-ausvac-alta td:first-child { box-shadow: inset 4px 0 0 var(--du-red); }
 body.dashboard-3-page .ausvac-alta { color: var(--du-red-dark, #a3121f); font-weight: 800; }
+/* Tienda Crítica: rojo fuerte, al final para ganar sobre verde/amarillo/rojo-ausvac.
+   #2a1c19 sobre #ffcccc = 11.5:1; barra #d91f2d = 3.5:1. */
+body.dashboard-3-page .row-critica td { background: #ffcccc !important; color: var(--du-text); }
+body.dashboard-3-page .row-critica td:first-child { box-shadow: inset 4px 0 0 var(--du-red); }
 body.dashboard-3-page .text-right { text-align: right; }
 body.dashboard-3-page .text-center { text-align: center; }
 
