@@ -358,7 +358,17 @@ body.dashboard-2-page .d2-attr.is-confirmed { background: #e6f5ec; color: #0f6a3
 body.dashboard-2-page .d2-attr.is-confirmed::before { background: #0f6a3c; color: #fff; }
 body.dashboard-2-page .d2-attr.is-pending { background: #fff1e0; color: #8a3b00; }
 body.dashboard-2-page .d2-attr.is-pending::before { content: "!"; content: "!" / ""; background: #8a3b00; color: #fff; }
-body.dashboard-2-page .d2-note--pending { margin-top: 10px; padding: 8px 12px; border-left: 3px solid var(--du-orange); background: #fff7ee; border-radius: 8px; font-size: 13px; color: var(--du-text); }
+/* Aviso de bajas sin responsable: alerta calida a todo el ancho, mismo icono "!" decorativo que .d2-attr.is-pending. */
+body.dashboard-2-page .d2-note--pending {
+  display: grid; grid-template-columns: 24px minmax(0, 1fr); align-items: start; gap: 10px;
+  box-sizing: border-box; width: 100%; margin: 12px 0 0; padding: 12px 14px 12px 12px;
+  border: 1px solid #f0c48f; border-left: 5px solid var(--du-orange); border-radius: 8px;
+  background: #fff1e0; color: #5a2600; font-size: 14px; font-weight: 700; line-height: 1.4;
+}
+body.dashboard-2-page .d2-note--pending::before {
+  content: "!"; content: "!" / ""; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%;
+  background: #8a3b00; color: #fff; font-size: 15px; font-weight: 800; line-height: 1;
+}
 body.dashboard-2-page .baja-kpi__attr { margin-top: 8px; }
 
 /* ── Filtros secundarios ────────────────────────────────── */
@@ -756,9 +766,12 @@ body.dashboard-2-page .d2-motivos-empty { display: none; padding: 24px 0; text-a
   body.dashboard-2-page .d2-tab[aria-selected="true"] { outline: 2px solid Highlight; }
   body.dashboard-2-page .plaza-rank-fill { forced-color-adjust: none; background: Highlight; }
   body.dashboard-2-page .d2-attr, body.dashboard-2-page .d2-decision__item { border: 1px solid CanvasText; }
+  body.dashboard-2-page .d2-note--pending { border: 2px solid CanvasText; border-left-width: 5px; }
+  body.dashboard-2-page .d2-note--pending::before { border: 2px solid CanvasText; }
 }
 @media print {
   body.dashboard-2-page .d2-tabs, body.dashboard-2-page .d2-filter-toggle, body.dashboard-2-page .d2-scope-toggle,
   body.dashboard-2-page .d2-export, body.dashboard-2-page .d2-scroll-hint { display: none !important; }
   body.dashboard-2-page .d2-panel { box-shadow: none; break-inside: avoid; }
+  body.dashboard-2-page .d2-note--pending { break-inside: avoid; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
