@@ -738,22 +738,25 @@ function renderCompromiso(data, cols){
     comp:configuredByKey.has(id)?configuredByKey.get(id):commitmentConfig.defaultValue
   })).sort((a,b) => b.bajas - a.bajas || a.full.localeCompare(b.full, 'es'));
   sorted.forEach(item => { totalBajas += item.bajas; totalComp += item.comp; });
-  // Tabla y grafica listan el roster completo del catalogo vigente, incluidos
-  // los AT con 0 bajas: esa fila (bajas 0 vs su compromiso) es justo la que
-  // muestra el desfase a favor. El pie no cambia: ya sumaba todo el roster.
+  // La tabla lista el roster completo del catalogo vigente, incluidos los AT
+  // con 0 bajas: esa fila (bajas 0 vs su compromiso) es justo la que muestra
+  // el desfase a favor. El pie no cambia: ya sumaba todo el roster.
   const ranking = sorted;
+  // La grafica solo dibuja a quienes tienen al menos una baja.
+  const chartRanking = ranking.filter(item => item.bajas > 0);
   const pendienteNota = pendientes
     ? `<p class="d2-note d2-note--pending">${d2Plural(pendientes, 'baja', 'bajas')} sin responsable identificado no ${pendientes === 1 ? 'se incluye' : 'se incluyen'} en esta comparación; sí cuentan en el total y en el detalle.</p>`
     : '';
   const asesoresEmpty = document.getElementById('asesores-empty');
-  if(!ranking.length){
-    document.getElementById('tabla-compromiso').innerHTML = `<div class="d2-empty">Sin asesores confirmados con los filtros activos.</div>${pendienteNota}`;
+  if(!chartRanking.length){
     const canvas = document.getElementById('chart-asesores');
     if(canvas && canvas._chartInstance){ canvas._chartInstance.destroy(); canvas._chartInstance = null; }
-    if(asesoresEmpty) asesoresEmpty.hidden = false;
+  }
+  if(asesoresEmpty) asesoresEmpty.hidden = chartRanking.length > 0;
+  if(!ranking.length){
+    document.getElementById('tabla-compromiso').innerHTML = `<div class="d2-empty">Sin asesores confirmados con los filtros activos.</div>${pendienteNota}`;
     return;
   }
-  if(asesoresEmpty) asesoresEmpty.hidden = true;
   const filaHTML = item => {
     const bajas = item.bajas;
     const desfase = bajas - item.comp;
@@ -772,9 +775,9 @@ function renderCompromiso(data, cols){
       <tbody>${rows}</tbody>
       <tfoot><tr><td>Total confirmado</td><td class="num">${totalBajas}</td><td class="num">${totalComp}</td><td class="num">${totalDesfase}</td></tr></tfoot>
     </table></div>${pendienteNota}`;
-  // Misma lista que la tabla: el degradado va de rojo (mas bajas) a verde (0).
-  renderChart('chart-asesores','bar',ranking.map(item=>OXXO.truncate(item.nombre,28)),ranking.map(item=>item.bajas),{horizontal:true,ranking:true,tickSize:12,label:'Bajas por asesor',
-    colors: rankingGradientColors(ranking.map(item=>item.bajas))});
+  // Mismo orden que la tabla, sin los AT en 0: el degradado va de rojo (mas bajas) a verde.
+  if(chartRanking.length) renderChart('chart-asesores','bar',chartRanking.map(item=>OXXO.truncate(item.nombre,28)),chartRanking.map(item=>item.bajas),{horizontal:true,ranking:true,tickSize:12,label:'Bajas por asesor',
+    colors: rankingGradientColors(chartRanking.map(item=>item.bajas))});
 }
 
 // Tabla de detalle de bajas: columnas reducidas (lo esencial para escanear rápido).
