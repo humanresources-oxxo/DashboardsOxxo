@@ -107,50 +107,35 @@ let COMPROMISOS_BY_PLAZA = new Map();
 let FILTER_STATE = {};
 let SELECTED_ASESORES = null; // array de asesores seleccionados (multi-select)
 
-const SIN_ASESOR = 'SIN ASESOR ASIGNADO';
-// Entrenamiento y Operaciones son unidades administrativas, no tiendas
-// operativas: sus bajas son reales y siguen contando en los totales, pero no
-// son "Sin asesor asignado" (eso es una tienda real que hoy no tiene AT
-// vigente). Se agrupan en su propio bucket visible para no mezclar dos cosas
-// distintas ni inventarle dueño a nadie. El dato crudo no se toca: esto es
-// solo la etiqueta con la que se agrupa y se muestra.
-const ENTRENAMIENTO_OPS = 'Entrenamiento / Operaciones';
-// Buckets que no son personas: van al final de los selectores, sin meta
-// individual en la tabla de compromiso y fuera del roster de asesores.
-const ASESOR_BUCKETS = [SIN_ASESOR, ENTRENAMIENTO_OPS];
-const ASESOR_BUCKET_LABELS = new Map([
-  [cleanKey(SIN_ASESOR), 'Sin asesor asignado'],
-  [cleanKey(ENTRENAMIENTO_OPS), ENTRENAMIENTO_OPS],
-]);
-function isAsesorBucket(name){ return ASESOR_BUCKET_LABELS.has(cleanKey(name)); }
-// El bucket solo entra cuando NO hay asesor real: una baja de Entrenamiento u
-// Operaciones que si trae AT (crudo o resuelto por catalogo en initDashboard)
-// se agrupa bajo esa persona, como cualquier otra. El nombre de la unidad
-// administrativa por si solo no manda.
+// Atribucion: solo el Asesor crudo de la fila identifica a un responsable.
+// Nunca se infiere por tienda vigente, catalogo, reasignaciones ni parecido de
+// nombre. Vacio, marcador ("Sin Asesor Asignado", "N/A", "-") o unidad
+// administrativa sin Asesor crudo => "Sin responsable identificado": cuenta en
+// el total y el detalle, pero no en rankings individuales ni en compromiso.
+// El dato crudo no se toca: esto es solo la etiqueta con la que se agrupa.
+const SIN_RESPONSABLE = 'Sin responsable identificado';
+const ATRIBUCION_PENDIENTE = 'Pendiente de atribución';
+const ATRIBUCION_CONFIRMADA = 'Asesor registrado';
+function isPlaceholderAsesor(value){
+  const c = cleanText(value);
+  return !c || /SIN ASESOR|NO ASIGNADO|SIN RESPONSABLE|POR ASIGNAR|PENDIENTE/.test(c)
+    || /^(N\/?A|#N\/A|NULL|NINGUNO|VACANTE|0|[-—.\s]+)$/.test(c);
+}
+function isAtribucionConfirmada(row, cols){ return !isPlaceholderAsesor(val(row, cols, 'asesor', '')); }
 function getAsesorValue(row, cols){
-  const raw = String(val(row, cols, 'asesor', '') || '').trim();
-  const c = raw ? cleanText(raw) : '';
-  if(raw && !c.includes('SIN ASESOR') && !c.includes('NO ASIGNADO')) return raw;
-  return OXXO.metricsIsTiendaEntrenamientoOperacionesD2(val(row, cols, 'tienda', '')) ? ENTRENAMIENTO_OPS : SIN_ASESOR;
+  return isAtribucionConfirmada(row, cols) ? String(val(row, cols, 'asesor')).trim() : SIN_RESPONSABLE;
 }
-// Etiqueta para rankings, tablas y modal: el bucket con su nombre legible,
-// el resto con el nombre tal cual viene del catalogo.
-function asesorDisplay(row, cols){
-  const v = getAsesorValue(row, cols);
-  return ASESOR_BUCKET_LABELS.get(cleanKey(v)) || v;
-}
+// Etiqueta para rankings, tablas y modal (ya es legible tal cual).
+function asesorDisplay(row, cols){ return getAsesorValue(row, cols); }
 function asesorOptionsList(data, cols){
   const set = new Set(data.map(r => getAsesorValue(r, cols)));
-  const arr = [...set].filter(v => !isAsesorBucket(v)).sort((a,b)=>a.localeCompare(b,'es'));
-  ASESOR_BUCKETS.forEach(v => { if(set.has(v)) arr.push(v); });
+  const arr = [...set].filter(v => v !== SIN_RESPONSABLE).sort((a,b)=>a.localeCompare(b,'es'));
+  if(set.has(SIN_RESPONSABLE)) arr.push(SIN_RESPONSABLE);
   return arr;
 }
 function defaultAsesorSelection(data, cols){
-  // Arranca con TODOS los buckets, incluidos "Sin asesor asignado" y
-  // "Entrenamiento / Operaciones". Antes esas bajas quedaban fuera por
-  // defecto y la tarjeta "Total Bajas" no era el total: eran bajas reales que
-  // no aparecian en ningun KPI y nada en pantalla lo decia. Se sigue pudiendo
-  // des-seleccionar a mano desde el filtro de asesor.
+  // Arranca con todo, incluido "Sin responsable identificado": la tarjeta
+  // "Total bajas" debe ser el total real. Se puede des-seleccionar a mano.
   return asesorOptionsList(data, cols);
 }
 function passesAsesorFilter(row, cols){
@@ -160,6 +145,8 @@ function passesAsesorFilter(row, cols){
 
 function getFilterValue(row, cols, key) {
   if (key === 'mes') return monthKeyFromRow(row, cols);
+  if (key === 'asesor') return getAsesorValue(row, cols);
+  if (key === 'atribucion') return isAtribucionConfirmada(row, cols) ? 'confirmada' : 'pendiente';
   if (key === 'temporalidad') return getTemporalidad(row, cols);
   if (key === 'puesto') return normalizePuesto(val(row, cols, 'puesto'));
   if (key === 'motivo') return normalizeMotivo(val(row, cols, 'motivo'));
@@ -508,10 +495,9 @@ function filterData(data, cols){
     });
     if(operativos.length) rows = operativos;
   }
-  // Se conservan Entrenamiento y Operaciones para que sus bajas aparezcan
-  // bajo "Entrenamiento / Operaciones" y en el detalle. Se excluyen únicamente del
-  // ranking de tiendas, porque no son tiendas operativas; sí cuentan en el
-  // total de su plaza para que todos los totales permanezcan sincronizados.
+  // Se conservan las unidades administrativas (Entrenamiento, Operaciones):
+  // cuentan en el total y el detalle. Se excluyen únicamente del ranking de
+  // tiendas, porque no son tiendas operativas, y nunca dan responsable.
   return rows;
 }
 function chartTheme(){
@@ -695,12 +681,10 @@ function catalogAsesorRoster(){
   byTienda.forEach(item=>{
     if(item.activa===false)return;
     if(!OXXO.matchesScopeValue(item.plaza||'','plaza',scope))return;
-    // Mismo resolvedor que usan las bajas (aplica el renombre Anadelia ->
-    // Timoteo), asi el nombre del roster y el de los conteos coinciden.
-    const name=OXXO.resolveAsesorD1
-      ? OXXO.resolveAsesorD1(ASESOR_CATALOG,{tienda:item.tienda,asesor:item.asesor})
-      : String(item.asesor||'').trim();
-    if(!name||isAsesorBucket(name)||cleanText(name).includes('SIN ASESOR'))return;
+    // Nombre tal cual del catalogo: el roster solo agrega filas con 0 bajas,
+    // nunca le asigna bajas a nadie.
+    const name=String(item.asesor||'').trim();
+    if(isPlaceholderAsesor(name))return;
     roster.set(cleanKey(name),name);
   });
   return roster;
@@ -714,15 +698,15 @@ function compromisoRoster(cols){
   // nombres que el catalogo no traiga (p.ej. un AT que ya salio pero tuvo bajas).
   const roster=catalogAsesorRoster();
   source.forEach(row=>{
+    if(!isAtribucionConfirmada(row,cols))return;
     const name=getAsesorValue(row,cols);
-    if(!name||isAsesorBucket(name))return;
     roster.set(cleanKey(name),name);
   });
   // Oaxaca ya tenía metas configuradas incluso para asesores con cero bajas.
   // Se agregan al roster únicamente cuando Oaxaca es el alcance activo; las
   // demás plazas se construyen exclusivamente con sus propios datos.
   const configured=compromisoConfigForScope().values;
-  Object.keys(configured).forEach(name=>roster.set(cleanKey(name),name));
+  Object.keys(configured).filter(name=>!isPlaceholderAsesor(name)).forEach(name=>roster.set(cleanKey(name),name));
   return roster;
 }
 
@@ -734,11 +718,14 @@ function compPillClass(bajas){
   return 'bad';
 }
 
+// Solo asesores con registro confirmado: las bajas sin responsable
+// identificado no se atribuyen a nadie y se reportan aparte en una nota.
 function renderCompromiso(data, cols){
   const counts = {};
+  let pendientes = 0;
   data.forEach(r => {
-    const name=getAsesorValue(r,cols);
-    const id=cleanKey(name);
+    if(!isAtribucionConfirmada(r,cols)){ pendientes++; return; }
+    const id=cleanKey(getAsesorValue(r,cols));
     counts[id]=(counts[id]||0)+1;
   });
   const commitmentConfig=compromisoConfigForScope();
@@ -746,23 +733,32 @@ function renderCompromiso(data, cols){
   let totalBajas = 0;
   let totalComp = 0;
   const roster=compromisoRoster(cols);
-  // No hay una meta individual para estas bajas, pero se listan con meta 0
-  // para que la suma de esta tabla sea exactamente el total filtrado.
-  ASESOR_BUCKETS.forEach(name=>{ const id=cleanKey(name); if(counts[id]) roster.set(id,name); });
   const sorted = [...roster].map(([id,full])=>({
-    id,full,nombre:ASESOR_BUCKET_LABELS.get(id)||shortAsesorName(full),bajas:counts[id]||0,
-    comp:ASESOR_BUCKET_LABELS.has(id)?0:(configuredByKey.has(id)?configuredByKey.get(id):commitmentConfig.defaultValue)
+    id,full,nombre:shortAsesorName(full),bajas:counts[id]||0,
+    comp:configuredByKey.has(id)?configuredByKey.get(id):commitmentConfig.defaultValue
   })).sort((a,b) => b.bajas - a.bajas || a.full.localeCompare(b.full, 'es'));
   sorted.forEach(item => { totalBajas += item.bajas; totalComp += item.comp; });
   // Tabla y grafica listan el roster completo del catalogo vigente, incluidos
   // los AT con 0 bajas: esa fila (bajas 0 vs su compromiso) es justo la que
   // muestra el desfase a favor. El pie no cambia: ya sumaba todo el roster.
   const ranking = sorted;
+  const pendienteNota = pendientes
+    ? `<p class="d2-note d2-note--pending">${d2Plural(pendientes, 'baja', 'bajas')} sin responsable identificado no ${pendientes === 1 ? 'se incluye' : 'se incluyen'} en esta comparación; sí cuentan en el total y en el detalle.</p>`
+    : '';
+  const asesoresEmpty = document.getElementById('asesores-empty');
+  if(!ranking.length){
+    document.getElementById('tabla-compromiso').innerHTML = `<div class="d2-empty">Sin asesores confirmados con los filtros activos.</div>${pendienteNota}`;
+    const canvas = document.getElementById('chart-asesores');
+    if(canvas && canvas._chartInstance){ canvas._chartInstance.destroy(); canvas._chartInstance = null; }
+    if(asesoresEmpty) asesoresEmpty.hidden = false;
+    return;
+  }
+  if(asesoresEmpty) asesoresEmpty.hidden = true;
   const filaHTML = item => {
     const bajas = item.bajas;
     const desfase = bajas - item.comp;
-    return `<tr${ASESOR_BUCKET_LABELS.has(item.id)?' class="compromiso-sin-asesor"':''}>
-      <td>${item.nombre}</td>
+    return `<tr>
+      <td>${escHtml(item.nombre)}</td>
       <td class="num"><span class="pill ${compPillClass(bajas)}">${bajas}</span></td>
       <td class="num">${item.comp}</td>
       <td class="num desfase ${desfase <= 0 ? 'pos' : 'neg'}">${desfase}</td>
@@ -774,8 +770,8 @@ function renderCompromiso(data, cols){
     <div class="d2-scroll" data-scroll-label="Compromiso contra resultado por asesor"><table class="compromiso-table">
       <thead><tr><th>AT</th><th class="num">Bajas</th><th class="num">Comp.</th><th class="num">Desfase</th></tr></thead>
       <tbody>${rows}</tbody>
-      <tfoot><tr><td>PLAZA</td><td class="num">${totalBajas}</td><td class="num">${totalComp}</td><td class="num">${totalDesfase}</td></tr></tfoot>
-    </table></div>`;
+      <tfoot><tr><td>Total confirmado</td><td class="num">${totalBajas}</td><td class="num">${totalComp}</td><td class="num">${totalDesfase}</td></tr></tfoot>
+    </table></div>${pendienteNota}`;
   // Misma lista que la tabla: el degradado va de rojo (mas bajas) a verde (0).
   renderChart('chart-asesores','bar',ranking.map(item=>OXXO.truncate(item.nombre,28)),ranking.map(item=>item.bajas),{horizontal:true,ranking:true,tickSize:12,label:'Bajas por asesor',
     colors: rankingGradientColors(ranking.map(item=>item.bajas))});
@@ -789,13 +785,21 @@ function renderCompromiso(data, cols){
 // cinco copias (dashboards 3, 4, 9, 9-analisis y admin-pptx-rae) si la escapan.
 function escHtml(s){ return String(s ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch])); }
 const DET_MAIN_COLS = [
-  ['mes','Mes'], ['asesor','Asesor'], ['tienda','Tienda'], ['empleado','Colaborador'], ['puesto','Puesto'], ['motivo','Motivo'], ['genero','Género']
+  ['mes','Mes'], ['asesor','Asesor'], ['atribucion','Atribución'], ['tienda','Tienda'], ['empleado','Colaborador'], ['puesto','Puesto'], ['motivo','Motivo'], ['genero','Género']
 ];
-let DET_DATA = [], DET_COLS = null;
+let DET_DATA = [], DET_COLS = null, DET_IDX = new Map();
 let DET_SORT = { col:'mes', dir:'desc' };
+function atribucionLabel(r, cols){ return isAtribucionConfirmada(r,cols) ? ATRIBUCION_CONFIRMADA : ATRIBUCION_PENDIENTE; }
+// Insignia con texto real (no solo color): se lee, se ordena y se exporta
+// igual. La marca visual vive en CSS para no ensuciar el texto exportado.
+function atribucionBadge(r, cols){
+  const pending = !isAtribucionConfirmada(r,cols);
+  return `<span class="d2-attr ${pending ? 'is-pending' : 'is-confirmed'}">${pending ? ATRIBUCION_PENDIENTE : ATRIBUCION_CONFIRMADA}</span>`;
+}
 function detValue(r, cols, key){
   if(key==='mes') return monthKeyFromRow(r,cols) || '';
   if(key==='asesor') return asesorDisplay(r,cols);
+  if(key==='atribucion') return atribucionLabel(r,cols);
   if(key==='puesto') return normalizePuesto(val(r,cols,key));
   if(key==='motivo') return val(r,cols,'detalle') || normalizeMotivo(val(r,cols,key));
   if(key==='temporalidad') return getTemporalidad(r,cols);
@@ -806,8 +810,9 @@ function detDisplay(r, cols, key){
   return detValue(r,cols,key) || '—';
 }
 function renderDetail(data, cols){
+  // El indice vive aparte: las filas de origen no se modifican.
   DET_DATA = data; DET_COLS = cols;
-  DET_DATA.forEach((r,i)=>{ r.__detIdx = i; });
+  DET_IDX = new Map(data.map((r,i)=>[r,i]));
   renderDetailTable();
 }
 function renderDetailTable(){
@@ -824,9 +829,10 @@ function renderDetailTable(){
   // y el estado se expone con aria-sort; DET_SORT no cambia.
   const ariaSort = col => DET_SORT.col!==col ? 'none' : (DET_SORT.dir==='asc' ? 'ascending' : 'descending');
   const thead = `<tr>${DET_MAIN_COLS.map(([k,label])=>`<th scope="col" data-col="${k}" aria-sort="${ariaSort(k)}"><button type="button" class="d2-sort" data-col="${k}">${label}${arrow(k)}</button></th>`).join('')}</tr>`;
-  const rows = sorted.map(r => `<tr class="det-row" data-idx="${r.__detIdx}">` + DET_MAIN_COLS.map(([k]) => {
+  const rows = sorted.map(r => `<tr class="det-row" data-idx="${DET_IDX.get(r)}">` + DET_MAIN_COLS.map(([k]) => {
     const v = detDisplay(r,cols,k);
-    return `<td title="${escHtml(v)}">${OXXO.truncate(String(v||'—'), 32)}</td>`;
+    if(k==='atribucion') return `<td>${atribucionBadge(r,cols)}</td>`;
+    return `<td title="${escHtml(v)}">${escHtml(OXXO.truncate(String(v||'—'), 32))}</td>`;
   }).join('') + '</tr>').join('');
   document.getElementById('tabla-detalle').innerHTML = `<div class="table-wrapper d2-scroll" data-scroll-label="Detalle completo de bajas"><table class="data-table" id="tbl-detalle-bajas" data-rh-tools data-rh-sort="false" data-rh-page-size="25"><thead>${thead}</thead><tbody>${rows}</tbody></table></div><p class="d2-scroll-hint">Desliza para ver más →</p>`;
 
@@ -905,7 +911,7 @@ function openMotivosModal(){
 const dlgBaja = OXXO_DIALOGS.register({ overlay:'baja-modal', title:'baja-title', close:'.baja-close' });
 function closeBajaModal(){ dlgBaja.close(); }
 function openBajaModal(idx){
-  const r = DET_DATA.find(x=>x.__detIdx===idx);
+  const r = DET_DATA[idx];
   if(!r) return;
   const cols = DET_COLS;
   const kv = (l,v) => { v = String(v==null?'':v).trim(); return v ? `<tr><td>${l}</td><td>${escHtml(v)}</td></tr>` : ''; };
@@ -913,7 +919,7 @@ function openBajaModal(idx){
   document.getElementById('baja-title').textContent = val(r,cols,'empleado','Colaborador');
   document.getElementById('baja-body').innerHTML = `
     <div class="baja-kpis">
-      <div class="baja-kpi"><div class="v">${escHtml(asesorDisplay(r,cols)||'—')}</div><div class="l">Asesor</div></div>
+      <div class="baja-kpi"><div class="v">${escHtml(asesorDisplay(r,cols)||'—')}</div><div class="l">Asesor</div><div class="baja-kpi__attr">${atribucionBadge(r,cols)}</div></div>
       <div class="baja-kpi"><div class="v">${escHtml(val(r,cols,'tienda','—'))}</div><div class="l">Tienda</div></div>
       <div class="baja-kpi"><div class="v">${escHtml(normalizeMotivo(val(r,cols,'motivo')))}</div><div class="l">Motivo</div></div>
     </div>
@@ -1116,9 +1122,36 @@ function renderHeatmapBajas(data, cols){
 // nombre accesible nunca se trunca, solo se recorta visualmente en CSS.
 function kpiCardHTML({ kpi, tone, label, tip, value, sub, entity, val: kpiVal, aria }){
   const data = kpiVal === undefined ? '' : ` data-kpi-val="${escHtml(kpiVal)}"`;
+  const staticCard = kpi !== 'todos' && kpiVal === undefined ? ' is-static' : '';
   const subClass = entity ? 'd2-kpi__entity' : 'd2-kpi__meta';
   const subTitle = entity ? ` title="${escHtml(entity)}"` : '';
-  return `<div class="kpi-card d2-kpi ${tone}" data-kpi="${kpi}"${data} aria-label="${escHtml(aria)}"><div class="kpi-card__label">${label}<span class="info-tip" tabindex="0" data-tip="${escHtml(tip)}"></span></div><div class="kpi-card__value">${value}</div><div class="kpi-card__delta ${subClass}"${subTitle}>${escHtml(sub)}</div></div>`;
+  return `<div class="kpi-card d2-kpi ${tone}${staticCard}" data-kpi="${kpi}"${data} aria-label="${escHtml(aria)}"><div class="kpi-card__label">${label}<span class="info-tip" tabindex="0" data-tip="${escHtml(tip)}"></span></div><div class="kpi-card__value">${value}</div><div class="kpi-card__delta ${subClass}"${subTitle}>${escHtml(sub)}</div></div>`;
+}
+// Panorama de decision: tres lecturas accionables calculadas sobre las bajas
+// filtradas (concentracion temprana, motivo predominante y atribucion).
+const EARLY_TENURE = ['0 - 45 días', '46 - 90 días'];
+function renderDecisionPanel(data, cols, { total, pendientes, byMotivo, byTemp }){
+  const list = document.getElementById('d2-decision-list');
+  if(!list) return;
+  if(!total){
+    list.innerHTML = '<li class="d2-decision__item d2-decision__item--empty">Sin bajas con los filtros activos: no hay lecturas que priorizar.</li>';
+    return;
+  }
+  const share = n => Math.round((n / total) * 100);
+  const temprana = EARLY_TENURE.reduce((sum, key) => sum + (byTemp[key] || 0), 0);
+  const motivos = topEntries(byMotivo, 2);
+  const motivo = (motivos[0]?.label === 'Sin motivo' && motivos[1]) ? motivos[1] : motivos[0];
+  // Los motivos normalizados vienen en mayusculas ("RENUNCIA"): se leen en tipo oracion.
+  const humano = s => s === s.toUpperCase() ? s.charAt(0) + s.slice(1).toLowerCase() : s;
+  const item = ({ tone, label, value, text }) => `<li class="d2-decision__item is-${tone}"><p class="d2-decision__label">${label}</p><p class="d2-decision__value">${escHtml(value)}</p><p class="d2-decision__text">${escHtml(text)}</p></li>`;
+  list.innerHTML = [
+    item({ tone: share(temprana) >= 50 ? 'alert' : 'neutral', label: 'Concentración temprana', value: `${share(temprana)}%`,
+      text: temprana ? `${d2Plural(temprana, 'baja', 'bajas')} de ${total} en los primeros 90 días de antigüedad.` : 'Ninguna baja en los primeros 90 días de antigüedad.' }),
+    item({ tone: 'neutral', label: 'Motivo predominante', value: motivo ? humano(motivo.label) : 'Sin motivo',
+      text: motivo ? `${share(motivo.total)}% de las bajas (${motivo.total} de ${total}).` : 'No hay motivos registrados.' }),
+    item({ tone: pendientes ? 'alert' : 'ok', label: 'Atribución pendiente', value: String(pendientes),
+      text: pendientes ? `${d2Plural(pendientes, 'baja', 'bajas')} sin responsable identificado (${share(pendientes)}%). Revisar el Asesor en la base de origen.` : 'Todas las bajas tienen asesor registrado.' }),
+  ].join('');
 }
 function renderBajasDashboard(data, cols){
   LAST_FILTERED_COUNT = data.length;
@@ -1141,6 +1174,7 @@ function renderBajasDashboard(data, cols){
       if(hadFocus) heatmapEl.querySelector('#heatmap-clear')?.focus({ preventScroll: true });
     }
     announceHeatmap();
+    renderDecisionPanel(data, cols, { total: 0, pendientes: 0, byMotivo: {}, byTemp: {} });
     renderPlazasForScope(cols);
     syncD2UI();
     return;
@@ -1150,14 +1184,17 @@ function renderBajasDashboard(data, cols){
   const byPuesto = countBy(data, r=>normalizePuesto(val(r,cols,'puesto')));
   const byMotivo = countBy(data, r=>normalizeMotivo(val(r,cols,'motivo')));
   const byTemp = countBy(data, r=>getTemporalidad(r,cols));
-  const byAsesor = countBy(data, r=>asesorDisplay(r,cols));
+  // El ranking individual solo considera atribuciones confirmadas.
+  const confirmadas = data.filter(r => isAtribucionConfirmada(r, cols));
+  const pendientes = total - confirmadas.length;
+  const byAsesor = countBy(confirmadas, r=>getAsesorValue(r,cols));
   const tiendasOperativasData = data.filter(r =>
     !OXXO.metricsIsTiendaEntrenamientoOperacionesD2(val(r, cols, 'tienda'))
   );
   const byTienda = countBy(tiendasOperativasData, r=>val(r,cols,'tienda','Sin tienda'));
   const topAsesor = topEntries(byAsesor,12);
   const topTienda = topEntries(byTienda,10);
-  const maxAsesor = topAsesor[0] || {label:'—',total:0};
+  const maxAsesor = topAsesor[0] || {label:'Sin asesor confirmado',total:0};
   const maxTiendaEntry = topTienda[0];
   const bajaTemprana = (byTemp['0 - 45 días'] || 0);
   const byRotTemp = countBy(data, r=>val(r,cols,'rotTemp','No'));
@@ -1165,22 +1202,30 @@ function renderBajasDashboard(data, cols){
   const tiendaLabel = maxTiendaEntry?.label || '';
   const tiendaTotal = maxTiendaEntry?.total || 0;
   const filtrosActivos = d2FilterInfo().count > 0;
+  const pct = n => `${total>0?Math.round((n/total)*100):0}% del total`;
 
+  // Jerarquia: el total abre la fila; despues rotacion temprana, responsables
+  // confirmados, tienda operativa y atribucion pendiente.
   document.getElementById('kpi-section').innerHTML =
-    kpiCardHTML({ kpi:'todos', tone:'rojo', label:'Total Bajas', value:total,
-      tip:'Cuenta cada fila de Dashboard_2_Diario (1 fila = 1 baja) con los filtros activos de Mes, Temporalidad, Rot. Temprana, Puesto y Asesor aplicados.',
+    kpiCardHTML({ kpi:'todos', tone:'rojo d2-kpi--lead', label:'Total bajas', value:total,
+      tip:'Cuenta cada fila de Dashboard_2_Diario (1 fila = 1 baja) con los filtros activos aplicados. Incluye las bajas sin responsable identificado.',
       sub: filtrosActivos ? 'Con filtros activos' : (FILTER_STATE.mes ? monthLabel(FILTER_STATE.mes) : 'Todos los meses'),
       aria:`Ver todas las bajas: ${total}` })
-    + kpiCardHTML({ kpi:'asesor', tone:'rojo', label:'AT con más bajas', value:maxAsesor.total, val:maxAsesor.label, entity:maxAsesor.label, sub:maxAsesor.label,
-      tip:"Agrupa las bajas filtradas por columna 'Asesor' y toma el que tiene mayor número.",
-      aria:`Filtrar por ${maxAsesor.label}: ${maxAsesor.total} bajas` })
-    + kpiCardHTML({ kpi:'tienda', tone:'naranja', label:'Tienda con más bajas', value:tiendaTotal, val:tiendaLabel, entity:tiendaLabel || '—', sub:tiendaLabel || '—',
-      tip:"Agrupa las bajas filtradas por columna 'Tienda' y toma la que tiene mayor número.",
-      aria:`Filtrar por ${tiendaLabel || 'tienda'}: ${tiendaTotal} bajas` })
-    + kpiCardHTML({ kpi:'rotTemp', tone:'amarillo', label:'Rot. Temprana', value:rotTemprana, val:'Si',
+    + kpiCardHTML({ kpi:'rotTemp', tone:'amarillo', label:'Rotación temprana', value:rotTemprana, val:'Si',
       tip:"Bajas donde la columna 'Rot_Temp' = Sí, es decir colaboradores que se fueron poco después de su ingreso, con los filtros activos aplicados.",
-      sub:`${total>0?Math.round((rotTemprana/total)*100):0}% del total`,
-      aria:`Filtrar rotación temprana: ${rotTemprana} bajas` });
+      sub:pct(rotTemprana),
+      aria:`Filtrar rotación temprana: ${rotTemprana} bajas` })
+    + kpiCardHTML({ kpi:'asesor', tone:'rojo', label:'AT confirmado con más bajas', value:maxAsesor.total, val:topAsesor[0] ? maxAsesor.label : undefined, entity:maxAsesor.label, sub:maxAsesor.label,
+      tip:'Solo considera bajas con Asesor registrado en la base. Las bajas sin responsable identificado nunca se atribuyen a un asesor.',
+      aria: topAsesor[0] ? `Filtrar por ${maxAsesor.label}: ${maxAsesor.total} bajas` : 'Sin asesor confirmado con los filtros activos' })
+    + kpiCardHTML({ kpi:'tienda', tone:'naranja', label:'Tienda operativa con más bajas', value:tiendaTotal, val:tiendaLabel || undefined, entity:tiendaLabel || '—', sub:tiendaLabel || '—',
+      tip:"Agrupa las bajas filtradas por columna 'Tienda' y toma la que tiene mayor número. Excluye unidades administrativas.",
+      aria:`Filtrar por ${tiendaLabel || 'tienda'}: ${tiendaTotal} bajas` })
+    + kpiCardHTML({ kpi:'atribucion', tone:pendientes ? 'naranja d2-kpi--pending' : 'verde', label:'Pendiente de atribución', value:pendientes, val:pendientes ? 'pendiente' : undefined,
+      tip:'Bajas sin Asesor registrado (vacío, marcador o unidad administrativa sin asesor). Cuentan en el total y el detalle, pero no en rankings ni compromisos.',
+      sub: pendientes ? pct(pendientes) : 'Todas con asesor registrado',
+      aria: pendientes ? `Filtrar bajas pendientes de atribución: ${pendientes}` : 'Sin bajas pendientes de atribución' });
+  renderDecisionPanel(data, cols, { total, pendientes, byMotivo, byTemp });
   // El clic en el "i" de ayuda no debe filtrar: se resuelve aqui y no con un
   // onclick en cada tarjeta.
   document.querySelectorAll('#kpi-section .kpi-card[data-kpi]').forEach(card => {
@@ -1191,6 +1236,8 @@ function renderBajasDashboard(data, cols){
     card.addEventListener('click', event => {
       if(event.target.closest('.info-tip')) return;
       const kpiVal = card.dataset.kpiVal;
+      // Sin valor (p. ej. ningun asesor confirmado) la tarjeta solo informa.
+      if(kpi !== 'todos' && kpiVal === undefined) return;
       const isActive = card.classList.contains('active');
 
       // Quitar active de todos
@@ -1470,7 +1517,7 @@ async function loadDenominaciones(rawData){
       else if(/AUMENTO|INCREMENTO|PROMOCION|ASCENSO/i.test(val(r,cols,'motivo',''))) direccion='up';
       else if(/DISMINUCION|DEGRADACION|REDUCCION/i.test(val(r,cols,'motivo',''))) direccion='down';
       return {
-        asesor: val(r,cols,'asesor','Sin asesor').trim(),
+        asesor: isPlaceholderAsesor(val(r,cols,'asesor','')) ? SIN_RESPONSABLE : val(r,cols,'asesor','').trim(),
         medida: val(r,cols,'medida','').trim(),
         motivo: val(r,cols,'motivo','').trim(),
         empleado: val(r,cols,'empleado','').trim(),
@@ -1518,7 +1565,7 @@ function renderDenominaciones(rows){
   const subieron = rows.filter(r=>r.direccion==='up').length;
   const bajaron  = rows.filter(r=>r.direccion==='down').length;
   const laterales= rows.filter(r=>r.direccion==='lateral').length;
-  const porAsesor = countBy(rows.filter(r=>!/sin asesor/i.test(r.asesor)), r=>r.asesor);
+  const porAsesor = countBy(rows.filter(r=>r.asesor !== SIN_RESPONSABLE), r=>r.asesor);
   const atTop = topEntries(porAsesor,1)[0];
 
   document.getElementById('denom-count').textContent = `${rows.length} movimiento${rows.length===1?'':'s'}`;
@@ -1603,19 +1650,10 @@ async function initDashboard(){
   // sin comentario propio dentro de un commit de otro tema (112a9e2, sobre el
   // switch de Alcance), asi que fue un descuido, no una regla de negocio.
   const filasBajas = raw;
-  // Corregir el asesor de cada baja contra el catalogo por Tienda (D2 no trae CR):
-  // asi las bajas se agrupan bajo el asesor que realmente tiene esa tienda hoy,
-  // igual que el resto de dashboards. resolveAsesorD1 aplica la regla completa:
-  // "Sin Asesor Asignado" (de tienda real sin AT vigente, crudo o via catalogo)
-  // se atribuye a Timoteo; Entrenamiento/Operaciones se queda con su propio
-  // "Sin Asesor Asignado" en vez de fusionarse.
-  filasBajas.forEach(row => {
-    if(!cols.asesor) return;
-    row[cols.asesor] = OXXO.resolveAsesorD1(asesorCatalog, {
-      tienda: cols.tienda ? row[cols.tienda] : '',
-      asesor: row[cols.asesor],
-    });
-  });
+  // Las filas no se reescriben: el responsable es el Asesor crudo de cada baja.
+  // Ya no se corrige contra el catalogo por tienda vigente ni por herencias
+  // (eso le atribuia bajas a quien hoy tiene la tienda, no a quien la tenia).
+  // Sin Asesor crudo valido la baja queda como "Sin responsable identificado".
   const data = filterData(filasBajas, cols);
   if(!data.length){ ['kpi-section','tabla-detalle'].forEach(id=>OXXO.showEmpty(id)); return; }
 
@@ -1689,12 +1727,13 @@ function d2MonthLong(key){ return key ? monthLabel(key) : 'Todos los meses'; }
 // Filtros secundarios vigentes (todo lo que no es el mes). El cruce del mapa
 // de calor cuenta como uno; con ignoreHeat se omite para el propio mapa, que
 // no aplica su seleccion a su matriz.
-const D2_FILTER_NAMES = { temporalidad: 'Temporalidad', rotTemp: 'Rot. Temp.', puesto: 'Puesto', tienda: 'Tienda', asesor: 'AT', motivo: 'Motivo' };
+const D2_FILTER_NAMES = { temporalidad: 'Temporalidad', rotTemp: 'Rot. Temp.', puesto: 'Puesto', tienda: 'Tienda', asesor: 'AT', motivo: 'Motivo', atribucion: 'Atribución' };
 function d2FilterInfo({ ignoreHeat = false } = {}){
   const items = [];
   Object.entries(FILTER_STATE).forEach(([key, value]) => {
     if(!value || key === 'mes' || key === 'edadRange' || key === 'antiguedadRange') return;
-    items.push(`${D2_FILTER_NAMES[key] || key}: ${key === 'rotTemp' && /^si$/i.test(value) ? 'Sí' : value}`);
+    const shown = key === 'rotTemp' && /^si$/i.test(value) ? 'Sí' : key === 'atribucion' ? (value === 'pendiente' ? 'Pendiente' : 'Asesor registrado') : value;
+    items.push(`${D2_FILTER_NAMES[key] || key}: ${shown}`);
   });
   if(!ignoreHeat && FILTER_STATE.edadRange && FILTER_STATE.antiguedadRange){
     items.push(`Mapa de calor: edad ${heatSpeak(FILTER_STATE.edadRange)}, antigüedad ${heatSpeak(FILTER_STATE.antiguedadRange)}`);
@@ -1732,8 +1771,9 @@ function updatePanelScopeLabels(){
   const filtersFull = info => info.count ? `Filtros: ${info.items.join('; ')}` : 'Sin filtros secundarios';
   const common = `${scope} · ${d2MonthShort(mes)}`;
   const commonFull = `${scope}. ${status}. Mes: ${d2MonthLong(mes)}.`;
-  ['compromiso', 'asesores', 'detalle'].forEach(kind => setPanelScope(kind, `${common} · ${filtersShort(filters.count)}`, `${commonFull} ${filtersFull(filters)}.`));
-  setPanelScope('tiendas', `${common} · ${filtersShort(filters.count)}`, `${commonFull} ${filtersFull(filters)}. Excluye tiendas de Entrenamiento y Operaciones.`);
+  ['decision', 'detalle'].forEach(kind => setPanelScope(kind, `${common} · ${filtersShort(filters.count)}`, `${commonFull} ${filtersFull(filters)}.`));
+  ['compromiso', 'asesores'].forEach(kind => setPanelScope(kind, `${common} · ${filtersShort(filters.count)} · Solo asesores confirmados`, `${commonFull} ${filtersFull(filters)}. Solo asesores con registro confirmado.`));
+  setPanelScope('tiendas', `${common} · ${filtersShort(filters.count)}`, `${commonFull} ${filtersFull(filters)}. Excluye unidades administrativas (no son tiendas operativas).`);
   setPanelScope('heatmap', `${common} · ${filtersShort(noHeat.count)}`, `${commonFull} ${filtersFull(noHeat)}. La selección del propio mapa no reduce su matriz.`);
   const mesActual = BASE_BAJAS_DATA.length ? latestMonthKey(BASE_BAJAS_DATA, BAJAS_COLS) : '';
   setPanelScope('plazas',

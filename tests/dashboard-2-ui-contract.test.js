@@ -25,8 +25,8 @@ const posicion = fragmento => {
   return i;
 };
 
-test('orden de la pagina: encabezado, KPI, filtros, analisis, plazas, tiendas, mapa, detalle y denominaciones', () => {
-  const orden = ['class="d2-hero"', 'id="kpi-section"', 'class="d2-filter-region"', 'class="d2-analysis"', 'class="d2-panel d2-plazas"',
+test('orden de la pagina: encabezado, KPI, panorama, filtros, analisis, plazas, tiendas, mapa, detalle y denominaciones', () => {
+  const orden = ['class="d2-hero"', 'id="kpi-section"', 'id="d2-decision"', 'class="d2-filter-region"', 'class="d2-analysis"', 'class="d2-panel d2-plazas"',
     'd2-panel--tiendas', 'd2-panel--heatmap', 'd2-panel--detalle', 'id="denom-section"', 'class="dash-footer"'].map(posicion);
   assert.deepEqual(orden, [...orden].sort((a, b) => a - b), 'el DOM debe seguir el orden visual movil');
   // El resumen numerico del encabezado y sus insights duplicados ya no existen.
@@ -39,7 +39,7 @@ test('conserva todos los IDs que consumen scripts compartidos, filtros y descarg
     'chart-tiendas', 'heatmap-bajas', 'tabla-detalle', 'row-count', 'btn-denominaciones', 'btn-motivos-pastel', 'motivos-modal',
     'motivos-title', 'chart-motivos-pastel', 'motivos-pastel-empty', 'denom-section', 'denom-count', 'denom-kpis', 'tabla-denominaciones',
     'load-time', 'baja-modal', 'baja-title', 'baja-body', 'hero-download', 'heatmap-status', 'heatmap-help', 'd2-filter-toggle',
-    'd2-active-context', 'd2-scope', 'd2-analysis-panels', 'd2-plazas-panels'];
+    'd2-active-context', 'd2-scope', 'd2-analysis-panels', 'd2-plazas-panels', 'd2-decision', 'd2-decision-list', 'asesores-empty'];
   for (const id of ids) ok(cuerpo, new RegExp(`\\bid="${id}"`), `falta id="${id}"`);
   const repetidos = [...cuerpo.matchAll(/\bid="([^"]+)"/g)].map(m => m[1]).filter((id, i, todos) => todos.indexOf(id) !== i);
   assert.deepEqual(repetidos, [], 'IDs duplicados');
@@ -86,14 +86,14 @@ test('ningun tablero monta el riel de Lectura rapida y la navegacion no depende 
 });
 
 
-test('las cuatro tarjetas KPI comparten estructura y el nombre accesible no se trunca', () => {
-  for (const kpi of ['todos', 'asesor', 'tienda', 'rotTemp']) ok(js, new RegExp(`kpi:'${kpi}'`));
+test('las cinco tarjetas KPI comparten estructura y el nombre accesible no se trunca', () => {
+  for (const kpi of ['todos', 'asesor', 'tienda', 'rotTemp', 'atribucion']) ok(js, new RegExp(`kpi:'${kpi}'`));
   ok(js, /function kpiCardHTML\(/);
   ok(js, /kpi-card__label.*kpi-card__value.*kpi-card__delta/s);
   ok(js, /d2-kpi__entity/);
   // La tienda muestra el conteo como cifra y el nombre como linea secundaria (antes al reves).
   ok(js, /kpi:'tienda'[^\n]*value:tiendaTotal[^\n]*entity:tiendaLabel/);
-  ok(js, /aria:`Filtrar por \$\{maxAsesor\.label\}: \$\{maxAsesor\.total\} bajas`/);
+  ok(js, /`Filtrar por \$\{maxAsesor\.label\}: \$\{maxAsesor\.total\} bajas`/);
   ok(js, /aria-label="\$\{escHtml\(aria\)\}"/);
   no(js, /clic para filtrar/i);
   no(cuerpo, /clic para filtrar/i);
@@ -195,7 +195,7 @@ test('Analisis, descargas, modales, denominaciones y lecturas en paralelo se con
 });
 
 test('rotulos de alcance: cada panel declara lo que de verdad usa', () => {
-  for (const tipo of ['compromiso', 'asesores', 'tiendas', 'heatmap', 'detalle', 'plazas', 'denom']) {
+  for (const tipo of ['decision', 'compromiso', 'asesores', 'tiendas', 'heatmap', 'detalle', 'plazas', 'denom']) {
     ok(cuerpo, new RegExp(`class="d2-panel-scope" data-d2-scope="${tipo}"`), `falta el rotulo ${tipo}`);
   }
   ok(js, /function updatePanelScopeLabels\(\)/);
@@ -273,7 +273,8 @@ function cargarD2(esAdminUnit = () => false) {
     return e;
   };
   const conocidos = ['kpi-section', 'tabla-compromiso', 'tabla-detalle', 'tabla-plazas', 'row-count', 'heatmap-bajas', 'heatmap-status',
-    'd2-active-context', 'd2-filter-summary', 'load-time', 'd2-hero-load', 'plazas-scope-toggle', 'motivos-pastel-empty'];
+    'd2-active-context', 'd2-filter-summary', 'load-time', 'd2-hero-load', 'plazas-scope-toggle', 'motivos-pastel-empty',
+    'd2-decision-list', 'asesores-empty'];
   const documento = {
     body: { classList: { add() {} } },
     activeElement: null,
@@ -296,18 +297,20 @@ function cargarD2(esAdminUnit = () => false) {
   };
   const ventana = { matchMedia: () => ({ matches: false, addEventListener() {} }), addEventListener() {}, OXXO };
   const contexto = vm.createContext({ document: documento, window: ventana, OXXO, OXXO_DIALOGS: { register: () => ({ open() {}, close() {} }), bindRows() {} }, console });
-  const exponer = `\n;globalThis.__d2 = { run(rows, metas, catalogo) {
+  const exponer = `\n;globalThis.__d2 = { run(rows, metas, catalogo, filtroExtra) {
     const graficas = {};
     renderChart = (id, _tipo, labels, values) => { graficas[id] = { labels, values }; };
     if(metas) COMPROMISOS_BY_PLAZA = metas;
     ASESOR_CATALOG = catalogo || null;
     const cols = buildCols(rows);
     RAW_BAJAS_DATA = rows; BASE_BAJAS_DATA = filterData(rows, cols); BAJAS_COLS = cols;
-    FILTER_STATE = defaultFilterState(BASE_BAJAS_DATA, BAJAS_COLS);
+    FILTER_STATE = { ...defaultFilterState(BASE_BAJAS_DATA, BAJAS_COLS), ...(filtroExtra || {}) };
     SELECTED_ASESORES = defaultAsesorSelection(BASE_BAJAS_DATA, BAJAS_COLS);
     renderBajasDashboard(applyUserFilters(BASE_BAJAS_DATA, BAJAS_COLS), BAJAS_COLS);
     return { kpi: document.getElementById('kpi-section').innerHTML, heat: document.getElementById('heatmap-bajas').innerHTML,
       compromiso: document.getElementById('tabla-compromiso').innerHTML, detalle: document.getElementById('tabla-detalle').innerHTML,
+      panorama: document.getElementById('d2-decision-list').innerHTML, filas: document.getElementById('row-count').textContent,
+      asesoresVacio: document.getElementById('asesores-empty').hidden,
       asesores: asesorOptionsList(BASE_BAJAS_DATA, BAJAS_COLS), graficas };
   }, heatSpeak, heatTextColor, d2MonthShort, kpiCardHTML };`;
   vm.runInContext(js + exponer, contexto, { filename: 'js/dashboard-2.js' });
@@ -338,6 +341,10 @@ test('fixture: total, asesor con mas bajas, tienda con mas bajas, rotacion tempr
   assert.equal(valor('rotTemp'), '2');
   ok(tarjeta('rotTemp'), /33% del total/);
   ok(tarjeta('rotTemp'), /data-kpi-val="Si"/);
+  // Todas con asesor registrado: la tarjeta de pendientes informa 0 y no filtra.
+  assert.equal(valor('atribucion'), '0');
+  ok(tarjeta('atribucion'), /is-static/);
+  no(tarjeta('atribucion'), /data-kpi-val=/);
   // 5x5 botones; celdas: (18-25 x 0-45)=2, (26-35 x 46-90)=1, (36-45 x 3-6 meses)=1, (26-35 x 0-45)=1, (46-55 x >1 año)=1.
   const celdas = [...heat.matchAll(/<button type="button" class="heatmap-cell[^"]*" data-edad="([^"]+)" data-ant="([^"]+)"[^>]*data-count="(\d+)"/g)];
   assert.equal(celdas.length, 25);
@@ -361,46 +368,128 @@ test('ayudas del mapa: rangos hablados y texto legible sobre cualquier relleno',
   assert.equal(d2.d2MonthShort(''), 'Todos los meses');
 });
 
-// Entrenamiento/Operaciones son unidades administrativas: sus bajas son reales
-// y siguen contando en el total, pero no son "Sin asesor asignado" (eso es una
-// tienda operativa real sin AT vigente). Deben verse como dos buckets distintos.
-test('Entrenamiento / Operaciones es un bucket propio, separado de Sin asesor asignado', () => {
-  const fila = (asesor, tienda) => ({ Mes: '2026-09', Asesor: asesor, Tienda: tienda, Puesto: 'Ayudante Tienda', Temporalidad: '0 - 45 días', 'Rot. Temp.': 'No', Edad: '25', Plaza: 'Oaxaca' });
-  const esAdmin = t => /^(ENTRENAMIENTO OAXACA|OPERACIONES )/.test(String(t || '').toUpperCase());
-  const filas = [
-    fila('Sin Asesor Asignado', 'ENTRENAMIENTO OAXACA'),
-    fila('Sin Asesor Asignado', 'ENTRENAMIENTO OAXACA II'),
-    fila('Ana Perez', 'OPERACIONES 1 OAXACA'),            // unidad admin CON AT real: manda la persona
-    fila('Sin Asesor Asignado', 'OXXO TIENDA REAL'),       // tienda operativa sin AT vigente
-    fila('Ana Perez', 'OXXO UNO'),
-    fila('Ana Perez', 'OXXO UNO'),
-  ];
-  const { kpi, compromiso, detalle, asesores } = cargarD2(esAdmin).run(filas);
+// Reglas de atribucion: solo el Asesor crudo (no marcador) identifica a un
+// responsable. Vacio, marcador o unidad administrativa sin Asesor crudo =>
+// "Sin responsable identificado": cuenta en total y detalle, nunca en
+// rankings individuales ni en Compromiso vs resultado.
+const filaAt = (asesor, tienda, extra = {}) => ({ Mes: '2026-09', Asesor: asesor, Tienda: tienda, Puesto: 'Ayudante Tienda', Temporalidad: '0 - 45 días', 'Rot. Temp.': 'No', Edad: '25', Plaza: 'Oaxaca', 'Motivo de baja': 'Renuncia voluntaria', ...extra });
+const esAdminAt = t => /^(ENTRENAMIENTO OAXACA|OPERACIONES )/.test(String(t || '').toUpperCase());
+const filasAtribucion = () => [
+  filaAt('Sin Asesor Asignado', 'ENTRENAMIENTO OAXACA'),            // unidad admin sin asesor crudo
+  filaAt('', 'ENTRENAMIENTO OAXACA II'),                            // vacio
+  filaAt('Ana Perez', 'OPERACIONES 1 OAXACA'),                      // unidad admin CON asesor crudo: confirmado
+  filaAt('Sin Asesor Asignado', 'OXXO TIENDA REAL'),                // marcador en tienda real
+  filaAt('N/A', 'OXXO UNO', { Temporalidad: '> 1 año' }),           // marcador
+  filaAt('Ana Perez', 'OXXO UNO'),
+  filaAt('Beto Lopez', 'OXXO DOS', { Temporalidad: '46 - 90 días', 'Motivo de baja': 'Abandono' }),
+];
+const tarjetaKpi = (kpi, clave) => kpi.match(new RegExp(`data-kpi="${clave}"[\\s\\S]*?</div></div>(?=<div class="kpi-card|$)`))?.[0] || '';
 
-  // Totales intactos: las seis bajas siguen contando.
-  assert.equal((kpi.match(/kpi-card__value">6</) || []).length, 1, 'el total no cambia');
+test('atribucion: marcadores, vacios y unidades admin sin asesor quedan Sin responsable identificado', () => {
+  const filas = filasAtribucion();
+  const copia = JSON.parse(JSON.stringify(filas));
+  const { kpi, compromiso, detalle, asesores, graficas, filas: conteo } = cargarD2(esAdminAt).run(filas);
+  assert.deepEqual(filas, copia, 'las filas de origen no se alteran');
 
-  // Filtro de asesor: los dos buckets existen por separado y van al final.
-  assert.deepEqual(Array.from(asesores), ['Ana Perez', 'SIN ASESOR ASIGNADO', 'Entrenamiento / Operaciones']);
+  // Total y detalle incluyen todo: 7 bajas, 7 filas.
+  ok(tarjetaKpi(kpi, 'todos'), /kpi-card__value">7</);
+  assert.equal(conteo, '7 bajas');
+  assert.equal((detalle.match(/class="det-row"/g) || []).length, 7);
 
-  // Tabla compromiso vs resultado: una fila por bucket, con su conteo y meta 0.
+  // Filtro: un solo grupo sin responsable, al final.
+  assert.deepEqual(Array.from(asesores), ['Ana Perez', 'Beto Lopez', 'Sin responsable identificado']);
+
+  // Compromiso y ranking: solo asesores confirmados; la nota declara las 4 excluidas.
   const celdas = [...compromiso.matchAll(/<td>([^<]*)<\/td>\s*<td class="num"><span class="pill [^"]*">(\d+)</g)].map(m => [m[1], Number(m[2])]);
-  const porNombre = Object.fromEntries(celdas);
-  assert.equal(porNombre['Entrenamiento / Operaciones'], 2, 'solo las unidades admin SIN asesor caen al bucket');
-  assert.equal(porNombre['Sin asesor asignado'], 1);
-  assert.equal(porNombre['Ana Perez'], 3, 'la baja de OPERACIONES con AT real cuenta para esa persona');
-  assert.ok(!/Sin asesor asignado<\/td>\s*<td class="num"><span class="pill [^"]*">4</.test(compromiso), 'no se fusionan los dos buckets');
+  assert.deepEqual(celdas, [['Ana Perez', 2], ['Beto Lopez', 1]]);
+  ok(compromiso, /<tfoot><tr><td>Total confirmado<\/td><td class="num">3</);
+  ok(compromiso, /4 bajas sin responsable identificado no se incluyen en esta comparación/);
+  assert.deepEqual([...graficas['chart-asesores'].labels], ['Ana Perez', 'Beto Lopez']);
 
-  // Ranking de asesores y detalle muestran la etiqueta nueva, no "Sin asesor asignado".
-  const tarjetaAsesor = kpi.match(/data-kpi="asesor"[\s\S]*?<\/div><\/div>/)?.[0] || '';
-  ok(tarjetaAsesor, /Ana Perez/, 'el tope es la persona real, no el bucket');
-  assert.ok(detalle.includes('Entrenamiento / Operaciones'), 'el detalle etiqueta la unidad administrativa');
-  assert.ok(detalle.includes('Sin asesor asignado'), 'el detalle conserva el bucket sin asesor de tienda real');
+  // KPI: el tope es una persona confirmada; pendientes = 4 y filtrable.
+  ok(tarjetaKpi(kpi, 'asesor'), /data-kpi-val="Ana Perez"/);
+  no(tarjetaKpi(kpi, 'asesor'), /Sin responsable/);
+  ok(tarjetaKpi(kpi, 'atribucion'), /kpi-card__value">4</);
+  ok(tarjetaKpi(kpi, 'atribucion'), /data-kpi-val="pendiente"/);
+  ok(tarjetaKpi(kpi, 'atribucion'), /57% del total/);
+  ok(tarjetaKpi(kpi, 'atribucion'), /aria-label="Filtrar bajas pendientes de atribución: 4"/);
+
+  // Detalle: insignia con texto accesible en cada fila, columna ordenable.
+  assert.equal((detalle.match(/class="d2-attr is-pending">Pendiente de atribución</g) || []).length, 4);
+  assert.equal((detalle.match(/class="d2-attr is-confirmed">Asesor registrado</g) || []).length, 3);
+  ok(detalle, /<th scope="col" data-col="atribucion" aria-sort="none"><button type="button" class="d2-sort" data-col="atribucion">Atribución/);
+  assert.equal((detalle.match(/>Sin responsable identificado</g) || []).length, 4);
+});
+
+test('atribucion: el KPI de pendientes filtra solo las bajas sin responsable', () => {
+  const { kpi, detalle, filas, compromiso, asesoresVacio } = cargarD2(esAdminAt).run(filasAtribucion(), null, null, { atribucion: 'pendiente' });
+  assert.equal(filas, '4 bajas');
+  no(detalle, /is-confirmed/);
+  // Sin asesores confirmados: tope sin persona, comparativos con estado vacio.
+  const tarjetaAsesor = tarjetaKpi(kpi, 'asesor');
+  ok(kpi, /class="kpi-card d2-kpi rojo is-static" data-kpi="asesor"/);
+  ok(tarjetaAsesor, /Sin asesor confirmado/);
+  no(tarjetaAsesor, /data-kpi-val=/);
+  // El roster del mes conserva a los confirmados en 0; las 4 pendientes se declaran aparte.
+  const celdas = [...compromiso.matchAll(/<td>([^<]*)<\/td>\s*<td class="num"><span class="pill [^"]*">(\d+)</g)].map(m => [m[1], Number(m[2])]);
+  assert.deepEqual(celdas, [['Ana Perez', 0], ['Beto Lopez', 0]]);
+  ok(compromiso, /4 bajas sin responsable identificado no se incluyen/);
+  assert.equal(asesoresVacio, true);
+  // Sin ningun asesor confirmado en el alcance: estado vacio en tabla y grafica.
+  const soloPendientes = cargarD2().run([filaAt('', 'OXXO UNO'), filaAt('N/A', 'OXXO DOS')]);
+  ok(soloPendientes.compromiso, /class="d2-empty">Sin asesores confirmados con los filtros activos/);
+  ok(soloPendientes.compromiso, /2 bajas sin responsable identificado no se incluyen/);
+  assert.equal(soloPendientes.asesoresVacio, false, 'la grafica muestra su estado vacio');
+  assert.equal(soloPendientes.graficas['chart-asesores'], undefined, 'no se dibuja un ranking vacio');
+  ok(js, /if\(kpi !== 'todos' && kpiVal === undefined\) return;/, 'una tarjeta sin valor no filtra');
+});
+
+test('atribucion: nunca se infiere asesor por tienda vigente, catalogo ni parecido de nombre', () => {
+  no(js, /resolveAsesorD1/, 'D2 no reescribe el asesor con el catalogo');
+  no(js, /row\[cols\.asesor\]\s*=/, 'las filas de origen no se modifican');
+  ok(js, /function isAtribucionConfirmada\(row, cols\)\{ return !isPlaceholderAsesor\(val\(row, cols, 'asesor', ''\)\); \}/);
+  // Aunque el catalogo diga quien tiene hoy la tienda, la baja sin asesor sigue pendiente.
+  const catalogo = { byTienda: new Map([['OXXO TIENDA REAL', { asesor: 'Carla Ruiz', tienda: 'OXXO TIENDA REAL', plaza: 'Oaxaca', activa: true }]]) };
+  const { detalle, compromiso } = cargarD2().run([filaAt('Sin Asesor Asignado', 'OXXO TIENDA REAL')], null, catalogo);
+  ok(detalle, /Pendiente de atribución/);
+  no(detalle, /Carla Ruiz/);
+  ok(compromiso, /<td>Carla Ruiz<\/td>\s*<td class="num"><span class="pill good">0</, 'el roster lista a la persona con 0 bajas');
+});
+
+test('la agrupacion administrativa heredada no aparece como responsable en la UI', () => {
+  for (const [nombre, texto] of [['html', cuerpo], ['js', js]]) {
+    no(texto, /Entrenamiento \/ Operaciones/, `${nombre} expone la agrupacion heredada`);
+    no(texto, /Sin asesor asignado/, `${nombre} conserva la etiqueta anterior`);
+  }
+  const { kpi, compromiso, detalle, asesores, panorama } = cargarD2(esAdminAt).run(filasAtribucion());
+  for (const salida of [kpi, compromiso, detalle, panorama, Array.from(asesores).join('|')]) no(salida, /Entrenamiento \/ Operaciones|SIN ASESOR ASIGNADO/i);
+});
+
+test('panorama de decision: concentracion temprana, motivo predominante y atribucion pendiente', () => {
+  ok(cuerpo, /<section class="d2-panel d2-decision" id="d2-decision" aria-labelledby="d2-decision-title"/);
+  ok(cuerpo, /<h2 class="d2-panel__title" id="d2-decision-title">Panorama de decisión/);
+  ok(cuerpo, /<ul class="d2-decision__list" id="d2-decision-list" aria-live="polite">/);
+  const { panorama } = cargarD2(esAdminAt).run(filasAtribucion());
+  const items = [...panorama.matchAll(/<li class="d2-decision__item is-(\w+)"><p class="d2-decision__label">([^<]+)<\/p><p class="d2-decision__value">([^<]+)<\/p><p class="d2-decision__text">([^<]+)</g)]
+    .map(m => ({ tono: m[1], etiqueta: m[2], valor: m[3], texto: m[4] }));
+  assert.deepEqual(items.map(i => i.etiqueta), ['Concentración temprana', 'Motivo predominante', 'Atribución pendiente']);
+  // 6 de 7 bajas dentro de 90 dias (5 en 0-45 + 1 en 46-90).
+  assert.deepEqual([items[0].valor, items[0].tono], ['86%', 'alert']);
+  ok(items[0].texto, /6 bajas de 7 en los primeros 90 días/);
+  assert.equal(items[1].valor, 'Renuncia', 'el motivo normalizado se presenta en tipo oración');
+  ok(items[1].texto, /86% de las bajas \(6 de 7\)/);
+  assert.deepEqual([items[2].valor, items[2].tono], ['4', 'alert']);
+  ok(items[2].texto, /4 bajas sin responsable identificado \(57%\)/);
+  // Sin pendientes: lectura positiva. Sin datos: estado vacio explicito.
+  const limpio = cargarD2().run([filaAt('Ana Perez', 'OXXO UNO')]).panorama;
+  ok(limpio, /is-ok"><p class="d2-decision__label">Atribución pendiente[\s\S]*Todas las bajas tienen asesor registrado/);
+  const vacio = cargarD2().run([filaAt('Ana Perez', 'OXXO UNO')], null, null, { puesto: 'Inexistente' }).panorama;
+  ok(vacio, /d2-decision__item--empty">Sin bajas con los filtros activos/);
 });
 
 // La tabla es el tablero de seguimiento de la plaza: un AT con meta y cero
 // bajas tambien se lista (su desfase a favor es informacion, no ruido).
-test('compromiso y ranking listan a los asesores con cero bajas sin mover los totales', () => {
+test('compromiso y ranking listan a los asesores con cero bajas; las bajas sin responsable quedan fuera', () => {
   const fila = (asesor, tienda) => ({ Mes: '2026-09', Asesor: asesor, Tienda: tienda, Puesto: 'Ayudante Tienda', Temporalidad: '0 - 45 días', 'Rot. Temp.': 'No', Edad: '25', Plaza: 'Oaxaca' });
   const esAdmin = t => /^ENTRENAMIENTO /.test(String(t || '').toUpperCase());
   const metas = new Map([['Oaxaca', { 'Ana Perez': 2, 'Zoe Fantasma': 5 }]]);
@@ -412,20 +501,20 @@ test('compromiso y ranking listan a los asesores con cero bajas sin mover los to
   const { compromiso, graficas } = cargarD2(esAdmin).run(filas, metas);
 
   const celdas = [...compromiso.matchAll(/<td>([^<]*)<\/td>\s*<td class="num"><span class="pill [^"]*">(\d+)</g)].map(m => [m[1], Number(m[2])]);
-  assert.deepEqual(celdas, [['Ana Perez', 3], ['Entrenamiento / Operaciones', 1], ['Sin asesor asignado', 1], ['Zoe Fantasma', 0]],
-    'el AT configurado con cero bajas se lista al final');
+  assert.deepEqual(celdas, [['Ana Perez', 3], ['Zoe Fantasma', 0]], 'el AT configurado con cero bajas se lista al final');
 
-  // Pie intacto: 5 bajas contra 7 de meta (Ana 2 + Zoe 5; los buckets no tienen meta).
-  ok(compromiso, /<tfoot><tr><td>PLAZA<\/td><td class="num">5<\/td><td class="num">7<\/td><td class="num">-2<\/td>/);
+  // Pie confirmado: 3 bajas contra 7 de meta (Ana 2 + Zoe 5); las 2 sin responsable se declaran aparte.
+  ok(compromiso, /<tfoot><tr><td>Total confirmado<\/td><td class="num">3<\/td><td class="num">7<\/td><td class="num">-4<\/td>/);
+  ok(compromiso, /2 bajas sin responsable identificado no se incluyen/);
   // La fila de Zoe muestra su meta y el desfase a favor.
   ok(compromiso, /<td>Zoe Fantasma<\/td>\s*<td class="num"><span class="pill good">0<\/span><\/td>\s*<td class="num">5<\/td>\s*<td class="num desfase pos">-5<\/td>/);
 
   // Ranking horizontal: mismas entradas que la tabla, incluida la barra en cero.
   const ranking = graficas['chart-asesores'];
-  assert.deepEqual([...ranking.labels], ['Ana Perez', 'Entrenamiento / Operaciones', 'Sin asesor asignado', 'Zoe Fantasma']);
-  assert.deepEqual([...ranking.values], [3, 1, 1, 0]);
+  assert.deepEqual([...ranking.labels], ['Ana Perez', 'Zoe Fantasma']);
+  assert.deepEqual([...ranking.values], [3, 0]);
 
-  // El cuerpo se queda vacio (no se inventa estado vacio) si nadie tuviera bajas.
+  // Con roster el cuerpo lista filas; solo sin ningun asesor confirmado hay estado vacio.
   ok(js, /<tbody>\$\{rows\}<\/tbody>/);
 });
 
@@ -461,7 +550,7 @@ test('ranking de asesores: tabla y grafica listan el roster completo, sin recort
   no(compromiso, /compromiso-grupo/, 'sin separadores de recorte');
 
   // Pie con el total real: 47 bajas.
-  ok(compromiso, /<tfoot><tr><td>PLAZA<\/td><td class="num">47</);
+  ok(compromiso, /<tfoot><tr><td>Total confirmado<\/td><td class="num">47</);
 
   // La grafica usa exactamente la misma lista que la tabla.
   const ranking = graficas['chart-asesores'];
@@ -489,5 +578,5 @@ test('compromiso: el roster incluye a los asesores vigentes del catalogo con cer
   assert.deepEqual([...graficas['chart-asesores'].values], [2, 0]);
 
   // Totales intactos: 2 bajas contra la meta default (4) de los dos del roster.
-  ok(compromiso, /<tfoot><tr><td>PLAZA<\/td><td class="num">2<\/td><td class="num">8<\/td><td class="num">-6<\/td>/);
+  ok(compromiso, /<tfoot><tr><td>Total confirmado<\/td><td class="num">2<\/td><td class="num">8<\/td><td class="num">-6<\/td>/);
 });

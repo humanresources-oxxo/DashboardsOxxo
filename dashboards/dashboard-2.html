@@ -45,6 +45,7 @@
       <div class="d2-hero__heading">
         <p class="d2-hero__eyebrow">Análisis diario · Plaza Oaxaca</p>
         <h1 id="d2-title">Bajas Diarias</h1>
+        <p class="d2-hero__lede">Qué está pasando con las bajas, dónde se concentran y quién responde por ellas.</p>
       </div>
       <div class="d2-hero__links">
         <a href="dashboard-2-analisis.html" class="d2-link"><svg class="icon-inline" viewBox="0 0 24 24" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>Análisis de Bajas</a>
@@ -60,6 +61,17 @@
     <div class="kpi-card d2-kpi"><div class="kpi-card__label">Cargando…</div><div class="kpi-card__value"><div class="spinner"></div></div></div>
   </section>
   <p class="d2-hint d2-kpi-hint" id="d2-kpi-hint">Toca un indicador para filtrar; tócalo de nuevo para quitar el filtro.</p>
+
+  <!-- 2b. Panorama de decision: tres lecturas calculadas con los filtros activos. -->
+  <section class="d2-panel d2-decision" id="d2-decision" aria-labelledby="d2-decision-title" data-png-export>
+    <header class="d2-panel__head">
+      <h2 class="d2-panel__title" id="d2-decision-title">Panorama de decisión<span class="info-tip" tabindex="0" data-tip="Lecturas calculadas sobre las bajas filtradas: concentración en los primeros 90 días de antigüedad, motivo predominante y bajas sin responsable identificado."></span></h2>
+      <p class="d2-panel-scope" data-d2-scope="decision"></p>
+    </header>
+    <ul class="d2-decision__list" id="d2-decision-list" aria-live="polite">
+      <li class="d2-decision__item d2-decision__item--empty">Cargando lecturas…</li>
+    </ul>
+  </section>
 
   <!-- 3. Filtros secundarios (plegables en celular). -->
   <section class="d2-filter-region" aria-labelledby="d2-filter-title">
@@ -84,7 +96,7 @@
     <div class="d2-grid d2-grid--analysis" id="d2-analysis-panels">
       <article class="d2-panel d2-panel--compromiso" id="d2-panel-compromiso" data-png-export>
         <header class="d2-panel__head">
-          <h2 class="d2-panel__title">Compromiso vs resultado<span class="info-tip" tabindex="0" data-tip="Compara las bajas reales contra la meta comprometida por asesor. Incluye “Sin asesor asignado” para que el total coincida con las bajas mostradas."></span></h2>
+          <h2 class="d2-panel__title">Compromiso vs resultado<span class="info-tip" tabindex="0" data-tip="Compara las bajas contra la meta comprometida de cada asesor. Solo incluye asesores con registro confirmado; las bajas sin responsable identificado se indican aparte y sí cuentan en el total y el detalle."></span></h2>
           <p class="d2-panel-scope" data-d2-scope="compromiso"></p>
         </header>
         <div id="tabla-compromiso"><div class="state-box"><div class="spinner"></div></div></div>
@@ -92,10 +104,11 @@
 
       <article class="d2-panel d2-panel--asesores" id="d2-panel-asesores" data-png-export>
         <header class="d2-panel__head">
-          <h2 class="d2-panel__title">Bajas por Asesor<span class="info-tip" tabindex="0" data-tip="Total de bajas por asesor con los filtros activos. Incluye “Sin asesor asignado” cuando existan registros sin responsable."></span></h2>
+          <h2 class="d2-panel__title">Bajas por Asesor<span class="info-tip" tabindex="0" data-tip="Bajas por asesor con los filtros activos. Solo incluye asesores con registro confirmado: una baja sin responsable identificado nunca se atribuye a un asesor."></span></h2>
           <p class="d2-panel-scope" data-d2-scope="asesores"></p>
         </header>
-        <div class="d2-chart d2-chart--ranking"><canvas id="chart-asesores"></canvas></div>
+        <p class="d2-empty" id="asesores-empty" hidden>Sin asesores confirmados con los filtros activos.</p>
+        <div class="d2-chart d2-chart--ranking"><canvas id="chart-asesores" role="img" aria-label="Bajas por asesor confirmado"></canvas></div>
       </article>
     </div>
   </section>
@@ -143,7 +156,7 @@
   <!-- 8. Detalle completo. -->
   <section class="d2-panel d2-panel--detalle" data-png-export>
     <header class="d2-panel__head d2-panel__head--actions">
-      <h2 class="d2-panel__title">Detalle completo de bajas<span class="info-tip" tabindex="0" data-tip="Listado fila por fila de Dashboard_2_Diario con los filtros activos aplicados (Temporalidad, Rot. Temprana, Puesto, Asesor)."></span></h2>
+      <h2 class="d2-panel__title">Detalle completo de bajas<span class="info-tip" tabindex="0" data-tip="Listado fila por fila de Dashboard_2_Diario con los filtros activos aplicados. La columna Atribución indica si la baja tiene Asesor registrado o está pendiente de atribución."></span></h2>
       <p class="d2-panel-scope" data-d2-scope="detalle"></p>
       <div class="d2-panel__actions">
         <button type="button" id="btn-denominaciones" class="d2-btn d2-btn--violet" hidden>Cambios de puesto</button>
