@@ -20,7 +20,7 @@
   <link rel="stylesheet" href="../css/dashboard-rh-unified.css?v=2cd21d36">
   <link rel="stylesheet" href="../css/dashboard-5.css?v=2cd21d36">
 </head>
-<body class="dashboard-5-page hr-dashboard rh-unified">
+<body class="dashboard-5-page hr-dashboard rh-unified rh-layered">
 <nav class="topbar">
   <div class="topbar__brand">
     <div class="topbar__logo"><img src="../assets/oxxo-logo-original.png" alt="OXXO"></div>
@@ -39,7 +39,7 @@
   <section class="dashboard-hero hero">
     <div class="hero-top">
       <div>
-        <h1>Control de Vacaciones</h1>
+        <span class="hero-eyebrow">Talento · Vacaciones</span><h1>Control de Vacaciones</h1>
         <p>Saldos, vencimientos y concentracion operativa para Plaza Oaxaca por asesor, tienda y puesto.</p>
       </div>
       <span class="dashboard-hero__badge hero-badge">Actualizado <span id="snapshot-date">--</span></span>
@@ -85,9 +85,13 @@
     </div>
   </section>
 
+  <div class="rh-layer"><h2 class="rh-layer__title">Resumen ejecutivo</h2><p class="rh-layer__purpose">Saldos y vencimientos de vacaciones del periodo.</p></div>
+
   <div class="kpi-grid executive-kpis kpis" id="kpi-section">
     <div class="kpi-card"><div class="kpi-card__label">Cargando</div><div class="kpi-card__value"><div class="spinner"></div></div></div>
   </div>
+
+  <div class="rh-layer"><h2 class="rh-layer__title">Foco y responsables</h2><p class="rh-layer__purpose">Días por asesor y acciones recomendadas por prioridad.</p></div>
 
   <section class="vac-grid-main">
     <article class="panel card">
@@ -106,6 +110,8 @@
       <div id="actions-list" class="vac-actions-list"><div class="state-box"><div class="spinner"></div></div></div>
     </article>
   </section>
+
+  <div class="rh-layer"><h2 class="rh-layer__title">Exploración detallada</h2><p class="rh-layer__purpose">Concentración por tienda, puesto y vencimiento.</p></div>
 
   <section class="vac-grid-two">
     <article class="panel card">

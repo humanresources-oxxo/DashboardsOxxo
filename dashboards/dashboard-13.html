@@ -21,7 +21,7 @@
   <script defer src="../js/rh-table-tools.js?v=2cd21d36"></script>
   <script defer src="../js/rh-filter-summary.js?v=2cd21d36"></script>
 </head>
-<body class="dashboard-13-page hr-dashboard rh-unified">
+<body class="dashboard-13-page hr-dashboard rh-unified rh-layered">
 <nav class="topbar">
   <div class="topbar__brand">
     <div class="topbar__logo"><img src="../assets/oxxo-logo-original.png" alt="OXXO"></div>
@@ -41,7 +41,7 @@
   <div class="hero">
     <div class="hero-top">
       <div>
-        <h1>Control de Ausentismo</h1>
+        <span class="hero-eyebrow">Bienestar · Incapacidades IMSS</span><h1>Control de Ausentismo</h1>
         <p>Incapacidades del IMSS, días perdidos y análisis de riesgos de trabajo · Plaza Oaxaca</p>
       </div>
       <div class="hero-scope-status">
@@ -67,9 +67,13 @@
     </div>
   </div>
 
+  <div class="rh-layer"><h2 class="rh-layer__title">Resumen ejecutivo</h2><p class="rh-layer__purpose">Incapacidades y días perdidos del periodo.</p></div>
+
   <div class="kpis d13-kpis" id="kpi-section">
     <div class="kpi-card"><div class="state-box"><div class="spinner"></div></div></div>
   </div>
+
+  <div class="rh-layer"><h2 class="rh-layer__title">Foco y responsables</h2><p class="rh-layer__purpose">Dónde se concentran: mes, clasificación, riesgos y asesor.</p></div>
 
   <div class="row2-wide">
     <div class="card">
@@ -128,6 +132,8 @@
     </div>
     <div id="mapa-calor"></div>
   </div>
+
+  <div class="rh-layer"><h2 class="rh-layer__title">Exploración detallada</h2><p class="rh-layer__purpose">Indicadores comparativos, seguimiento y folios.</p></div>
 
   <div class="card d13-stack-card">
     <div class="card-head">

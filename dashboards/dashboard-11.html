@@ -15,7 +15,7 @@
   <link rel="stylesheet" href="../css/dashboard-11.css?v=2cd21d36">
   <script defer src="../js/rh-dashboard-enhancements.js?v=2cd21d36"></script>
 </head>
-<body class="dashboard-11-page hr-dashboard rh-unified">
+<body class="dashboard-11-page hr-dashboard rh-unified rh-layered">
 <nav class="topbar"><div class="topbar__brand"><div class="topbar__logo"><img src="../assets/oxxo-logo-original.png" alt="OXXO"></div><div><div class="topbar__title">Dashboards Ats</div><div class="topbar__subtitle">Región Tabasco</div></div></div><div class="topbar__meta"><a href="../index.html" class="topbar__back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>Inicio</a></div></nav>
 <main class="page">
   <section class="hero">
@@ -28,7 +28,11 @@
     </div>
   </section>
 
+  <div class="rh-layer"><h2 class="rh-layer__title">Resumen ejecutivo</h2><p class="rh-layer__purpose">Cumplimiento de marcajes de la semana cargada.</p></div>
+
   <section class="kpis" id="kpi-section" aria-label="Indicadores principales"><div class="state"><div class="spinner" aria-label="Cargando"></div></div></section>
+  <div class="rh-layer"><h2 class="rh-layer__title">Foco y responsables</h2><p class="rh-layer__purpose">Distribución del cumplimiento y asesores por atender.</p></div>
+
   <section class="layout">
     <article class="card"><div class="card-head"><div class="card-title">Distribución de cumplimiento</div><span class="card-chip" id="mix-chip">— tiendas</span></div><div class="mix"><div class="ring" id="mix-ring" style="--p1:0%;--p2:0%;--p3:0%"><div class="ring-center"><b id="ring-total">0</b><span>tiendas</span></div></div><div class="legend" id="mix-legend"></div></div></article>
     <article class="card"><div class="card-head"><div class="card-title">Cumplimiento por asesor</div><span class="card-chip">Menor promedio primero</span></div><div class="advisor-list" id="advisor-list"><div class="state">Calculando asesores…</div></div></article>
@@ -40,6 +44,8 @@
       <div class="rank-col"><h3 class="rank-head rank-head--bottom">Bottom 5 · menor cumplimiento</h3><ol class="rank-list" id="rank-bottom"><li class="state">Calculando…</li></ol></div>
     </div>
   </section>
+  <div class="rh-layer"><h2 class="rh-layer__title">Exploración detallada</h2><p class="rh-layer__purpose">Detalle por tienda ordenado por prioridad.</p></div>
+
   <section class="card"><div class="card-head table-tools"><div><div class="card-title">Detalle por tienda</div><div class="result-count" id="result-count">—</div></div><span class="card-chip">Ordenado por prioridad</span></div><div class="tbl-wrap"><table class="tbl" id="detail-table"><thead><tr><th>Tienda</th><th>Asesor</th><th>Plaza</th><th>Entradas</th><th>Salidas</th><th>Total</th><th>Estatus</th><th class="hide-mobile">Calidad</th></tr></thead><tbody><tr><td colspan="8"><div class="state"><div class="spinner"></div></div></td></tr></tbody></table></div></section>
   <footer class="dash-footer"><div class="dash-footer__update"><span class="dash-footer__update-dot"></span>Datos cargados: <span id="load-time">—</span></div><div>La nueva carga reemplaza la semana anterior · Sin histórico</div></footer>
 </main>

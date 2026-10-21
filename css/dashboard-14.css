@@ -1,6 +1,5 @@
 /* Avance Comercial: componentes de datos sobre el canon visual rh-unified. */
 body.dashboard-14-page .hero-download-link { text-decoration: none; cursor: pointer; }
-body.dashboard-14-page .c14-eyebrow { display: block; margin-bottom: 6px; color: var(--du-red-dark); font-size: 11px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
 body.dashboard-14-page .search-box { display: flex; align-items: center; gap: 8px; min-width: 0; min-height: var(--du-target); padding: 8px 12px; border: 1px solid var(--du-border); border-radius: 10px; background: #fff; }
 body.dashboard-14-page .search-box:hover,
 body.dashboard-14-page .search-box:focus-within { border-color: var(--du-red); }
@@ -8,10 +7,6 @@ body.dashboard-14-page .search-box svg { width: 16px; height: 16px; flex: 0 0 16
 body.dashboard-14-page .search-box input { width: 100%; min-width: 0; border: 0; outline: none; background: transparent; color: var(--du-text); font: 600 14px/1.25 var(--font-body); }
 body.dashboard-14-page .search-box:focus-within { outline: 3px solid var(--du-focus); outline-offset: 2px; }
 
-body.dashboard-14-page .section-intro { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 8px 18px; margin: 8px 2px 12px; }
-body.dashboard-14-page .section-intro__eyebrow { display: block; margin-bottom: 4px; color: var(--du-red-dark); font-size: 10px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
-body.dashboard-14-page .section-intro h2 { margin: 0; color: var(--du-text); font: 700 1.35rem/1.2 var(--font-display); }
-body.dashboard-14-page .section-intro p { max-width: 620px; margin: 0; color: var(--du-muted); font-size: 12px; }
 
 /* Seis indicadores conservan su meta, barra de avance y semáforo propios. */
 body.dashboard-14-page .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -84,7 +79,6 @@ body.dashboard-14-page .dash-footer__update-dot { background: var(--du-green); b
   body.dashboard-14-page .row2-wide { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 700px) {
-  body.dashboard-14-page .section-intro { align-items: flex-start; flex-direction: column; }
   body.dashboard-14-page .table-footer { align-items: flex-start; flex-direction: column; }
   body.dashboard-14-page .table-pager { justify-content: space-between; width: 100%; }
 }

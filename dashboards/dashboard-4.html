@@ -22,7 +22,7 @@
   <script defer src="../js/rh-table-tools.js?v=2cd21d36"></script>
   <script defer src="../js/rh-filter-summary.js?v=2cd21d36"></script>
 </head>
-<body class="dashboard-4-page hr-dashboard rh-unified">
+<body class="dashboard-4-page hr-dashboard rh-unified rh-layered">
 <nav class="topbar">
   <div class="topbar__brand">
     <div class="topbar__logo"><img src="../assets/oxxo-logo-original.png" alt="OXXO"></div>
@@ -43,7 +43,7 @@
   <div class="hero hero--orange">
     <div class="hero-top">
       <div>
-        <h1>Tiempo Extra Semanal</h1>
+        <span class="hero-eyebrow">Costo operativo · Tiempo extra</span><h1>Tiempo Extra Semanal</h1>
         <p>Análisis de gasto por asesor, tipo de TE y tienda · Plaza Oaxaca</p>
       </div>
       <span class="hero-badge" id="semana-badge">⟳ Semanal · Plaza Oaxaca</span>
@@ -83,6 +83,8 @@
     </div>
   </div>
 
+  <div class="rh-layer"><h2 class="rh-layer__title">Resumen ejecutivo</h2><p class="rh-layer__purpose">Gasto y horas de tiempo extra de la semana.</p></div>
+
   <!-- KPIs -->
   <div class="kpis kpi-grid" id="kpi-section">
     <div class="kpi-card"><div class="kpi-card__label">Cargando…</div>
@@ -94,6 +96,8 @@
     <span><svg class="icon-inline" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>KPI activo: <strong id="filter-label">—</strong></span>
     <button type="button" class="filter-banner__clear" id="clear-filter">✕ Quitar</button>
   </div>
+
+  <div class="rh-layer"><h2 class="rh-layer__title">Foco y responsables</h2><p class="rh-layer__purpose">Asesores con mayor gasto y mezcla por tipo de TE.</p></div>
 
   <!-- Row 1: Ranking + Donut -->
   <div class="te-row1">
@@ -117,6 +121,8 @@
       </div>
     </div>
   </div>
+
+  <div class="rh-layer"><h2 class="rh-layer__title">Exploración detallada</h2><p class="rh-layer__purpose">Comparativos por asesor y tienda, y registros completos.</p></div>
 
   <!-- Row 2: Bar charts -->
   <div class="te-row2">

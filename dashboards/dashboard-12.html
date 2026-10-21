@@ -21,7 +21,7 @@
   <script defer src="../js/rh-table-tools.js?v=2cd21d36"></script>
   <script defer src="../js/rh-filter-summary.js?v=2cd21d36"></script>
 </head>
-<body class="dashboard-12-page hr-dashboard rh-unified">
+<body class="dashboard-12-page hr-dashboard rh-unified rh-layered">
 <nav class="topbar">
   <div class="topbar__brand">
     <div class="topbar__logo"><img src="../assets/oxxo-logo-original.png" alt="OXXO"></div>
@@ -41,7 +41,7 @@
   <div class="hero hero--blue">
     <div class="hero-top">
       <div>
-        <h1>Enfoque del Líder</h1>
+        <span class="hero-eyebrow">Desarrollo · Liderazgo de tienda</span><h1>Enfoque del Líder</h1>
         <p>Etapa de desarrollo de cada líder de tienda, su trayectoria mes a mes y la rotación del puesto · Plaza Oaxaca</p>
       </div>
       <span class="hero-badge" id="corte-badge">⟳ Mensual · Plaza Oaxaca</span>
@@ -64,9 +64,13 @@
     </div>
   </div>
 
+  <div class="rh-layer"><h2 class="rh-layer__title">Resumen ejecutivo</h2><p class="rh-layer__purpose">Etapa de los líderes en el mes de corte.</p></div>
+
   <div class="kpis" id="kpi-section">
     <div class="kpi-card"><div class="state-box"><div class="spinner"></div></div></div>
   </div>
+
+  <div class="rh-layer"><h2 class="rh-layer__title">Foco y responsables</h2><p class="rh-layer__purpose">Evolución de etapas, pilares y distribución por asesor.</p></div>
 
   <div class="row2-wide">
     <div class="card">
@@ -107,6 +111,8 @@
       <span><i style="background:#8B4CF7"></i> Líder Nuevo</span>
     </div>
   </div>
+
+  <div class="rh-layer"><h2 class="rh-layer__title">Exploración detallada</h2><p class="rh-layer__purpose">Trayectoria líder por líder en el mes de corte.</p></div>
 
   <div class="card">
     <div class="card-head">

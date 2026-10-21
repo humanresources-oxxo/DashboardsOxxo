@@ -17,20 +17,6 @@ body.dashboard-11-page {
   --mark-blue: #176d98;
 }
 
-/* Héroe compacto: el canon dimensiona para un titular suelto, pero aquí el
-   bloque carga eyebrow + título + bajada + los filtros, y en escritorio se
-   comía casi media pantalla antes del primer dato. Se recorta el aire sin
-   tocar el sistema visual (misma tarjeta blanca, mismo borde y sombra). */
-body.dashboard-11-page .hero { gap: 10px; padding: 14px 18px; }
-body.dashboard-11-page .hero h1 { font-size: clamp(1.7rem, 5vw, 2.1rem); }
-body.dashboard-11-page .hero p { margin-top: 3px; }
-body.dashboard-11-page .hero .vac-filters { padding: 12px; gap: 10px; }
-
-/* Eyebrow del héroe (el canon no lo trae). */
-body.dashboard-11-page .hero-eyebrow {
-  margin-bottom: 3px; color: var(--du-red-dark);
-  font-size: 11px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase;
-}
 body.dashboard-11-page #hero-download { display: flex; min-width: 0; }
 
 /* KPIs: usan la tarjeta blanca del canon; el color va en el filo izquierdo,

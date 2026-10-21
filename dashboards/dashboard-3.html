@@ -23,7 +23,7 @@
   <script defer src="../js/rh-table-tools.js?v=2cd21d36"></script>
   <script defer src="../js/rh-filter-summary.js?v=2cd21d36"></script>
 </head>
-<body class="hr-dashboard dashboard-3-page rh-unified">
+<body class="hr-dashboard dashboard-3-page rh-unified rh-layered">
 
 <nav class="topbar">
   <div class="topbar__brand">
@@ -47,7 +47,7 @@
   <div class="hero hero--green">
     <div class="hero-top">
       <div>
-        <h1>Aprovechamiento de Estructura</h1>
+        <span class="hero-eyebrow">Estructura · Equipo completo</span><h1>Aprovechamiento de Estructura</h1>
         <p>Equipo Completo · Equipo Incompleto · Tienda Crítica · Aprovechamiento por AT y Plaza</p>
       </div>
       <div class="hero-right">
@@ -90,6 +90,8 @@
     </div>
   </div>
 
+  <div class="rh-layer"><h2 class="rh-layer__title">Resumen ejecutivo</h2><p class="rh-layer__purpose">Estado de la estructura de tiendas en el corte vigente.</p></div>
+
   <!-- KPIs -->
   <div class="kpis kpi-grid" id="kpi-section">
     <div class="kpi-card"><div class="kpi-card__label">Cargando…</div>
@@ -97,6 +99,8 @@
   </div>
 
 
+
+  <div class="rh-layer"><h2 class="rh-layer__title">Foco y responsables</h2><p class="rh-layer__purpose">Aprovechamiento por plaza y asesor para priorizar seguimiento.</p></div>
 
   <!-- TABLA APROVECHAMIENTO POR PLAZA + EC % (AT) -->
   <div id="plaza-ec-row">
@@ -129,6 +133,8 @@
       <div class="state-box"><div class="spinner"></div></div>
     </div>
   </div>
+
+  <div class="rh-layer"><h2 class="rh-layer__title">Exploración detallada</h2><p class="rh-layer__purpose">Detalle por tienda y distribución de estatus.</p></div>
 
   <!-- DETALLE POR TIENDA (base "Plaza Oaxaca") -->
   <div class="card d3-fullcard" id="detalle-card" style="display:none">

@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="../css/global.css?v=2cd21d36"/>  <link rel="stylesheet" href="../css/dashboard-rh-unified.css?v=2cd21d36">
   <link rel="stylesheet" href="../css/dashboard-14.css?v=2cd21d36">
 </head>
-<body class="dashboard-14-page commercial-dashboard rh-unified">
+<body class="dashboard-14-page commercial-dashboard rh-unified rh-layered">
 <nav class="topbar">
   <div class="topbar__brand">
     <div class="topbar__logo"><img src="../assets/oxxo-logo-original.png" alt="OXXO"></div>
@@ -33,7 +33,7 @@
   <div class="hero c14-hero">
     <div class="hero-top">
       <div>
-        <span class="c14-eyebrow">Desempeño comercial · Corte quincenal</span>
+        <span class="hero-eyebrow">Desempeño comercial · Corte quincenal</span>
         <h1>Avance Comercial</h1>
         <p>SPIN, Premia, Cruzada Andatti, Venta Sugerida, Banner y MEP vs meta · Plaza Oaxaca</p>
       </div>
@@ -56,12 +56,11 @@
 
   <div id="contenido" style="display:none">
 
-    <div class="section-intro">
-      <div><span class="section-intro__eyebrow">Lectura ejecutiva</span><h2>Indicadores frente a meta</h2></div>
-      <p>Promedio de las tiendas visibles y porcentaje de unidades que alcanzan el objetivo.</p>
-    </div>
+    <div class="rh-layer"><h2 class="rh-layer__title">Resumen ejecutivo</h2><p class="rh-layer__purpose">Promedio de las tiendas visibles y porcentaje de unidades que alcanzan el objetivo.</p></div>
 
     <div class="kpis" id="kpis"></div>
+
+    <div class="rh-layer"><h2 class="rh-layer__title">Foco y responsables</h2><p class="rh-layer__purpose">Avance por asesor y tiendas con menor avance.</p></div>
 
     <div class="row2-wide">
       <div class="card">
@@ -84,6 +83,8 @@
         <div class="pr-list" id="pr-list"></div>
       </div>
     </div>
+
+    <div class="rh-layer"><h2 class="rh-layer__title">Exploración detallada</h2><p class="rh-layer__purpose">Base por tienda para consulta puntual.</p></div>
 
     <div class="card detail-card">
       <div class="card-head">

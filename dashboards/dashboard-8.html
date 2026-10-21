@@ -21,7 +21,7 @@
   <script defer src="../js/rh-table-tools.js?v=2cd21d36"></script>
   <script defer src="../js/rh-filter-summary.js?v=2cd21d36"></script>
 </head>
-<body class="hr-dashboard dashboard-8-page rh-unified">
+<body class="hr-dashboard dashboard-8-page rh-unified rh-layered">
 <nav class="topbar">
   <div class="topbar__brand">
     <div class="topbar__logo"><img src="../assets/oxxo-logo-original.png" alt="OXXO"></div>
@@ -41,7 +41,7 @@
   <div class="hero">
     <div class="hero-top">
       <div>
-        <h1>Capacidades 2026</h1>
+        <span class="hero-eyebrow">Desarrollo · Certificaciones</span><h1>Capacidades 2026</h1>
         <p>Avance de certificaciones y capacitaciones por asesor, puesto y tienda · Plaza Oaxaca</p>
       </div>
       <span class="hero-badge" id="corte-badge">⟳ Diario · Plaza Oaxaca</span>
@@ -72,9 +72,13 @@
     </div>
   </div>
 
+  <div class="rh-layer"><h2 class="rh-layer__title">Resumen ejecutivo</h2><p class="rh-layer__purpose">Avance de certificaciones con los filtros activos.</p></div>
+
   <div class="kpis kpi-grid" id="kpi-section">
     <div class="kpi-card"><div class="kpi-card__label">Cargando…</div><div class="kpi-card__value"><div class="spinner"></div></div></div>
   </div>
+
+  <div class="rh-layer"><h2 class="rh-layer__title">Foco y responsables</h2><p class="rh-layer__purpose">Cumplimiento por certificación, puesto y asesor.</p></div>
 
   <div class="row2 row2-wide">
     <div class="card">
@@ -112,6 +116,8 @@
       <span><i style="background:#D92B2B"></i> Rojo &lt; 50%</span>
     </div>
   </div>
+
+  <div class="rh-layer"><h2 class="rh-layer__title">Exploración detallada</h2><p class="rh-layer__purpose">Registro por empleado para dar seguimiento puntual.</p></div>
 
   <div class="card">
     <div class="card-head">

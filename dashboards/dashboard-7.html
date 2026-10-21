@@ -21,7 +21,7 @@
   <script defer src="../js/rh-table-tools.js?v=2cd21d36"></script>
   <script defer src="../js/rh-filter-summary.js?v=2cd21d36"></script>
 </head>
-<body class="dashboard-7-page hr-dashboard rh-unified">
+<body class="dashboard-7-page hr-dashboard rh-unified rh-layered">
 <nav class="topbar">
   <div class="topbar__brand">
     <div class="topbar__logo"><img src="../assets/oxxo-logo-original.png" alt="OXXO"></div>
@@ -42,7 +42,7 @@
   <div class="hero">
     <div class="hero-top">
       <div>
-        <h1>TREO</h1>
+        <span class="hero-eyebrow">Estructura · Plantilla vs TREO</span><h1>TREO</h1>
       </div>
       <span class="hero-badge" id="hero-treo-badge"><svg class="icon-inline" viewBox="0 0 24 24" aria-hidden="true"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>TREO · Plaza Oaxaca</span>
       <span id="hero-download" style="display:none"></span>
@@ -82,10 +82,14 @@
     </div>
   </div>
 
+  <div class="rh-layer"><h2 class="rh-layer__title">Resumen ejecutivo</h2><p class="rh-layer__purpose">Plantilla activa frente al requerimiento TREO.</p></div>
+
   <!-- KPIs -->
   <div class="kpis" id="kpi-section">
     <div class="kpi-card"><div class="kpi-card__label">Cargando…</div><div class="kpi-card__value"><div class="spinner"></div></div></div>
   </div>
+
+  <div class="rh-layer"><h2 class="rh-layer__title">Foco y responsables</h2><p class="rh-layer__purpose">Tiendas por ajustar, alineación global y movimientos por AT.</p></div>
 
   <!-- FILA PRINCIPAL: tabla grande + panel lateral -->
   <div class="row-main">
@@ -172,6 +176,8 @@
     </div>
 
   </div>
+
+  <div class="rh-layer"><h2 class="rh-layer__title">Exploración detallada</h2><p class="rh-layer__purpose">Composición por antigüedad, concepto y totales de estructura.</p></div>
 
   <!-- FILA 3: Antigüedad + Concepto + Totales -->
   <div class="row3">
