@@ -14,7 +14,7 @@
   <link rel="stylesheet" href="../css/dashboard-rh-unified.css?v=14b1e036"/>
   <link rel="stylesheet" href="../css/mi-ficha.css?v=14b1e036"/>
 </head>
-<body class="mi-dashboard-page rh-unified">
+<body class="mi-dashboard-page rh-unified rh-layered">
 <nav class="topbar">
   <div class="topbar__brand">
     <div class="topbar__logo"><img src="../assets/oxxo-logo-original.png" alt="OXXO"></div>
@@ -33,6 +33,7 @@
 
   <div class="hero mt-hero">
     <div>
+      <span class="hero-eyebrow">Ficha personal · Asesor comercial</span>
       <h1><svg class="icon-inline" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>Mi Dashboard</h1>
       <p>Todo lo tuyo en una sola ficha: vacantes, bajas, estructura, tiempo extra, vacaciones, ausentismos, TREO y capacidades de tus tiendas.</p>
     </div>
@@ -60,8 +61,12 @@
       <div class="ficha__meta" id="ficha-meta"></div>
     </div>
 
+    <div class="rh-layer"><h2 class="rh-layer__title">Resumen</h2><p class="rh-layer__purpose">Indicadores clave del asesor o del total seleccionado.</p></div>
     <div class="ficha__resumen" id="ficha-resumen"></div>
+    <div class="rh-layer"><h2 class="rh-layer__title">Atención prioritaria</h2><p class="rh-layer__purpose">Desvíos frente a la plaza que conviene revisar primero.</p></div>
     <div class="ficha__alertas" id="ficha-alertas"></div>
+
+    <div class="rh-layer"><h2 class="rh-layer__title">Detalle por indicador</h2><p class="rh-layer__purpose">Cada tablero con su desglose consultable.</p></div>
 
     <div class="ficha__grid">
 

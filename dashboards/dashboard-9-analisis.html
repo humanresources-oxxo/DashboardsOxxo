@@ -15,7 +15,7 @@
   <link rel="stylesheet" href="../css/dashboard-9-analisis.css?v=14b1e036"/>
   <script defer src="../assets/vendor/chart.umd.min.js?v=14b1e036"></script>
 </head>
-<body class="dashboard-9-analisis-page rh-unified">
+<body class="dashboard-9-analisis-page rh-unified rh-layered">
 <nav class="topbar">
   <div class="topbar__brand">
     <div class="topbar__logo"><img src="../assets/oxxo-logo-original.png" alt="OXXO"></div>
@@ -34,16 +34,20 @@
   <section class="hero">
     <div class="hero-top" data-oxxo-scope-mount>
       <div>
-        <h1>Balance de Caja</h1>
+        <span class="hero-eyebrow">Administrativo · Lectura histórica</span><h1>Balance de Caja</h1>
         <p>Faltantes y sobrantes a través del tiempo, por tienda, por asesor y por motivo · lectura exploratoria de la misma base de Dashboard 9 · Plaza Oaxaca</p>
       </div>
       <a href="dashboard-9.html" class="bc-back">← Faltantes y Sobrantes</a>
     </div>
   </section>
 
+  <div class="rh-layer"><h2 class="rh-layer__title">Resumen del periodo</h2><p class="rh-layer__purpose">Totales acumulados de caja en toda la base.</p></div>
+
   <section class="bc-kpis" id="kpi-section">
     <div class="bc-kpi"><div class="bc-kpi__label">Cargando…</div><div class="bc-kpi__value"><div class="spinner"></div></div></div>
   </section>
+
+  <div class="rh-layer"><h2 class="rh-layer__title">Tendencia y focos</h2><p class="rh-layer__purpose">Evolución semanal, tiendas y motivos con mayor monto.</p></div>
 
   <section class="card">
     <h2>Pulso semanal</h2>
@@ -64,14 +68,16 @@
     </section>
   </div>
 
-  <section class="card">
+  <div class="rh-layer"><h2 class="rh-layer__title">Exploración detallada</h2><p class="rh-layer__purpose">Patrones por tienda y dispersión por asesor.</p></div>
+
+  <section class="card bc-card--quiet">
     <h2>El hallazgo</h2>
     <div id="finding-text" class="bc-finding"><div class="state-box"><div class="spinner"></div></div></div>
-    <div class="bc-sub" style="margin-bottom:10px">Pero no en todas las tiendas se cancela igual — estas son las que más se desvían del patrón (mínimo 5 movimientos):</div>
+    <div class="bc-sub bc-imb-lead">Pero no en todas las tiendas se cancela igual — estas son las que más se desvían del patrón (mínimo 5 movimientos):</div>
     <div class="bc-imb-grid" id="imb-grid"></div>
   </section>
 
-  <section class="card">
+  <section class="card bc-card--quiet">
     <h2>Asesores: Faltante vs Sobrante</h2>
     <div class="bc-sub">Cada punto es un asesor · tamaño = movimientos · la línea diagonal marca faltante = sobrante</div>
     <div class="bc-chart-box"><canvas id="chart-quad"></canvas></div>

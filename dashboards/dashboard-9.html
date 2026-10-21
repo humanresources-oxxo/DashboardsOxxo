@@ -17,7 +17,7 @@
   <link rel="stylesheet" href="../css/dashboard-9.css?v=14b1e036">
   <link rel="stylesheet" href="../css/dashboard-dialogs.css?v=14b1e036" />
 </head>
-<body class="dashboard-9-page rh-unified">
+<body class="dashboard-9-page rh-unified rh-layered">
 <nav class="topbar inv-topbar">
   <div class="topbar__brand">
     <div class="topbar__logo"><img src="../assets/oxxo-logo-original.png" alt="OXXO"></div>
@@ -45,6 +45,8 @@
         <a href="dashboard-9-analisis.html" class="inv-hero__status d9-analysis-link"><svg viewBox="0 0 24 24" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>Análisis histórico</a>
       </div>
   </section>
+
+  <div class="rh-layer"><h2 class="rh-layer__title">Resumen ejecutivo</h2><p class="rh-layer__purpose">Faltante, sobrante y neto del periodo; un clic en el indicador filtra el tablero.</p></div>
 
   <span id="hero-download" style="display:none"></span>
 
@@ -91,6 +93,8 @@
     <button type="button" class="filter-banner__clear" id="clear-filter">✕ Quitar</button>
   </div>
 
+  <div class="rh-layer"><h2 class="rh-layer__title">Foco y responsables</h2><p class="rh-layer__purpose">Tiendas y asesores que concentran el faltante.</p></div>
+
   <!-- Row 1: Stores + Donut -->
   <div class="fs-row1">
     <div class="card">
@@ -124,6 +128,8 @@
       <div class="bar-chart-area" id="ranking-container"><canvas id="chart-ranking"></canvas></div>
     </div>
   </div>
+
+  <div class="rh-layer"><h2 class="rh-layer__title">Exploración detallada</h2><p class="rh-layer__purpose">Balance completo por asesor para revisión puntual.</p></div>
 
   <!-- Detail table -->
   <div class="card fs-detail">

@@ -18,6 +18,9 @@ body.dashboard-9-analisis-page .bc-back:hover { border-color: var(--du-red); }
 
 /* Encabezados de card (estáticos) + subtítulo. */
 body.dashboard-9-analisis-page .card h2 { margin: 0 0 4px; color: var(--du-text); font-family: var(--font-display); font-size: 1.15rem; font-weight: 700; }
+body.dashboard-9-analisis-page .bc-imb-lead { margin-bottom: 10px; }
+/* Tercera capa (rh-layered): exploracion sin sombra para ceder peso al resumen. */
+body.dashboard-9-analisis-page .bc-card--quiet { box-shadow: none; }
 body.dashboard-9-analisis-page .bc-sub { margin-bottom: 14px; color: var(--du-muted); font-size: 12px; }
 
 /* KPIs de balance: tarjeta blanca con filo superior cuyo color lo fija el JS por

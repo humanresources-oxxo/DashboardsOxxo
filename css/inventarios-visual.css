@@ -53,6 +53,7 @@ body.inventarios-page .inv-hero, body.dashboard-9-page .inv-hero { flex-directio
 :is(body.inventarios-page,body.dashboard-9-page) .inv-advisor-value { text-align: right; }
 :is(body.inventarios-page,body.dashboard-9-page) .inv-panel-empty { display: grid; place-items: center; min-height: 200px; color: var(--du-muted); font-size: 13px; }
 :is(body.inventarios-page,body.dashboard-9-page) .inv-detail-panel { padding-bottom: 0; }
+body.inventarios-page.rh-layered .inv-detail-panel { box-shadow: none; }
 :is(body.inventarios-page,body.dashboard-9-page) .inv-detail-head { align-items: center; }
 :is(body.inventarios-page,body.dashboard-9-page) .inv-detail-tools { display: flex; align-items: center; justify-content: flex-end; gap: 10px; min-width: min(520px,100%); }
 :is(body.inventarios-page,body.dashboard-9-page) .inv-detail-tools > small { flex: 0 0 auto; color: var(--du-muted); }

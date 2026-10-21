@@ -50,6 +50,8 @@ body.dashboard-9-page .donut-leg-label { color: var(--du-muted); font-size: 12px
 body.dashboard-9-page .donut-leg-val { margin-top: 3px; font-family: var(--font-display); font-size: 18px; font-weight: 800; }
 body.dashboard-9-page .donut-leg-pct { margin-left: 5px; color: var(--du-muted); font-size: 11px; }
 body.dashboard-9-page .fs-detail { padding-bottom: 0; overflow: hidden; }
+/* Tercera capa (rh-layered): la base consultable se lee como consulta, no como titular. */
+body.dashboard-9-page.rh-layered .fs-detail { box-shadow: none; }
 body.dashboard-9-page .detail-toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
 body.dashboard-9-page .table-sort-select { min-height: 40px; padding: 8px 36px 8px 12px; border: 1px solid var(--du-border); border-radius: 10px; background: #fff; color: var(--du-text); font: 700 13px var(--font-body); }
 body.dashboard-9-page .table-sort-select:hover { border-color: var(--du-red); }

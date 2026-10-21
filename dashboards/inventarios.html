@@ -16,7 +16,7 @@
   <link rel="stylesheet" href="../css/inventarios-visual.css?v=14b1e036">
   <script defer src="../assets/vendor/chart.umd.min.js?v=14b1e036"></script>
 </head>
-<body class="rh-unified inventarios-page">
+<body class="rh-unified rh-layered inventarios-page">
   <nav class="topbar inv-topbar">
     <div class="topbar__brand">
       <div class="topbar__logo"><img src="../assets/oxxo-logo-original.png" alt="OXXO"></div>
@@ -37,6 +37,8 @@
       <div class="inv-hero__status" id="inventory-cut"><span></span>Cargando información…</div>
     </section>
 
+    <div class="rh-layer"><h2 class="rh-layer__title">Resumen ejecutivo</h2><p class="rh-layer__purpose">Merma sobre venta y cobertura de inventario con los filtros activos.</p></div>
+
     <section class="inv-kpis kpis" id="inventory-kpis" aria-label="Indicadores de inventario">
       <article><span>Tiendas</span><strong id="kpi-stores">—</strong><small id="kpi-records">Registros cargados</small></article>
       <article><span>Con inventario</span><strong id="kpi-inventories">—</strong><small id="kpi-coverage">Cobertura del periodo</small></article>
@@ -54,6 +56,8 @@
     </section>
 
     <div class="inv-result-line"><span id="inventory-results">Preparando análisis…</span><span id="inventory-period-note">Google Sheets · Solo lectura</span></div>
+
+    <div class="rh-layer"><h2 class="rh-layer__title">Foco y responsables</h2><p class="rh-layer__purpose">Tendencia, tipos de inventario y dónde se concentra la merma.</p></div>
 
     <section class="inv-analysis-grid" aria-label="Análisis visual de inventarios">
       <article class="inv-panel inv-panel--trend">
@@ -73,6 +77,8 @@
         <div class="inv-advisor-list" id="advisor-list"><div class="inv-panel-empty">Esperando datos…</div></div>
       </article>
     </section>
+
+    <div class="rh-layer"><h2 class="rh-layer__title">Exploración detallada</h2><p class="rh-layer__purpose">Detalle por tienda para consulta puntual.</p></div>
 
     <section class="inv-panel inv-detail-panel">
       <div class="inv-panel__head inv-detail-head">

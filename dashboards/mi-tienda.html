@@ -14,7 +14,7 @@
   <link rel="stylesheet" href="../css/dashboard-rh-unified.css?v=14b1e036"/>
   <link rel="stylesheet" href="../css/mi-ficha.css?v=14b1e036"/>
 </head>
-<body class="mi-tienda-page rh-unified">
+<body class="mi-tienda-page rh-unified rh-layered">
 <nav class="topbar">
   <div class="topbar__brand">
     <div class="topbar__logo"><img src="../assets/oxxo-logo-original.png" alt="OXXO"></div>
@@ -34,6 +34,7 @@
 
   <div class="hero mt-hero">
     <div>
+      <span class="hero-eyebrow">Ficha de tienda · Operación y personas</span>
       <h1><svg class="icon-inline" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>Mi Tienda</h1>
       <p>Todo lo de tu tienda en una sola ficha: operación, personas, estructura e indicadores administrativos.</p>
     </div>
@@ -74,9 +75,12 @@
       <div class="mt-storefront__sign" id="mt-storefront-sign"></div>
     </div>
 
+    <div class="rh-layer"><h2 class="rh-layer__title">Resumen</h2><p class="rh-layer__purpose">Indicadores clave de la tienda seleccionada.</p></div>
     <div class="ficha__resumen" id="ficha-resumen"></div>
+    <div class="rh-layer"><h2 class="rh-layer__title">Atención prioritaria</h2><p class="rh-layer__purpose">Alertas del periodo y lectura cruzada del mes.</p></div>
     <div class="ficha__alertas" id="ficha-alertas"></div>
     <div class="ficha__cruzado" id="ficha-cruzado"></div>
+    <div class="rh-layer"><h2 class="rh-layer__title">Detalle por indicador</h2><p class="rh-layer__purpose">Glosario y desglose de cada tablero.</p></div>
     <details class="mt-glossary">
       <summary>Glosario de indicadores <span>Consulta cómo se interpreta cada métrica</span></summary>
       <div class="mt-glossary__grid">

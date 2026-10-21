@@ -15,7 +15,7 @@
   <link rel="stylesheet" href="../css/dashboard-rh-unified.css?v=14b1e036">
   <link rel="stylesheet" href="../css/promociones.css?v=14b1e036">
 </head>
-<body class="rh-unified promociones-page">
+<body class="rh-unified rh-layered promociones-page">
   <nav class="topbar">
     <div class="topbar__brand">
       <div class="topbar__logo"><img src="../assets/oxxo-logo-original.png" alt="OXXO"></div>
@@ -36,11 +36,15 @@
       <div class="promo-hero__status" id="promo-corte"><span></span>Cargando promociones…</div>
     </section>
 
+    <div class="rh-layer"><h2 class="rh-layer__title">Resumen vigente</h2><p class="rh-layer__purpose">Promociones activas, próximas y categorías disponibles.</p></div>
+
     <section class="promo-summary kpis" aria-label="Resumen de promociones">
       <article><span>Vigentes</span><strong id="count-current">—</strong></article>
       <article><span>Próximas</span><strong id="count-next">—</strong></article>
       <article><span>Categorías</span><strong id="count-categories">—</strong></article>
     </section>
+
+    <div class="rh-layer"><h2 class="rh-layer__title">Galería de materiales</h2><p class="rh-layer__purpose">Filtra por estado o categoría y abre cada material en tamaño completo.</p></div>
 
     <section class="promo-toolbar filter-panel" aria-label="Filtros de promociones">
       <div class="promo-filter">
