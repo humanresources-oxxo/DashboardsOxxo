@@ -1796,12 +1796,6 @@ function updateActiveContext(filters = d2FilterInfo()){
     if(summary.textContent !== text) summary.textContent = text;
   }
 }
-// Marca de frescura del encabezado: reutiliza la hora que ya escribe el pie.
-function syncHeroFreshness(){
-  const hero = document.getElementById('d2-hero-load');
-  const foot = document.getElementById('load-time');
-  if(hero && foot && hero.textContent !== foot.textContent) hero.textContent = foot.textContent;
-}
 // Una tabla ancha se desplaza dentro de su contenedor (nunca el documento) y
 // solo entonces es enfocable, con nombre y aviso "Desliza para ver más".
 function refreshScrollRegions(){
@@ -1822,7 +1816,6 @@ function refreshScrollRegions(){
 }
 function syncD2UI(){
   updatePanelScopeLabels();
-  syncHeroFreshness();
   refreshScrollRegions();
 }
 

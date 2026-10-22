@@ -176,8 +176,6 @@ body.dashboard-2-page .d2-link {
 }
 body.dashboard-2-page .d2-link:hover { border-color: var(--du-red); }
 body.dashboard-2-page .d2-link .icon-inline { width: 18px; height: 18px; }
-body.dashboard-2-page .d2-hero__status { margin: 0; font-size: 13px; color: var(--du-muted); }
-body.dashboard-2-page .d2-hero__lede { margin: 4px 0 0; max-width: 60ch; font-size: 14px; line-height: 1.4; color: var(--du-muted); }
 
 /* Alcance: se reutiliza el selector de core.js; aqui solo se aplana. */
 body.dashboard-2-page .d2-scope { display: grid; gap: 8px; min-width: 0; }
@@ -233,14 +231,13 @@ body.dashboard-2-page .d2-scope :is(.oxxo-scope-switch__opt, .oxxo-store-status_
 }
 @media (min-width: 1024px) {
   body.dashboard-2-page .d2-hero {
-    grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "head scope links" "status status status";
+    grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "head scope links";
     align-items: center; column-gap: 20px;
   }
   body.dashboard-2-page .d2-hero__row { display: contents; }
   body.dashboard-2-page .d2-hero__heading { grid-area: head; }
   body.dashboard-2-page .d2-hero__links { grid-area: links; }
   body.dashboard-2-page .d2-scope { grid-area: scope; justify-self: end; }
-  body.dashboard-2-page .d2-hero__status { grid-area: status; }
 }
 
 /* ── KPI ────────────────────────────────────────────────── */
