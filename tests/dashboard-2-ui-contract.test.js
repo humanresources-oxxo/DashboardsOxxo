@@ -25,8 +25,8 @@ const posicion = fragmento => {
   return i;
 };
 
-test('orden de la pagina: encabezado, KPI, panorama, filtros, analisis, plazas, tiendas, mapa, detalle y denominaciones', () => {
-  const orden = ['class="d2-hero"', 'id="kpi-section"', 'id="d2-decision"', 'class="d2-filter-region"', 'class="d2-analysis"', 'class="d2-panel d2-plazas"',
+test('orden de la pagina: encabezado, filtros, KPI, panorama, analisis, plazas, tiendas, mapa, detalle y denominaciones', () => {
+  const orden = ['class="d2-hero"', 'class="d2-filter-region"', 'id="kpi-section"', 'id="d2-decision"', 'class="d2-analysis"', 'class="d2-panel d2-plazas"',
     'd2-panel--tiendas', 'd2-panel--heatmap', 'd2-panel--detalle', 'id="denom-section"', 'class="dash-footer"'].map(posicion);
   assert.deepEqual(orden, [...orden].sort((a, b) => a - b), 'el DOM debe seguir el orden visual movil');
   // El resumen numerico del encabezado y sus insights duplicados ya no existen.
