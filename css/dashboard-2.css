@@ -108,6 +108,14 @@ body.dashboard-2-page .d2-export .png-export-ui {
   font-family: inherit; font-size: 14px; font-weight: 700; letter-spacing: normal;
 }
 @media (max-width: 767px) {
+  /* En celular la marca va en su propia linea: compartirla con Inicio,
+     Exportar y el selector la encimaba sobre los botones. */
+  body.dashboard-2-page nav.topbar { flex-wrap: wrap; row-gap: 10px; }
+  body.dashboard-2-page .topbar__meta { flex: 1 1 100%; flex-wrap: wrap; justify-content: flex-start; }
+  body.dashboard-2-page .topbar__meta .hr-dashboard-switcher { order: 3; flex: 1 1 100%; min-width: 0; }
+  /* El canon (<=560 px) deja "Inicio" como circulo de 44 px solo con icono, pero
+     aqui se conserva el texto: sin esto la palabra se salia del circulo. */
+  body.dashboard-2-page .topbar__meta .topbar__back { flex: 0 0 auto; width: auto; padding: 0 14px; font-size: 14px; }
   body.dashboard-2-page .topbar__back,
   body.dashboard-2-page .hr-dashboard-switcher select { min-height: var(--du-target); }
   body.dashboard-2-page .hr-dashboard-switcher select { font-size: 16px; }
