@@ -361,11 +361,13 @@
     /* ---------- armas ---------- */
     // hoja: [x, ancho] dentro de assets/juego/armas.png (360 px de alto).
     // boca: de donde sale el disparo, en pixeles de esa misma imagen.
+    // corre: desplazamiento a la derecha en pantalla (el escaner se sostiene
+    // como pistola: su ventana apunta arriba a la izquierda, hacia la mira).
     // tipo: 'golpe' cuerpo a cuerpo · 'rayo' disparo directo · 'congela'
     // detiene a los monitos cercanos · 'empuje' golpe del escudo.
     const WEAP = {
       trapeador: { name: 'TRAPEADOR', ammo: null, label: 'CLORO', tipo: 'golpe', rate: 0.55, dmg: [22, 34], alcance: 1.6, hoja: [0, 400], boca: [180, 50] },
-      escaner: { name: 'ESCÁNER', ammo: 'pilas', label: 'PILAS', tipo: 'rayo', rate: 0.32, dmg: [10, 18], pellets: 1, spread: 0.01, hoja: [816, 498], boca: [212, 32] },
+      escaner: { name: 'ESCÁNER', ammo: 'pilas', label: 'PILAS', tipo: 'rayo', rate: 0.32, dmg: [10, 18], pellets: 1, spread: 0.01, hoja: [816, 498], boca: [212, 32], corre: 170 },
       cafe: { name: 'LANZA-CAFÉ', ammo: 'cafe', label: 'CARGAS', tipo: 'rayo', rate: 0.95, dmg: [7, 12], pellets: 7, spread: 0.09, hoja: [400, 416], boca: [195, 35] },
       terminal: { name: 'NO HAY SISTEMA', ammo: 'senal', label: 'SEÑALES', tipo: 'congela', rate: 1.4, radio: 9, dura: 4, hoja: [1314, 426], boca: [210, 100] },
       escudo: { name: 'CAJA CERRADA', ammo: null, label: 'ESCUDO', tipo: 'empuje', rate: 0.7, dmg: [6, 10], alcance: 1.4, hoja: [1740, 404], boca: [200, 150] }
@@ -741,7 +743,7 @@
     const ESC = 0.8, BAJA = 70, ALTO_ARMA = 360 * ESC;
     function poseArma(w) {
       const mv = moving ? 1 : 0, sw = swapT > 0 ? swapT * 480 : 0;
-      const x = AW / 2 - w.hoja[1] * ESC / 2 + Math.cos(bobT) * 20 * mv;
+      const x = AW / 2 - w.hoja[1] * ESC / 2 + (w.corre || 0) + Math.cos(bobT) * 20 * mv;
       const y = AH - ALTO_ARMA + BAJA + Math.abs(Math.sin(bobT)) * 18 * mv + recoil * 18 + sw + (state === 'dying' || state === 'dead' ? 180 : 0);
       return [x, y];
     }
@@ -787,10 +789,10 @@
       }
       actx.drawImage(hojaArmas, w.hoja[0], 0, w.hoja[1], 360, Math.round(x), Math.round(y), Math.round(w.hoja[1] * ESC), ALTO_ARMA);
       actx.restore();
-      // Laser del escaner, encima del arma: destello en la boca y rayo hacia
-      // el fondo de la mira (la boca queda casi al centro de la pantalla).
+      // Laser del escaner, encima del arma: destello en la boca y rayo hasta
+      // la mira, que esta en el centro de la vista (a la altura del horizonte).
       if (cur === 'escaner' && flashT > 0) {
-        const bx = x + w.boca[0] * ESC, by = y + w.boca[1] * ESC, mx = AW / 2, my = AH / 2 - 60;
+        const bx = x + w.boca[0] * ESC, by = y + w.boca[1] * ESC, mx = AW / 2, my = AH / 2;
         const brillo = actx.createRadialGradient(bx, by, 2, bx, by, 60);
         brillo.addColorStop(0, 'rgba(255,240,240,1)'); brillo.addColorStop(.35, 'rgba(255,50,50,.85)'); brillo.addColorStop(1, 'rgba(255,0,0,0)');
         actx.fillStyle = brillo; actx.fillRect(bx - 60, by - 60, 120, 120);
