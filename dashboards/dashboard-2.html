@@ -120,15 +120,12 @@
       <p class="d2-panel-scope" data-d2-scope="plazas"></p>
       <button type="button" id="plazas-scope-toggle" class="d2-toggle">Ver todas las plazas</button>
     </header>
-    <div class="d2-grid d2-grid--plazas" id="d2-plazas-panels">
-      <div class="d2-plazas__col" id="d2-plazas-ranking">
+    <div class="d2-plazas__layout" id="d2-plazas-panels">
+      <div class="d2-plazas__summary" id="d2-plazas-summary"></div>
+      <div class="d2-plazas__ranking" id="d2-plazas-ranking">
         <div id="tabla-plazas">
           <div class="state-box"><div class="spinner"></div></div>
         </div>
-      </div>
-      <div class="d2-plazas__col" id="d2-plazas-chart">
-        <h3 class="d2-subtitle">Comparativo por Plaza<span class="info-tip" tabindex="0" data-tip="Misma base que el ranking de plazas: bajas del mes en curso por Plaza, sin filtros activos."></span></h3>
-        <div class="d2-chart d2-chart--plazas"><canvas id="chart-plazas"></canvas></div>
       </div>
     </div>
   </section>

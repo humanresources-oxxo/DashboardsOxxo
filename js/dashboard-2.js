@@ -93,6 +93,8 @@ let ASESOR_CATALOG = null;
 // Boton local "Ver todas las plazas" del panel Ranking/Comparativo de
 // Plazas: por defecto solo muestra la plaza activa (ver renderPlazas).
 let PLAZAS_SHOW_ALL = false;
+// Filas del ranking de plazas tal como se muestran, para la descarga XLSX.
+let LAST_PLAZAS_ROWS = [];
 let OTRAS_PLAZAS_DATA = [];
 // El tablero principal puede estar filtrado a una plaza. Para que el boton
 // "Ver todas las plazas" tenga datos reales, se conserva una lectura regional
@@ -1368,75 +1370,68 @@ function renderPlazas(allData, cols) {
     plazasToggleBtn.classList.toggle('is-active',showAllPlazas);
   }
 
+  const summaryEl=document.getElementById('d2-plazas-summary');
   if(!plazasData.length) {
+    LAST_PLAZAS_ROWS=[];
+    if(summaryEl) summaryEl.innerHTML='';
     document.getElementById('tabla-plazas').innerHTML = '<div class="d2-empty">No se encontraron columnas de plazas en los datos.</div>';
     return;
   }
 
-  // Renderizar tabla
+  // Un solo ranking (la grafica de barras repetia exactamente los mismos
+  // datos). El resumen lateral da la lectura rapida: total, plaza con mas
+  // bajas y la posicion de la plaza activa dentro de la region.
   const maxBajas = Math.max(...plazasData.map(p => p.bajas), 1);
   const totalBajas = plazasData.reduce((s,p) => s + p.bajas, 0);
+  const pctDe = n => Math.round(n / totalBajas * 100);
+  const plazaActivaIdx = activeScope.level==='region' ? -1
+    : plazasData.findIndex(item => OXXO.matchesScopeValue(item.plaza,'plaza',activeScope));
+  // Cada plaza conserva su color aunque cambie de lugar en el ranking.
+  const PLAZA_COLORS = { 'OAXACA': '#D92B2B', 'CHONTALPA': '#E86A00', 'VILLAHERMOSA': '#C99700', 'COSTA ISTMO': '#00A650', 'TUXTLA': '#0066CC' };
+  const EXTRA_COLORS = ['#7B4FB8', '#00838F', '#8A6D3B'];
+  const colorPlaza = (plaza, i) => PLAZA_COLORS[cleanText(plaza).replace(/^PLAZA\s+/, '')] || EXTRA_COLORS[i % EXTRA_COLORS.length];
+  LAST_PLAZAS_ROWS = plazasData.map((p, i) => ({ 'Posición': i + 1, Plaza: p.plaza, Bajas: p.bajas, '% del total': `${pctDe(p.bajas)}%` }));
 
   const rows = plazasData.map((p, i) => {
-    const pct = Math.round(p.bajas / totalBajas * 100);
     const barW = Math.round(p.bajas / maxBajas * 100);
-    const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i+1}`;
-    const tone = i === 0 ? 'red' : i === 1 ? 'orange' : i === 2 ? 'gold' : 'neutral';
-    return `<div class="plaza-rank-row ${tone}">
-      <div class="plaza-rank-medal">${medal}</div>
+    const clases = ['plaza-rank-row', i === plazaActivaIdx && plazasData.length > 1 ? 'is-current' : ''].filter(Boolean).join(' ');
+    return `<li class="${clases}" style="--d2-rank:${colorPlaza(p.plaza, i)}">
+      <span class="plaza-rank-pos" aria-label="Posición ${i+1}">${i+1}</span>
       <div class="plaza-rank-main">
         <div class="plaza-rank-top">
-          <strong>${p.plaza}</strong>
-          <span>${pct}% del total</span>
+          <strong>${esc(p.plaza)}</strong>
+          ${i === plazaActivaIdx && plazasData.length > 1 ? '<span class="plaza-rank-tag">Tu plaza</span>' : ''}
         </div>
         <div class="plaza-rank-track"><div class="plaza-rank-fill" style="--w:${barW}%"></div></div>
       </div>
-      <div class="plaza-rank-value">${p.bajas}</div>
-    </div>`;
+      <div class="plaza-rank-figs">
+        <strong class="plaza-rank-value">${p.bajas}</strong>
+        <span class="plaza-rank-pct">${pctDe(p.bajas)}% del total</span>
+      </div>
+    </li>`;
   }).join('');
+
+  if(summaryEl) {
+    const lider = plazasData[0];
+    const plazaNombre = String(activeScope.plaza||'').replace(/^Plaza\s+/i,'');
+    const tiles = [
+      `<div class="plaza-stat plaza-stat--total"><span class="plaza-stat__label">Total acumulado</span><strong class="plaza-stat__value">${totalBajas}</strong><span class="plaza-stat__meta">${plazasData.length > 1 ? `bajas en ${plazasData.length} plazas` : `bajas en ${esc(lider.plaza)}`}</span></div>`
+    ];
+    if(plazasData.length > 1) {
+      tiles.push(`<div class="plaza-stat"><span class="plaza-stat__label">Mayor volumen</span><strong class="plaza-stat__value">${esc(lider.plaza)}</strong><span class="plaza-stat__meta">${lider.bajas} bajas · ${pctDe(lider.bajas)}% del total</span></div>`);
+      // Si la plaza activa ya es la de mayor volumen, su posicion repetiria la tarjeta anterior.
+      tiles.push(plazaActivaIdx > 0
+        ? `<div class="plaza-stat"><span class="plaza-stat__label">Posición de ${esc(plazaNombre || plazasData[plazaActivaIdx].plaza)}</span><strong class="plaza-stat__value">${plazaActivaIdx + 1}° de ${plazasData.length}</strong><span class="plaza-stat__meta">${plazasData[plazaActivaIdx].bajas} bajas · ${pctDe(plazasData[plazaActivaIdx].bajas)}% del total</span></div>`
+        : `<div class="plaza-stat"><span class="plaza-stat__label">Promedio por plaza</span><strong class="plaza-stat__value">${Math.round(totalBajas / plazasData.length)}</strong><span class="plaza-stat__meta">bajas en el mes</span></div>`);
+    }
+    summaryEl.innerHTML = tiles.join('');
+  }
 
   const otrasKeyPlaza = OTRAS_PLAZAS_DATA.length ? findRealKey(OTRAS_PLAZAS_DATA[0], ['Actualizado']) : null;
   const otrasActualizado = otrasKeyPlaza ? String(OTRAS_PLAZAS_DATA[0][otrasKeyPlaza]||'').trim() : '';
   document.getElementById('tabla-plazas').innerHTML = `
-    <div class="plaza-rank-list">${rows}</div>
-    <div class="plaza-rank-total">
-      <span>Total acumulado</span>
-      <strong>${totalBajas}</strong>
-      <em>100%</em>
-    </div>
-    ${otrasActualizado ? `<div class="d2-note">Otras plazas actualizado: ${otrasActualizado}</div>` : ''}`;
-
-  // Gráfica de plazas
-  const canvas = document.getElementById('chart-plazas');
-  if(canvas) {
-    const theme = chartTheme();
-    const tickColor = theme.text;
-    const tickStrokeWidth = 0;
-    if(!chartReady(canvas)) return;
-    if(canvas._chartInstance) canvas._chartInstance.destroy();
-    canvas._chartInstance = new Chart(canvas.getContext('2d'), {
-      type: 'bar',
-      data: {
-        labels: plazasData.map(p => p.plaza),
-        datasets: [{
-          label: 'Bajas', data: plazasData.map(p => p.bajas),
-          backgroundColor: plazasData.map((p,i) => ['#D92B2B','#FF6B00','#FFD200','#00A650','#0066CC'][i] || '#8A8A99'),
-          borderRadius: 999, borderSkipped: false,
-          barPercentage: 0.54, categoryPercentage: 0.82, maxBarThickness: 28
-        }]
-      },
-      options: {
-        indexAxis: 'y',
-        responsive: true, maintainAspectRatio: false,
-        layout: { padding: { top: 6, right: 50, bottom: 4, left: 4 } },
-        plugins: { legend: { display: false }, tooltip: { backgroundColor: theme.tooltipBg, padding: 10, cornerRadius: 8 }},
-        scales: {
-          x: { beginAtZero: true, grid: { color: theme.grid }, ticks: { precision: 0, font: { family: 'Barlow', size: 12, weight: '800' }, color: tickColor, textStrokeColor:'rgba(0,0,0,0.55)', textStrokeWidth: tickStrokeWidth }},
-          y: { grid: { display: false }, ticks: { font: { family: 'Barlow', size: 13, weight: '900' }, color: tickColor, textStrokeColor:'rgba(0,0,0,0.55)', textStrokeWidth: tickStrokeWidth }}
-        }
-      }
-    });
-  }
+    <ol class="plaza-rank-list">${rows}</ol>
+    ${otrasActualizado ? `<div class="d2-note">Otras plazas actualizado: ${esc(otrasActualizado)}</div>` : ''}`;
 }
 
 // ─────────────────────────────────────────────────────────
@@ -1698,7 +1693,7 @@ window.buildExcelSheets = async function(){
   return [
     { name: 'KPIs', rows: kpiRows },
     { name: 'Compromiso', rows: OXXO.scrapeHtmlTable('#tabla-compromiso table') },
-    { name: 'Otras Plazas', rows: OXXO.scrapeHtmlTable('#tabla-plazas table') },
+    { name: 'Otras Plazas', rows: LAST_PLAZAS_ROWS },
     { name: 'Detalle de Bajas', rows: OXXO.scrapeHtmlTable('#tbl-detalle-bajas') },
     { name: 'Denominaciones', rows: OXXO.scrapeHtmlTable('#tabla-denominaciones table') }
   ];
@@ -1977,10 +1972,6 @@ function initD2Presentation(){
   initResponsiveTabs({ key: 'analysis', label: 'Vista del análisis por asesor', before: '#d2-analysis-panels', tabs: [
     { label: 'Compromiso', panel: '#d2-panel-compromiso' },
     { label: 'Bajas por AT', panel: '#d2-panel-asesores' },
-  ] });
-  initResponsiveTabs({ key: 'plazas', label: 'Vista del comparativo de plazas', before: '#d2-plazas-panels', tabs: [
-    { label: 'Ranking', panel: '#d2-plazas-ranking' },
-    { label: 'Gráfica', panel: '#d2-plazas-chart' },
   ] });
   initExportMenu();
   document.getElementById('btn-denominaciones')?.addEventListener('click', toggleDenominaciones);

@@ -321,7 +321,7 @@ body.dashboard-2-page .info-tip::after { font-size: 13px; line-height: 1.4; }
   }
   body.dashboard-2-page .info-tip:hover::after,
   body.dashboard-2-page .info-tip:focus-visible::after { transform: none; }
-  body.dashboard-2-page .d2-panel__head, body.dashboard-2-page .d2-kpis .kpi-card, body.dashboard-2-page .d2-plazas__col { position: relative; }
+  body.dashboard-2-page .d2-panel__head, body.dashboard-2-page .d2-kpis .kpi-card { position: relative; }
 }
 
 /* ── Panorama de decision ───────────────────────────────── */
@@ -505,7 +505,10 @@ body.dashboard-2-page .d2-btn--red { --d2-ctl-color: var(--du-red-dark); --d2-ct
 body.dashboard-2-page :is(.d2-btn, .d2-toggle):hover { --d2-ctl-border: var(--du-red); }
 body.dashboard-2-page .d2-toggle.is-active { --d2-ctl-bg: var(--du-red-dark); --d2-ctl-border: var(--du-red-dark); --d2-ctl-color: #fff; }
 body.dashboard-2-page .d2-btn .icon-inline { width: 16px; height: 16px; }
-body.dashboard-2-page .d2-plazas .d2-panel__head .d2-toggle { margin-left: auto; }
+/* Plazas: titulo y boton en la misma linea; el rotulo de alcance debajo. */
+body.dashboard-2-page .d2-plazas .d2-panel__title { flex: 1 1 auto; }
+body.dashboard-2-page .d2-plazas .d2-panel__head .d2-toggle { order: 1; margin-left: auto; }
+body.dashboard-2-page .d2-plazas .d2-panel__head .d2-panel-scope { order: 2; }
 @media (min-width: 768px) {
   body.dashboard-2-page .d2-panel { margin-bottom: 16px; padding: 16px 18px; }
   body.dashboard-2-page .d2-analysis { margin-bottom: 16px; }
@@ -516,23 +519,18 @@ body.dashboard-2-page .d2-plazas .d2-panel__head .d2-toggle { margin-left: auto;
 /* Graficas: altura acotada; Chart.js mide su contenedor. */
 body.dashboard-2-page .d2-chart { position: relative; width: 100%; height: var(--d2-chart-h); }
 body.dashboard-2-page .d2-chart canvas { width: 100% !important; height: 100% !important; }
-body.dashboard-2-page .d2-chart--plazas { --d2-chart-h: 260px; }
-body.dashboard-2-page .d2-plazas.is-single-plaza .d2-chart--plazas { --d2-chart-h: 160px; }
 @media (min-width: 1024px) { body.dashboard-2-page { --d2-chart-h: 430px; } }
 
 /* Rejillas analiticas */
 body.dashboard-2-page .d2-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
-body.dashboard-2-page .d2-grid--analysis .d2-panel,
-body.dashboard-2-page .d2-grid--plazas .d2-plazas__col { margin: 0; }
+body.dashboard-2-page .d2-grid--analysis .d2-panel { margin: 0; }
 body.dashboard-2-page .d2-analysis { margin: 0 0 12px; }
-body.dashboard-2-page .d2-plazas__col { min-width: 0; }
 @media (min-width: 1024px) {
   body.dashboard-2-page .d2-grid--analysis { grid-template-columns: minmax(340px, 36fr) minmax(0, 64fr); align-items: stretch; }
   /* Lado a lado la tabla fija el alto de la fila: la grafica rellena el resto (minimo = altura base). */
   body.dashboard-2-page .d2-panel--asesores { display: flex; flex-direction: column; }
   body.dashboard-2-page .d2-panel--asesores .d2-chart { flex: 1 1 auto; height: auto; min-height: var(--d2-chart-h); }
   body.dashboard-2-page .d2-panel--asesores .d2-chart canvas { position: absolute; inset: 0; }
-  body.dashboard-2-page .d2-grid--plazas { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
 }
 
 /* Pestañas (solo las crea JS, solo en celular) */
@@ -626,27 +624,43 @@ body.dashboard-2-page .rh-table-page-button { flex: 0 0 auto; }
 }
 
 /* ── Ranking de plazas ──────────────────────────────────── */
-body.dashboard-2-page .plaza-rank-list { display: grid; gap: 0; }
+/* Resumen (total, mayor volumen, posicion de la plaza activa) + un solo ranking. */
+body.dashboard-2-page .d2-plazas__layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
+body.dashboard-2-page .d2-plazas__summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; align-content: start; }
+body.dashboard-2-page .d2-plazas__summary:empty { display: none; }
+body.dashboard-2-page .d2-plazas__summary .plaza-stat--total { grid-column: 1 / -1; }
+body.dashboard-2-page .d2-plazas__ranking { min-width: 0; }
+@media (min-width: 1024px) {
+  body.dashboard-2-page .d2-plazas__layout { grid-template-columns: minmax(220px, 1fr) minmax(0, 3fr); gap: 24px; }
+  body.dashboard-2-page .d2-plazas__summary { grid-template-columns: minmax(0, 1fr); }
+}
+body.dashboard-2-page .plaza-stat { display: grid; gap: 2px; padding: 12px 14px; background: #f8f3ee; border-radius: 10px; }
+body.dashboard-2-page .plaza-stat--total { background: #fdecee; }
+body.dashboard-2-page .plaza-stat__label { font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--du-muted); }
+body.dashboard-2-page .plaza-stat__value { font-family: var(--font-display); font-size: 1.6rem; font-weight: 800; line-height: 1.1; color: var(--du-text); overflow-wrap: anywhere; }
+body.dashboard-2-page .plaza-stat--total .plaza-stat__value { font-size: 2.2rem; color: var(--du-red-dark); }
+body.dashboard-2-page .plaza-stat__meta { font-size: 13px; color: var(--du-muted); }
+
+body.dashboard-2-page .plaza-rank-list { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; }
 body.dashboard-2-page .plaza-rank-row {
-  --d2-rank: #6b5a54;
-  display: grid; grid-template-columns: 36px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 10px 0;
-  background: transparent; border: 0; border-bottom: 1px solid var(--du-border); border-radius: 0; box-shadow: none;
+  --d2-rank: #a89890;
+  display: grid; grid-template-columns: 32px minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 10px 0;
+  border-bottom: 1px solid var(--du-border);
 }
-body.dashboard-2-page .plaza-rank-row.red { --d2-rank: var(--du-red); }
-body.dashboard-2-page .plaza-rank-row.orange { --d2-rank: var(--du-orange); }
-body.dashboard-2-page .plaza-rank-row.gold { --d2-rank: var(--du-gold); }
-body.dashboard-2-page .plaza-rank-medal { display: grid; place-items: center; width: 32px; height: 32px; font-size: 20px; font-weight: 800; background: transparent; box-shadow: none; border: 0; color: var(--du-text); }
-body.dashboard-2-page .plaza-rank-top { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 6px; font-size: 14px; }
+body.dashboard-2-page .plaza-rank-row:last-child { border-bottom: 0; }
+body.dashboard-2-page .plaza-rank-pos {
+  display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--d2-rank); color: #fff;
+  font-family: var(--font-display); font-size: 15px; font-weight: 800;
+}
+body.dashboard-2-page .plaza-rank-top { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 15px; }
 body.dashboard-2-page .plaza-rank-top strong { font-weight: 700; color: var(--du-text); }
-body.dashboard-2-page .plaza-rank-top span { font-size: 13px; color: var(--du-muted); }
-body.dashboard-2-page .plaza-rank-track { height: 8px; overflow: hidden; border-radius: 999px; background: #efe8e1; }
-body.dashboard-2-page .plaza-rank-fill { width: var(--w, 0%); height: 100%; border-radius: 999px; background: var(--d2-rank); box-shadow: none; }
-body.dashboard-2-page .plaza-rank-value { display: block; width: auto; height: auto; padding: 0; background: transparent; box-shadow: none; border: 0; border-radius: 0; font-family: var(--font-display); font-size: 1.5rem; font-weight: 800; color: var(--du-text); }
-body.dashboard-2-page .plaza-rank-total {
-  display: flex; align-items: baseline; gap: 8px; margin-top: 10px; padding: 10px 12px; background: #f8f3ee; border: 0; border-radius: 10px; font-size: 14px;
-}
-body.dashboard-2-page .plaza-rank-total strong { font-family: var(--font-display); font-size: 1.4rem; font-weight: 800; }
-body.dashboard-2-page .plaza-rank-total em { margin-left: auto; font-style: normal; color: var(--du-muted); }
+body.dashboard-2-page .plaza-rank-tag { padding: 2px 8px; border-radius: 999px; background: #fdecee; color: var(--du-red-dark); font-size: 12px; font-weight: 700; }
+body.dashboard-2-page .plaza-rank-track { height: 10px; overflow: hidden; border-radius: 999px; background: #efe8e1; }
+body.dashboard-2-page .plaza-rank-fill { width: var(--w, 0%); height: 100%; border-radius: 999px; background: var(--d2-rank); }
+body.dashboard-2-page .plaza-rank-figs { display: grid; justify-items: end; min-width: 84px; }
+body.dashboard-2-page .plaza-rank-value { font-family: var(--font-display); font-size: 1.5rem; font-weight: 800; line-height: 1.1; color: var(--du-text); }
+body.dashboard-2-page .plaza-rank-pct { font-size: 12px; color: var(--du-muted); white-space: nowrap; }
+body.dashboard-2-page .d2-plazas .d2-note { margin-top: 8px; }
 
 /* ── Mapa de calor ──────────────────────────────────────── */
 body.dashboard-2-page .heatmap-wrap { display: flex; flex-wrap: wrap; gap: 14px 24px; align-items: flex-start; }

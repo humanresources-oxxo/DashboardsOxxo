@@ -35,7 +35,7 @@ test('orden de la pagina: encabezado, KPI, panorama, filtros, analisis, plazas, 
 });
 
 test('conserva todos los IDs que consumen scripts compartidos, filtros y descargas', () => {
-  const ids = ['kpi-section', 'filter-bar', 'tabla-compromiso', 'chart-asesores', 'tabla-plazas', 'chart-plazas', 'plazas-scope-toggle',
+  const ids = ['kpi-section', 'filter-bar', 'tabla-compromiso', 'chart-asesores', 'tabla-plazas', 'd2-plazas-summary', 'plazas-scope-toggle',
     'chart-tiendas', 'heatmap-bajas', 'tabla-detalle', 'row-count', 'btn-denominaciones', 'btn-motivos-pastel', 'motivos-modal',
     'motivos-title', 'chart-motivos-pastel', 'motivos-pastel-empty', 'denom-section', 'denom-count', 'denom-kpis', 'tabla-denominaciones',
     'load-time', 'baja-modal', 'baja-title', 'baja-body', 'hero-download', 'heatmap-status', 'heatmap-help', 'd2-filter-toggle',
@@ -48,6 +48,14 @@ test('conserva todos los IDs que consumen scripts compartidos, filtros y descarg
     'reset-filters', 'download-base', 'download-contact', 'denom-sort']) ok(js, new RegExp(`id="${id}"`), `JS debe generar id="${id}"`);
   for (const clave of ['mes', 'temporalidad', 'rotTemp', 'puesto']) ok(js, new RegExp(`\\['${clave}',`));
   ok(js, /id="filter-\$\{key\}"/);
+});
+
+test('ranking de plazas: un solo ranking con resumen, sin grafica duplicada y con descarga real', () => {
+  no(cuerpo, /chart-plazas/);
+  no(js, /chart-plazas|d2-plazas-chart/);
+  ok(js, /<ol class="plaza-rank-list">/);
+  ok(js, /style="--d2-rank:\$\{colorPlaza\(p\.plaza, i\)\}"/, 'cada plaza conserva su color');
+  ok(js, /\{ name: 'Otras Plazas', rows: LAST_PLAZAS_ROWS \}/);
 });
 
 test('D2 usa el canon visual unificado y un solo css propio; sin capas legadas ni logica embebida', () => {
@@ -145,7 +153,7 @@ test('filtros y vistas hermanas: disclosure real, pestañas con roving focus y s
   ok(js, /canvas\._chartInstance\?\.resize\(\)/, 'al mostrar una pestaña se llama resize() del grafico existente');
   ok(js, /panel\.hidden = false/, 'a partir de 768 px todos los paneles quedan visibles');
   ok(js, /tabs: \[\s*\{ label: 'Compromiso'[\s\S]*label: 'Bajas por AT'/);
-  ok(js, /label: 'Ranking'[\s\S]*label: 'Gráfica'/);
+  no(js, /label: 'Gráfica'/, 'el ranking de plazas ya no tiene pestaña de gráfica duplicada');
   no(js, /tabindex="[1-9]/, 'no hay tabindex positivo');
   no(cuerpo, /tabindex="[1-9]/);
 });
