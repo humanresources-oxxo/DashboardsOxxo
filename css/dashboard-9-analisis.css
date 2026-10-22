@@ -30,7 +30,6 @@ body.dashboard-9-analisis-page .bc-kpis { display: grid; grid-template-columns: 
 body.dashboard-9-analisis-page .bc-kpi { padding: 16px 18px; border: 1px solid var(--du-border); border-top: 3px solid #9e9e9e; border-radius: var(--du-radius); background: var(--du-card); box-shadow: var(--du-shadow); }
 body.dashboard-9-analisis-page .bc-kpi__label { color: var(--du-muted); font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
 body.dashboard-9-analisis-page .bc-kpi__value { margin-top: 4px; color: var(--du-text); font-family: var(--font-display); font-size: 24px; font-weight: 800; }
-body.dashboard-9-analisis-page .bc-kpi__sub { margin-top: 2px; color: var(--du-muted); font-size: 11px; }
 
 /* Rejilla de dos columnas y cajas de gráfico. */
 body.dashboard-9-analisis-page .bc-grid-2 { display: grid; grid-template-columns: 1.15fr .85fr; gap: 12px; align-items: start; }

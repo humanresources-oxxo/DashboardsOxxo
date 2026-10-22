@@ -75,4 +75,3 @@ Cada tablero conserva sus funciones `openXModal()/closeXModal()` como adaptadore
 ## Que no mover todavia
 
 - No partir `js/core.js`, `apps-script/admin-upload.gs`, los generadores PPTX del admin ni la logica embebida dentro de cada `dashboard-*.html` sin una prueba visual y de metricas clara: es codigo funcional y muy conectado a la UI.
-- `css/floating-filter-layout.css` y `css/rh-dashboard-refresh.css` quedaron sin consumidores: solo guardan los contratos responsive que fija `tests/accessibility-contract.test.js`. No agregar reglas ahi; lo visual va en `dashboard-rh-unified.css` o en la hoja de la pagina.

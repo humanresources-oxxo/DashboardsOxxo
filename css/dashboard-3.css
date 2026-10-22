@@ -180,7 +180,6 @@ body.dashboard-3-page .am-filter-count { color: var(--du-muted); font-size: 13px
 body.dashboard-3-page .am-empty-msg { padding: 20px; color: var(--du-muted); text-align: center; }
 
 @media (min-width: 640px) {
-  body.dashboard-3-page .vac-actions { grid-template-columns: repeat(2,minmax(0,1fr)); }
   body.dashboard-3-page .estatus-distribution { grid-template-columns: minmax(260px,.8fr) minmax(220px,1.2fr); }
 }
 @media (min-width: 768px) {
@@ -201,7 +200,6 @@ body.dashboard-3-page .am-empty-msg { padding: 20px; color: var(--du-muted); tex
 }
 
 @media (max-width: 560px) {
-  body.dashboard-3-page .hero-right { align-items: stretch; width: 100%; }
   body.dashboard-3-page .hero-badge { width: 100%; justify-content: center; }
   body.dashboard-3-page .chart-wrap { height: 280px; }
   body.dashboard-3-page .estatus-chart-wrap { height: 240px; }

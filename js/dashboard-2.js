@@ -858,10 +858,8 @@ function renderDetailTable(){
 // ── MODAL: GRAFICA DE PASTEL DE MOTIVOS ───────────────────
 let chartMotivosPastel = null;
 const PASTEL_COLORS = ['#D91F2D','#F07B22','#F6B73C','#19AD63','#1F6FD9','#7B1FA2','#00838F','#8A7A72','#C0181F','#3F51B5'];
-// Semantica, foco y Escape: js/dashboard-dialogs.js. Las funciones open/close
-// se conservan como adaptadores.
+// Semantica, foco y Escape: js/dashboard-dialogs.js.
 const dlgMotivos = OXXO_DIALOGS.register({ overlay:'motivos-modal', title:'motivos-title', close:'.baja-close' });
-function closeMotivosModal(){ dlgMotivos.close(); }
 function openMotivosModal(){
   const cols = DET_COLS;
   const counts = new Map();
@@ -914,7 +912,6 @@ function openMotivosModal(){
 
 // ── MODAL DETALLE DE BAJA ─────────────────────────────────
 const dlgBaja = OXXO_DIALOGS.register({ overlay:'baja-modal', title:'baja-title', close:'.baja-close' });
-function closeBajaModal(){ dlgBaja.close(); }
 function openBajaModal(idx){
   const r = DET_DATA[idx];
   if(!r) return;
