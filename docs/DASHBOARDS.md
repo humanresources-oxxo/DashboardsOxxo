@@ -154,3 +154,21 @@ Al elegir Region TABASCO, los tableros muestran todas las plazas a la vez (los q
 - XLSX.js, JSZip, PptxGenJS: CDN jsDelivr, bajo demanda en el panel admin.
 - html2canvas: CDN, bajo demanda para exportar PNG.
 - Google Fonts: Archivo (portada) y Barlow (estilos globales).
+
+## Turno Nocturno (juego)
+
+`dashboards/turno-nocturno.html` (`js/juego-turno-nocturno.js`,
+`css/juego-turno-nocturno.css`). Juego en primera persona (raycasting sobre un
+canvas de 320x200) ambientado en una tienda OXXO de madrugada: bodega, camara
+fria, pasillos de anaqueles, barra de cafe y la puerta de SALIDA al frente.
+
+Monitos: salchicha mutante (escupe jalapenos), cajero zombi (avienta monedas) y
+vaso gigante (muerde). Armas: botella de catsup y lanza-hielo; se recogen cafe
+(salud), sobres de catsup y bolsas de hielo. Funciona con teclado y raton o con
+controles tactiles en celular.
+
+Todo se dibuja con formas al arrancar: sin imagenes, sin librerias y sin red;
+solo carga las fuentes de Google Fonts y, si no llegan, usa monospace. El mejor
+tiempo vive en `localStorage` (`oxxo-turno-nocturno-record`). El mapa esta en
+`MAP_SRC` y `tests/juego-turno-nocturno.test.js` verifica que siga siendo
+rectangular, cerrado y con la salida alcanzable desde el inicio.
