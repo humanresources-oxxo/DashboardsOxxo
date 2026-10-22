@@ -19,6 +19,7 @@
 <div id="app">
   <div id="stage">
     <canvas id="view" width="320" height="200" role="img" aria-label="Vista del juego dentro de la tienda"></canvas>
+    <canvas id="armas" width="960" height="600" aria-hidden="true"></canvas>
     <div id="msg" aria-live="polite"></div>
     <div id="touch" hidden>
       <div id="stick"><div id="knob"></div></div>
@@ -42,7 +43,7 @@
         <kbd>Ratón / ← →</kbd><span>girar</span>
         <kbd>Clic / Espacio</kbd><span>disparar</span>
         <kbd>E</kbd><span>abrir puertas, salir</span>
-        <kbd>1 2 / Q</kbd><span>cátsup o hielo</span>
+        <kbd>1–5 / Q</kbd><span>cambiar arma</span>
         <kbd>Shift</kbd><span>correr</span>
         <kbd>M</kbd><span>mapa</span>
       </div>
@@ -75,8 +76,8 @@
 
   <footer id="hud">
     <div class="cell"><b id="hHp">100%</b><span>SALUD</span></div>
-    <div class="cell"><b id="hAmmo">50</b><span id="hAmmoL">SOBRES</span></div>
-    <div class="cell"><b id="hWeap">CÁTSUP</b><small id="hInv">50 sobres · 0 hielos</small></div>
+    <div class="cell"><b id="hAmmo">50</b><span id="hAmmoL">PILAS</span></div>
+    <div class="cell"><b id="hWeap">ESCÁNER</b><small id="hInv">50 pilas · 0 café · 0 señal</small></div>
     <div class="cell"><b id="hKills">0/0</b><span>MONITOS</span></div>
     <div class="cell opt"><b id="hTime">0:00</b><span>TIEMPO</span></div>
   </footer>
@@ -84,7 +85,7 @@
 
 <script src="../js/juego-turno-nocturno.js?v=7b4c5f5a"></script>
 <script>
-  OXXO_TURNO_NOCTURNO.montar({ monitos: '../assets/juego/monitos.png' });
+  OXXO_TURNO_NOCTURNO.montar({ monitos: '../assets/juego/monitos.png', armas: '../assets/juego/armas.png' });
 </script>
 </body>
 </html>
