@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="es" data-oxxo-region-unavailable="1">
+<head>
+  <script>(function(){try{if(localStorage.getItem('oxxo_site_unlocked')!=='1')document.documentElement.classList.add('oxxo-locked');}catch(e){}})();</script>
+  <style>html.oxxo-locked{background:#2D0B0C}html.oxxo-locked body>*{visibility:hidden!important}#oxxo-lock-overlay{visibility:visible!important}</style>
+  <script defer src="../js/site-lock.js?v=d1e9ba73"></script>
+  <meta charset="UTF-8"/>
+  <meta name="robots" content="noindex, nofollow"/><meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <title>Turno Nocturno · Dashboards Ats</title>
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+  <link rel="icon" type="image/png" href="../assets/favicon.png"/>
+  <link rel="apple-touch-icon" href="../assets/favicon.png"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=VT323&display=swap"/>
+  <link rel="stylesheet" href="../css/juego-turno-nocturno.css?v=d1e9ba73"/>
+</head>
+<body class="turno-page">
+<div id="app">
+  <div id="stage">
+    <canvas id="view" width="320" height="200" role="img" aria-label="Vista del juego dentro de la tienda"></canvas>
+    <div id="msg" aria-live="polite"></div>
+    <div id="touch" hidden>
+      <div id="stick"><div id="knob"></div></div>
+      <button class="tb" id="tSwap" type="button">ARMA</button>
+      <button class="tb" id="tUse" type="button">USAR</button>
+      <button class="tb" id="tFire" type="button">FUEGO</button>
+    </div>
+
+    <div class="screen" id="scrTitle">
+      <div class="tag">TIENDA 24 H · 3:00 A.M.</div>
+      <h1>TURNO<br>NOCTURNO</h1>
+      <p>Algo salió mal con el rodillo de salchichas y la tienda se llenó de monitos. Cruza la bodega, la cámara fría y los pasillos hasta la puerta de SALIDA.</p>
+      <div class="monitos">
+        <span><b>Salchicha mutante</b> · escupe jalapeños</span>
+        <span><b>Cajero zombi</b> · avienta monedas</span>
+        <span><b>Vaso gigante</b> · muerde</span>
+      </div>
+      <div class="keys" id="keyHelp">
+        <kbd>W A S D</kbd><span>moverse</span>
+        <kbd>Ratón / ← →</kbd><span>girar</span>
+        <kbd>Clic / Espacio</kbd><span>disparar</span>
+        <kbd>E</kbd><span>abrir puertas, salir</span>
+        <kbd>1 2 / Q</kbd><span>cátsup o hielo</span>
+        <kbd>Shift</kbd><span>correr</span>
+        <kbd>M</kbd><span>mapa</span>
+      </div>
+      <div class="record" id="titleRecord"></div>
+      <div class="acciones">
+        <button class="btn" id="bStart" type="button">ENTRAR AL TURNO</button>
+        <a class="salir" href="../index.html">← VOLVER AL INICIO</a>
+      </div>
+      <p class="aviso">El mejor tiempo se guarda en este navegador. El juego no lee ni envía ningún dato.</p>
+    </div>
+
+    <div class="screen" id="scrPause" hidden>
+      <h1>PAUSA</h1>
+      <div class="acciones">
+        <button class="btn" id="bResume" type="button">CONTINUAR</button>
+        <a class="salir" href="../index.html">← VOLVER AL INICIO</a>
+      </div>
+    </div>
+
+    <div class="screen" id="scrEnd" hidden>
+      <h1 id="endTitle">FIN DEL TURNO</h1>
+      <p id="endText"></p>
+      <div class="stats" id="endStats"></div>
+      <div class="acciones">
+        <button class="btn" id="bAgain" type="button">OTRO TURNO</button>
+        <a class="salir" href="../index.html">← VOLVER AL INICIO</a>
+      </div>
+    </div>
+  </div>
+
+  <footer id="hud">
+    <div class="cell"><b id="hHp">100%</b><span>SALUD</span></div>
+    <div class="cell"><b id="hAmmo">50</b><span id="hAmmoL">SOBRES</span></div>
+    <div class="cell"><b id="hWeap">CÁTSUP</b><small id="hInv">50 sobres · 0 hielos</small></div>
+    <div class="cell"><b id="hKills">0/0</b><span>MONITOS</span></div>
+    <div class="cell opt"><b id="hTime">0:00</b><span>TIEMPO</span></div>
+  </footer>
+</div>
+
+<script src="../js/juego-turno-nocturno.js?v=d1e9ba73"></script>
+<script>
+  OXXO_TURNO_NOCTURNO.montar();
+</script>
+</body>
+</html>
