@@ -736,14 +736,17 @@
     }
     // Posicion del arma en la capa (esquina superior izquierda) con balanceo,
     // retroceso y cambio de arma.
+    // ESC: tamano del arma en pantalla. BAJA: cuanto se hunde bajo el borde,
+    // para que los brazos salgan de abajo y no se vean flotando.
+    const ESC = 0.8, BAJA = 70, ALTO_ARMA = 360 * ESC;
     function poseArma(w) {
       const mv = moving ? 1 : 0, sw = swapT > 0 ? swapT * 480 : 0;
-      const x = AW / 2 - w.hoja[1] / 2 + Math.cos(bobT) * 20 * mv;
-      const y = AH - 360 + Math.abs(Math.sin(bobT)) * 18 * mv + recoil * 18 + sw + (state === 'dying' || state === 'dead' ? 180 : 0);
+      const x = AW / 2 - w.hoja[1] * ESC / 2 + Math.cos(bobT) * 20 * mv;
+      const y = AH - ALTO_ARMA + BAJA + Math.abs(Math.sin(bobT)) * 18 * mv + recoil * 18 + sw + (state === 'dying' || state === 'dead' ? 180 : 0);
       return [x, y];
     }
     function efectoDisparo(w) {
-      const [x, y] = poseArma(w), bx = x + w.boca[0], by = y + w.boca[1];
+      const [x, y] = poseArma(w), bx = x + w.boca[0] * ESC, by = y + w.boca[1] * ESC;
       // Los chorros apuntan a la mira (centro de la pantalla).
       const haciaMira = Math.atan2(AH / 2 - 20 - by, AW / 2 - bx);
       const chorro = (n, color, vel, abre, vida, tam, g) => {
@@ -762,7 +765,7 @@
       const avance = wcool > 0 ? Math.sin(clamp(1 - wcool / w.rate, 0, 1) * Math.PI) : 0;
       // Onda de "No hay sistema": anillos azules y amarillos que se abren.
       if (cur === 'terminal' && flashT > 0) {
-        const t = 1 - flashT / 0.7, cx = x + w.boca[0], cy = y + w.boca[1];
+        const t = 1 - flashT / 0.7, cx = x + w.boca[0] * ESC, cy = y + w.boca[1] * ESC;
         actx.save();
         for (let k = 0; k < 5; k++) {
           const r = (t * 900 + k * 70) % 900;
@@ -778,16 +781,16 @@
       actx.imageSmoothingEnabled = false;
       if (cur === 'trapeador' && avance > 0) {
         // Golpe: el trapeador se inclina hacia adelante desde los brazos.
-        actx.translate(x + w.hoja[1] / 2, y + 360); actx.rotate(-avance * 0.45); actx.translate(-(x + w.hoja[1] / 2), -(y + 360 + avance * 40));
+        actx.translate(x + w.hoja[1] * ESC / 2, y + ALTO_ARMA); actx.rotate(-avance * 0.45); actx.translate(-(x + w.hoja[1] * ESC / 2), -(y + ALTO_ARMA + avance * 40));
       } else if (cur === 'escudo' && avance > 0) {
-        actx.translate(x + w.hoja[1] / 2, y + 360); actx.scale(1 + avance * 0.12, 1 + avance * 0.12); actx.translate(-(x + w.hoja[1] / 2), -(y + 360));
+        actx.translate(x + w.hoja[1] * ESC / 2, y + ALTO_ARMA); actx.scale(1 + avance * 0.12, 1 + avance * 0.12); actx.translate(-(x + w.hoja[1] * ESC / 2), -(y + ALTO_ARMA));
       }
-      actx.drawImage(hojaArmas, w.hoja[0], 0, w.hoja[1], 360, Math.round(x), Math.round(y), w.hoja[1], 360);
+      actx.drawImage(hojaArmas, w.hoja[0], 0, w.hoja[1], 360, Math.round(x), Math.round(y), Math.round(w.hoja[1] * ESC), ALTO_ARMA);
       actx.restore();
       // Laser del escaner, encima del arma: destello en la boca y rayo hacia
       // el fondo de la mira (la boca queda casi al centro de la pantalla).
       if (cur === 'escaner' && flashT > 0) {
-        const bx = x + w.boca[0], by = y + w.boca[1], mx = AW / 2, my = AH / 2 - 60;
+        const bx = x + w.boca[0] * ESC, by = y + w.boca[1] * ESC, mx = AW / 2, my = AH / 2 - 60;
         const brillo = actx.createRadialGradient(bx, by, 2, bx, by, 60);
         brillo.addColorStop(0, 'rgba(255,240,240,1)'); brillo.addColorStop(.35, 'rgba(255,50,50,.85)'); brillo.addColorStop(1, 'rgba(255,0,0,0)');
         actx.fillStyle = brillo; actx.fillRect(bx - 60, by - 60, 120, 120);
