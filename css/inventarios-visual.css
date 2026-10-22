@@ -5,7 +5,6 @@ body.inventarios-page .inv-hero, body.dashboard-9-page .inv-hero { flex-directio
 :is(body.inventarios-page,body.dashboard-9-page) .inv-hero__eyebrow { display: block; margin-bottom: 6px; color: var(--du-red-dark); font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
 :is(body.inventarios-page,body.dashboard-9-page) .inv-hero p { max-width: 740px; }
 :is(body.inventarios-page,body.dashboard-9-page) .inv-hero__status { display: inline-flex; align-items: center; gap: 9px; min-height: 36px; padding: 7px 12px; border: 1px solid var(--du-border); border-radius: 999px; background: var(--du-soft); color: var(--du-muted); font-size: 12px; font-weight: 700; }
-:is(body.inventarios-page,body.dashboard-9-page) .inv-hero__status span { width: 8px; height: 8px; flex: 0 0 8px; border-radius: 50%; background: var(--du-green); }
 :is(body.inventarios-page,body.dashboard-9-page) .inv-kpis { grid-template-columns: repeat(2,minmax(0,1fr)); margin: 0 0 12px; }
 :is(body.inventarios-page,body.dashboard-9-page) .inv-kpis article { display: flex; flex-direction: column; justify-content: center; gap: 5px; min-width: 0; min-height: 108px; padding: 12px 12px 12px 14px; border: 1px solid var(--du-border); border-left: 4px solid var(--du-red); border-radius: var(--du-radius); background: #fff; box-shadow: var(--du-shadow); }
 :is(body.inventarios-page,body.dashboard-9-page) .inv-kpis span { color: var(--du-muted); font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }

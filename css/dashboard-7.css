@@ -7,8 +7,6 @@ body.dashboard-7-page .filtro-input:hover { border-color: var(--du-red); }
 body.dashboard-7-page .filtro-input::placeholder { color: var(--du-muted); }
 body.dashboard-7-page .vac-fbox[role="group"] { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; }
 body.dashboard-7-page .vac-fbox[role="group"] > label { grid-column: 1/-1; }
-body.dashboard-7-page .vac-fbox[role="group"] .filtro-btn:last-child { border-color: var(--du-red-dark); background: var(--du-red-dark); color: #fff; }
-body.dashboard-7-page .vac-fbox[role="group"] .filtro-btn:last-child:hover { background: var(--du-red); }
 body.dashboard-7-page .kpis { grid-template-columns: repeat(2,minmax(0,1fr)); }
 body.dashboard-7-page #kpi-section > .kpi-card:only-child { grid-column: 1/-1; }
 body.dashboard-7-page .row-main { display: grid; grid-template-columns: minmax(0,1.5fr) minmax(300px,1fr); align-items: stretch; gap: 12px; margin-bottom: 12px; }

@@ -21,7 +21,7 @@
   <script defer src="../js/rh-table-tools.js?v=7184ebc0"></script>
   <script defer src="../js/rh-filter-summary.js?v=7184ebc0"></script>
 </head>
-<body class="dashboard-13-page hr-dashboard rh-unified rh-layered">
+<body class="dashboard-13-page hr-dashboard rh-unified rh-layered rh-cabecera">
 <nav class="topbar">
   <div class="topbar__brand">
     <div class="topbar__logo"><img src="../assets/oxxo-logo-original.png" alt="OXXO"></div>
@@ -42,17 +42,17 @@
     <div class="hero-top">
       <div>
         <span class="hero-eyebrow">Bienestar · Incapacidades IMSS</span><h1>Control de Ausentismo</h1>
-        <p>Incapacidades del IMSS, días perdidos y análisis de riesgos de trabajo · Plaza Oaxaca</p>
-      </div>
-      <div class="hero-scope-status">
-        <span class="scope-exclusive-alert" role="status" aria-label="Dashboard exclusivo para Plaza Oaxaca">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="2"></rect><path d="M8 10V7a4 4 0 0 1 8 0v3"></path></svg>
-          Uso exclusivo · Plaza Oaxaca
-        </span>
-        <span class="hero-badge" id="corte-badge">⟳ Control de Ausentismo · Plaza Oaxaca</span>
       </div>
       <span id="hero-download" style="display:none"></span>
     </div>
+    <div class="hero-context"><span class="scope-exclusive-alert" role="status" aria-label="Dashboard exclusivo para Plaza Oaxaca">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="2"></rect><path d="M8 10V7a4 4 0 0 1 8 0v3"></path></svg>
+          Uso exclusivo · Plaza Oaxaca
+        </span>
+        <span id="corte-badge">Control de Ausentismo · Plaza Oaxaca</span></div>
+  </div>
+
+  <section class="filter-panel" aria-label="Filtros del dashboard">
     <div class="vac-filters">
       <div class="vac-fbox"><label for="filtro-asesor-button">Asesor</label><div id="filtro-asesor"></div></div>
       <div class="vac-fbox">
@@ -63,9 +63,9 @@
         <label for="filtro-puesto">Puesto</label>
         <select class="filtro-select" id="filtro-puesto" onchange="applyFilters()"><option value="">Todos</option></select>
       </div>
-      <div class="vac-fbox"><label aria-hidden="true">&nbsp;</label><button type="button" class="filtro-btn" onclick="limpiarFiltros()">Limpiar filtros</button></div>
+      <div class="vac-fbox"><label aria-hidden="true">&nbsp;</label><button type="button" class="filtro-btn" onclick="limpiarFiltros()">✕ Limpiar</button></div>
     </div>
-  </div>
+  </section>
 
   <div class="rh-layer"><h2 class="rh-layer__title">Resumen ejecutivo</h2><p class="rh-layer__purpose">Incapacidades y días perdidos del periodo.</p></div>
 
@@ -1049,8 +1049,8 @@ async function initDashboard(){
 
     const fechas = BASE.map(r => fechaIso(val(r, C.fIni))).filter(Boolean).sort();
     document.getElementById('corte-badge').textContent = CUTOFF_MONTH
-      ? `⟳ Acumulado ${MESES[0]}–${MESES[CUTOFF_MONTH-1]} ${REPORT_YEAR} · Plaza Oaxaca`
-      : '⟳ Control de Ausentismo · Plaza Oaxaca';
+      ? `Acumulado ${MESES[0]}–${MESES[CUTOFF_MONTH-1]} ${REPORT_YEAR} · Plaza Oaxaca`
+      : 'Control de Ausentismo · Plaza Oaxaca';
 
     const asesores = [...new Set(BASE.map(r => val(r, C.asesor)).filter(Boolean))].sort();
     asesorFilterHandle = OXXO.mountAsesorFilter('filtro-asesor', asesores, {

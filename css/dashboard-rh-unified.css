@@ -102,6 +102,60 @@ body.rh-unified .filter-panel, body.rh-unified .hero .vac-filters {
   background: var(--du-card); box-shadow: var(--du-shadow);
 }
 body.rh-unified .hero .vac-filters { margin: 0; box-shadow: none; }
+
+/* ── Encabezado comun (patron de Dashboard 1) ─────────────────────────────
+   Lo activa body.rh-cabecera: titulo y selector de plaza como botones dentro
+   del hero, el corte en una linea de contexto debajo y los filtros en su
+   propia tarjeta (.filter-panel). D1 conserva sus propias reglas. */
+body.rh-cabecera .hero-context {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px;
+  margin: 8px 0 0; color: var(--du-muted); font-size: 13px; font-weight: 600;
+}
+body.rh-cabecera .hero-context:empty, body.rh-cabecera #hero-download:empty { display: none; }
+/* Punto de "datos al dia" que algunos tableros escriben al inicio del corte. */
+body.rh-cabecera .hero-context > span:empty:first-child { width: 8px; height: 8px; flex: 0 0 8px; border-radius: 50%; background: var(--du-green); }
+body.rh-cabecera .hero .oxxo-scope-selector {
+  width: 100%; max-width: 100%; margin: 0; padding: 0; gap: 8px;
+  border: 0 !important; border-radius: 0; background: transparent !important; box-shadow: none !important;
+}
+body.rh-cabecera .hero .oxxo-scope-selector__intro { display: none; }
+body.rh-cabecera .hero :is(.oxxo-scope-switch, .oxxo-store-status) {
+  display: flex; flex-wrap: nowrap; gap: 4px; width: 100%; padding: 4px; overflow-x: auto;
+  border: 0; border-radius: 12px; background: #f3ede7; box-shadow: none;
+}
+body.rh-cabecera .hero :is(.oxxo-scope-switch__opt, .oxxo-store-status__opt) {
+  display: inline-flex; flex: 0 0 auto; align-items: center; justify-content: center; gap: 6px;
+  min-width: var(--du-target); min-height: var(--du-target); padding: 0 14px;
+  border: 0 !important; border-radius: 9px !important; background: transparent !important; color: var(--du-text) !important;
+  box-shadow: none !important; font: 700 14px/1.1 var(--font-body); transform: none !important;
+}
+body.rh-cabecera .hero :is(.oxxo-scope-switch__opt, .oxxo-store-status__opt):hover { background: #fff !important; }
+body.rh-cabecera .hero :is(.oxxo-scope-switch__opt, .oxxo-store-status__opt).is-active { background: var(--du-red-dark) !important; color: #fff !important; }
+/* Comercial y Administrativo conservan el color de su area en la opcion activa. */
+body.rh-cabecera .hero .oxxo-scope-selector:is([data-area="comercial"], [data-area="administrativo"]) :is(.oxxo-scope-switch__opt, .oxxo-store-status__opt).is-active { background: var(--scope-accent) !important; }
+body.rh-cabecera .hero :is(.oxxo-scope-switch__opt, .oxxo-store-status__opt).is-active::before { content: "✓"; }
+body.rh-cabecera .hero .oxxo-scope-switch__dot { display: none; }
+body.rh-cabecera .filter-panel .vac-filters { grid-template-columns: minmax(0, 1fr); }
+body.rh-cabecera .filter-panel .vac-filter-status { grid-column: 1 / -1; }
+body.rh-cabecera .rh-filter-summary-badge { display: none; }
+/* La caja "Filtros y acciones" lleva sus botones lado a lado: misma altura que los demas filtros. */
+body.rh-cabecera .filter-panel .vac-fbox:has(.filtro-btn + .filtro-btn) { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 10px; }
+body.rh-cabecera .filter-panel .vac-fbox:has(.filtro-btn + .filtro-btn) > label { grid-column: 1 / -1; }
+/* Encabezados de Administrativo y Comercial (sin .hero-top): titulo, selector y corte en columna. */
+body.rh-cabecera :is(.inv-hero, .promo-hero) { flex-direction: column; align-items: stretch; justify-content: flex-start; }
+body.rh-cabecera :is(.inv-hero, .promo-hero) > .oxxo-scope-selector { order: 1; }
+body.rh-cabecera :is(.inv-hero, .promo-hero) > .hero-context { order: 2; }
+@media (min-width: 768px) {
+  body.rh-cabecera .filter-panel .vac-filters { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+}
+@media (min-width: 1024px) {
+  body.rh-cabecera .hero .oxxo-scope-selector { display: flex; flex-wrap: wrap; align-items: center; }
+  body.rh-cabecera .hero :is(.oxxo-scope-switch, .oxxo-store-status) { width: auto; flex-wrap: wrap; overflow: visible; }
+  body.rh-cabecera .hero :is(.oxxo-scope-switch__opt, .oxxo-store-status__opt) { min-width: 0; min-height: 36px; padding-inline: 12px; }
+}
+@media (max-width: 640px) {
+  body.rh-cabecera .hero :is(.oxxo-scope-switch, .oxxo-store-status) { display: grid; overflow: visible; }
+}
 body.rh-unified .vac-filters { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; align-items: end; }
 body.rh-unified .vac-fbox { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
 body.rh-unified .vac-fbox > label {

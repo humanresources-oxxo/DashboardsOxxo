@@ -8,8 +8,6 @@ body.dashboard-8-page .icon-inline { width: 18px; height: 18px; fill: none; stro
 
 /* Filtros del hero: la caja "Filtros" trae 2 botones (Limpiar + Descargar).
    En 2 columnas iguala su altura al resto y evita el hueco de align-items:end. */
-body.dashboard-8-page .vac-fbox:has(.filtro-btn + .filtro-btn) { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 6px 10px; }
-body.dashboard-8-page .vac-fbox:has(.filtro-btn + .filtro-btn) > label { grid-column: 1 / -1; }
 
 /* KPIs: 4 tarjetas -> 2x2 en tablet, 4 en linea en escritorio. */
 body.dashboard-8-page .kpi-card.azul { --du-accent: var(--du-focus); }

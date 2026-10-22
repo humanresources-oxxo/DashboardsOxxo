@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="../css/global.css?v=7184ebc0"/>  <link rel="stylesheet" href="../css/dashboard-rh-unified.css?v=7184ebc0">
   <link rel="stylesheet" href="../css/dashboard-14.css?v=7184ebc0">
 </head>
-<body class="dashboard-14-page commercial-dashboard rh-unified rh-layered">
+<body class="dashboard-14-page commercial-dashboard rh-unified rh-layered rh-cabecera">
 <nav class="topbar">
   <div class="topbar__brand">
     <div class="topbar__logo"><img src="../assets/oxxo-logo-original.png" alt="OXXO"></div>
@@ -35,11 +35,13 @@
       <div>
         <span class="hero-eyebrow">Desempeño comercial · Corte quincenal</span>
         <h1>Avance Comercial</h1>
-        <p>SPIN, Premia, Cruzada Andatti, Venta Sugerida, Banner y MEP vs meta · Plaza Oaxaca</p>
       </div>
-      <span class="hero-badge" id="hero-badge">⟳ Avance Comercial · Plaza Oaxaca</span>
       <span id="hero-download" style="display:none"></span>
     </div>
+    <div class="hero-context"><span id="hero-badge">Avance Comercial · Plaza Oaxaca</span></div>
+  </div>
+
+  <section class="filter-panel" aria-label="Filtros del dashboard">
     <div class="vac-filters">
       <div class="vac-fbox"><label for="filtro-asesor-button">Asesor</label><div id="filtro-asesor"></div></div>
       <div class="vac-fbox">
@@ -50,7 +52,7 @@
         </div>
       </div>
     </div>
-  </div>
+  </section>
 
   <div id="estado-carga" class="state-box"><div class="spinner"></div><span>Cargando indicadores…</span></div>
 
@@ -398,7 +400,7 @@ function renderAll(){
   renderMapaAvance(data);
   renderPrioridad(data);
   renderTabla(data);
-  document.getElementById('hero-badge').textContent = `⟳ ${BASE.length} tiendas · corte quincenal`;
+  document.getElementById('hero-badge').textContent = `${BASE.length} tiendas · corte quincenal`;
 }
 
 async function initDashboard(){

@@ -3,8 +3,6 @@ body.promociones-page .promo-hero { flex-direction: row; align-items: center; ju
 body.promociones-page .promo-hero__copy { min-width: 0; }
 body.promociones-page .promo-hero__eyebrow { display: block; margin-bottom: 6px; color: var(--du-red-dark); font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
 body.promociones-page .promo-hero p { max-width: 690px; }
-body.promociones-page .promo-hero__status { display: inline-flex; align-items: center; gap: 9px; min-height: 36px; padding: 7px 12px; border: 1px solid var(--du-border); border-radius: 999px; background: var(--du-soft); color: var(--du-muted); font-size: 12px; font-weight: 700; }
-body.promociones-page .promo-hero__status span { width: 8px; height: 8px; flex: 0 0 8px; border-radius: 50%; background: var(--du-green); }
 body.promociones-page .promo-summary { grid-template-columns: repeat(3,minmax(0,1fr)); gap: 10px; margin: 0 0 12px; }
 body.promociones-page .promo-summary article { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; min-height: 96px; padding: 14px 16px; border: 1px solid var(--du-border); border-left: 4px solid var(--du-red); border-radius: var(--du-radius); background: #fff; box-shadow: var(--du-shadow); }
 body.promociones-page .promo-summary span { color: var(--du-muted); font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }

@@ -21,7 +21,7 @@
   <script defer src="../js/rh-table-tools.js?v=7184ebc0"></script>
   <script defer src="../js/rh-filter-summary.js?v=7184ebc0"></script>
 </head>
-<body class="hr-dashboard dashboard-8-page rh-unified rh-layered">
+<body class="hr-dashboard dashboard-8-page rh-unified rh-layered rh-cabecera">
 <nav class="topbar">
   <div class="topbar__brand">
     <div class="topbar__logo"><img src="../assets/oxxo-logo-original.png" alt="OXXO"></div>
@@ -42,11 +42,13 @@
     <div class="hero-top">
       <div>
         <span class="hero-eyebrow">Desarrollo · Certificaciones</span><h1>Capacidades 2026</h1>
-        <p>Avance de certificaciones y capacitaciones por asesor, puesto y tienda · Plaza Oaxaca</p>
       </div>
-      <span class="hero-badge" id="corte-badge">⟳ Diario · Plaza Oaxaca</span>
       <span id="hero-download" style="display:none"></span>
     </div>
+    <div class="hero-context"><span id="corte-badge">Diario · Plaza Oaxaca</span></div>
+  </div>
+
+  <section class="filter-panel" aria-label="Filtros del dashboard">
     <div class="vac-filters">
       <div class="vac-fbox">
         <label for="filtro-asesor-button">Asesor</label>
@@ -65,12 +67,12 @@
         </select>
       </div>
       <div class="vac-fbox" role="group" aria-labelledby="filtros-acciones-label">
-        <label id="filtros-acciones-label">Filtros</label>
+        <label id="filtros-acciones-label">Filtros y acciones</label>
         <button type="button" class="filtro-btn" onclick="limpiarFiltros()">✕ Limpiar</button>
         <button class="filtro-btn" type="button" onclick="OXXO.handleDownloadButton(this, () => OXXO.downloadSheetTab(TAB, 'dashboard-8-capacidades.csv'))">Descargar base</button>
       </div>
     </div>
-  </div>
+  </section>
 
   <div class="rh-layer"><h2 class="rh-layer__title">Resumen ejecutivo</h2><p class="rh-layer__purpose">Avance de certificaciones con los filtros activos.</p></div>
 
@@ -606,7 +608,7 @@ async function initDashboard() {
   BASE_DATA = data;
   clasificarCerts(detectarCerts(data[0]), data);
 
-  document.getElementById('corte-badge').textContent = `⟳ Foto diaria · Plaza Oaxaca`;
+  document.getElementById('corte-badge').textContent = `Foto diaria · Plaza Oaxaca`;
 
   const asesores = [...new Set(data.map(r=>r[C.asesor]).filter(Boolean))].sort();
   const puestos  = [...new Set(data.map(r=>r[C.puesto]).filter(Boolean))].sort();

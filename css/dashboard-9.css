@@ -1,5 +1,4 @@
 /* Dashboard 9: faltantes y sobrantes; sólo los módulos específicos sobre el canon. */
-body.dashboard-9-page .d9-hero-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
 body.dashboard-9-page .d9-analysis-link { color: var(--du-red-dark); text-decoration: none; }
 body.dashboard-9-page .d9-analysis-link:hover { border-color: var(--du-red); }
 body.dashboard-9-page .d9-analysis-link svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; }
@@ -106,7 +105,6 @@ body.dashboard-9-page .dash-footer { max-width: 1480px; margin: 0 auto; padding-
   body.dashboard-9-page .dash-footer { padding-inline: 14px; }
 }
 @media (max-width: 560px) {
-  body.dashboard-9-page .d9-hero-meta { width: 100%; }
   body.dashboard-9-page .d9-analysis-link { white-space: normal; }
   body.dashboard-9-page .inv-filters { grid-template-columns: 1fr; }
   body.dashboard-9-page .donut-legend { grid-template-columns: 1fr; }
