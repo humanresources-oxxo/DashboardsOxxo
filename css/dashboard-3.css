@@ -1,12 +1,51 @@
 /* Dashboard 3: componentes propios sobre dashboard-rh-unified.css. */
 
-body.dashboard-3-page .hero-right { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+/* Encabezado y filtros con el mismo patron que Dashboard 1: titulo y selector
+   de plaza en el hero, filtros en su propia tarjeta (.filter-panel). */
+body.dashboard-3-page .hero-context { margin: 8px 0 0; color: var(--du-muted); font-size: 13px; }
 body.dashboard-3-page #hero-download:empty,
-body.dashboard-3-page #hero-date:empty { display: none; }
-body.dashboard-3-page .hero .vac-filters { grid-template-columns: minmax(0,1fr); }
-body.dashboard-3-page .vac-actions { display: grid; grid-template-columns: minmax(0,1fr); gap: 8px; }
-body.dashboard-3-page .vac-fbox--actions { min-width: 0; }
-body.dashboard-3-page .download-filter { color: var(--du-red-dark); }
+body.dashboard-3-page .hero-context:empty { display: none; }
+
+body.dashboard-3-page .hero .oxxo-scope-selector {
+  width: 100%; max-width: 100%; margin: 0; padding: 0; gap: 8px;
+  border: 0 !important; border-radius: 0; background: transparent !important; box-shadow: none !important;
+}
+body.dashboard-3-page .hero .oxxo-scope-selector__intro { display: none; }
+body.dashboard-3-page .hero :is(.oxxo-scope-switch,.oxxo-store-status) {
+  display: flex; flex-wrap: nowrap; gap: 4px; width: 100%; padding: 4px; overflow-x: auto;
+  border: 0; border-radius: 12px; background: #f3ede7; box-shadow: none;
+}
+body.dashboard-3-page .hero :is(.oxxo-scope-switch__opt,.oxxo-store-status__opt) {
+  display: inline-flex; flex: 0 0 auto; align-items: center; justify-content: center; gap: 6px;
+  min-width: var(--du-target); min-height: var(--du-target); padding: 0 14px;
+  border: 0 !important; border-radius: 9px !important; background: transparent !important; color: var(--du-text) !important;
+  box-shadow: none !important; font: 700 14px/1.1 var(--font-body); transform: none !important;
+}
+body.dashboard-3-page .hero :is(.oxxo-scope-switch__opt,.oxxo-store-status__opt):hover { background: #fff !important; }
+body.dashboard-3-page .hero :is(.oxxo-scope-switch__opt,.oxxo-store-status__opt).is-active { background: var(--du-red-dark) !important; color: #fff !important; }
+body.dashboard-3-page .hero :is(.oxxo-scope-switch__opt,.oxxo-store-status__opt).is-active::before { content: "✓"; }
+body.dashboard-3-page .hero .oxxo-scope-switch__dot { display: none; }
+
+body.dashboard-3-page .filter-panel .vac-filters { grid-template-columns: minmax(0,1fr); }
+/* Igual que en D1: el badge de filtros activos no se muestra aqui. */
+body.dashboard-3-page .rh-filter-summary-badge { display: none; }
+/* La caja "Filtros y acciones" lleva sus 2 botones lado a lado para igualar su
+   altura con la de los demas filtros. */
+body.dashboard-3-page .filter-panel .vac-fbox:has(.filtro-btn + .filtro-btn) {
+  display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 6px 10px;
+}
+body.dashboard-3-page .filter-panel .vac-fbox:has(.filtro-btn + .filtro-btn) > label { grid-column: 1 / -1; }
+@media (min-width: 768px) {
+  body.dashboard-3-page .filter-panel .vac-filters { grid-template-columns: repeat(3,minmax(0,1fr)); }
+}
+@media (min-width: 1024px) {
+  body.dashboard-3-page .hero .oxxo-scope-selector { display: flex; flex-wrap: wrap; align-items: center; }
+  body.dashboard-3-page .hero :is(.oxxo-scope-switch,.oxxo-store-status) { width: auto; flex-wrap: wrap; overflow: visible; }
+  body.dashboard-3-page .hero :is(.oxxo-scope-switch__opt,.oxxo-store-status__opt) { min-width: 0; min-height: 36px; padding-inline: 12px; }
+}
+@media (max-width: 640px) {
+  body.dashboard-3-page .hero :is(.oxxo-scope-switch,.oxxo-store-status) { display: grid; overflow: visible; }
+}
 body.dashboard-3-page .icon-inline { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; vertical-align: -4px; }
 
 body.dashboard-3-page .kpi-card { cursor: pointer; }

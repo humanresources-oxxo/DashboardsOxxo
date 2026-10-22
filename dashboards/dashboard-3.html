@@ -44,25 +44,24 @@
 <div class="page">
 
   <!-- HERO con filtros -->
-  <div class="hero hero--green">
+  <div class="hero">
     <div class="hero-top">
       <div>
         <span class="hero-eyebrow">Estructura · Equipo completo</span><h1>Aprovechamiento de Estructura</h1>
-        <p>Equipo Completo · Equipo Incompleto · Tienda Crítica · Aprovechamiento por AT y Plaza</p>
       </div>
-      <div class="hero-right">
-        <span class="hero-badge">⟳ Semanal · Plaza Oaxaca</span>
-        <span id="hero-download"></span>
-        <span class="hero-date" id="hero-date"></span>
-      </div>
+      <span id="hero-download"></span>
     </div>
+    <p class="hero-context" id="hero-date"></p>
+  </div>
+
+  <section class="filter-panel" aria-label="Filtros del dashboard">
     <div class="vac-filters">
       <div class="vac-fbox">
         <label for="asesor-button">Asesor</label>
         <div class="smart-filter" id="asesor-filter">
           <button class="smart-filter__button" type="button" id="asesor-button">
             <span class="smart-filter__label" id="asesor-label">Todos los asesores</span>
-            <span class="smart-filter__chev">v</span>
+            <span class="smart-filter__chev">▾</span>
           </button>
           <div class="smart-filter__menu" id="asesor-menu">
             <input class="smart-filter__search" id="asesor-search" type="search" placeholder="Buscar asesor..." autocomplete="off">
@@ -72,7 +71,7 @@
         </div>
       </div>
       <div class="vac-fbox">
-        <label for="filtro-estatus"><svg class="icon-inline" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.59 13.41L13.42 20.58a2 2 0 0 1-2.83 0L2.59 12.58a2 2 0 0 1 0-2.83L9.76 2.58A2 2 0 0 1 11.17 2H18a2 2 0 0 1 2 2v6.83a2 2 0 0 1-.59 1.41z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>Estatus</label>
+        <label for="filtro-estatus">Estatus</label>
         <select class="filtro-select" id="filtro-estatus" onchange="applyFilters()">
           <option value="">Todos los estatus</option>
           <option value="completo">Equipo Completo</option>
@@ -80,15 +79,13 @@
           <option value="critica">Tienda Crítica</option>
         </select>
       </div>
-      <div class="vac-fbox vac-fbox--actions" role="group" aria-labelledby="filtros-acciones-label">
-        <label id="filtros-acciones-label">Acciones</label>
-        <div class="vac-actions">
-          <button type="button" class="filtro-btn" onclick="limpiarFiltros()">✕ Limpiar filtros</button>
-          <button class="filtro-btn download-filter" type="button" onclick="OXXO.handleDownloadButton(this, () => OXXO.downloadSheetTab(TAB, 'dashboard-3-estructura.csv'))">Descargar base</button>
-        </div>
+      <div class="vac-fbox" role="group" aria-labelledby="filtros-acciones-label">
+        <label id="filtros-acciones-label">Filtros y acciones</label>
+        <button type="button" class="filtro-btn" onclick="limpiarFiltros()">✕ Limpiar</button>
+        <button class="filtro-btn" type="button" onclick="OXXO.handleDownloadButton(this, () => OXXO.downloadSheetTab(TAB, 'dashboard-3-estructura.csv'))">Descargar base</button>
       </div>
     </div>
-  </div>
+  </section>
 
   <div class="rh-layer"><h2 class="rh-layer__title">Resumen ejecutivo</h2><p class="rh-layer__purpose">Estado de la estructura de tiendas en el corte vigente.</p></div>
 
