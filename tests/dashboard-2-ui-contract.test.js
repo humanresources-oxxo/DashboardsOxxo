@@ -281,7 +281,7 @@ function cargarD2(esAdminUnit = () => false) {
     return e;
   };
   const conocidos = ['kpi-section', 'tabla-compromiso', 'tabla-detalle', 'tabla-plazas', 'row-count', 'heatmap-bajas', 'heatmap-status',
-    'd2-active-context', 'd2-filter-summary', 'load-time', 'd2-hero-load', 'plazas-scope-toggle', 'motivos-pastel-empty',
+    'd2-active-context', 'd2-filter-summary', 'load-time', 'plazas-scope-toggle', 'motivos-pastel-empty',
     'd2-decision-list', 'asesores-empty'];
   const documento = {
     body: { classList: { add() {} } },
