@@ -25,8 +25,8 @@ const posicion = fragmento => {
   return i;
 };
 
-test('orden de la pagina: encabezado, filtros, KPI, panorama, analisis, plazas, tiendas, mapa, detalle y denominaciones', () => {
-  const orden = ['class="d2-hero"', 'class="d2-filter-region"', 'id="kpi-section"', 'id="d2-decision"', 'class="d2-analysis"', 'class="d2-panel d2-plazas"',
+test('orden de la pagina: encabezado, filtros, KPI, analisis, plazas, tiendas, mapa, detalle y denominaciones', () => {
+  const orden = ['class="d2-hero"', 'class="d2-filter-region"', 'id="kpi-section"', 'class="d2-analysis"', 'class="d2-panel d2-plazas"',
     'd2-panel--tiendas', 'd2-panel--heatmap', 'd2-panel--detalle', 'id="denom-section"', 'class="dash-footer"'].map(posicion);
   assert.deepEqual(orden, [...orden].sort((a, b) => a - b), 'el DOM debe seguir el orden visual movil');
   // El resumen numerico del encabezado y sus insights duplicados ya no existen.
@@ -39,7 +39,7 @@ test('conserva todos los IDs que consumen scripts compartidos, filtros y descarg
     'chart-tiendas', 'heatmap-bajas', 'tabla-detalle', 'row-count', 'btn-denominaciones', 'btn-motivos-pastel', 'motivos-modal',
     'motivos-title', 'chart-motivos-pastel', 'motivos-pastel-empty', 'denom-section', 'denom-count', 'denom-kpis', 'tabla-denominaciones',
     'load-time', 'baja-modal', 'baja-title', 'baja-body', 'hero-download', 'heatmap-status', 'heatmap-help', 'd2-filter-toggle',
-    'd2-active-context', 'd2-scope', 'd2-analysis-panels', 'd2-plazas-panels', 'd2-decision', 'd2-decision-list', 'asesores-empty'];
+    'd2-active-context', 'd2-scope', 'd2-analysis-panels', 'd2-plazas-panels', 'asesores-empty'];
   for (const id of ids) ok(cuerpo, new RegExp(`\\bid="${id}"`), `falta id="${id}"`);
   const repetidos = [...cuerpo.matchAll(/\bid="([^"]+)"/g)].map(m => m[1]).filter((id, i, todos) => todos.indexOf(id) !== i);
   assert.deepEqual(repetidos, [], 'IDs duplicados');
@@ -203,7 +203,7 @@ test('Analisis, descargas, modales, denominaciones y lecturas en paralelo se con
 });
 
 test('rotulos de alcance: cada panel declara lo que de verdad usa', () => {
-  for (const tipo of ['decision', 'compromiso', 'asesores', 'tiendas', 'heatmap', 'detalle', 'plazas', 'denom']) {
+  for (const tipo of ['compromiso', 'asesores', 'tiendas', 'heatmap', 'detalle', 'plazas', 'denom']) {
     ok(cuerpo, new RegExp(`class="d2-panel-scope" data-d2-scope="${tipo}"`), `falta el rotulo ${tipo}`);
   }
   ok(js, /function updatePanelScopeLabels\(\)/);
@@ -281,8 +281,7 @@ function cargarD2(esAdminUnit = () => false) {
     return e;
   };
   const conocidos = ['kpi-section', 'tabla-compromiso', 'tabla-detalle', 'tabla-plazas', 'row-count', 'heatmap-bajas', 'heatmap-status',
-    'd2-active-context', 'd2-filter-summary', 'load-time', 'plazas-scope-toggle', 'motivos-pastel-empty',
-    'd2-decision-list', 'asesores-empty'];
+    'd2-active-context', 'd2-filter-summary', 'load-time', 'plazas-scope-toggle', 'motivos-pastel-empty', 'asesores-empty'];
   const documento = {
     body: { classList: { add() {} } },
     activeElement: null,
@@ -317,7 +316,7 @@ function cargarD2(esAdminUnit = () => false) {
     renderBajasDashboard(applyUserFilters(BASE_BAJAS_DATA, BAJAS_COLS), BAJAS_COLS);
     return { kpi: document.getElementById('kpi-section').innerHTML, heat: document.getElementById('heatmap-bajas').innerHTML,
       compromiso: document.getElementById('tabla-compromiso').innerHTML, detalle: document.getElementById('tabla-detalle').innerHTML,
-      panorama: document.getElementById('d2-decision-list').innerHTML, filas: document.getElementById('row-count').textContent,
+      filas: document.getElementById('row-count').textContent,
       asesoresVacio: document.getElementById('asesores-empty').hidden,
       asesores: asesorOptionsList(BASE_BAJAS_DATA, BAJAS_COLS), graficas };
   }, heatSpeak, heatTextColor, d2MonthShort, kpiCardHTML };`;
@@ -471,30 +470,13 @@ test('la agrupacion administrativa heredada no aparece como responsable en la UI
     no(texto, /Entrenamiento \/ Operaciones/, `${nombre} expone la agrupacion heredada`);
     no(texto, /Sin asesor asignado/, `${nombre} conserva la etiqueta anterior`);
   }
-  const { kpi, compromiso, detalle, asesores, panorama } = cargarD2(esAdminAt).run(filasAtribucion());
-  for (const salida of [kpi, compromiso, detalle, panorama, Array.from(asesores).join('|')]) no(salida, /Entrenamiento \/ Operaciones|SIN ASESOR ASIGNADO/i);
+  const { kpi, compromiso, detalle, asesores } = cargarD2(esAdminAt).run(filasAtribucion());
+  for (const salida of [kpi, compromiso, detalle, Array.from(asesores).join('|')]) no(salida, /Entrenamiento \/ Operaciones|SIN ASESOR ASIGNADO/i);
 });
 
-test('panorama de decision: concentracion temprana, motivo predominante y atribucion pendiente', () => {
-  ok(cuerpo, /<section class="d2-panel d2-decision" id="d2-decision" aria-labelledby="d2-decision-title"/);
-  ok(cuerpo, /<h2 class="d2-panel__title" id="d2-decision-title">Panorama de decisión/);
-  ok(cuerpo, /<ul class="d2-decision__list" id="d2-decision-list" aria-live="polite">/);
-  const { panorama } = cargarD2(esAdminAt).run(filasAtribucion());
-  const items = [...panorama.matchAll(/<li class="d2-decision__item is-(\w+)"><p class="d2-decision__label">([^<]+)<\/p><p class="d2-decision__value">([^<]+)<\/p><p class="d2-decision__text">([^<]+)</g)]
-    .map(m => ({ tono: m[1], etiqueta: m[2], valor: m[3], texto: m[4] }));
-  assert.deepEqual(items.map(i => i.etiqueta), ['Concentración temprana', 'Motivo predominante', 'Atribución pendiente']);
-  // 6 de 7 bajas dentro de 90 dias (5 en 0-45 + 1 en 46-90).
-  assert.deepEqual([items[0].valor, items[0].tono], ['86%', 'alert']);
-  ok(items[0].texto, /6 bajas de 7 en los primeros 90 días/);
-  assert.equal(items[1].valor, 'Renuncia', 'el motivo normalizado se presenta en tipo oración');
-  ok(items[1].texto, /86% de las bajas \(6 de 7\)/);
-  assert.deepEqual([items[2].valor, items[2].tono], ['4', 'alert']);
-  ok(items[2].texto, /4 bajas sin responsable identificado \(57%\)/);
-  // Sin pendientes: lectura positiva. Sin datos: estado vacio explicito.
-  const limpio = cargarD2().run([filaAt('Ana Perez', 'OXXO UNO')]).panorama;
-  ok(limpio, /is-ok"><p class="d2-decision__label">Atribución pendiente[\s\S]*Todas las bajas tienen asesor registrado/);
-  const vacio = cargarD2().run([filaAt('Ana Perez', 'OXXO UNO')], null, null, { puesto: 'Inexistente' }).panorama;
-  ok(vacio, /d2-decision__item--empty">Sin bajas con los filtros activos/);
+test('el panorama de decision ya no existe en D2', () => {
+  no(cuerpo, /d2-decision|Panorama de decisión/);
+  no(js, /renderDecisionPanel|d2-decision/);
 });
 
 // La tabla es el tablero de seguimiento de la plaza: un AT con meta y cero

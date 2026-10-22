@@ -1132,32 +1132,6 @@ function kpiCardHTML({ kpi, tone, label, tip, value, sub, entity, val: kpiVal, a
   const subTitle = entity ? ` title="${escHtml(entity)}"` : '';
   return `<div class="kpi-card d2-kpi ${tone}${staticCard}" data-kpi="${kpi}"${data} aria-label="${escHtml(aria)}"><div class="kpi-card__label">${label}<span class="info-tip" tabindex="0" data-tip="${escHtml(tip)}"></span></div><div class="kpi-card__value">${value}</div><div class="kpi-card__delta ${subClass}"${subTitle}>${escHtml(sub)}</div></div>`;
 }
-// Panorama de decision: tres lecturas accionables calculadas sobre las bajas
-// filtradas (concentracion temprana, motivo predominante y atribucion).
-const EARLY_TENURE = ['0 - 45 días', '46 - 90 días'];
-function renderDecisionPanel(data, cols, { total, pendientes, byMotivo, byTemp }){
-  const list = document.getElementById('d2-decision-list');
-  if(!list) return;
-  if(!total){
-    list.innerHTML = '<li class="d2-decision__item d2-decision__item--empty">Sin bajas con los filtros activos: no hay lecturas que priorizar.</li>';
-    return;
-  }
-  const share = n => Math.round((n / total) * 100);
-  const temprana = EARLY_TENURE.reduce((sum, key) => sum + (byTemp[key] || 0), 0);
-  const motivos = topEntries(byMotivo, 2);
-  const motivo = (motivos[0]?.label === 'Sin motivo' && motivos[1]) ? motivos[1] : motivos[0];
-  // Los motivos normalizados vienen en mayusculas ("RENUNCIA"): se leen en tipo oracion.
-  const humano = s => s === s.toUpperCase() ? s.charAt(0) + s.slice(1).toLowerCase() : s;
-  const item = ({ tone, label, value, text }) => `<li class="d2-decision__item is-${tone}"><p class="d2-decision__label">${label}</p><p class="d2-decision__value">${escHtml(value)}</p><p class="d2-decision__text">${escHtml(text)}</p></li>`;
-  list.innerHTML = [
-    item({ tone: share(temprana) >= 50 ? 'alert' : 'neutral', label: 'Concentración temprana', value: `${share(temprana)}%`,
-      text: temprana ? `${d2Plural(temprana, 'baja', 'bajas')} de ${total} en los primeros 90 días de antigüedad.` : 'Ninguna baja en los primeros 90 días de antigüedad.' }),
-    item({ tone: 'neutral', label: 'Motivo predominante', value: motivo ? humano(motivo.label) : 'Sin motivo',
-      text: motivo ? `${share(motivo.total)}% de las bajas (${motivo.total} de ${total}).` : 'No hay motivos registrados.' }),
-    item({ tone: pendientes ? 'alert' : 'ok', label: 'Atribución pendiente', value: String(pendientes),
-      text: pendientes ? `${d2Plural(pendientes, 'baja', 'bajas')} sin responsable identificado (${share(pendientes)}%). Revisar el Asesor en la base de origen.` : 'Todas las bajas tienen asesor registrado.' }),
-  ].join('');
-}
 function renderBajasDashboard(data, cols){
   LAST_FILTERED_COUNT = data.length;
   if(!data.length){
@@ -1179,7 +1153,6 @@ function renderBajasDashboard(data, cols){
       if(hadFocus) heatmapEl.querySelector('#heatmap-clear')?.focus({ preventScroll: true });
     }
     announceHeatmap();
-    renderDecisionPanel(data, cols, { total: 0, pendientes: 0, byMotivo: {}, byTemp: {} });
     renderPlazasForScope(cols);
     syncD2UI();
     return;
@@ -1230,7 +1203,6 @@ function renderBajasDashboard(data, cols){
       tip:'Bajas sin Asesor registrado (vacío, marcador o unidad administrativa sin asesor). Cuentan en el total y el detalle, pero no en rankings ni compromisos.',
       sub: pendientes ? pct(pendientes) : 'Todas con asesor registrado',
       aria: pendientes ? `Filtrar bajas pendientes de atribución: ${pendientes}` : 'Sin bajas pendientes de atribución' });
-  renderDecisionPanel(data, cols, { total, pendientes, byMotivo, byTemp });
   // El clic en el "i" de ayuda no debe filtrar: se resuelve aqui y no con un
   // onclick en cada tarjeta.
   document.querySelectorAll('#kpi-section .kpi-card[data-kpi]').forEach(card => {
@@ -1769,7 +1741,7 @@ function updatePanelScopeLabels(){
   const filtersFull = info => info.count ? `Filtros: ${info.items.join('; ')}` : 'Sin filtros secundarios';
   const common = `${scope} · ${d2MonthShort(mes)}`;
   const commonFull = `${scope}. ${status}. Mes: ${d2MonthLong(mes)}.`;
-  ['decision', 'detalle'].forEach(kind => setPanelScope(kind, `${common} · ${filtersShort(filters.count)}`, `${commonFull} ${filtersFull(filters)}.`));
+  setPanelScope('detalle', `${common} · ${filtersShort(filters.count)}`, `${commonFull} ${filtersFull(filters)}.`);
   ['compromiso', 'asesores'].forEach(kind => setPanelScope(kind, `${common} · ${filtersShort(filters.count)} · Solo asesores confirmados`, `${commonFull} ${filtersFull(filters)}. Solo asesores con registro confirmado.`));
   setPanelScope('tiendas', `${common} · ${filtersShort(filters.count)}`, `${commonFull} ${filtersFull(filters)}. Excluye unidades administrativas (no son tiendas operativas).`);
   setPanelScope('heatmap', `${common} · ${filtersShort(noHeat.count)}`, `${commonFull} ${filtersFull(noHeat)}. La selección del propio mapa no reduce su matriz.`);

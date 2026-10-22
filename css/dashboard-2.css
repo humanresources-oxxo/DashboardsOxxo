@@ -329,27 +329,6 @@ body.dashboard-2-page .info-tip::after { font-size: 13px; line-height: 1.4; }
   body.dashboard-2-page .d2-panel__head, body.dashboard-2-page .d2-kpis .kpi-card { position: relative; }
 }
 
-/* ── Panorama de decision ───────────────────────────────── */
-body.dashboard-2-page .d2-decision__list {
-  display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; margin: 0; padding: 0; list-style: none;
-}
-@media (min-width: 768px) { body.dashboard-2-page .d2-decision__list { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; } }
-body.dashboard-2-page .d2-decision__item {
-  --d2-tone: var(--du-border);
-  display: grid; align-content: start; gap: 4px; min-width: 0; margin: 0; padding: 12px 14px;
-  background: #faf6f1; border: 1px solid var(--du-border); border-top: 3px solid var(--d2-tone); border-radius: 12px;
-}
-body.dashboard-2-page .d2-decision__item.is-alert { --d2-tone: var(--du-red); background: #fff7f6; }
-body.dashboard-2-page .d2-decision__item.is-ok { --d2-tone: var(--du-green); }
-body.dashboard-2-page .d2-decision__item.is-neutral { --d2-tone: var(--du-orange); }
-body.dashboard-2-page .d2-decision__item--empty { grid-column: 1 / -1; font-size: 14px; color: var(--du-muted); }
-body.dashboard-2-page .d2-decision__label { margin: 0; font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--du-muted); }
-body.dashboard-2-page .d2-decision__value {
-  margin: 0; font-family: var(--font-display); font-size: 1.6rem; font-weight: 800; line-height: 1.1; color: var(--du-text); overflow-wrap: anywhere;
-}
-body.dashboard-2-page .d2-decision__item.is-alert .d2-decision__value { color: var(--du-red-dark); }
-body.dashboard-2-page .d2-decision__text { margin: 0; font-size: 14px; line-height: 1.4; color: var(--du-text); }
-
 /* ── Atribucion: insignia con texto, la marca no depende del color ── */
 body.dashboard-2-page .d2-attr {
   display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px 2px 4px; border-radius: 999px;
@@ -784,7 +763,7 @@ body.dashboard-2-page .d2-motivos-empty { display: none; padding: 24px 0; text-a
   body.dashboard-2-page .d2-kpis .kpi-card.active { outline: 3px solid Highlight; }
   body.dashboard-2-page .d2-tab[aria-selected="true"] { outline: 2px solid Highlight; }
   body.dashboard-2-page .plaza-rank-fill { forced-color-adjust: none; background: Highlight; }
-  body.dashboard-2-page .d2-attr, body.dashboard-2-page .d2-decision__item { border: 1px solid CanvasText; }
+  body.dashboard-2-page .d2-attr { border: 1px solid CanvasText; }
   body.dashboard-2-page .d2-note--pending { border: 2px solid CanvasText; border-left-width: 5px; }
   body.dashboard-2-page .d2-note--pending::before { border: 2px solid CanvasText; }
 }
