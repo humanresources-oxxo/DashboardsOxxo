@@ -15,8 +15,10 @@ body.turno-page * { box-sizing: border-box; }
 body.turno-page [hidden] { display: none !important; }
 body.turno-page #app { height: 100%; display: flex; flex-direction: column; }
 body.turno-page #stage { position: relative; flex: 1; min-height: 0; background: #000; cursor: crosshair; touch-action: none; user-select: none; -webkit-user-select: none; }
-body.turno-page :is(#view, #armas) { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; image-rendering: pixelated; image-rendering: crisp-edges; }
-/* Las armas van en su propia capa, encima de la vista y sin capturar clics. */
+body.turno-page :is(#view, #armas) { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; object-position: 50% 100%; image-rendering: pixelated; image-rendering: crisp-edges; }
+/* Las armas van en su propia capa, encima de la vista y sin capturar clics.
+   Las dos capas se pegan abajo (object-position): si sobra alto, la franja
+   negra queda arriba y los brazos siguen tocando la barra de estado. */
 body.turno-page #armas { pointer-events: none; }
 body.turno-page #msg { position: absolute; top: 10px; left: max(12px, env(safe-area-inset-left, 0px)); max-width: 70%; font-size: 22px; color: var(--tn-amarillo); text-shadow: 2px 2px 0 #000; pointer-events: none; }
 
@@ -82,6 +84,13 @@ body.turno-page #tSwap { right: max(36px, env(safe-area-inset-right, 0px)); bott
   body.turno-page .screen h1 { font-size: clamp(28px, 11vh, 56px); }
   body.turno-page .screen p { font-size: 17px; }
   body.turno-page .monitos, body.turno-page .aviso { display: none; }
+}
+/* Celular vertical: la vista queda abajo y sobra espacio negro arriba. */
+@media (orientation: portrait) and (max-width: 700px) {
+  body.turno-page #stage::before {
+    content: "↻ Gira el celular para ver más grande"; position: absolute; top: 18%; left: 0; right: 0;
+    font-family: var(--tn-ui); font-size: 12px; letter-spacing: .08em; text-align: center; color: var(--tn-tenue);
+  }
 }
 @media (prefers-reduced-motion: reduce) {
   body.turno-page #hHp.low { animation: none; }
