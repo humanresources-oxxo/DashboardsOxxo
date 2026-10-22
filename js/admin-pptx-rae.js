@@ -107,17 +107,6 @@
     });
     return [...counts.entries()].map(([name, value]) => ({ name, value })).sort((a,b) => b.value - a.value).slice(0, limit);
   }
-  // Ranking de promedio por nombre (p.ej. % aprovechamiento por AT), ordenado descendente.
-  function rankAvg(rows, nameKey, valueKey, limit){
-    const sums = new Map(), counts = new Map();
-    rows.forEach(r => {
-      const name = String(val(r, nameKey)||'').trim();
-      if(!name) return;
-      sums.set(name, (sums.get(name)||0) + num(val(r, valueKey)));
-      counts.set(name, (counts.get(name)||0) + 1);
-    });
-    return [...sums.entries()].map(([name, sum]) => ({ name, value: sum / counts.get(name) })).sort((a,b) => b.value - a.value).slice(0, limit);
-  }
   async function dataD1(targetMes = ''){
     const source = await OXXO.metricsD1Rows(true, { scope: OAXACA_SCOPE });
     if (!source || (targetMes && !source.months.includes(targetMes))) return null;
@@ -891,69 +880,6 @@
     });
   }
 
-  function addRankingList(slide, x, y, w, h, title, items, rightText){
-    slide.addShape('roundRect', { x, y, w, h, rectRadius: 0.1, fill: { color: WHITE }, line: { color: BORDER, width: 1 } });
-    addSectionTitle(slide, x + 0.2, y + 0.16, w - 0.4, title, rightText);
-    if(!items.length){
-      slide.addText('Sin datos disponibles', { x: x + 0.2, y: y + h/2 - 0.2, w: w - 0.4, h: 0.4, fontSize: 12, color: MUTED, align: 'center', fontFace: 'Arial', margin: 0 });
-      return;
-    }
-    const maxValue = Math.max(...items.map(it => it.value), 1);
-    const rowH = Math.min(0.68, (h - 0.8) / items.length);
-    let ry = y + 0.62;
-    items.forEach((item, idx) => {
-      const barColor = idx === 0 ? RED : GOLD;
-      const nameW = w * 0.32;
-      const barX = x + 0.2 + nameW;
-      const barW = w - 0.4 - nameW - 0.65;
-      const pillW = 0.6;
-      slide.addText(shortenName(item.name), { x: x + 0.2, y: ry, w: nameW - 0.1, h: rowH, fontSize: 9.5, color: TEXT, fontFace: 'Arial', valign: 'middle', margin: 0, fit: 'shrink' });
-      slide.addShape('roundRect', { x: barX, y: ry + rowH * 0.28, w: barW, h: rowH * 0.32, rectRadius: 0.04, fill: { color: TRACKBG }, line: { type: 'none' } });
-      const fillW = Math.max(barW * (item.value / maxValue), 0.06);
-      slide.addShape('roundRect', { x: barX, y: ry + rowH * 0.28, w: fillW, h: rowH * 0.32, rectRadius: 0.04, fill: { color: barColor }, line: { type: 'none' } });
-      slide.addShape('roundRect', { x: x + w - 0.2 - pillW, y: ry + (rowH - 0.24) / 2, w: pillW, h: 0.24, rectRadius: 0.04, fill: { color: PINKBG }, line: { type: 'none' } });
-      slide.addText(String(item.value), { x: x + w - 0.2 - pillW, y: ry + (rowH - 0.24) / 2, w: pillW, h: 0.24, fontSize: 10, bold: true, color: RED, fontFace: 'Arial', align: 'center', valign: 'middle', margin: 0 });
-      ry += rowH;
-    });
-  }
-
-  function addGaugeCard(slide, x, y, w, h, pct, label){
-    const color = pct >= 95 ? GREEN : (pct >= 85 ? GOLD : RED);
-    slide.addShape('roundRect', { x, y, w, h, rectRadius: 0.08, fill: { color: WHITE }, line: { color: BORDER, width: 1 } });
-    slide.addText(`${pct.toFixed(1)}%`, { x: x + 0.1, y: y + 0.16, w: w - 0.2, h: 0.6, fontSize: 26, bold: true, color, fontFace: 'Arial', margin: 0 });
-    slide.addText(label.toUpperCase(), { x: x + 0.1, y: y + 0.72, w: w - 0.2, h: 0.24, fontSize: 10, bold: true, color: MUTED, fontFace: 'Arial', margin: 0, fit: 'shrink' });
-    slide.addShape('roundRect', { x: x + 0.1, y: y + h - 0.24, w: w - 0.2, h: 0.1, rectRadius: 0.05, fill: { color: TRACKBG }, line: { type: 'none' } });
-    slide.addShape('roundRect', { x: x + 0.1, y: y + h - 0.24, w: (w - 0.2) * Math.min(pct, 100) / 100, h: 0.1, rectRadius: 0.05, fill: { color }, line: { type: 'none' } });
-  }
-
-  // Ranking de porcentaje con barra (p.ej. Aprovechamiento por AT). Igual que
-  // addRankingList pero con barra hasta el 100% y color por umbral (95/85%)
-  // en vez de color fijo por posicion, y valor mostrado con decimales.
-  function addPctRankingList(slide, x, y, w, h, title, items, rightText){
-    slide.addShape('roundRect', { x, y, w, h, rectRadius: 0.1, fill: { color: WHITE }, line: { color: BORDER, width: 1 } });
-    addSectionTitle(slide, x + 0.2, y + 0.16, w - 0.4, title, rightText);
-    if(!items.length){
-      slide.addText('Sin datos disponibles', { x: x + 0.2, y: y + h/2 - 0.2, w: w - 0.4, h: 0.4, fontSize: 12, color: MUTED, align: 'center', fontFace: 'Arial', margin: 0 });
-      return;
-    }
-    const rowH = Math.min(0.68, (h - 0.8) / items.length);
-    let ry = y + 0.62;
-    items.forEach(item => {
-      const barColor = item.value >= 95 ? GREEN : (item.value >= 85 ? GOLD : RED);
-      const nameW = w * 0.32;
-      const barX = x + 0.2 + nameW;
-      const barW = w - 0.4 - nameW - 0.75;
-      const pillW = 0.7;
-      slide.addText(shortenName(item.name), { x: x + 0.2, y: ry, w: nameW - 0.1, h: rowH, fontSize: 9.5, color: TEXT, fontFace: 'Arial', valign: 'middle', margin: 0, fit: 'shrink' });
-      slide.addShape('roundRect', { x: barX, y: ry + rowH * 0.28, w: barW, h: rowH * 0.32, rectRadius: 0.04, fill: { color: TRACKBG }, line: { type: 'none' } });
-      const fillW = Math.max(barW * Math.min(item.value, 100) / 100, 0.06);
-      slide.addShape('roundRect', { x: barX, y: ry + rowH * 0.28, w: fillW, h: rowH * 0.32, rectRadius: 0.04, fill: { color: barColor }, line: { type: 'none' } });
-      slide.addShape('roundRect', { x: x + w - 0.2 - pillW, y: ry + (rowH - 0.24) / 2, w: pillW, h: 0.24, rectRadius: 0.04, fill: { color: PINKBG }, line: { type: 'none' } });
-      slide.addText(`${item.value.toFixed(1)}%`, { x: x + w - 0.2 - pillW, y: ry + (rowH - 0.24) / 2, w: pillW, h: 0.24, fontSize: 9.5, bold: true, color: barColor, fontFace: 'Arial', align: 'center', valign: 'middle', margin: 0 });
-      ry += rowH;
-    });
-  }
-
   // Tarjeta de metrica TREO. Proporciones fraccionales (label ~arriba 8-25%,
   // valor grande ~27-68%, nota ~74-96%) tomadas de las coordenadas reales de
   // RAE_BASE.pptx (tarjetas de 1.83x2.05in), para que escale igual sin
@@ -963,45 +889,6 @@
     slide.addText(label.toUpperCase(), { x: x + 0.14, y: y + h * 0.08, w: w - 0.28, h: h * 0.17, fontSize: 9, bold: true, color: MUTED, fontFace: 'Arial', margin: 0, fit: 'shrink' });
     slide.addText(String(value), { x: x + 0.14, y: y + h * 0.27, w: w - 0.28, h: h * 0.41, fontSize: 30, bold: true, color: TEXT, fontFace: 'Arial', margin: 0, fit: 'shrink' });
     slide.addText(note, { x: x + 0.14, y: y + h * 0.74, w: w - 0.28, h: h * 0.22, fontSize: 8.5, bold: true, color: RED, fontFace: 'Arial', margin: 0, fit: 'shrink' });
-  }
-
-  function addNoteCard(slide, x, y, w, h, title, note){
-    slide.addShape('roundRect', { x, y, w, h, rectRadius: 0.08, fill: { color: WHITE }, line: { color: BORDER, width: 1 } });
-    slide.addText(title, { x: x + 0.14, y: y + h * 0.1, w: w - 0.28, h: h * 0.4, fontSize: 11, bold: true, color: TEXT, fontFace: 'Arial', margin: 0, fit: 'shrink' });
-    slide.addText(note, { x: x + 0.14, y: y + h * 0.5, w: w - 0.28, h: h * 0.4, fontSize: 10, color: RED, fontFace: 'Arial', margin: 0, fit: 'shrink' });
-  }
-
-  // Tarjeta "Alineacion Global": dona arriba + 3 casillas de estatus abajo,
-  // igual que la columna derecha de la diapositiva TREO en RAE_BASE.pptx
-  // (ahi la dona no lleva leyenda lateral, sino recuadros debajo).
-  function addTreoAlignmentCard(pptx, slide, x, y, w, h, segments){
-    slide.addShape('roundRect', { x, y, w, h, rectRadius: 0.1, fill: { color: WHITE }, line: { color: BORDER, width: 1 } });
-    addSectionTitle(slide, x + 0.3, y + 0.29, w - 0.6, 'Alineación Global');
-    const clean = segments.filter(s => s.value > 0);
-    const total = clean.reduce((s, seg) => s + seg.value, 0) || 1;
-    const chartSize = Math.min(w * 0.78, h * 0.56);
-    const chartX = x + (w - chartSize) / 2;
-    const chartY = y + 0.7;
-    if(clean.length){
-      slide.addChart(pptx.ChartType.doughnut, [{ name: 'Alineación Global', labels: clean.map(s => s.label), values: clean.map(s => s.value) }], {
-        x: chartX, y: chartY, w: chartSize, h: chartSize,
-        chartColors: clean.map(s => s.color),
-        showLegend: false, showValue: false, showPercent: false,
-        dataBorder: { pt: 2, color: WHITE },
-        holeSize: 62,
-      });
-      const topPct = Math.round((clean[0].value / total) * 100);
-      slide.addText(`${topPct}%`, { x: chartX, y: chartY + chartSize/2 - 0.32, w: chartSize, h: 0.34, fontSize: 22, bold: true, color: TEXT, align: 'center', fontFace: 'Arial', margin: 0 });
-      slide.addText(clean[0].label.toUpperCase(), { x: chartX, y: chartY + chartSize/2 + 0.03, w: chartSize, h: 0.22, fontSize: 9, color: MUTED, align: 'center', fontFace: 'Arial', margin: 0 });
-    }
-    const boxY = chartY + chartSize + 0.15;
-    const boxW = (w - 0.4) / segments.length - 0.1;
-    segments.forEach((seg, i) => {
-      const bx = x + 0.2 + i * (boxW + 0.13);
-      slide.addShape('roundRect', { x: bx, y: boxY, w: boxW, h: 0.85, rectRadius: 0.06, fill: { color: TRACKBG }, line: { type: 'none' } });
-      slide.addText(String(seg.value), { x: bx, y: boxY + 0.08, w: boxW, h: 0.42, fontSize: 16, bold: true, color: TEXT, align: 'center', fontFace: 'Arial', margin: 0 });
-      slide.addText(seg.label, { x: bx, y: boxY + 0.52, w: boxW, h: 0.26, fontSize: 8.5, color: MUTED, align: 'center', fontFace: 'Arial', margin: 0, fit: 'shrink' });
-    });
   }
 
   function emptySlide(pptx, title, dateLabel, detail='No hay información para este corte; no se sustituyó por otro periodo.'){
@@ -1407,43 +1294,6 @@
         text(value,x+labelW+j*colW+.05,y,colW-.1,rowH,size,cell.pct===null?MUTED:capColor(cell.pct),false,{align:'center',breakLine:false});
       });
       text(item.pct.toFixed(1)+'%',x+labelW+item.cursos.length*colW+.05,y,colW-.1,rowH,size,capColor(item.pct),true,{align:'center',breakLine:false});
-    });
-  }
-
-  function buildD8Capability(pptx, d, dateLabel){
-    const items=d.asesores || [];
-    const title=capKey(d.label).includes('cercasiempre') ? 'Módulo Cerca Siempre' : `Capacidad · ${d.label}`;
-    const {text,rect}=editorialSlide(pptx,title,dateLabel);
-    const color = d.pct >= 80 ? GREEN : (d.pct >= 50 ? GOLD : RED);
-    text(d.pct.toFixed(1)+'%',.5,1.98,3.85,.9,56,color,true);
-    text('CUMPLIMIENTO DE LA CAPACIDAD',.53,2.98,3.7,.28,11,DARK,true);
-    text('Capacidades 2026 · corte vigente',.53,3.34,3.7,.28,11,MUTED);
-    const metrics = [
-      ['Personal aplicable', d.aplicables, DARK],
-      ['Completaron', d.completadas, GREEN],
-      ['Pendientes', d.pendientes, d.pendientes ? RED : GREEN],
-    ];
-    metrics.forEach(([label,value,metricColor], index) => {
-      const y = 4.03 + index * .72;
-      text(label,.53,y,2.45,.25,13,DARK,true);
-      text(value,3.15,y-.08,.72,.43,23,metricColor,true,{align:'right'});
-      rect(.53,y+.4,3.3,.06,'EDE6DF');
-      if(d.aplicables) rect(.53,y+.4,3.3 * Math.min(Number(value) / d.aplicables, 1),.06,metricColor);
-    });
-    rect(4.4,1.97,.015,4.86,'E5DCD6');
-    text('Asesores con seguimiento pendiente',4.8,2.02,6.2,.35,18,DARK,true);
-    text('Cumplimiento y personas pendientes',9.9,2.08,2.85,.25,10,MUTED,false,{align:'right'});
-    const rowH = Math.min(.43,4.12/Math.max(1,items.length));
-    const nameSize = items.length>16 ? 8.5 : items.length>12 ? 9 : 10;
-    if(!items.length) text('Sin registros aplicables para el módulo',4.8,2.8,7,.5,15,MUTED);
-    items.forEach((item,i)=>{
-      const y=2.65+i*rowH;
-      const itemColor=item.pct>=80?GREEN:(item.pct>=50?GOLD:RED);
-      text(shortenName(item.name,30),4.8,y,3.7,rowH*.84,nameSize,TEXT);
-      rect(8.68,y+rowH*.31,2.18,.07,'EDE6DF');
-      if(item.pct>0) rect(8.68,y+rowH*.31,2.18*Math.min(item.pct,100)/100,.07,itemColor);
-      text(item.pct.toFixed(1)+'%',10.98,y,.8,rowH*.84,11,itemColor,true,{align:'right'});
-      text(item.pendientes+' pend.',11.86,y,.9,rowH*.84,10,MUTED,false,{align:'right'});
     });
   }
 

@@ -275,7 +275,6 @@ body.dashboard-2-page .d2-kpis .kpi-card.verde { --d2-accent: var(--du-green); }
 body.dashboard-2-page .d2-kpis .kpi-card::after,
 body.dashboard-2-page .d2-kpis .kpi-card__icon { display: none; }
 body.dashboard-2-page .d2-kpis .kpi-card:hover { border-color: var(--d2-accent); box-shadow: var(--du-shadow); transform: none; }
-body.dashboard-2-page .d2-kpis .kpi-card--empty,
 body.dashboard-2-page .d2-kpis .d2-kpi--empty { cursor: default; }
 body.dashboard-2-page .d2-kpis .kpi-card__label {
   display: flex; align-items: flex-start; justify-content: space-between; gap: 4px; margin: 0; font-size: 12px; font-weight: 700; line-height: 1.25; letter-spacing: .06em; text-transform: uppercase;
@@ -467,11 +466,9 @@ body.dashboard-2-page .d2-panel {
 }
 body.dashboard-2-page .d2-panel:hover { transform: none; }
 body.dashboard-2-page .d2-panel__head { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 12px; margin: 0 0 10px; }
-body.dashboard-2-page .d2-panel__title,
-body.dashboard-2-page .d2-subtitle {
+body.dashboard-2-page .d2-panel__title {
   margin: 0; font-family: var(--font-display); font-size: 1.2rem; font-weight: 700; line-height: 1.2; letter-spacing: 0; color: var(--du-text);
 }
-body.dashboard-2-page .d2-subtitle { margin-bottom: 10px; font-size: 1.05rem; }
 body.dashboard-2-page .d2-panel-scope { flex: 1 0 100%; margin: 0; font-size: 13px; line-height: 1.35; color: var(--du-muted); }
 body.dashboard-2-page .d2-panel-scope:empty { display: none; }
 body.dashboard-2-page .d2-panel__head--actions .d2-panel__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-left: auto; }

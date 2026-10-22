@@ -187,14 +187,14 @@ body.rh-unified .tbl tbody tr:nth-child(even) td { background: #fcfaf7; }
 body.rh-unified .tbl tbody tr:hover td { background: #faf5f0; }
 body.rh-unified .tbl tfoot td { padding: 10px 12px; border-top: 2px solid var(--du-text); background: #f8f3ee; color: var(--du-text); font-weight: 800; }
 
-body.rh-unified .pill, body.rh-unified .dias-badge, body.rh-unified .ec-pill {
+body.rh-unified .pill, body.rh-unified .dias-badge {
   display: inline-flex; align-items: center; justify-content: center; gap: 6px;
   min-height: 28px; padding: 3px 10px; border: 0; border-radius: 999px; box-shadow: none; font-size: 12px; font-weight: 700;
 }
-body.rh-unified :is(.pill, .dias-badge).verde, body.rh-unified :is(.pill, .ec-pill).verde { background: #e6f5ec; color: #0f6a3c; }
-body.rh-unified :is(.pill, .dias-badge).amarillo, body.rh-unified :is(.pill, .ec-pill).amarillo { background: #fff3d6; color: #765500; }
-body.rh-unified :is(.pill, .dias-badge).rojo, body.rh-unified :is(.pill, .ec-pill).rojo { background: #fbe9ea; color: #a91f26; }
-body.rh-unified .pill-dot, body.rh-unified .ec-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+body.rh-unified :is(.pill, .dias-badge).verde { background: #e6f5ec; color: #0f6a3c; }
+body.rh-unified :is(.pill, .dias-badge).amarillo { background: #fff3d6; color: #765500; }
+body.rh-unified :is(.pill, .dias-badge).rojo { background: #fbe9ea; color: #a91f26; }
+body.rh-unified .pill-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
 
 body.rh-unified .info-tip { cursor: help; }
 body.rh-unified .state-box { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; min-height: 120px; padding: 24px; color: var(--du-muted); text-align: center; }

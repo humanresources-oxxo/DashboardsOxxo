@@ -43,7 +43,7 @@ vm.runInContext(fs.readFileSync(path.join(root, 'js/config.js'), 'utf8'), sandbo
 vm.runInContext(fs.readFileSync(path.join(root, 'js/core.js'), 'utf8'), sandbox);
 
 vm.runInContext(fs.readFileSync(path.join(root,'js/metrics-periods.js'),'utf8'),sandbox);
-for(const [file,api,names] of [['admin-pptx.js','general','kpiD1,kpiD2,kpiD4,kpiD6'],['admin-pptx-rae.js','rae','dataD1,dataD2,dataRotationTop10,dataD3,dataD7,dataD8,dataFocusKpis,raeMonthOption,buildD1,buildD2,buildD2Analysis,buildRotationTop10,buildD3,buildFocusKpis,buildD3StoreListSlides,buildD3ZeroAprovechamiento,buildD3RescateEc,buildD8,buildD8Capability,buildDashboardList'],['admin-pptx-asesor.js','advisor','datosAsesorD1,datosAsesorD2']]){
+for(const [file,api,names] of [['admin-pptx.js','general','kpiD1,kpiD2,kpiD4,kpiD6'],['admin-pptx-rae.js','rae','dataD1,dataD2,dataRotationTop10,dataD3,dataD7,dataD8,dataFocusKpis,raeMonthOption,buildD1,buildD2,buildD2Analysis,buildRotationTop10,buildD3,buildFocusKpis,buildD3StoreListSlides,buildD3ZeroAprovechamiento,buildD3RescateEc,buildD8,buildDashboardList'],['admin-pptx-asesor.js','advisor','datosAsesorD1,datosAsesorD2']]){
  const code=fs.readFileSync(path.join(root,'js',file),'utf8').replace(/\}\)\(\);\s*$/, 'window.'+api+'={'+names+'};})();');vm.runInContext(code,sandbox);
 }
 let fixture=[], fixtureByTab=null;
@@ -179,10 +179,7 @@ sandbox.loadAsesorCatalog=async()=>null;sandbox.OXXO.loadAsesorCatalog=sandbox.l
  const listaRae=sandbox.rae.buildDashboardList('','',new Date());
  assert.equal(listaRae.filter(item=>/CAPACIDAD/i.test(item.title)).length,1);
  assert.ok(!listaRae.some(item=>/M.DULO/i.test(item.title)));
- assert.ok(!fs.readFileSync(path.join(root,'js/admin-pptx-rae.js'),'utf8').includes('buildD8Capabilities'));
- const capabilitySlides=[];
- sandbox.rae.buildD8Capability({addSlide(){const slide={background:{},addText(){},addShape(){}};capabilitySlides.push(slide);return slide;}},{...capacidades.cercaSiempre,asesores:Array.from({length:12},(_,i)=>({name:'Asesor '+i,pct:60,pendientes:2}))},'Corte vigente');
- assert.equal(capabilitySlides.length,1);
+ assert.ok(!fs.readFileSync(path.join(root,'js/admin-pptx-rae.js'),'utf8').includes('buildD8Capabilit'), 'sin laminas por capacidad: ni buildD8Capability ni buildD8Capabilities');
  const applyCatalogOriginal = sandbox.OXXO.applyAsesorCatalog;
  sandbox.OXXO.applyAsesorCatalog = (row) => {
   if(row.Asesor_Correcto === 'Centralizacion') row.Asesor_Correcto = 'Edgar Jonathan Bautista Ventura';

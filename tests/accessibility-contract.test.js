@@ -178,11 +178,15 @@ test('D8: el boton de detalle por certificacion mide 44x44 en celular y nombra a
 });
 
 test('css responsive compartido: filtros 2/1 columnas, tabla con scroll propio y admin con tabs desplazables', () => {
-  const filtros = leer('css/floating-filter-layout.css');
-  assert.match(filtros, /max-width:\s*979px[\s\S]*?repeat\(2,\s*minmax\(0,\s*1fr\)\)/);
-  assert.match(filtros, /max-width:\s*639px[\s\S]*?grid-template-columns:\s*minmax\(0,\s*1fr\)\s*!important/);
-  const refresh = leer('css/rh-dashboard-refresh.css');
-  assert.match(refresh, /\.tbl-wrap[\s\S]*?overflow-x:\s*auto\s*!important/);
+  // Las hojas legadas (floating-filter-layout.css, rh-dashboard-refresh.css) se
+  // borraron: el contrato responsive vive en el canon que si cargan las paginas.
+  for (const legada of ['css/floating-filter-layout.css', 'css/rh-dashboard-refresh.css']) {
+    assert.ok(!fs.existsSync(path.join(raiz, legada)), `${legada} ya no existe`);
+  }
+  const canon = leer('css/dashboard-rh-unified.css');
+  assert.match(canon, /body\.rh-unified \.vac-filters \{[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\)/, 'filtros a 1 columna en celular');
+  assert.match(canon, /@media \(min-width: 768px\)[\s\S]*?body\.rh-unified \.vac-filters \{[^}]*repeat\(2,\s*minmax\(0,\s*1fr\)\)/, 'filtros a 2 columnas desde 768 px');
+  assert.match(canon, /body\.rh-unified \.tbl-wrap \{[^}]*overflow:\s*auto/, 'tablas con scroll propio');
   const admin = leer('css/admin-layout.css');
   assert.match(admin, /\.admin-tabs\{[^}]*overflow-x:auto/);
   assert.match(admin, /\.restore-dialog\{[^}]*max-height:91vh/);

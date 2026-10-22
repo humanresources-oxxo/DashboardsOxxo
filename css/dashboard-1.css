@@ -34,9 +34,8 @@ body.dashboard-1-page .rh-filter-summary-badge { display: none; }
 
 /* La caja "Filtros y acciones" trae 2 botones apilados (vs. 1 control en las
    demas), lo que la hace mas alta y, con align-items:end en .vac-filters,
-   deja un hueco vacio arriba de las demas cajas. Mismo patron que Dashboard 2
-   (floating-filter-layout.css): los botones van en 2 columnas para igualar
-   la altura de la caja al resto. */
+   deja un hueco vacio arriba de las demas cajas. Los botones van en 2
+   columnas para igualar la altura de la caja al resto. */
 body.dashboard-1-page .filter-panel .vac-fbox:has(.filtro-btn + .filtro-btn) {
   display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 6px 10px;
 }
@@ -66,11 +65,6 @@ body.dashboard-1-page #tabla-detalle .tbl-wrap { max-height: 560px; }
 body.dashboard-1-page #tabla-detalle .tbl { min-width: 980px; }
 
 body.dashboard-1-page .vacantes-asesor-nota { margin-top: 10px; color: var(--du-muted); font-size: 13px; line-height: 1.45; }
-body.dashboard-1-page .vacantes-asesor-legend { display: flex; flex-wrap: wrap; gap: 8px 16px; padding: 0 0 10px; color: var(--du-muted); font-size: 12px; font-weight: 600; }
-body.dashboard-1-page .vacantes-asesor-legend .dot { display: inline-block; width: 9px; height: 9px; margin-right: 5px; border-radius: 50%; }
-body.dashboard-1-page .vacantes-asesor-legend .dot.verde { background: var(--du-green); }
-body.dashboard-1-page .vacantes-asesor-legend .dot.amarillo { background: var(--du-gold); }
-body.dashboard-1-page .vacantes-asesor-legend .dot.rojo { background: var(--du-red); }
 body.dashboard-1-page .va-badge { display: inline-flex; align-items: center; justify-content: center; min-width: 28px; min-height: 26px; padding: 2px 8px; border-radius: 8px; font-size: 13px; font-weight: 800; }
 body.dashboard-1-page .va-badge.verde { background: #e6f5ec; color: #0f6a3c; }
 body.dashboard-1-page .va-badge.amarillo { background: #fff3d6; color: #765500; }
@@ -105,16 +99,6 @@ body.dashboard-1-page #tabla-detalle .tbl thead th[data-col].sort-desc::after { 
 
 body.dashboard-1-page #plazas-panel .pz-lead { margin: 0 0 10px; color: var(--du-muted); font-size: 13px; line-height: 1.45; }
 body.dashboard-1-page #plazas-panel .pz-warn { display: block; margin-top: 4px; font-style: normal; }
-body.dashboard-1-page .pz-row { display: grid; grid-template-columns: minmax(0,1fr) auto; grid-template-areas: "name val" "bar val" "sub val"; gap: 0 12px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--du-border); }
-body.dashboard-1-page .pz-row:last-child { border-bottom: 0; }
-body.dashboard-1-page .pz-row.activa { margin-inline: -8px; padding-inline: 8px; border-radius: 10px; background: #fff5f5; }
-body.dashboard-1-page .pz-name { grid-area: name; overflow: hidden; color: var(--du-text); font-size: 13px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
-body.dashboard-1-page .pz-tag { margin-left: 6px; padding: 2px 6px; border-radius: 999px; background: #fdecee; color: var(--du-red-dark); font-size: 9px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; }
-body.dashboard-1-page .pz-val { grid-area: val; min-width: 42px; color: var(--du-text); font-family: var(--font-display); font-size: 1.5rem; font-weight: 800; text-align: right; }
-body.dashboard-1-page .pz-bar { grid-area: bar; height: 8px; margin: 6px 0 5px; overflow: hidden; border-radius: 999px; background: #efe8e1; }
-body.dashboard-1-page .pz-bar i { display: block; height: 100%; border-radius: inherit; background: var(--du-red); }
-body.dashboard-1-page .pz-bar i.bien { background: var(--du-green); }
-body.dashboard-1-page .pz-sub { grid-area: sub; color: var(--du-muted); font-size: 12px; }
 
 body.dashboard-1-page .ranking-chart { display: grid; gap: 10px; }
 body.dashboard-1-page .ranking-chart__row { display: grid; grid-template-columns: 30px minmax(0,1fr) auto; grid-template-areas: "rank label value" "rank track value"; gap: 4px 10px; align-items: center; }
