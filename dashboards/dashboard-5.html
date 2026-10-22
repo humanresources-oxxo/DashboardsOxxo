@@ -20,7 +20,7 @@
   <link rel="stylesheet" href="../css/dashboard-rh-unified.css?v=7184ebc0">
   <link rel="stylesheet" href="../css/dashboard-5.css?v=7184ebc0">
 </head>
-<body class="dashboard-5-page hr-dashboard rh-unified rh-layered">
+<body class="dashboard-5-page hr-dashboard rh-unified rh-layered rh-cabecera">
 <nav class="topbar">
   <div class="topbar__brand">
     <div class="topbar__logo"><img src="../assets/oxxo-logo-original.png" alt="OXXO"></div>
@@ -40,12 +40,13 @@
     <div class="hero-top">
       <div>
         <span class="hero-eyebrow">Talento · Vacaciones</span><h1>Control de Vacaciones</h1>
-        <p>Saldos, vencimientos y concentracion operativa para Plaza Oaxaca por asesor, tienda y puesto.</p>
       </div>
-      <span class="dashboard-hero__badge hero-badge">Actualizado <span id="snapshot-date">--</span></span>
       <span id="hero-download" style="display:none"></span>
     </div>
+    <div class="hero-context"><span>Actualizado <span id="snapshot-date">--</span></span></div>
+  </section>
 
+  <section class="filter-panel" aria-label="Filtros del dashboard">
     <div class="vac-filters">
       <div class="vac-fbox">
         <label for="filtro-asesor-button">Asesor</label>
@@ -77,8 +78,8 @@
         </select>
       </div>
       <div class="vac-fbox vac-fbox--actions" role="group" aria-labelledby="filtros-acciones-label">
-        <label id="filtros-acciones-label">Filtros</label>
-        <button class="filtro-btn" type="button" id="clear-filters">Limpiar</button>
+        <label id="filtros-acciones-label">Filtros y acciones</label>
+        <button class="filtro-btn" type="button" id="clear-filters">✕ Limpiar</button>
         <button class="filtro-btn" type="button" id="download-base">Descargar base</button>
       </div>
       <div class="vac-filter-status" id="filter-status">Filtro activo: todos los colaboradores</div>

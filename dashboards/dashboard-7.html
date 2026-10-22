@@ -21,7 +21,7 @@
   <script defer src="../js/rh-table-tools.js?v=7184ebc0"></script>
   <script defer src="../js/rh-filter-summary.js?v=7184ebc0"></script>
 </head>
-<body class="dashboard-7-page hr-dashboard rh-unified rh-layered">
+<body class="dashboard-7-page hr-dashboard rh-unified rh-layered rh-cabecera">
 <nav class="topbar">
   <div class="topbar__brand">
     <div class="topbar__logo"><img src="../assets/oxxo-logo-original.png" alt="OXXO"></div>
@@ -44,9 +44,12 @@
       <div>
         <span class="hero-eyebrow">Estructura · Plantilla vs TREO</span><h1>TREO</h1>
       </div>
-      <span class="hero-badge" id="hero-treo-badge"><svg class="icon-inline" viewBox="0 0 24 24" aria-hidden="true"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>TREO · Plaza Oaxaca</span>
       <span id="hero-download" style="display:none"></span>
     </div>
+    <div class="hero-context"><span id="hero-treo-badge">TREO · Plaza Oaxaca</span></div>
+  </div>
+
+  <section class="filter-panel" aria-label="Filtros del dashboard">
     <div class="vac-filters">
       <div class="vac-fbox">
         <label for="filtro-buscar">Buscar tienda</label>
@@ -75,12 +78,12 @@
         </select>
       </div>
       <div class="vac-fbox" role="group" aria-labelledby="filtros-acciones-label">
-        <label id="filtros-acciones-label">Filtros</label>
+        <label id="filtros-acciones-label">Filtros y acciones</label>
         <button type="button" class="filtro-btn" onclick="limpiarFiltros()">✕ Limpiar</button>
         <button class="filtro-btn" type="button" onclick="OXXO.handleDownloadButton(this, () => OXXO.downloadSheetTab(SHEET_TAB, 'dashboard-7-treo.csv'))">Descargar base</button>
       </div>
     </div>
-  </div>
+  </section>
 
   <div class="rh-layer"><h2 class="rh-layer__title">Resumen ejecutivo</h2><p class="rh-layer__purpose">Plantilla activa frente al requerimiento TREO.</p></div>
 
@@ -1017,7 +1020,7 @@ async function init(){
 
   const periodo = derivePeriodoTreo(rows);
   const badgeEl = document.getElementById('hero-treo-badge');
-  if(periodo && badgeEl) badgeEl.textContent = `📋 TREO · ${periodo} · Plaza Oaxaca`;
+  if(periodo && badgeEl) badgeEl.textContent = `TREO · ${periodo} · Plaza Oaxaca`;
   const footPeriodoEl = document.getElementById('foot-treo-periodo');
   if(footPeriodoEl) footPeriodoEl.textContent = periodo ? `TREO ${periodo}` : 'TREO';
 

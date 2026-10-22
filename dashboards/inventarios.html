@@ -16,7 +16,7 @@
   <link rel="stylesheet" href="../css/inventarios-visual.css?v=7184ebc0">
   <script defer src="../assets/vendor/chart.umd.min.js?v=7184ebc0"></script>
 </head>
-<body class="rh-unified rh-layered inventarios-page">
+<body class="rh-unified rh-layered inventarios-page rh-cabecera">
   <nav class="topbar inv-topbar">
     <div class="topbar__brand">
       <div class="topbar__logo"><img src="../assets/oxxo-logo-original.png" alt="OXXO"></div>
@@ -29,12 +29,13 @@
 
   <main class="inv-page page">
     <section class="inv-hero hero" data-oxxo-scope-mount>
-      <div class="inv-hero__copy">
-        <span class="inv-hero__eyebrow">Administrativo · Plaza Oaxaca</span>
-        <h1>Resultados de Inventario</h1>
-        <p>Lectura ejecutiva de inventarios, merma y venta sin TAE por tienda y asesor comercial.</p>
+      <div class="hero-top">
+        <div class="inv-hero__copy">
+          <span class="inv-hero__eyebrow">Administrativo · Plaza Oaxaca</span>
+          <h1>Resultados de Inventario</h1>
+        </div>
       </div>
-      <div class="inv-hero__status" id="inventory-cut"><span></span>Cargando información…</div>
+      <div class="hero-context" id="inventory-cut"><span></span>Cargando información…</div>
     </section>
 
     <div class="rh-layer"><h2 class="rh-layer__title">Resumen ejecutivo</h2><p class="rh-layer__purpose">Merma sobre venta y cobertura de inventario con los filtros activos.</p></div>

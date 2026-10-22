@@ -20,7 +20,7 @@
   <script defer src="../js/rh-table-tools.js?v=7184ebc0"></script>
   <script defer src="../js/rh-filter-summary.js?v=7184ebc0"></script>
 </head>
-<body class="dashboard-6-page hr-dashboard rh-unified rh-layered">
+<body class="dashboard-6-page hr-dashboard rh-unified rh-layered rh-cabecera">
 <nav class="topbar">
   <div class="topbar__brand">
     <div class="topbar__logo"><img src="../assets/oxxo-logo-original.png" alt="OXXO"></div>
@@ -42,11 +42,13 @@
     <div class="hero-top">
       <div>
         <span class="hero-eyebrow">Asistencia · Ausentismo semanal</span><h1>Ausentismos Semanal</h1>
-        <p>Faltas, incapacidades, vacaciones y permisos por asesor, tipo y tienda · Plaza Oaxaca</p>
       </div>
-      <span class="hero-badge" id="semana-badge">⟳ Semanal · Plaza Oaxaca</span>
       <span id="hero-download" style="display:none"></span>
     </div>
+    <div class="hero-context"><span id="semana-badge">Semanal · Plaza Oaxaca</span></div>
+  </div>
+
+  <section class="filter-panel" aria-label="Filtros del dashboard">
     <div class="vac-filters">
       <div class="vac-fbox">
         <label for="filtro-asesor-button">Asesor</label>
@@ -71,12 +73,12 @@
         </select>
       </div>
       <div class="vac-fbox" role="group" aria-labelledby="filtros-acciones-label">
-        <label id="filtros-acciones-label">Filtros</label>
+        <label id="filtros-acciones-label">Filtros y acciones</label>
         <button type="button" class="filtro-btn" onclick="limpiarFiltros()">✕ Limpiar</button>
         <button class="filtro-btn" type="button" onclick="OXXO.handleDownloadButton(this, () => OXXO.downloadSheetTab(TAB, 'dashboard-6-ausentismos.csv'))">Descargar base</button>
       </div>
     </div>
-  </div>
+  </section>
 
   <div class="rh-layer"><h2 class="rh-layer__title">Resumen ejecutivo</h2><p class="rh-layer__purpose">Ausencias registradas en la semana seleccionada.</p></div>
 
@@ -266,7 +268,7 @@ function renderAll() {
   const permisos     = data.filter(r => { const t=(r[C.tipo]||'').toLowerCase(); return t.includes('matern')||t.includes('patern')||t.includes('permiso'); }).length;
   const tiendas      = new Set(data.map(r => r[C.tienda])).size;
   const semana       = document.getElementById('filtro-semana')?.value || LATEST_SEMANA || data[0]?.[C.semana] || '—';
-  document.getElementById('semana-badge').textContent = `⟳ ${semana} · Plaza Oaxaca`;
+  document.getElementById('semana-badge').textContent = `${semana} · Plaza Oaxaca`;
 
   // KPIs
   document.getElementById('kpi-section').innerHTML = `

@@ -21,7 +21,7 @@
   <script defer src="../js/rh-table-tools.js?v=7184ebc0"></script>
   <script defer src="../js/rh-filter-summary.js?v=7184ebc0"></script>
 </head>
-<body class="dashboard-12-page hr-dashboard rh-unified rh-layered">
+<body class="dashboard-12-page hr-dashboard rh-unified rh-layered rh-cabecera">
 <nav class="topbar">
   <div class="topbar__brand">
     <div class="topbar__logo"><img src="../assets/oxxo-logo-original.png" alt="OXXO"></div>
@@ -42,11 +42,13 @@
     <div class="hero-top">
       <div>
         <span class="hero-eyebrow">Desarrollo · Liderazgo de tienda</span><h1>Enfoque del Líder</h1>
-        <p>Etapa de desarrollo de cada líder de tienda, su trayectoria mes a mes y la rotación del puesto · Plaza Oaxaca</p>
       </div>
-      <span class="hero-badge" id="corte-badge">⟳ Mensual · Plaza Oaxaca</span>
       <span id="hero-download" style="display:none"></span>
     </div>
+    <div class="hero-context"><span id="corte-badge">Mensual · Plaza Oaxaca</span></div>
+  </div>
+
+  <section class="filter-panel" aria-label="Filtros del dashboard">
     <div class="vac-filters">
       <div class="vac-fbox">
         <label for="filtro-asesor-button">Asesor</label>
@@ -59,10 +61,10 @@
         </select>
       </div>
       <div class="vac-fbox vac-fbox--actions">
-        <button type="button" class="filtro-btn" onclick="limpiarFiltros()">Limpiar filtros</button>
+        <button type="button" class="filtro-btn" onclick="limpiarFiltros()">✕ Limpiar</button>
       </div>
     </div>
-  </div>
+  </section>
 
   <div class="rh-layer"><h2 class="rh-layer__title">Resumen ejecutivo</h2><p class="rh-layer__purpose">Etapa de los líderes en el mes de corte.</p></div>
 
@@ -623,7 +625,7 @@ async function initDashboard(){
   });
   Object.values(HIST_TIENDA).forEach(lista => lista.sort((a, b) => val(a, C.mes).localeCompare(val(b, C.mes))));
 
-  document.getElementById('corte-badge').textContent = `⟳ Corte ${nombreMes(MES_ACT)} · Plaza Oaxaca`;
+  document.getElementById('corte-badge').textContent = `Corte ${nombreMes(MES_ACT)} · Plaza Oaxaca`;
 
   const actuales = filasDelMes(MES_ACT);
   const asesores = [...new Set(actuales.map(r => val(r, C.asesor)).filter(Boolean))].sort();

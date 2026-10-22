@@ -8,8 +8,6 @@
 body.dashboard-4-page .hero-download-link { text-decoration: none; cursor: pointer; }
 body.dashboard-4-page .vac-fbox[role="group"] { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; }
 body.dashboard-4-page .vac-fbox[role="group"] > label { grid-column: 1/-1; }
-body.dashboard-4-page .vac-fbox[role="group"] .filtro-btn:last-child { border-color: var(--du-red-dark); background: var(--du-red-dark); color: #fff; }
-body.dashboard-4-page .vac-fbox[role="group"] .filtro-btn:last-child:hover { background: var(--du-red); }
 
 /* KPIs: 8 tarjetas clicables en rejilla de 4 (layout propio de la página). */
 body.dashboard-4-page .kpis { grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
