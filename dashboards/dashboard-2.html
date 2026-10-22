@@ -54,24 +54,7 @@
     <div class="d2-scope" id="d2-scope" data-oxxo-scope-mount></div>
   </section>
 
-  <!-- 2. Indicadores: primero lo que se lee, despues lo que se filtra. -->
-  <section class="d2-kpis" id="kpi-section" aria-label="Indicadores de bajas" aria-describedby="d2-kpi-hint">
-    <div class="kpi-card d2-kpi"><div class="kpi-card__label">Cargando…</div><div class="kpi-card__value"><div class="spinner"></div></div></div>
-  </section>
-  <p class="d2-hint d2-kpi-hint" id="d2-kpi-hint">Toca un indicador para filtrar; tócalo de nuevo para quitar el filtro.</p>
-
-  <!-- 2b. Panorama de decision: tres lecturas calculadas con los filtros activos. -->
-  <section class="d2-panel d2-decision" id="d2-decision" aria-labelledby="d2-decision-title" data-png-export>
-    <header class="d2-panel__head">
-      <h2 class="d2-panel__title" id="d2-decision-title">Panorama de decisión<span class="info-tip" tabindex="0" data-tip="Lecturas calculadas sobre las bajas filtradas: concentración en los primeros 90 días de antigüedad, motivo predominante y bajas sin responsable identificado."></span></h2>
-      <p class="d2-panel-scope" data-d2-scope="decision"></p>
-    </header>
-    <ul class="d2-decision__list" id="d2-decision-list" aria-live="polite">
-      <li class="d2-decision__item d2-decision__item--empty">Cargando lecturas…</li>
-    </ul>
-  </section>
-
-  <!-- 3. Filtros secundarios (plegables en celular). -->
+  <!-- 2. Filtros secundarios, justo bajo el encabezado (plegables en celular). -->
   <section class="d2-filter-region" aria-labelledby="d2-filter-title">
     <h2 class="d2-region-title" id="d2-filter-title">Filtros secundarios</h2>
     <button type="button" class="d2-filter-toggle" id="d2-filter-toggle" aria-expanded="true" aria-controls="filter-bar">
@@ -87,6 +70,23 @@
       <div class="filter-box"><span class="filter-title">Puesto</span></div>
     </div>
     <p class="d2-active-context" id="d2-active-context" role="status" aria-live="polite"></p>
+  </section>
+
+  <!-- 3. Indicadores. -->
+  <section class="d2-kpis" id="kpi-section" aria-label="Indicadores de bajas" aria-describedby="d2-kpi-hint">
+    <div class="kpi-card d2-kpi"><div class="kpi-card__label">Cargando…</div><div class="kpi-card__value"><div class="spinner"></div></div></div>
+  </section>
+  <p class="d2-hint d2-kpi-hint" id="d2-kpi-hint">Toca un indicador para filtrar; tócalo de nuevo para quitar el filtro.</p>
+
+  <!-- 3b. Panorama de decision: tres lecturas calculadas con los filtros activos. -->
+  <section class="d2-panel d2-decision" id="d2-decision" aria-labelledby="d2-decision-title" data-png-export>
+    <header class="d2-panel__head">
+      <h2 class="d2-panel__title" id="d2-decision-title">Panorama de decisión<span class="info-tip" tabindex="0" data-tip="Lecturas calculadas sobre las bajas filtradas: concentración en los primeros 90 días de antigüedad, motivo predominante y bajas sin responsable identificado."></span></h2>
+      <p class="d2-panel-scope" data-d2-scope="decision"></p>
+    </header>
+    <ul class="d2-decision__list" id="d2-decision-list" aria-live="polite">
+      <li class="d2-decision__item d2-decision__item--empty">Cargando lecturas…</li>
+    </ul>
   </section>
 
   <!-- 4. Analisis principal: compromiso y bajas por asesor (pestañas en celular). -->
