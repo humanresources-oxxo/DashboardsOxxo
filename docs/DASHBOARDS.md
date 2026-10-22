@@ -164,12 +164,21 @@ fria, pasillos de anaqueles, barra de cafe y la puerta de SALIDA al frente.
 
 Monitos (todos con el uniforme rojo de la tienda): chihuahua y jaguar muerden,
 tlacuache y mono avientan monedas, los lobos (solo cabeza, flotan) y el pinguino
-escupen, y el oso gerente cuida la salida. Armas: botella de catsup y
-lanza-hielo; se recogen cafe (salud), sobres de catsup y bolsas de hielo.
+escupen, y el oso gerente cuida la salida.
+
+Armas (teclas 1 a 5): trapeador de cloro (golpe, sin municion), escaner de
+barras (laser, pilas), lanza-cafe (escopeta, cargas de cafe), terminal "No hay
+sistema" (congela unos segundos a los monitos que te ven; recupera una senal
+cada 12 s) y escudo "Caja cerrada" (mientras lo traes el dano baja a la cuarta
+parte; empuja al disparar). Se empieza con trapeador y escaner; las otras tres
+se recogen en el mapa (S, T y K). La torta da salud.
 Funciona con teclado y raton o con controles tactiles en celular.
 
-Paredes, armas y objetos se dibujan con formas al arrancar. Los monitos salen
-de `assets/juego/monitos.png`: una celda de 128x128 por personaje, en el orden
+Paredes y objetos se dibujan con formas al arrancar. Las armas salen de
+`assets/juego/armas.png` (360 px de alto; cada arma guarda su tramo en `hoja`)
+y se pintan en un segundo canvas `#armas` de 960x600 encima de la vista; los
+efectos de disparo (cloro, cafe, laser y ondas) se dibujan ahi mismo. Los
+monitos salen de `assets/juego/monitos.png`: una celda de 128x128 por personaje, en el orden
 de `MONITOS` dentro del motor; de esa pose se derivan los cuadros de caminar,
 atacar, dolor y muerto. Si la imagen no carga, cada monito se ve como una
 silueta y el juego sigue. No usa librerias ni lee o envia datos; solo carga

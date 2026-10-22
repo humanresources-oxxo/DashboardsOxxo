@@ -12,7 +12,8 @@ const bloque = juego.match(/const MAP_SRC = \[([\s\S]*?)\];/);
 const mapa = bloque ? [...bloque[1].matchAll(/"([^"]*)"/g)].map(m => m[1]) : [];
 const MUROS = '12345DX';
 const MONITOS = 'zcjlLmop';
-const CONOCIDOS = new Set('12345DX.PhabS' + MONITOS);
+const OBJETOS = 'habSTK';
+const CONOCIDOS = new Set('12345DX.P' + OBJETOS + MONITOS);
 
 test('el mapa es rectangular, cerrado y solo usa caracteres conocidos', () => {
   assert.ok(mapa.length > 5, 'no se encontro MAP_SRC');
@@ -47,7 +48,7 @@ test('hay un solo inicio, una sola salida y se llega a ella caminando', () => {
   }
   assert.ok(llega, 'la salida X no se alcanza desde P');
   // Todo monito y objeto queda en una zona alcanzable (si no, el contador de monitos nunca se completa).
-  for (const c of celdas.filter(c => (MONITOS + 'habS').includes(c.ch))) {
+  for (const c of celdas.filter(c => (MONITOS + OBJETOS).includes(c.ch))) {
     assert.ok(visto.has(`${c.x},${c.y}`), `"${c.ch}" en (${c.x},${c.y}) queda encerrado`);
   }
 });
@@ -62,7 +63,8 @@ test('la portada lo ofrece y la pagina carga el candado del sitio', () => {
   assert.match(fs.readFileSync(path.join(raiz, 'index.html'), 'utf8'), /href="dashboards\/turno-nocturno\.html"/);
   const pagina = fs.readFileSync(path.join(raiz, 'dashboards', 'turno-nocturno.html'), 'utf8');
   assert.match(pagina, /js\/site-lock\.js\?v=/);
-  assert.match(pagina, /OXXO_TURNO_NOCTURNO\.montar\(\{ monitos: '\.\.\/assets\/juego\/monitos\.png' \}\)/);
+  assert.match(pagina, /OXXO_TURNO_NOCTURNO\.montar\(\{ monitos: '\.\.\/assets\/juego\/monitos\.png', armas: '\.\.\/assets\/juego\/armas\.png' \}\)/);
+  assert.match(pagina, /<canvas id="armas" width="960" height="600"/);
 });
 
 test('cada letra de monito del mapa tiene su celda en la hoja de sprites', () => {
@@ -75,4 +77,18 @@ test('cada letra de monito del mapa tiene su celda en la hoja de sprites', () =>
   for (const [, letra, tipo, celda] of celdas) {
     assert.ok((Number(celda) + 1) * 128 <= ancho, `${tipo} (${letra}) apunta a la celda ${celda}, fuera de la hoja`);
   }
+});
+
+test('cada arma recorta su propio tramo de la hoja de armas, sin encimarse', () => {
+  const hoja = fs.readFileSync(path.join(raiz, 'assets', 'juego', 'armas.png'));
+  const ancho = hoja.readUInt32BE(16), alto = hoja.readUInt32BE(20);
+  assert.equal(alto, 360, 'las armas miden 360 px de alto');
+  const armas = [...juego.matchAll(/^\s+(\w+): \{ name: '[^']+',[^\n]*hoja: \[(\d+), (\d+)\], boca: \[(\d+), (\d+)\]/gm)]
+    .map(m => ({ arma: m[1], x: +m[2], w: +m[3], bx: +m[4], by: +m[5] }));
+  assert.deepEqual(armas.map(a => a.arma).sort(), ['cafe', 'escaner', 'escudo', 'terminal', 'trapeador']);
+  armas.sort((a, b) => a.x - b.x).forEach((a, i, todas) => {
+    assert.ok(a.x + a.w <= ancho, `${a.arma} se sale de la hoja`);
+    if (i) assert.ok(a.x >= todas[i - 1].x + todas[i - 1].w, `${a.arma} se encima con ${todas[i - 1].arma}`);
+    assert.ok(a.bx <= a.w && a.by <= alto, `la boca de ${a.arma} queda fuera de su imagen`);
+  });
 });

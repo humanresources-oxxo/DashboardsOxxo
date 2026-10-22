@@ -7,14 +7,16 @@
    y pasillos hasta la puerta de SALIDA.
 
    Motor de raycasting (estilo clasico) sobre un canvas de 320x200.
-   Paredes, armas y objetos se dibujan con formas al arrancar; los
-   monitos salen de una sola imagen (assets/juego/monitos.png, una
-   celda de 128x128 por personaje). No usa librerias y, como la
-   Torre de Cajas, no lee ni envia datos; el mejor tiempo vive en
-   localStorage.
+   Paredes y objetos se dibujan con formas al arrancar; los monitos
+   salen de assets/juego/monitos.png (una celda de 128x128 por
+   personaje) y las 5 armas de assets/juego/armas.png, que se dibujan
+   en un segundo canvas (#armas) a 960x600 para que no pierdan
+   detalle. No usa librerias y, como la Torre de Cajas, no lee ni
+   envia datos; el mejor tiempo vive en localStorage.
 
-   Uso: OXXO_TURNO_NOCTURNO.montar({ monitos: 'ruta/monitos.png' })
-   sobre dashboards/turno-nocturno.html (busca sus elementos por id).
+   Uso: OXXO_TURNO_NOCTURNO.montar({ monitos: 'ruta/monitos.png',
+   armas: 'ruta/armas.png' }) sobre dashboards/turno-nocturno.html
+   (busca sus elementos por id).
    ========================================================== */
 (function () {
   'use strict';
@@ -29,6 +31,9 @@
     const img = ctx.createImageData(W, H);
     const buf = new Uint32Array(img.data.buffer);
     const zbuf = new Float32Array(W);
+    // Capa de armas: misma proporcion que la vista, 3 veces mas grande.
+    const AW = 960, AH = 600, AS = AW / W;
+    const actx = document.getElementById('armas').getContext('2d');
 
     /* ---------- utilidades ---------- */
     let seed = 2400;
@@ -40,6 +45,8 @@
       return 0xff000000 | (((c >> 16 & 255) * f) << 16) | (((c >> 8 & 255) * f) << 8) | ((c & 255) * f);
     }
     const fog = d => clamp(3.4 / (d + 1.5), 0.1, 1);
+    // Monito congelado: se ve azul hielo.
+    const azul = c => 0xff000000 | (Math.min(255, (c >> 16 & 255) + 120) << 16) | (Math.min(255, (c >> 8 & 255) + 50) << 8) | ((c & 255) >> 1);
 
     function makeTex(draw, noise = 0) {
       const c = document.createElement('canvas'); c.width = c.height = TS;
@@ -205,24 +212,28 @@
         for (const k in f) SPR[cfg.tipo + '_' + k] = f[k];
       }
     }
-    // h: cafe caliente, a: sobres de catsup, b: bolsa de hielo, S: lanza-hielo.
-    SPR.h = spr(makeTex(g => { poly(g, '#f4efe4', [24, 42, 40, 42, 38, 63, 26, 63]); rect(g, '#7a4a2a', 25, 50, 14, 6); rect(g, ROJO, 25, 46, 14, 3); rect(g, '#d8d2c8', 22, 39, 20, 4); for (const x of [28, 33]) poly(g, 'rgba(255,255,255,.7)', [x, 36, x + 2, 30, x, 24, x + 1, 24, x + 3, 30, x + 1, 36]); }), 64);
-    SPR.a = spr(makeTex(g => { rect(g, '#6b5a3a', 18, 48, 28, 15); rect(g, '#8a7a4a', 19, 48, 26, 13); for (let x = 20; x < 44; x += 6) { rect(g, ROJO, x, 42, 5, 10); rect(g, '#fff', x + 1, 45, 3, 2); } }), 64);
-    SPR.b = spr(makeTex(g => { el(g, 32, 52, 14, 11, 'rgba(190,230,255,.95)'); rect(g, '#2b6fd6', 22, 50, 20, 6); rect(g, '#fff', 31, 49, 2, 8); rect(g, '#fff', 28, 52, 8, 2); for (const [x, y] of [[25, 45], [36, 44], [30, 59]]) rect(g, '#ffffff', x, y, 4, 4); rect(g, '#9ec9e6', 28, 40, 8, 3); }), 64);
-    SPR.S = spr(makeTex(g => { rect(g, '#d8e9f5', 12, 52, 40, 8); rect(g, '#2b6fd6', 12, 52, 12, 8); rect(g, '#9fd2f2', 48, 50, 8, 12); rect(g, '#5a5f66', 28, 58, 8, 5); rect(g, '#fff', 40, 54, 6, 2); }), 64);
+    // h: torta (salud) · a: pilas (escaner) · b: cargas de cafe (lanza-cafe)
+    // S lanza-cafe · T terminal "No hay sistema" · K escudo "Caja cerrada".
+    SPR.h = spr(makeTex(g => { el(g, 32, 50, 18, 7, '#e2a95a'); rect(g, '#5aa83c', 15, 52, 34, 3); rect(g, '#d9534f', 16, 55, 32, 3); rect(g, '#f2d27a', 16, 58, 32, 2); el(g, 32, 61, 18, 4, '#d8994a'); for (const x of [24, 32, 40]) rect(g, '#fff3d6', x, 46, 2, 2); }), 64);
+    SPR.a = spr(makeTex(g => { for (const x of [18, 30, 42]) { rect(g, '#2a2a2e', x, 44, 9, 19); rect(g, AMARILLO, x, 50, 9, 6); rect(g, '#c9c9cc', x + 3, 41, 3, 3); } }), 64);
+    SPR.b = spr(makeTex(g => { poly(g, '#6b4226', [20, 42, 44, 42, 46, 63, 18, 63]); rect(g, ROJO, 19, 50, 26, 6); rect(g, '#f4efe4', 26, 52, 12, 2); rect(g, '#4a2c18', 22, 40, 20, 3); }), 64);
+    SPR.S = spr(makeTex(g => { rect(g, '#5a5f66', 22, 40, 22, 22); rect(g, '#9aa0a6', 30, 30, 5, 12); el(g, 18, 54, 8, 8, '#cfe6f5'); el(g, 18, 56, 6, 5, '#5a3216'); rect(g, ROJO, 46, 44, 7, 16); rect(g, '#7a4a2a', 30, 50, 6, 13); }), 64);
+    SPR.T = spr(makeTex(g => { rect(g, '#2f3540', 22, 34, 20, 29); rect(g, '#a9c48a', 25, 37, 14, 8); rect(g, ROJO, 34, 40, 3, 3); for (let y = 48; y < 60; y += 4) for (let x = 25; x < 39; x += 5) rect(g, '#9aa0a6', x, y, 3, 2); rect(g, '#2f3540', 38, 26, 2, 9); }), 64);
+    SPR.K = spr(makeTex(g => { rect(g, '#2a2d33', 14, 36, 36, 27); rect(g, '#16181c', 18, 42, 28, 14); rect(g, AMARILLO, 21, 45, 22, 3); rect(g, ROJO, 21, 50, 22, 3); poly(g, '#9aa0a6', [14, 36, 22, 36, 14, 42]); poly(g, '#9aa0a6', [50, 36, 42, 36, 50, 42]); }), 64);
     // Proyectiles: baba verde de los lobos y bola de nieve del pinguino.
     SPR.proj_baba = spr(makeTex(g => { el(g, 32, 32, 26, 26, 'rgba(120,255,90,.55)'); el(g, 32, 34, 16, 18, '#4fd14a'); el(g, 27, 28, 5, 6, '#c8ffb0'); }), 64);
     SPR.proj_nieve = spr(makeTex(g => { el(g, 32, 32, 26, 26, 'rgba(170,220,255,.6)'); el(g, 32, 32, 17, 17, '#f4fbff'); el(g, 27, 27, 5, 5, '#ffffff'); el(g, 37, 37, 4, 4, '#cfe6f5'); }), 64);
 
     /* ---------- mapa ---------- */
     // P inicio · monitos: z tlacuache, c chihuahua, j jaguar, l/L lobos,
-    // m mono, o oso, p pinguino · h cafe · a catsup · b hielo · S lanza-hielo
+    // m mono, o oso, p pinguino · h torta · a pilas · b cargas de cafe
+    // S lanza-cafe · T terminal "No hay sistema" · K escudo "Caja cerrada"
     // 1 anaquel · 2 refrigerador · 3 pared · 4 bodega · 5 barra de cafe
     // D puerta · X salida
     const MAP_SRC = [
       "444444444444222222222222",
       "4P....4....h2...l....z.2",
-      "4.....4.....2..........2",
+      "4.....4.....2.......T..2",
       "4..a..D..c..D....m....h2",
       "4.....4.....2..........2",
       "4..b..4.....2...a.....p2",
@@ -235,7 +246,7 @@
       "3.11111.111111.111111..3",
       "3...L.........m.....b..3",
       "3.11111.111111.111111..3",
-      "3......................3",
+      "3....K.................3",
       "3555...p.....j....z..h.3",
       "3555.......o...........3",
       "333333333333X33333333333"
@@ -245,7 +256,7 @@
     const DOOR = 4, EXIT = 5;
 
     let grid, doors, ents, player, kills, total, elapsed, state = 'title', mapOn = false;
-    let ammo, have, cur, wcool, flashT, recoil, hurtT, pickT, bobT, moving, swapT, deathT;
+    let ammo, have, cur, wcool, flashT, recoil, hurtT, pickT, bobT, moving, swapT, deathT, senalT, particulas;
 
     function loadLevel() {
       grid = new Int8Array(MW * MH).fill(-1); doors = new Map(); ents = [];
@@ -255,10 +266,11 @@
         const cx = x + .5, cy = y + .5;
         if (ch === 'P') player = { x: cx, y: cy, a: 0, hp: 100 };
         else if (ch in MONITOS) ents.push(enemy(MONITOS[ch], cx, cy));
-        else if ('habS'.includes(ch)) ents.push({ kind: 'pick', item: ch, x: cx, y: cy });
+        else if ('habSTK'.includes(ch)) ents.push({ kind: 'pick', item: ch, x: cx, y: cy });
       }
       total = ents.filter(e => e.kind === 'enemy').length; kills = 0; elapsed = 0;
-      ammo = { sobres: 50, hielo: 0 }; have = { catsup: true, hielo: false }; cur = 'catsup';
+      ammo = { pilas: 50, cafe: 0, senal: 0 }; have = { trapeador: true, escaner: true, cafe: false, terminal: false, escudo: false }; cur = 'escaner';
+      senalT = 0; particulas = [];
       wcool = 0; flashT = 0; recoil = 0; hurtT = 0; pickT = 0; bobT = 0; moving = false; swapT = 0; deathT = 0;
     }
     function enemy(cfg, x, y) {
@@ -320,8 +332,12 @@
       let v = 1;
       if (x !== undefined) v = clamp(1.6 / (1 + Math.hypot(x - player.x, y - player.y) * 0.35), 0.05, 1);
       switch (name) {
-        case 'catsup': noise(.45 * v, .14, 'lowpass', 700); tone(.2 * v, .09, 'sine', 240, 90); break;
-        case 'hielo': noise(.7 * v, .32, 'highpass', 2400); tone(.35 * v, .2, 'triangle', 900, 300); break;
+        case 'trapeador': noise(.4 * v, .22, 'bandpass', 600); break;
+        case 'escaner': tone(.2 * v, .08, 'square', 1500, 1500); tone(.15 * v, .2, 'sawtooth', 1400, 500); break;
+        case 'cafe': noise(.7 * v, .4, 'lowpass', 900); tone(.25 * v, .3, 'sine', 140, 60); break;
+        case 'terminal': tone(.22, .12, 'square', 700, 700); setTimeout(() => AC && tone(.22, .12, 'square', 500, 500), 140); setTimeout(() => AC && tone(.22, .3, 'square', 320, 300), 280); break;
+        case 'escudo': noise(.5 * v, .15, 'lowpass', 300); tone(.3 * v, .12, 'sine', 90, 50); break;
+        case 'congela': tone(.2 * v, .5, 'sine', 900, 200); break;
         case 'moneda': tone(.22 * v, .06, 'square', 1800, 1700); setTimeout(() => AC && tone(.18 * v, .12, 'square', 2600, 2500), 50); break;
         case 'gruñido': tone(.3 * v, .55, 'sawtooth', 95, 55); break;
         case 'alerta': tone(.22 * v, .18, 'square', 520, 300); break;
@@ -343,27 +359,58 @@
     }
 
     /* ---------- armas ---------- */
+    // hoja: [x, ancho] dentro de assets/juego/armas.png (360 px de alto).
+    // boca: de donde sale el disparo, en pixeles de esa misma imagen.
+    // tipo: 'golpe' cuerpo a cuerpo · 'rayo' disparo directo · 'congela'
+    // detiene a los monitos cercanos · 'empuje' golpe del escudo.
     const WEAP = {
-      catsup: { name: 'CÁTSUP', ammo: 'sobres', label: 'SOBRES', rate: 0.36, dmg: [10, 18], pellets: 1, spread: 0.012 },
-      hielo: { name: 'HIELO', ammo: 'hielo', label: 'HIELOS', rate: 0.95, dmg: [6, 11], pellets: 7, spread: 0.085 }
+      trapeador: { name: 'TRAPEADOR', ammo: null, label: 'CLORO', tipo: 'golpe', rate: 0.55, dmg: [22, 34], alcance: 1.6, hoja: [0, 400], boca: [180, 50] },
+      escaner: { name: 'ESCÁNER', ammo: 'pilas', label: 'PILAS', tipo: 'rayo', rate: 0.32, dmg: [10, 18], pellets: 1, spread: 0.01, hoja: [816, 498], boca: [212, 32] },
+      cafe: { name: 'LANZA-CAFÉ', ammo: 'cafe', label: 'CARGAS', tipo: 'rayo', rate: 0.95, dmg: [7, 12], pellets: 7, spread: 0.09, hoja: [400, 416], boca: [195, 35] },
+      terminal: { name: 'NO HAY SISTEMA', ammo: 'senal', label: 'SEÑALES', tipo: 'congela', rate: 1.4, radio: 9, dura: 4, hoja: [1314, 426], boca: [210, 100] },
+      escudo: { name: 'CAJA CERRADA', ammo: null, label: 'ESCUDO', tipo: 'empuje', rate: 0.7, dmg: [6, 10], alcance: 1.4, hoja: [1740, 404], boca: [200, 150] }
     };
+    // Teclas 1-5.
+    const TECLAS = ['trapeador', 'escaner', 'cafe', 'terminal', 'escudo'];
+    let hojaArmas = null;
     function switchTo(w) { if (!have[w] || cur === w) return; cur = w; swapT = 0.25; }
-    function cycle() { switchTo(cur === 'catsup' ? 'hielo' : 'catsup'); }
+    function cycle() { const i = TECLAS.indexOf(cur); for (let k = 1; k <= TECLAS.length; k++) { const w = TECLAS[(i + k) % TECLAS.length]; if (have[w]) { switchTo(w); return; } } }
+    const tiro = w => w.dmg[0] + Math.random() * (w.dmg[1] - w.dmg[0]) | 0;
     function fire() {
       if (wcool > 0 || swapT > 0) return;
       const w = WEAP[cur];
-      if (ammo[w.ammo] <= 0) {
+      if (w.ammo && ammo[w.ammo] <= 0) {
         sfx('vacio'); wcool = 0.35;
-        const other = cur === 'catsup' ? 'hielo' : 'catsup';
-        if (have[other] && ammo[WEAP[other].ammo] > 0) switchTo(other);
+        if (cur !== 'escaner' && have.escaner && ammo.pilas > 0) switchTo('escaner'); else switchTo('trapeador');
         return;
       }
-      ammo[w.ammo]--; wcool = w.rate; flashT = 0.09; recoil = 1; sfx(cur);
-      for (let p = 0; p < w.pellets; p++) {
-        const dmg = w.dmg[0] + Math.random() * (w.dmg[1] - w.dmg[0]) | 0;
-        hitscan(player.a + (Math.random() - 0.5) * 2 * w.spread, dmg);
-      }
+      if (w.ammo) ammo[w.ammo]--;
+      wcool = w.rate; flashT = w.tipo === 'congela' ? 0.7 : cur === 'escaner' ? 0.16 : 0.12; recoil = 1; sfx(cur);
+      if (w.tipo === 'rayo') for (let p = 0; p < w.pellets; p++) hitscan(player.a + (Math.random() - 0.5) * 2 * w.spread, tiro(w));
+      else if (w.tipo === 'golpe' || w.tipo === 'empuje') golpeCercano(w);
+      else if (w.tipo === 'congela') congelar(w);
+      efectoDisparo(w);
       for (const e of ents) if (e.kind === 'enemy' && !e.dead && !e.awake && Math.hypot(e.x - player.x, e.y - player.y) < 11) wake(e);
+    }
+    // Trapeador y escudo: pegan al monito mas cercano frente a ti; el escudo lo empuja.
+    function golpeCercano(w) {
+      let best = null, bd = w.alcance;
+      for (const e of ents) {
+        if (e.kind !== 'enemy' || e.dead) continue;
+        const dx = e.x - player.x, dy = e.y - player.y, d = Math.hypot(dx, dy);
+        if (d < bd && Math.abs(angDiff(Math.atan2(dy, dx), player.a)) < 0.6) { best = e; bd = d; }
+      }
+      if (!best) return;
+      hurtEnemy(best, tiro(w));
+      if (w.tipo === 'empuje' && !best.dead) { const a = Math.atan2(best.y - player.y, best.x - player.x); move(best, Math.cos(a) * 0.9, Math.sin(a) * 0.9, 0.28, false); best.painT = 0.5; }
+    }
+    // "No hay sistema": los monitos que te ven se quedan quietos unos segundos.
+    function congelar(w) {
+      for (const e of ents) {
+        if (e.kind !== 'enemy' || e.dead) continue;
+        const d = Math.hypot(e.x - player.x, e.y - player.y);
+        if (d < w.radio && los(e, d)) { e.congeladoT = w.dura; sfx('congela', e.x, e.y); }
+      }
     }
     function hitscan(ang, dmg) {
       let best = null, bd = castRay(player.x, player.y, ang, 30);
@@ -385,6 +432,8 @@
     }
     function hurtPlayer(n) {
       if (state !== 'play') return;
+      // Con "Caja cerrada" en las manos el golpe llega a la cuarta parte.
+      if (cur === 'escudo' && swapT <= 0) { n = Math.ceil(n * 0.25); sfx('escudo'); }
       player.hp -= n; hurtT = 0.4; sfx('herido');
       if (player.hp <= 0) { player.hp = 0; state = 'dying'; deathT = 0; releaseLock(); }
     }
@@ -439,8 +488,8 @@
       if (state === 'play') {
         if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space', 'Tab'].includes(e.code)) e.preventDefault();
         if (e.code === 'KeyE' || e.code === 'Enter') use();
-        if (e.code === 'Digit1') switchTo('catsup');
-        if (e.code === 'Digit2') switchTo('hielo');
+        const n = ['Digit1', 'Digit2', 'Digit3', 'Digit4', 'Digit5'].indexOf(e.code);
+        if (n >= 0) switchTo(TECLAS[n]);
         if (e.code === 'KeyQ') cycle();
         if (e.code === 'KeyM' || e.code === 'Tab') mapOn = !mapOn;
         if (e.code === 'Escape' || e.code === 'KeyP') pause();
@@ -525,6 +574,9 @@
       wcool -= dt; swapT = Math.max(0, swapT - dt); flashT -= dt; recoil = Math.max(0, recoil - dt * 6);
       hurtT = Math.max(0, hurtT - dt); pickT = Math.max(0, pickT - dt);
       if (keys.Space || mouseDown || touch.fire) fire();
+      // La terminal recupera una senal cada 12 s, hasta 3.
+      if (have.terminal && ammo.senal < 3) { senalT += dt; if (senalT >= 12) { senalT = 0; ammo.senal++; } }
+      for (let k = particulas.length - 1; k >= 0; k--) { const q = particulas[k]; q.x += q.vx * dt; q.y += q.vy * dt; q.vy += q.g * dt; q.vida -= dt; if (q.vida <= 0) particulas.splice(k, 1); }
 
       for (const [i, d] of doors) {
         if (d.target === 1) {
@@ -551,15 +603,19 @@
       if (msgT > 0) { msgT -= dt; if (msgT <= 0) msgEl.textContent = ''; }
     }
     function takePickup(it) {
-      if (it === 'h') { if (player.hp >= 100) return false; player.hp = Math.min(100, player.hp + 25); say('Café caliente +25 de salud'); }
-      else if (it === 'a') { if (ammo.sobres >= 200) return false; ammo.sobres = Math.min(200, ammo.sobres + 12); say('Sobres de cátsup +12'); }
-      else if (it === 'b') { if (ammo.hielo >= 50) return false; ammo.hielo = Math.min(50, ammo.hielo + 6); say('Bolsa de hielo +6'); }
-      else if (it === 'S') { have.hielo = true; ammo.hielo = Math.min(50, ammo.hielo + 8); switchTo('hielo'); say('¡Lanza-hielo! Pulsa 2 o Q para cambiar'); }
+      if (it === 'h') { if (player.hp >= 100) return false; player.hp = Math.min(100, player.hp + 25); say('Torta +25 de salud'); }
+      else if (it === 'a') { if (ammo.pilas >= 200) return false; ammo.pilas = Math.min(200, ammo.pilas + 12); say('Pilas para el escáner +12'); }
+      else if (it === 'b') { if (ammo.cafe >= 50) return false; ammo.cafe = Math.min(50, ammo.cafe + 6); say('Cargas de café +6'); }
+      else if (it === 'S') { have.cafe = true; ammo.cafe = Math.min(50, ammo.cafe + 8); switchTo('cafe'); say('¡Lanza-café! Tecla 3'); }
+      else if (it === 'T') { have.terminal = true; ammo.senal = Math.max(ammo.senal, 3); switchTo('terminal'); say('¡Terminal "No hay sistema"! Tecla 4: congela a los monitos'); }
+      else if (it === 'K') { have.escudo = true; switchTo('escudo'); say('¡Escudo "Caja cerrada"! Tecla 5: aguanta los golpes'); }
       pickT = 0.25; sfx('recoge'); return true;
     }
     function updateEnemy(e, dt) {
       if (e.dead) return;
-      e.cool -= dt; e.painT -= dt; e.atkT -= dt; e.moved = false;
+      e.moved = false;
+      if (e.congeladoT > 0) { e.congeladoT -= dt; return; }
+      e.cool -= dt; e.painT -= dt; e.atkT -= dt;
       const dx = player.x - e.x, dy = player.y - e.y, d = Math.hypot(dx, dy);
       if (!e.awake) { if (d < 13 && los(e, d)) wake(e); return; }
       if (e.painT > 0) return;
@@ -657,6 +713,7 @@
         const full = H / tY, sh = full * scale, scrX = W / 2 * (1 + tX / tY);
         const bottom = h2 + full / 2 - z * full, top = bottom - sh, left = scrX - sh / 2;
         const f = bright ? 1 : Math.min(1, fog(tY) * boost);
+        const helado = e.kind === 'enemy' && e.congeladoT > 0;
         const x0 = Math.max(0, left | 0), x1 = Math.min(W, (left + sh) | 0);
         const y0 = Math.max(0, top | 0), y1 = Math.min(H, bottom | 0);
         for (let x = x0; x < x1; x++) {
@@ -665,45 +722,80 @@
           for (let y = y0; y < y1; y++) {
             const c = tex.px[(((y - top) * n / sh) & m) * n + tx];
             if ((c >>> 24) === 0) continue;
-            buf[y * W + x] = shade(c, f);
+            buf[y * W + x] = helado ? azul(shade(c, f)) : shade(c, f);
           }
         }
       }
       ctx.putImageData(img, 0, 0);
-      if (state !== 'title') drawWeapon();
       if (mapOn && state === 'play') drawMap();
-      if (hurtT > 0) { ctx.fillStyle = `rgba(190,20,8,${Math.min(.55, hurtT * 1.3)})`; ctx.fillRect(0, 0, W, H); }
-      if (pickT > 0) { ctx.fillStyle = `rgba(255,214,120,${pickT})`; ctx.fillRect(0, 0, W, H); }
-      if (state === 'dying' || state === 'dead') { ctx.fillStyle = `rgba(110,0,0,${Math.min(.6, deathT)})`; ctx.fillRect(0, 0, W, H); }
+      actx.clearRect(0, 0, AW, AH);
+      if (state !== 'title') drawWeapon();
+      if (hurtT > 0) { actx.fillStyle = `rgba(190,20,8,${Math.min(.55, hurtT * 1.3)})`; actx.fillRect(0, 0, AW, AH); }
+      if (pickT > 0) { actx.fillStyle = `rgba(255,214,120,${pickT})`; actx.fillRect(0, 0, AW, AH); }
+      if (state === 'dying' || state === 'dead') { actx.fillStyle = `rgba(110,0,0,${Math.min(.6, deathT)})`; actx.fillRect(0, 0, AW, AH); }
+    }
+    // Posicion del arma en la capa (esquina superior izquierda) con balanceo,
+    // retroceso y cambio de arma.
+    function poseArma(w) {
+      const mv = moving ? 1 : 0, sw = swapT > 0 ? swapT * 480 : 0;
+      const x = AW / 2 - w.hoja[1] / 2 + Math.cos(bobT) * 20 * mv;
+      const y = AH - 360 + Math.abs(Math.sin(bobT)) * 18 * mv + recoil * 18 + sw + (state === 'dying' || state === 'dead' ? 180 : 0);
+      return [x, y];
+    }
+    function efectoDisparo(w) {
+      const [x, y] = poseArma(w), bx = x + w.boca[0], by = y + w.boca[1];
+      // Los chorros apuntan a la mira (centro de la pantalla).
+      const haciaMira = Math.atan2(AH / 2 - 20 - by, AW / 2 - bx);
+      const chorro = (n, color, vel, abre, vida, tam, g) => {
+        for (let i = 0; i < n; i++) {
+          const a = haciaMira + (Math.random() - 0.5) * abre, v = vel * (0.6 + Math.random() * 0.6);
+          particulas.push({ x: bx, y: by, vx: Math.cos(a) * v, vy: Math.sin(a) * v, g, vida: vida * (0.6 + Math.random() * 0.6), total: vida, color, tam: tam * (0.6 + Math.random() * 0.8) });
+        }
+      };
+      if (cur === 'trapeador') chorro(18, '#5fe05a', 520, 2.2, 0.5, 9, 900);
+      else if (cur === 'cafe') { chorro(34, '#5a3216', 1100, 0.35, 0.3, 14, 200); chorro(16, '#8a5a2b', 900, 0.5, 0.3, 9, 200); chorro(8, 'rgba(235,235,235,.8)', 160, 1.4, 0.8, 16, -60); }
+      else if (cur === 'escudo') chorro(6, '#9aa0a6', 300, 1.6, 0.3, 6, 600);
     }
     function drawWeapon() {
-      const mv = moving ? 1 : 0, sw = swapT > 0 ? swapT * 160 : 0;
-      const bx = 160 + Math.cos(bobT) * 7 * mv | 0;
-      const by = 200 + Math.abs(Math.sin(bobT)) * 6 * mv + recoil * 7 + sw + (state === 'dying' || state === 'dead' ? 60 : 0) | 0;
-      const r = (c, x, y, w, h) => { ctx.fillStyle = c; ctx.fillRect(x, y, w, h); };
-      if (flashT > 0) {
-        const fy = cur === 'hielo' ? by - 92 : by - 80;
-        const g = ctx.createRadialGradient(bx, fy, 2, bx, fy, cur === 'hielo' ? 26 : 16);
-        if (cur === 'hielo') { g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(.4, 'rgba(170,225,255,.9)'); g.addColorStop(1, 'rgba(90,170,255,0)'); }
-        else { g.addColorStop(0, 'rgba(255,120,100,1)'); g.addColorStop(.4, 'rgba(217,31,45,.9)'); g.addColorStop(1, 'rgba(140,10,10,0)'); }
-        ctx.fillStyle = g; ctx.fillRect(bx - 30, fy - 30, 60, 60);
+      const w = WEAP[cur];
+      const [x, y] = poseArma(w);
+      const avance = wcool > 0 ? Math.sin(clamp(1 - wcool / w.rate, 0, 1) * Math.PI) : 0;
+      // Onda de "No hay sistema": anillos azules y amarillos que se abren.
+      if (cur === 'terminal' && flashT > 0) {
+        const t = 1 - flashT / 0.7, cx = x + w.boca[0], cy = y + w.boca[1];
+        actx.save();
+        for (let k = 0; k < 5; k++) {
+          const r = (t * 900 + k * 70) % 900;
+          actx.strokeStyle = k % 2 ? `rgba(255,210,0,${0.7 * (1 - r / 900)})` : `rgba(60,160,255,${0.8 * (1 - r / 900)})`;
+          actx.lineWidth = 10; actx.beginPath(); actx.arc(cx, cy, r, 0, Math.PI * 2); actx.stroke();
+        }
+        actx.restore();
       }
-      if (cur === 'catsup') {
-        // Botella de catsup apretada con la mano.
-        r('#b98a6a', bx - 18, by - 26, 36, 26);
-        r('#a3201c', bx - 11, by - 66, 22, 46); r('#d91f2d', bx - 9, by - 66, 18, 44);
-        r('#f4efe4', bx - 9, by - 52, 18, 12); r('#d91f2d', bx - 6, by - 49, 12, 2); r('#2fae3c', bx - 3, by - 46, 6, 3);
-        r('#f4efe4', bx - 6, by - 72, 12, 7); r('#f4efe4', bx - 2, by - 80, 4, 9);
-        r('#b98a6a', bx - 14, by - 34, 7, 12); r('#b98a6a', bx + 7, by - 34, 7, 12);
-      } else {
-        // Lanza-hielo: hielera azul con canon.
-        const pump = wcool > 0 ? Math.sin(clamp(1 - wcool / WEAP.hielo.rate, 0, 1) * Math.PI) * 10 : 0;
-        r('#2b6fd6', bx - 24, by - 32, 48, 32); r('#f4efe4', bx - 24, by - 34, 48, 6);
-        r('#9fd2f2', bx - 8, by - 92, 16, 62); r('#d8e9f5', bx - 11, by - 94, 22, 10);
-        r('#ffffff', bx - 5, by - 90, 3, 54);
-        r('#5a5f66', bx - 13, by - 58 + pump, 26, 12); r('#7d838a', bx - 13, by - 58 + pump, 26, 3);
-        r('#b98a6a', bx - 15, by - 52 + pump, 8, 12); r('#b98a6a', bx + 7, by - 52 + pump, 8, 12);
-        r('#b98a6a', bx - 18, by - 22, 36, 22);
+      for (const q of particulas) { actx.globalAlpha = clamp(q.vida / q.total, 0, 1); actx.fillStyle = q.color; actx.fillRect(q.x - q.tam / 2, q.y - q.tam / 2, q.tam, q.tam); }
+      actx.globalAlpha = 1;
+      if (!hojaArmas) return;
+      actx.save();
+      actx.imageSmoothingEnabled = false;
+      if (cur === 'trapeador' && avance > 0) {
+        // Golpe: el trapeador se inclina hacia adelante desde los brazos.
+        actx.translate(x + w.hoja[1] / 2, y + 360); actx.rotate(-avance * 0.45); actx.translate(-(x + w.hoja[1] / 2), -(y + 360 + avance * 40));
+      } else if (cur === 'escudo' && avance > 0) {
+        actx.translate(x + w.hoja[1] / 2, y + 360); actx.scale(1 + avance * 0.12, 1 + avance * 0.12); actx.translate(-(x + w.hoja[1] / 2), -(y + 360));
+      }
+      actx.drawImage(hojaArmas, w.hoja[0], 0, w.hoja[1], 360, Math.round(x), Math.round(y), w.hoja[1], 360);
+      actx.restore();
+      // Laser del escaner, encima del arma: destello en la boca y rayo hacia
+      // el fondo de la mira (la boca queda casi al centro de la pantalla).
+      if (cur === 'escaner' && flashT > 0) {
+        const bx = x + w.boca[0], by = y + w.boca[1], mx = AW / 2, my = AH / 2 - 60;
+        const brillo = actx.createRadialGradient(bx, by, 2, bx, by, 60);
+        brillo.addColorStop(0, 'rgba(255,240,240,1)'); brillo.addColorStop(.35, 'rgba(255,50,50,.85)'); brillo.addColorStop(1, 'rgba(255,0,0,0)');
+        actx.fillStyle = brillo; actx.fillRect(bx - 60, by - 60, 120, 120);
+        actx.save(); actx.lineCap = 'round';
+        for (const [ancho, color] of [[18, 'rgba(255,40,40,.35)'], [8, 'rgba(255,60,60,.95)'], [3, '#ffe8e8']]) {
+          actx.strokeStyle = color; actx.lineWidth = ancho; actx.beginPath(); actx.moveTo(bx, by); actx.lineTo(mx, my); actx.stroke();
+        }
+        actx.restore();
       }
     }
     function drawMap() {
@@ -724,20 +816,23 @@
       setT('hp', Math.max(0, player.hp | 0) + '%');
       hud.hp.classList.toggle('low', player.hp <= 25 && player.hp > 0);
       const w = WEAP[cur];
-      setT('ammo', String(ammo[w.ammo])); setT('ammoL', w.label); setT('weap', w.name);
-      setT('inv', `${ammo.sobres} sobres · ${ammo.hielo} hielos`);
+      setT('ammo', w.ammo ? String(ammo[w.ammo]) : '∞'); setT('ammoL', w.label); setT('weap', w.name);
+      setT('inv', `${ammo.pilas} pilas · ${ammo.cafe} café · ${ammo.senal} señal`);
       setT('kills', `${kills}/${total}`); setT('time', fmtTime(elapsed));
     }
 
+    // Las dos hojas se cargan antes de dejar entrar. Si alguna falla el juego
+    // sigue: monitos como siluetas y, sin armas, solo los efectos de disparo.
     const bStart = document.getElementById('bStart'), textoEntrar = bStart.textContent;
-    bStart.disabled = true; bStart.textContent = 'CARGANDO MONITOS…';
-    const listo = fuente => { prepararMonitos(fuente); bStart.disabled = false; bStart.textContent = textoEntrar; };
-    if (opciones.monitos) {
-      const hoja = new Image();
-      hoja.onload = () => listo(hoja);
-      hoja.onerror = () => listo(null);
-      hoja.src = opciones.monitos;
-    } else listo(null);
+    bStart.disabled = true; bStart.textContent = 'CARGANDO…';
+    const cargar = ruta => new Promise(ok => {
+      if (!ruta) { ok(null); return; }
+      const im = new Image(); im.onload = () => ok(im); im.onerror = () => ok(null); im.src = ruta;
+    });
+    Promise.all([cargar(opciones.monitos), cargar(opciones.armas)]).then(([monitos, armas]) => {
+      prepararMonitos(monitos); hojaArmas = armas;
+      bStart.disabled = false; bStart.textContent = textoEntrar;
+    });
 
     const record = leerRecord();
     if (record) document.getElementById('titleRecord').textContent = `Mejor tiempo en este navegador: ${fmtTime(record)}`;
