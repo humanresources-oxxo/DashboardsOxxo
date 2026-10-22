@@ -40,23 +40,32 @@
 
   // ── Estado global (se carga una sola vez) ─────────────
   let CATALOG = null;
+  // Cada base escribe el nombre a su manera ("Ernesto Cruz Márquez" vs
+  // "ERNESTO CRUZ MÁRQUEZ"): se agrupa por la llave limpia y se muestra
+  // una sola vez, prefiriendo la version que no viene toda en mayusculas.
   const ASESORES = new Set();
+  const ASESOR_POR_LLAVE = new Map();
   const TODOS_ASESORES = 'Todos los asesores';
   const DATA = {};
   let activeAsesor = '';
   let asesorSelectControl = null;
+  const llaveAsesor = (a) => OXXO.metricsCleanKey(a);
 
   function addAsesores(names) {
     names.forEach((a) => {
       const t = String(a || '').trim();
       if (!t || /sin asesor/i.test(t)) return;
-      ASESORES.add(t);
+      const k = llaveAsesor(t), actual = ASESOR_POR_LLAVE.get(k);
+      if (actual && (actual !== actual.toUpperCase() || t === t.toUpperCase())) return;
+      ASESOR_POR_LLAVE.set(k, t);
     });
+    ASESORES.clear();
+    ASESOR_POR_LLAVE.forEach((nombre) => ASESORES.add(nombre));
   }
   const lookupRows = OXXO.metricsCreateRowLookup();
   function rowsFor(d, asesor) {
     if (asesor === TODOS_ASESORES) return filasDeAsesores(d);
-    return lookupRows(d, asesor, r => V(r, d.asesorKey), CATALOG);
+    return lookupRows(d, llaveAsesor(asesor), r => llaveAsesor(V(r, d.asesorKey)), CATALOG);
   }
 
   // ── D1 · Vacantes Diarias (mismo pipeline que dashboard-1.html) ──
@@ -517,7 +526,7 @@
   let PLAZA = null;
   function filasDeAsesores(d) {
     if (!d) return [];
-    return d.rows.filter((r) => ASESORES.has(String(V(r, d.asesorKey) || '').trim()));
+    return d.rows.filter((r) => ASESOR_POR_LLAVE.has(llaveAsesor(V(r, d.asesorKey))));
   }
   function computePlaza() {
     const r1 = filasDeAsesores(DATA.d1), r2 = filasDeAsesores(DATA.d2), r3 = filasDeAsesores(DATA.d3);
@@ -685,7 +694,7 @@
   }
 
   function mountAsesorSelector() {
-    const previous = activeAsesor;
+    const previous = activeAsesor === TODOS_ASESORES ? activeAsesor : ASESOR_POR_LLAVE.get(llaveAsesor(activeAsesor));
     asesorSelectControl = mountSingleSelect('mi-asesor-select', [TODOS_ASESORES, ...ASESORES], {
       pinnedValue: TODOS_ASESORES,
       placeholder: 'Selecciona un asesor o todos',
@@ -693,7 +702,7 @@
       searchPlaceholder: 'Buscar asesor...',
       onChange: renderFor,
     });
-    if (previous && (previous === TODOS_ASESORES || ASESORES.has(previous))) {
+    if (previous) {
       asesorSelectControl?.setValue(previous);
       renderFor(previous);
     }

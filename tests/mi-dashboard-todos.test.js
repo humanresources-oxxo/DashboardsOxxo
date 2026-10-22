@@ -16,23 +16,25 @@ const context = {
   document: { getElementById: element, querySelector: element, addEventListener() {} },
   OXXO: {
     metricsVal: (row, key) => row[key], formatNum: String, truncate: String,
+    metricsCleanKey: s => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]/g, ''),
     metricsClasificaAprovechamiento: value => value,
     getScopeLabel: () => 'Plaza de prueba', setRetryHandler() {},
   },
 };
 let source = fs.readFileSync(path.join(__dirname, '../js/mi-dashboard.js'), 'utf8');
 source = source.replace('  OXXO.setRetryHandler(init);', `
-  window.testAPI = { DATA, ASESORES, TODOS_ASESORES, rowsFor, renderFor, mountAsesorSelector };
+  window.testAPI = { DATA, ASESORES, TODOS_ASESORES, addAsesores, rowsFor, renderFor, mountAsesorSelector };
   OXXO.setRetryHandler(init);`);
 vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../js/metrics-periods.js'), 'utf8'), context);
 vm.runInNewContext(source, context);
 const api = context.window.testAPI;
-api.ASESORES.add('Ana');
-api.ASESORES.add('Beto');
+// Cada base escribe el nombre a su manera: debe quedar un solo asesor.
+api.addAsesores(['ANA', 'Ana', 'Beto', 'BETO', 'Sin asesor']);
+assert.deepEqual([...api.ASESORES], ['Ana', 'Beto']);
 const rows = [
   { asesor: 'Ana', tienda: 'A', estado: 'completas' },
   { asesor: 'Beto', tienda: 'B', estado: 'incompletas' },
-  { asesor: 'Beto', tienda: 'C', estado: 'incompletas' },
+  { asesor: 'BETO', tienda: 'C', estado: 'incompletas' },
   { asesor: 'Sin asesor', tienda: 'D', estado: 'completas' },
 ];
 const data = { rows, asesorKey: 'asesor', tiendaKey: 'tienda', estatusKey: 'estado' };
