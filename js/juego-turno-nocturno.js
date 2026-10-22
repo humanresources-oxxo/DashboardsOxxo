@@ -1,25 +1,27 @@
 /* ==========================================================
    TURNO NOCTURNO — juego en primera persona dentro de un OXXO
 
-   Son las 3:00 a.m., algo salio mal con el rodillo de salchichas
-   y la tienda se lleno de monitos: salchichas mutantes, cajeros
-   zombi y vasos de refresco con dientes. Hay que cruzar bodega,
-   camara fria y pasillos hasta la puerta de SALIDA.
+   Son las 3:00 a.m. y la tienda se lleno de monitos zombi con el
+   uniforme rojo: tlacuache, chihuahua, jaguar, lobos, mono,
+   pinguino y el oso gerente. Hay que cruzar bodega, camara fria
+   y pasillos hasta la puerta de SALIDA.
 
    Motor de raycasting (estilo clasico) sobre un canvas de 320x200.
-   Todo se dibuja con formas al arrancar: sin imagenes, sin
-   librerias y sin red. Igual que la Torre de Cajas, no lee ni
-   envia datos; el mejor tiempo vive en localStorage.
+   Paredes, armas y objetos se dibujan con formas al arrancar; los
+   monitos salen de una sola imagen (assets/juego/monitos.png, una
+   celda de 128x128 por personaje). No usa librerias y, como la
+   Torre de Cajas, no lee ni envia datos; el mejor tiempo vive en
+   localStorage.
 
-   Uso: OXXO_TURNO_NOCTURNO.montar() sobre la pagina
-   dashboards/turno-nocturno.html (busca sus elementos por id).
+   Uso: OXXO_TURNO_NOCTURNO.montar({ monitos: 'ruta/monitos.png' })
+   sobre dashboards/turno-nocturno.html (busca sus elementos por id).
    ========================================================== */
 (function () {
   'use strict';
 
   const RECORD_KEY = 'oxxo-turno-nocturno-record';
 
-  function montar() {
+  function montar(opciones = {}) {
     const W = 320, H = 200, TS = 64;
     const stage = document.getElementById('stage');
     const cv = document.getElementById('view');
@@ -153,95 +155,94 @@
     }, 8);
 
     /* ---------- monitos ---------- */
-    function drawSalchicha(g, f) { // salchicha del rodillo, escupe jalapenos
-      if (f === 'dead') { el(g, 32, 59, 26, 5, '#7a2a10'); el(g, 32, 56, 22, 5, '#c8553d'); for (let x = 14; x < 50; x += 8) poly(g, '#f3c02c', [x, 55, x + 4, 52, x + 8, 55, x + 4, 57]); return; }
-      const lo = f === 'walk' ? 3 : 0, pain = f === 'pain', atk = f === 'atk';
-      const piel = pain ? '#f19a80' : '#c8553d', sombra = pain ? '#d9735a' : '#9c3a26';
-      rect(g, sombra, 24 - lo, 50, 6, 13); rect(g, sombra, 34 + lo, 50, 6, 13);
-      rect(g, '#3a1a10', 22 - lo, 61, 9, 3); rect(g, '#3a1a10', 33 + lo, 61, 9, 3);
-      el(g, 32, 30, 14, 25, piel); el(g, 28, 28, 6, 18, 'rgba(255,255,255,.12)');
-      for (let y = 14; y < 50; y += 8) poly(g, '#f3c02c', [22, y, 28, y + 4, 34, y, 40, y + 4, 42, y + 6, 34, y + 3, 28, y + 7, 22, y + 3]);
-      const ay = atk ? 16 : 28;
-      rect(g, sombra, 12, ay, 7, 16); rect(g, sombra, 45, ay, 7, 16);
-      rect(g, '#fff4c2', 15, 18, 6, 4); rect(g, '#fff4c2', 43, 18, 6, 4);
-      rect(g, AMARILLO, 25, 16, 5, 4); rect(g, AMARILLO, 35, 16, 5, 4); rect(g, '#000', 27, 17, 2, 2); rect(g, '#000', 37, 17, 2, 2);
-      if (atk) { el(g, 32, 28, 6, 5, '#3a0a04'); el(g, 32, 28, 3, 3, '#2fae3c'); }
-      else { rect(g, '#3a0a04', 27, 26, 10, 3); for (let x = 27; x < 37; x += 3) rect(g, '#fff', x, 26, 2, 2); }
+    // Cada personaje ocupa una celda de 128x128 en assets/juego/monitos.png,
+    // en este orden. Sus cuadros (caminar, atacar, dolor, muerto) se derivan
+    // de esa unica pose al cargar la imagen.
+    // ia: 'cuerpo' persigue y muerde · 'tirador' esquiva y avienta monedas ·
+    // 'escupe' lanza proyectiles y muerde de cerca.
+    const MONITOS = {
+      z: { tipo: 'tlacuache', celda: 0, vida: 35, ia: 'tirador', vel: 1.5, dano: [4, 10], escala: 0.8, sonido: 'alerta', suelta: 'a' },
+      c: { tipo: 'chihuahua', celda: 1, vida: 28, ia: 'cuerpo', vel: 3.4, dano: [5, 9], escala: 0.62, sonido: 'ladrido' },
+      j: { tipo: 'jaguar', celda: 2, vida: 60, ia: 'cuerpo', vel: 2.5, dano: [10, 16], escala: 0.9, sonido: 'gruñido' },
+      l: { tipo: 'lobo', celda: 3, vida: 50, ia: 'escupe', vel: 1.9, dano: [9, 16], escala: 0.62, z: 0.3, sonido: 'aullido', proj: 'baba' },
+      L: { tipo: 'lobo2', celda: 4, vida: 50, ia: 'escupe', vel: 1.9, dano: [9, 16], escala: 0.62, z: 0.3, sonido: 'aullido', proj: 'baba' },
+      m: { tipo: 'mono', celda: 5, vida: 40, ia: 'tirador', vel: 1.8, dano: [4, 9], escala: 0.85, sonido: 'chillido', suelta: 'a' },
+      o: { tipo: 'oso', celda: 6, vida: 220, ia: 'cuerpo', vel: 1.3, embiste: 2.5, dano: [15, 24], escala: 1.3, sonido: 'gruñido' },
+      p: { tipo: 'pinguino', celda: 7, vida: 70, ia: 'escupe', vel: 1.2, dano: [8, 14], escala: 0.82, sonido: 'graznido', proj: 'nieve' }
+    };
+    const CELDA = 128;
+    // Textura de sprite: pixeles + lado (64 para objetos, 128 para monitos).
+    const spr = (px, n) => ({ px, n });
+    function texDeCanvas(c) {
+      const g = c.getContext('2d'), d = g.getImageData(0, 0, c.width, c.height);
+      for (let i = 3; i < d.data.length; i += 4) d.data[i] = d.data[i] < 128 ? 0 : 255;
+      return spr(new Uint32Array(d.data.buffer), c.width);
     }
-    function drawCajero(g, f) { // cajero zombi, avienta monedas
-      if (f === 'dead') { el(g, 32, 60, 24, 4, '#3d0c08'); el(g, 30, 57, 18, 4, ROJO); el(g, 47, 56, 6, 4, '#8fb07a'); rect(g, AMARILLO, 20, 56, 14, 1); for (const x of [14, 22, 52]) el(g, x, 60, 2, 1.5, '#e8c84a'); return; }
-      const lo = f === 'walk' ? 3 : 0, pain = f === 'pain', atk = f === 'atk';
-      const piel = pain ? '#c9dcb8' : '#8fb07a';
-      rect(g, '#2b2f3a', 24 - lo, 42, 7, 20); rect(g, '#2b2f3a', 33 + lo, 42, 7, 20);
-      rect(g, '#1a1a1a', 23 - lo, 60, 9, 4); rect(g, '#1a1a1a', 32 + lo, 60, 9, 4);
-      rect(g, '#eeeae2', 19, 20, 26, 24);
-      rect(g, pain ? '#ef6a73' : ROJO, 20, 21, 9, 22); rect(g, pain ? '#ef6a73' : ROJO, 35, 21, 9, 22);
-      rect(g, AMARILLO, 20, 38, 9, 2); rect(g, AMARILLO, 35, 38, 9, 2);
-      rect(g, '#fff', 36, 25, 7, 4); rect(g, '#333', 37, 26, 5, 1);
-      rect(g, piel, 13, 22, 6, 14); rect(g, piel, 45, atk ? 14 : 22, 6, 14);
-      el(g, 32, 12, 9, 10, piel);
-      rect(g, '#3b2a1a', 23, 2, 18, 5);
-      rect(g, '#ff3b2a', 27, 10, 3, 3); rect(g, '#ff3b2a', 34, 10, 3, 3);
-      rect(g, '#2a1a10', 28, 17, 8, 2); rect(g, '#b33', 30, 18, 2, 3);
-      if (atk) { el(g, 52, 12, 5, 5, '#ffe27a'); el(g, 52, 12, 3, 3, '#e8b62a'); }
+    function cuadros(fuente, sx) {
+      const hacer = dibujo => { const c = document.createElement('canvas'); c.width = c.height = CELDA; dibujo(c.getContext('2d')); return texDeCanvas(c); };
+      const pose = (g, ancho, alto) => g.drawImage(fuente, sx, 0, CELDA, CELDA, (CELDA - ancho) / 2, CELDA - alto, ancho, alto);
+      const tinte = (g, color) => { g.globalCompositeOperation = 'source-atop'; g.fillStyle = color; g.fillRect(0, 0, CELDA, CELDA); };
+      return {
+        idle: hacer(g => pose(g, CELDA, CELDA)),
+        walk: hacer(g => pose(g, CELDA * 1.03, CELDA * 0.96)),
+        atk: hacer(g => { pose(g, CELDA, CELDA); tinte(g, 'rgba(255,220,90,.28)'); }),
+        pain: hacer(g => { pose(g, CELDA * 0.97, CELDA * 0.97); tinte(g, 'rgba(255,40,40,.5)'); }),
+        dead: hacer(g => { g.translate(CELDA / 2, CELDA - 22); g.rotate(Math.PI / 2); g.scale(0.7, 0.7); g.drawImage(fuente, sx, 0, CELDA, CELDA, -CELDA / 2, -CELDA / 2, CELDA, CELDA); g.setTransform(1, 0, 0, 1, 0, 0); tinte(g, 'rgba(20,0,0,.35)'); })
+      };
     }
-    function drawVaso(g, f) { // vaso de refresco gigante, muerde
-      if (f === 'dead') { el(g, 32, 60, 28, 4, '#3a1a0c'); poly(g, '#f4efe4', [10, 50, 40, 46, 42, 58, 12, 62]); rect(g, ROJO, 18, 52, 18, 3); rect(g, '#ffe0e0', 44, 50, 14, 2); return; }
-      const lo = f === 'walk' ? 3 : 0, pain = f === 'pain', atk = f === 'atk';
-      rect(g, '#5a3a22', 24 - lo, 52, 5, 11); rect(g, '#5a3a22', 35 + lo, 52, 5, 11);
-      poly(g, pain ? '#ffffff' : '#f4efe4', [14, 12, 50, 12, 44, 54, 20, 54]);
-      poly(g, pain ? '#ff8a92' : ROJO, [16, 26, 48, 26, 46, 38, 18, 38]);
-      rect(g, AMARILLO, 17, 24, 30, 2);
-      rect(g, '#c9c2b6', 12, 8, 40, 5); rect(g, '#e8e2d6', 13, 7, 38, 2);
-      poly(g, '#ff5a7a', [36, 8, 39, 8, 46, -2, 43, -2]);
-      rect(g, '#000', 22, 16, 6, 5); rect(g, '#000', 36, 16, 6, 5); rect(g, '#ff3b2a', 24, 17, 2, 2); rect(g, '#ff3b2a', 38, 17, 2, 2);
-      if (atk) { rect(g, '#2a0a06', 22, 40, 20, 10); for (let x = 22; x < 42; x += 4) { poly(g, '#fff', [x, 40, x + 4, 40, x + 2, 44]); poly(g, '#fff', [x, 50, x + 4, 50, x + 2, 46]); } }
-      else { rect(g, '#2a0a06', 24, 43, 16, 4); for (let x = 24; x < 40; x += 4) poly(g, '#fff', [x, 43, x + 4, 43, x + 2, 46]); }
-      rect(g, '#f4efe4', 10, 30, 4, 12); rect(g, '#f4efe4', 50, atk ? 18 : 30, 4, 12);
+    // Si la imagen no llega (sin red, archivo movido) cada monito se ve como
+    // una silueta roja: el juego sigue siendo jugable.
+    function silueta() {
+      const c = document.createElement('canvas'); c.width = c.height = CELDA; const g = c.getContext('2d');
+      g.fillStyle = ROJO; g.beginPath(); g.ellipse(64, 80, 34, 44, 0, 0, Math.PI * 2); g.fill();
+      g.fillStyle = '#8fb07a'; g.beginPath(); g.ellipse(64, 34, 24, 22, 0, 0, Math.PI * 2); g.fill();
+      return c;
     }
     const SPR = {};
-    for (const f of ['idle', 'walk', 'atk', 'pain', 'dead']) {
-      SPR['salchicha_' + f] = makeTex(g => drawSalchicha(g, f), 8);
-      SPR['cajero_' + f] = makeTex(g => drawCajero(g, f), 8);
-      SPR['vaso_' + f] = makeTex(g => drawVaso(g, f), 6);
+    function prepararMonitos(fuente) {
+      for (const cfg of Object.values(MONITOS)) {
+        const f = fuente ? cuadros(fuente, cfg.celda * CELDA) : cuadros(silueta(), 0);
+        for (const k in f) SPR[cfg.tipo + '_' + k] = f[k];
+      }
     }
     // h: cafe caliente, a: sobres de catsup, b: bolsa de hielo, S: lanza-hielo.
-    SPR.h = makeTex(g => { poly(g, '#f4efe4', [24, 42, 40, 42, 38, 63, 26, 63]); rect(g, '#7a4a2a', 25, 50, 14, 6); rect(g, ROJO, 25, 46, 14, 3); rect(g, '#d8d2c8', 22, 39, 20, 4); for (const x of [28, 33]) poly(g, 'rgba(255,255,255,.7)', [x, 36, x + 2, 30, x, 24, x + 1, 24, x + 3, 30, x + 1, 36]); });
-    SPR.a = makeTex(g => { rect(g, '#6b5a3a', 18, 48, 28, 15); rect(g, '#8a7a4a', 19, 48, 26, 13); for (let x = 20; x < 44; x += 6) { rect(g, ROJO, x, 42, 5, 10); rect(g, '#fff', x + 1, 45, 3, 2); } });
-    SPR.b = makeTex(g => { el(g, 32, 52, 14, 11, 'rgba(190,230,255,.95)'); rect(g, '#2b6fd6', 22, 50, 20, 6); rect(g, '#fff', 31, 49, 2, 8); rect(g, '#fff', 28, 52, 8, 2); for (const [x, y] of [[25, 45], [36, 44], [30, 59]]) rect(g, '#ffffff', x, y, 4, 4); rect(g, '#9ec9e6', 28, 40, 8, 3); });
-    SPR.S = makeTex(g => { rect(g, '#d8e9f5', 12, 52, 40, 8); rect(g, '#2b6fd6', 12, 52, 12, 8); rect(g, '#9fd2f2', 48, 50, 8, 12); rect(g, '#5a5f66', 28, 58, 8, 5); rect(g, '#fff', 40, 54, 6, 2); });
-    SPR.proj = makeTex(g => { el(g, 32, 32, 26, 26, 'rgba(255,90,20,.9)'); el(g, 32, 34, 14, 20, '#2fae3c'); el(g, 29, 30, 4, 12, '#7fe08a'); rect(g, '#5a3a14', 30, 10, 4, 6); });
+    SPR.h = spr(makeTex(g => { poly(g, '#f4efe4', [24, 42, 40, 42, 38, 63, 26, 63]); rect(g, '#7a4a2a', 25, 50, 14, 6); rect(g, ROJO, 25, 46, 14, 3); rect(g, '#d8d2c8', 22, 39, 20, 4); for (const x of [28, 33]) poly(g, 'rgba(255,255,255,.7)', [x, 36, x + 2, 30, x, 24, x + 1, 24, x + 3, 30, x + 1, 36]); }), 64);
+    SPR.a = spr(makeTex(g => { rect(g, '#6b5a3a', 18, 48, 28, 15); rect(g, '#8a7a4a', 19, 48, 26, 13); for (let x = 20; x < 44; x += 6) { rect(g, ROJO, x, 42, 5, 10); rect(g, '#fff', x + 1, 45, 3, 2); } }), 64);
+    SPR.b = spr(makeTex(g => { el(g, 32, 52, 14, 11, 'rgba(190,230,255,.95)'); rect(g, '#2b6fd6', 22, 50, 20, 6); rect(g, '#fff', 31, 49, 2, 8); rect(g, '#fff', 28, 52, 8, 2); for (const [x, y] of [[25, 45], [36, 44], [30, 59]]) rect(g, '#ffffff', x, y, 4, 4); rect(g, '#9ec9e6', 28, 40, 8, 3); }), 64);
+    SPR.S = spr(makeTex(g => { rect(g, '#d8e9f5', 12, 52, 40, 8); rect(g, '#2b6fd6', 12, 52, 12, 8); rect(g, '#9fd2f2', 48, 50, 8, 12); rect(g, '#5a5f66', 28, 58, 8, 5); rect(g, '#fff', 40, 54, 6, 2); }), 64);
+    // Proyectiles: baba verde de los lobos y bola de nieve del pinguino.
+    SPR.proj_baba = spr(makeTex(g => { el(g, 32, 32, 26, 26, 'rgba(120,255,90,.55)'); el(g, 32, 34, 16, 18, '#4fd14a'); el(g, 27, 28, 5, 6, '#c8ffb0'); }), 64);
+    SPR.proj_nieve = spr(makeTex(g => { el(g, 32, 32, 26, 26, 'rgba(170,220,255,.6)'); el(g, 32, 32, 17, 17, '#f4fbff'); el(g, 27, 27, 5, 5, '#ffffff'); el(g, 37, 37, 4, 4, '#cfe6f5'); }), 64);
 
     /* ---------- mapa ---------- */
-    // P inicio · g salchicha · s cajero · v vaso · h cafe · a catsup · b hielo
-    // S lanza-hielo · 1 anaquel · 2 refrigerador · 3 pared · 4 bodega
-    // 5 barra de cafe · D puerta · X salida
+    // P inicio · monitos: z tlacuache, c chihuahua, j jaguar, l/L lobos,
+    // m mono, o oso, p pinguino · h cafe · a catsup · b hielo · S lanza-hielo
+    // 1 anaquel · 2 refrigerador · 3 pared · 4 bodega · 5 barra de cafe
+    // D puerta · X salida
     const MAP_SRC = [
       "444444444444222222222222",
-      "4P....4....h2...g....v.2",
+      "4P....4....h2...l....z.2",
       "4.....4.....2..........2",
-      "4..a..D..g..D....s....h2",
+      "4..a..D..c..D....m....h2",
       "4.....4.....2..........2",
-      "4..b..4.....2...a.....s2",
+      "4..b..4.....2...a.....p2",
       "444D444444D4222222D22222",
       "3......................3",
       "3.11111.111111.111111..3",
-      "3......s.........g.....3",
+      "3......z.........j.....3",
       "3.11111.111111.111111..3",
-      "3..h....v....S.....a...3",
+      "3..h....c....S.....a...3",
       "3.11111.111111.111111..3",
-      "3...g.........s.....b..3",
+      "3...L.........m.....b..3",
       "3.11111.111111.111111..3",
       "3......................3",
-      "3555...v.....g....s..h.3",
-      "3555...................3",
+      "3555...p.....j....z..h.3",
+      "3555.......o...........3",
       "333333333333X33333333333"
     ];
     const MH = MAP_SRC.length, MW = MAP_SRC[0].length;
     const WALLCH = { '1': 0, '2': 1, '3': 2, '4': 3, 'D': 4, 'X': 5, '5': 6 };
     const DOOR = 4, EXIT = 5;
-    const ENEMIGOS = { g: 'salchicha', s: 'cajero', v: 'vaso' };
-    const VIDA = { salchicha: 70, cajero: 35, vaso: 110 };
 
     let grid, doors, ents, player, kills, total, elapsed, state = 'title', mapOn = false;
     let ammo, have, cur, wcool, flashT, recoil, hurtT, pickT, bobT, moving, swapT, deathT;
@@ -253,15 +254,15 @@
         if (ch in WALLCH) { grid[i] = WALLCH[ch]; if (ch === 'D') doors.set(i, { open: 0, target: 0, timer: 0 }); continue; }
         const cx = x + .5, cy = y + .5;
         if (ch === 'P') player = { x: cx, y: cy, a: 0, hp: 100 };
-        else if (ch in ENEMIGOS) ents.push(enemy(ENEMIGOS[ch], cx, cy));
+        else if (ch in MONITOS) ents.push(enemy(MONITOS[ch], cx, cy));
         else if ('habS'.includes(ch)) ents.push({ kind: 'pick', item: ch, x: cx, y: cy });
       }
       total = ents.filter(e => e.kind === 'enemy').length; kills = 0; elapsed = 0;
       ammo = { sobres: 50, hielo: 0 }; have = { catsup: true, hielo: false }; cur = 'catsup';
       wcool = 0; flashT = 0; recoil = 0; hurtT = 0; pickT = 0; bobT = 0; moving = false; swapT = 0; deathT = 0;
     }
-    function enemy(type, x, y) {
-      return { kind: 'enemy', type, x, y, hp: VIDA[type], awake: false, cool: 1 + Math.random(),
+    function enemy(cfg, x, y) {
+      return { kind: 'enemy', cfg, type: cfg.tipo, x, y, hp: cfg.vida, awake: false, cool: 1 + Math.random(),
         painT: 0, atkT: 0, dead: false, walkT: Math.random() * 10, moved: false, strafe: 1, strafeT: 0 };
     }
     function solidCell(x, y) {
@@ -322,9 +323,7 @@
         case 'catsup': noise(.45 * v, .14, 'lowpass', 700); tone(.2 * v, .09, 'sine', 240, 90); break;
         case 'hielo': noise(.7 * v, .32, 'highpass', 2400); tone(.35 * v, .2, 'triangle', 900, 300); break;
         case 'moneda': tone(.22 * v, .06, 'square', 1800, 1700); setTimeout(() => AC && tone(.18 * v, .12, 'square', 2600, 2500), 50); break;
-        case 'jalapeno': tone(.3 * v, .4, 'sawtooth', 420, 90); noise(.15 * v, .25, 'bandpass', 900); break;
         case 'gruñido': tone(.3 * v, .55, 'sawtooth', 95, 55); break;
-        case 'sorbo': noise(.3 * v, .45, 'bandpass', 500); tone(.2 * v, .45, 'sine', 160, 60); break;
         case 'alerta': tone(.22 * v, .18, 'square', 520, 300); break;
         case 'dolor': tone(.25 * v, .18, 'square', 260, 120); break;
         case 'muere': tone(.35 * v, .7, 'sawtooth', 220, 35); noise(.2 * v, .4, 'lowpass', 400); break;
@@ -333,6 +332,12 @@
         case 'puerta': tone(.25 * v, .55, 'triangle', 70, 55); noise(.12 * v, .5, 'lowpass', 300); break;
         case 'vacio': tone(.15, .05, 'square', 1200, 900); break;
         case 'uf': tone(.2, .12, 'square', 140, 100); break;
+        case 'ladrido': tone(.25 * v, .07, 'square', 900, 700); setTimeout(() => AC && tone(.25 * v, .08, 'square', 950, 650), 110); break;
+        case 'aullido': tone(.25 * v, .8, 'sine', 300, 520); break;
+        case 'chillido': tone(.22 * v, .25, 'square', 1200, 1600); break;
+        case 'graznido': tone(.25 * v, .3, 'sawtooth', 500, 380); noise(.12 * v, .2, 'bandpass', 1200); break;
+        case 'baba': noise(.3 * v, .3, 'lowpass', 500); tone(.18 * v, .3, 'sine', 180, 90); break;
+        case 'nieve': noise(.35 * v, .25, 'highpass', 1800); break;
         case 'bienvenido': tone(.18, .14, 'sine', 880, 880); setTimeout(() => AC && tone(.18, .22, 'sine', 660, 660), 150); break;
       }
     }
@@ -366,16 +371,16 @@
         if (e.kind !== 'enemy' || e.dead) continue;
         const dx = e.x - player.x, dy = e.y - player.y, d = Math.hypot(dx, dy);
         if (d >= bd) continue;
-        if (Math.abs(angDiff(Math.atan2(dy, dx), ang)) < Math.atan2(0.3, d)) { best = e; bd = d; }
+        if (Math.abs(angDiff(Math.atan2(dy, dx), ang)) < Math.atan2(0.3 * Math.max(1, e.cfg.escala), d)) { best = e; bd = d; }
       }
       if (best) hurtEnemy(best, dmg);
     }
-    function wake(e) { if (e.awake) return; e.awake = true; sfx(e.type === 'cajero' ? 'alerta' : e.type === 'vaso' ? 'sorbo' : 'gruñido', e.x, e.y); }
+    function wake(e) { if (e.awake) return; e.awake = true; sfx(e.cfg.sonido, e.x, e.y); }
     function hurtEnemy(e, dmg) {
       e.hp -= dmg; wake(e);
       if (e.hp <= 0) {
         e.dead = true; kills++; sfx('muere', e.x, e.y);
-        if (e.type === 'cajero') ents.push({ kind: 'pick', item: 'a', x: e.x + 0.15, y: e.y + 0.1, drop: true });
+        if (e.cfg.suelta) ents.push({ kind: 'pick', item: e.cfg.suelta, x: e.x + 0.15, y: e.y + 0.1, drop: true });
       } else if (Math.random() < 0.55) { e.painT = 0.22; sfx('dolor', e.x, e.y); }
     }
     function hurtPlayer(n) {
@@ -539,7 +544,7 @@
           if (Math.hypot(e.x - player.x, e.y - player.y) < 0.55 && takePickup(e.item)) ents.splice(k, 1);
         } else if (e.kind === 'proj') {
           e.x += e.vx * dt; e.y += e.vy * dt; e.life -= dt;
-          if (Math.hypot(e.x - player.x, e.y - player.y) < 0.4) { hurtPlayer(10 + Math.random() * 12 | 0); ents.splice(k, 1); }
+          if (Math.hypot(e.x - player.x, e.y - player.y) < 0.4) { hurtPlayer(e.dano); ents.splice(k, 1); }
           else if (e.life <= 0 || solidCell(e.x | 0, e.y | 0)) ents.splice(k, 1);
         } else if (e.kind === 'enemy') updateEnemy(e, dt);
       }
@@ -560,27 +565,29 @@
       if (e.painT > 0) return;
       const see = d < 16 && los(e, d);
       const ux = dx / d, uy = dy / d;
-      if (e.type === 'salchicha') {
-        if (d < 1.15 && e.cool <= 0) { hurtPlayer(8 + Math.random() * 8 | 0); e.cool = 1.1; e.atkT = 0.3; sfx('gruñido', e.x, e.y); return; }
+      const cfg = e.cfg, golpe = () => cfg.dano[0] + Math.random() * (cfg.dano[1] - cfg.dano[0]) | 0;
+      if (cfg.ia === 'escupe') {
+        if (d < 1.15 && e.cool <= 0) { hurtPlayer(golpe()); e.cool = 1.1; e.atkT = 0.3; sfx(cfg.sonido, e.x, e.y); return; }
         if (see && d > 2 && d < 12 && e.cool <= 0 && Math.random() < dt * 1.3) {
           const a = Math.atan2(dy, dx) + (Math.random() - 0.5) * 0.12;
-          ents.push({ kind: 'proj', x: e.x + ux * 0.4, y: e.y + uy * 0.4, vx: Math.cos(a) * 6, vy: Math.sin(a) * 6, life: 4 });
-          e.cool = 2.2; e.atkT = 0.45; sfx('jalapeno', e.x, e.y); return;
+          ents.push({ kind: 'proj', skin: cfg.proj, dano: golpe(), x: e.x + ux * 0.4, y: e.y + uy * 0.4, vx: Math.cos(a) * 6, vy: Math.sin(a) * 6, life: 4 });
+          e.cool = 2.2; e.atkT = 0.45; sfx(cfg.proj, e.x, e.y); return;
         }
-        if (e.atkT <= 0 && d > 0.95) { e.moved = move(e, ux * 1.7 * dt, uy * 1.7 * dt, 0.28, true); }
-      } else if (e.type === 'vaso') {
-        // Lento de lejos, embiste de cerca: el monito tanque.
-        if (d < 1.2 && e.cool <= 0) { hurtPlayer(12 + Math.random() * 8 | 0); e.cool = 1.3; e.atkT = 0.35; sfx('sorbo', e.x, e.y); return; }
-        if (e.atkT <= 0 && d > 1) { const v = d < 4 && see ? 2.6 : 1.3; e.moved = move(e, ux * v * dt, uy * v * dt, 0.3, true); }
+        if (e.atkT <= 0 && d > 0.95) { e.moved = move(e, ux * cfg.vel * dt, uy * cfg.vel * dt, 0.28, true); }
+      } else if (cfg.ia === 'cuerpo') {
+        // Persigue y muerde; el oso ademas embiste cuando te tiene cerca.
+        const alcance = 0.9 + 0.3 * cfg.escala;
+        if (d < alcance && e.cool <= 0) { hurtPlayer(golpe()); e.cool = 1.2; e.atkT = 0.3; sfx(cfg.sonido, e.x, e.y); return; }
+        if (e.atkT <= 0 && d > alcance - 0.2) { const v = cfg.embiste && see && d < 4 ? cfg.embiste : cfg.vel; e.moved = move(e, ux * v * dt, uy * v * dt, 0.3, true); }
       } else {
         if (see && d < 15 && e.cool <= 0 && Math.random() < dt * 1.1) {
           e.cool = 1.5; e.atkT = 0.25; sfx('moneda', e.x, e.y);
-          if (Math.random() < clamp(0.85 - d * 0.05, 0.25, 0.85)) hurtPlayer(4 + Math.random() * 7 | 0);
+          if (Math.random() < clamp(0.85 - d * 0.05, 0.25, 0.85)) hurtPlayer(golpe());
           return;
         }
         if (e.atkT > 0) return;
         e.strafeT -= dt; if (e.strafeT <= 0) { e.strafe = Math.random() < .5 ? -1 : 1; e.strafeT = 1 + Math.random() * 1.5; }
-        if (d > 3.2 || !see) e.moved = move(e, ux * 1.5 * dt, uy * 1.5 * dt, 0.28, true);
+        if (d > 3.2 || !see) e.moved = move(e, ux * cfg.vel * dt, uy * cfg.vel * dt, 0.28, true);
         else e.moved = move(e, -uy * e.strafe * 1.2 * dt, ux * e.strafe * 1.2 * dt, 0.28, true);
       }
       if (e.moved) e.walkT += dt;
@@ -643,8 +650,10 @@
         if (e.kind === 'enemy') {
           const fr = e.dead ? 'dead' : e.atkT > 0 ? 'atk' : e.painT > 0 ? 'pain' : (e.moved && (e.walkT * 5 | 0) % 2) ? 'walk' : 'idle';
           tex = SPR[e.type + '_' + fr]; if (fr === 'atk') bright = true;
+          scale = e.cfg.escala; z = e.dead ? 0 : (e.cfg.z || 0);
         } else if (e.kind === 'pick') tex = SPR[e.item];
-        else { tex = SPR.proj; scale = 0.32; z = 0.36; bright = true; }
+        else { tex = SPR['proj_' + e.skin]; scale = 0.32; z = 0.36; bright = true; }
+        if (!tex) continue;
         const full = H / tY, sh = full * scale, scrX = W / 2 * (1 + tX / tY);
         const bottom = h2 + full / 2 - z * full, top = bottom - sh, left = scrX - sh / 2;
         const f = bright ? 1 : Math.min(1, fog(tY) * boost);
@@ -652,9 +661,9 @@
         const y0 = Math.max(0, top | 0), y1 = Math.min(H, bottom | 0);
         for (let x = x0; x < x1; x++) {
           if (tY >= zbuf[x]) continue;
-          const tx = ((x - left) * TS / sh) & 63;
+          const n = tex.n, m = n - 1, tx = ((x - left) * n / sh) & m;
           for (let y = y0; y < y1; y++) {
-            const c = tex[(((y - top) * TS / sh) & 63) * TS + tx];
+            const c = tex.px[(((y - top) * n / sh) & m) * n + tx];
             if ((c >>> 24) === 0) continue;
             buf[y * W + x] = shade(c, f);
           }
@@ -719,6 +728,16 @@
       setT('inv', `${ammo.sobres} sobres · ${ammo.hielo} hielos`);
       setT('kills', `${kills}/${total}`); setT('time', fmtTime(elapsed));
     }
+
+    const bStart = document.getElementById('bStart'), textoEntrar = bStart.textContent;
+    bStart.disabled = true; bStart.textContent = 'CARGANDO MONITOS…';
+    const listo = fuente => { prepararMonitos(fuente); bStart.disabled = false; bStart.textContent = textoEntrar; };
+    if (opciones.monitos) {
+      const hoja = new Image();
+      hoja.onload = () => listo(hoja);
+      hoja.onerror = () => listo(null);
+      hoja.src = opciones.monitos;
+    } else listo(null);
 
     const record = leerRecord();
     if (record) document.getElementById('titleRecord').textContent = `Mejor tiempo en este navegador: ${fmtTime(record)}`;

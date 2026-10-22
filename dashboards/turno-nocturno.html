@@ -30,11 +30,12 @@
     <div class="screen" id="scrTitle">
       <div class="tag">TIENDA 24 H · 3:00 A.M.</div>
       <h1>TURNO<br>NOCTURNO</h1>
-      <p>Algo salió mal con el rodillo de salchichas y la tienda se llenó de monitos. Cruza la bodega, la cámara fría y los pasillos hasta la puerta de SALIDA.</p>
+      <p>Los monitos del turno se volvieron zombis y no te dejan cerrar la tienda. Cruza la bodega, la cámara fría y los pasillos hasta la puerta de SALIDA.</p>
       <div class="monitos">
-        <span><b>Salchicha mutante</b> · escupe jalapeños</span>
-        <span><b>Cajero zombi</b> · avienta monedas</span>
-        <span><b>Vaso gigante</b> · muerde</span>
+        <span><b>Chihuahua y jaguar</b> · muerden</span>
+        <span><b>Tlacuache y mono</b> · avientan monedas</span>
+        <span><b>Lobos y pingüino</b> · escupen</span>
+        <span><b>Oso gerente</b> · cuida la salida</span>
       </div>
       <div class="keys" id="keyHelp">
         <kbd>W A S D</kbd><span>moverse</span>
@@ -83,7 +84,7 @@
 
 <script src="../js/juego-turno-nocturno.js?v=26801ab7"></script>
 <script>
-  OXXO_TURNO_NOCTURNO.montar();
+  OXXO_TURNO_NOCTURNO.montar({ monitos: '../assets/juego/monitos.png' });
 </script>
 </body>
 </html>

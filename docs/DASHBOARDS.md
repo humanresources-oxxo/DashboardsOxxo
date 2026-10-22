@@ -162,13 +162,18 @@ Al elegir Region TABASCO, los tableros muestran todas las plazas a la vez (los q
 canvas de 320x200) ambientado en una tienda OXXO de madrugada: bodega, camara
 fria, pasillos de anaqueles, barra de cafe y la puerta de SALIDA al frente.
 
-Monitos: salchicha mutante (escupe jalapenos), cajero zombi (avienta monedas) y
-vaso gigante (muerde). Armas: botella de catsup y lanza-hielo; se recogen cafe
-(salud), sobres de catsup y bolsas de hielo. Funciona con teclado y raton o con
-controles tactiles en celular.
+Monitos (todos con el uniforme rojo de la tienda): chihuahua y jaguar muerden,
+tlacuache y mono avientan monedas, los lobos (solo cabeza, flotan) y el pinguino
+escupen, y el oso gerente cuida la salida. Armas: botella de catsup y
+lanza-hielo; se recogen cafe (salud), sobres de catsup y bolsas de hielo.
+Funciona con teclado y raton o con controles tactiles en celular.
 
-Todo se dibuja con formas al arrancar: sin imagenes, sin librerias y sin red;
-solo carga las fuentes de Google Fonts y, si no llegan, usa monospace. El mejor
+Paredes, armas y objetos se dibujan con formas al arrancar. Los monitos salen
+de `assets/juego/monitos.png`: una celda de 128x128 por personaje, en el orden
+de `MONITOS` dentro del motor; de esa pose se derivan los cuadros de caminar,
+atacar, dolor y muerto. Si la imagen no carga, cada monito se ve como una
+silueta y el juego sigue. No usa librerias ni lee o envia datos; solo carga
+las fuentes de Google Fonts y, si no llegan, usa monospace. El mejor
 tiempo vive en `localStorage` (`oxxo-turno-nocturno-record`). El mapa esta en
 `MAP_SRC` y `tests/juego-turno-nocturno.test.js` verifica que siga siendo
 rectangular, cerrado y con la salida alcanzable desde el inicio.
