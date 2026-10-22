@@ -1386,12 +1386,16 @@ function renderPlazas(allData, cols) {
   const pctDe = n => Math.round(n / totalBajas * 100);
   const plazaActivaIdx = activeScope.level==='region' ? -1
     : plazasData.findIndex(item => OXXO.matchesScopeValue(item.plaza,'plaza',activeScope));
+  // Cada plaza conserva su color aunque cambie de lugar en el ranking.
+  const PLAZA_COLORS = { 'OAXACA': '#D92B2B', 'CHONTALPA': '#E86A00', 'VILLAHERMOSA': '#C99700', 'COSTA ISTMO': '#00A650', 'TUXTLA': '#0066CC' };
+  const EXTRA_COLORS = ['#7B4FB8', '#00838F', '#8A6D3B'];
+  const colorPlaza = (plaza, i) => PLAZA_COLORS[cleanText(plaza).replace(/^PLAZA\s+/, '')] || EXTRA_COLORS[i % EXTRA_COLORS.length];
   LAST_PLAZAS_ROWS = plazasData.map((p, i) => ({ 'Posición': i + 1, Plaza: p.plaza, Bajas: p.bajas, '% del total': `${pctDe(p.bajas)}%` }));
 
   const rows = plazasData.map((p, i) => {
     const barW = Math.round(p.bajas / maxBajas * 100);
-    const clases = ['plaza-rank-row', i === 0 && plazasData.length > 1 ? 'is-lead' : '', i === plazaActivaIdx && plazasData.length > 1 ? 'is-current' : ''].filter(Boolean).join(' ');
-    return `<li class="${clases}">
+    const clases = ['plaza-rank-row', i === plazaActivaIdx && plazasData.length > 1 ? 'is-current' : ''].filter(Boolean).join(' ');
+    return `<li class="${clases}" style="--d2-rank:${colorPlaza(p.plaza, i)}">
       <span class="plaza-rank-pos" aria-label="Posición ${i+1}">${i+1}</span>
       <div class="plaza-rank-main">
         <div class="plaza-rank-top">

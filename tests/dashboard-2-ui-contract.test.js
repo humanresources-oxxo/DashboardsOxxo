@@ -54,6 +54,7 @@ test('ranking de plazas: un solo ranking con resumen, sin grafica duplicada y co
   no(cuerpo, /chart-plazas/);
   no(js, /chart-plazas|d2-plazas-chart/);
   ok(js, /<ol class="plaza-rank-list">/);
+  ok(js, /style="--d2-rank:\$\{colorPlaza\(p\.plaza, i\)\}"/, 'cada plaza conserva su color');
   ok(js, /\{ name: 'Otras Plazas', rows: LAST_PLAZAS_ROWS \}/);
 });
 

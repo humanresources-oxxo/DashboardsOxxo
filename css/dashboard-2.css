@@ -648,13 +648,10 @@ body.dashboard-2-page .plaza-rank-row {
   border-bottom: 1px solid var(--du-border);
 }
 body.dashboard-2-page .plaza-rank-row:last-child { border-bottom: 0; }
-body.dashboard-2-page .plaza-rank-row.is-lead { --d2-rank: var(--du-red); }
-body.dashboard-2-page .plaza-rank-row.is-current { --d2-rank: var(--du-red-dark); }
 body.dashboard-2-page .plaza-rank-pos {
-  display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%;
-  background: #f1eae4; color: var(--du-text); font-family: var(--font-display); font-size: 15px; font-weight: 800;
+  display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--d2-rank); color: #fff;
+  font-family: var(--font-display); font-size: 15px; font-weight: 800;
 }
-body.dashboard-2-page .plaza-rank-row.is-lead .plaza-rank-pos { background: var(--du-red); color: #fff; }
 body.dashboard-2-page .plaza-rank-top { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 15px; }
 body.dashboard-2-page .plaza-rank-top strong { font-weight: 700; color: var(--du-text); }
 body.dashboard-2-page .plaza-rank-tag { padding: 2px 8px; border-radius: 999px; background: #fdecee; color: var(--du-red-dark); font-size: 12px; font-weight: 700; }
