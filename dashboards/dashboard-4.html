@@ -229,7 +229,9 @@ const TIPO_DOBLE_KEY  = normTipoTE("Tiempo Extra Doble");
 const TIPO_TRIPLE_KEY = normTipoTE("Tiempo Extra Triple");
 const isTipoDoble  = t => normTipoTE(t) === TIPO_DOBLE_KEY;
 const isTipoTriple = t => normTipoTE(t) === TIPO_TRIPLE_KEY;
-const isDes = t => normTipoTE(t).startsWith('diades');
+// Trabajo en dia de descanso: hasta Sem39 la base lo traia como "Día Des";
+// desde Sem 40 viene como "Descanso Laborado". Se aceptan los dos textos.
+const isDes = t => { const k = normTipoTE(t); return k.startsWith('diades') || k.startsWith('descansolab'); };
 
 // Algunas filas de 'Importe' vienen con separador de miles (ej. "1,333.78"). parseFloat
 // nativo se detiene en la coma y regresa 1 en vez de 1333.78, descuadrando las sumas.
@@ -343,7 +345,7 @@ function renderAll() {
       <div class="kpi-filter-hint">▶ Click para filtrar</div>
     </div>
     <div class="kpi-card" id="kpi-desc" role="button" tabindex="0" onclick="setFilter('descanso')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();setFilter('descanso')}" title="Filtrar: Día Descanso" style="--du-accent:#0066CC">
-      <div class="kpi-card__label">Día Descanso<span class="info-tip" tabindex="0" onclick="event.stopPropagation()" data-tip="Filas donde 'Textos homologados' empieza con 'Día Des' (trabajo en día de descanso). Clic filtra el dashboard a este tipo."></span></div>
+      <div class="kpi-card__label">Día Descanso<span class="info-tip" tabindex="0" onclick="event.stopPropagation()" data-tip="Filas donde 'Textos homologados' dice 'Día Des' o 'Descanso Laborado' (trabajo en día de descanso). Clic filtra el dashboard a este tipo."></span></div>
       <div class="kpi-card__value">${fmtH(totalHDesc)}</div>
       <div class="kpi-card__sub">${pct(totalHDesc,totalBase)} del total · ${fmt$(totalGDesc)}</div>
       <div class="kpi-filter-hint">▶ Click para filtrar</div>
