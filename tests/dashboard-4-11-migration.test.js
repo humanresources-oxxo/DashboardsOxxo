@@ -103,14 +103,13 @@ test('D11 adopta el sistema blanco: sin lienzo rojo, degradado de héroe ni vidr
   assert.match(css, /var\(--du-/, 'usa tokens del canon');
 });
 
-test('D11 cierra la fila de KPIs: seis tarjetas en un solo renglón de escritorio', () => {
-  // El canon reparte los KPIs en 5 columnas y D11 publica 6: sin este override
-  // la sexta tarjeta caía sola en un renglón aparte.
+test('D11 reparte sus ocho tarjetas del encabezado en dos filas de cuatro', () => {
+  // El canon usa 5 columnas: con 8 KPIs quedaban 5 + 3. A 4 por fila caben parejas.
   const css = read('css/dashboard-11.css');
-  assert.match(css, /@media \(min-width: 1200px\) \{[^@]*\.kpis \{ grid-template-columns: repeat\(6,/,
-    'D11: seis KPIs en una fila desde 1200px');
-  const html = read('dashboards/dashboard-11.html');
-  assert.equal((html.match(/\+kpi\(|=kpi\(/g) || []).length, 6, 'D11 sigue pintando exactamente seis KPIs');
+  assert.match(css, /@media \(min-width: 1024px\) \{[^@]*\.kpis \{ grid-template-columns: repeat\(4,/,
+    'D11: cuatro KPIs por fila desde 1024px');
+  const js = read('js/dashboard-11.js');
+  assert.equal((js.match(/\bkpi\('/g) || []).length, 8, 'D11 pinta exactamente ocho KPIs');
 });
 
 test('se preservan los contratos de DOM (IDs, data-* y handlers) que consume el JS', () => {
@@ -125,7 +124,7 @@ test('se preservan los contratos de DOM (IDs, data-* y handlers) que consume el 
   assert.match(d4, /js\/dashboard-dialogs\.js/, 'D4 conserva el controlador de diálogos');
 
   const d11 = read('dashboards/dashboard-11.html');
-  for (const id of ['kpi-section', 'detail-table', 'advisor-list', 'mix-ring']) {
+  for (const id of ['kpi-section', 'detail-table', 'advisor-table', 'mix-ring']) {
     assert.match(d11, new RegExp(`id="${id}"`), `D11 conserva #${id}`);
   }
 });

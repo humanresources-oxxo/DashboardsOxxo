@@ -34,7 +34,8 @@ body.dashboard-11-page .kpis > .state .action {
 body.dashboard-11-page .kpis > .state .action:hover { border-color: var(--du-red); }
 
 /* Layout de dos columnas (mezcla + ranking). */
-body.dashboard-11-page .layout { display: grid; grid-template-columns: minmax(0, .78fr) minmax(0, 1.22fr); gap: 12px; margin-bottom: 12px; }
+body.dashboard-11-page .layout { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, .65fr); gap: 12px; margin-bottom: 12px; }
+body.dashboard-11-page .layout.d11-bottom { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); margin-top: 12px; }
 body.dashboard-11-page .layout > .card { display: flex; flex-direction: column; }
 body.dashboard-11-page .card-chip { padding: 4px 10px; border: 0; border-radius: 999px; background: #f3ede7; color: var(--du-text); font-size: 12px; font-weight: 700; }
 body.dashboard-11-page .table-tools { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
@@ -52,22 +53,10 @@ body.dashboard-11-page .ring-center { position: absolute; inset: 0; z-index: 1; 
 body.dashboard-11-page .ring-center b { font-family: var(--font-display); font-size: 2.4rem; line-height: 1; color: var(--du-text); }
 body.dashboard-11-page .ring-center span { color: var(--du-muted); font-size: 9px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
 body.dashboard-11-page .legend { display: flex; flex-direction: column; justify-content: center; gap: 8px; }
-body.dashboard-11-page .legend-row { display: grid; grid-template-columns: 11px minmax(0, 1fr) auto 34px; gap: 9px; align-items: center; padding: 8px 10px; border: 1px solid var(--du-border); border-radius: 10px; background: var(--du-soft); font-size: 12px; }
+body.dashboard-11-page .legend-row { width: 100%; font: inherit; color: inherit; text-align: left; cursor: pointer; display: grid; grid-template-columns: 11px minmax(0, 1fr) auto 34px; gap: 9px; align-items: center; padding: 8px 10px; border: 1px solid var(--du-border); border-radius: 10px; background: var(--du-soft); font-size: 12px; }
 body.dashboard-11-page .legend-row i { width: 10px; height: 10px; border-radius: 3px; background: var(--c); }
 body.dashboard-11-page .legend-row b { font-family: var(--font-display); font-size: 15px; }
 body.dashboard-11-page .legend-row em { font-style: normal; text-align: right; font-size: 10px; font-weight: 800; color: var(--du-muted); }
-
-/* Ranking por asesor — barra escalada con marca de referencia (dato). */
-body.dashboard-11-page .advisor-list { display: flex; flex: 1; flex-direction: column; gap: 8px; min-height: 0; max-height: 264px; overflow: auto; padding-right: 6px; }
-body.dashboard-11-page .advisor { display: flex; flex-direction: column; gap: 7px; padding: 10px 12px; border: 1px solid var(--du-border); border-radius: 12px; background: var(--du-soft); }
-body.dashboard-11-page .advisor-top { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
-body.dashboard-11-page .advisor-name { min-width: 0; overflow: hidden; font-size: 12px; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
-body.dashboard-11-page .advisor-score { flex: 0 0 auto; color: var(--tone, var(--du-text)); font-family: var(--font-display); font-size: 17px; font-weight: 800; line-height: 1; }
-body.dashboard-11-page .advisor-bar { position: relative; height: 7px; border-radius: 99px; background: #efe8e1; }
-body.dashboard-11-page .advisor-bar span { display: block; height: 100%; border-radius: 99px; background: var(--tone, var(--du-red)); }
-body.dashboard-11-page .advisor-bar.has-ref::after { content: ""; position: absolute; top: -3px; bottom: -3px; left: var(--ref, 100%); width: 1px; background: var(--du-border); }
-body.dashboard-11-page .advisor-meta { display: flex; align-items: center; justify-content: space-between; gap: 10px; color: var(--du-muted); font-size: 11px; font-weight: 700; }
-body.dashboard-11-page .advisor-flag { flex: 0 0 auto; color: var(--du-red-dark); font-weight: 800; }
 
 /* Tabla de detalle: base blanca del canon (.tbl); aquí solo el alto con scroll y
    el formato/color de las celdas por dato. */
@@ -93,18 +82,10 @@ body.dashboard-11-page .dash-footer__update-dot { width: 9px; height: 9px; borde
   body.dashboard-11-page .vac-fbox--actions > label { grid-column: 1 / -1; }
 }
 @media (min-width: 1024px) {
-  body.dashboard-11-page .hero .vac-filters { grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(240px, 1.1fr); }
-  /* El canon pasa a 5 columnas y D11 publica 6 KPIs: la sexta caía sola en un
-     renglón aparte. 3+3 mientras no caben seis, y seis en una fila cuando sí.
-     Mismo criterio que Dashboard 14, que también publica seis. */
-  body.dashboard-11-page .kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-}
-@media (min-width: 1200px) {
-  body.dashboard-11-page .kpis { grid-template-columns: repeat(6, minmax(0, 1fr)); }
-  /* A seis por fila la tarjeta mide ~230px: el valor del canon (2.9rem) se
-     desbordaba con cifras como "+12.2 pts". */
+  /* Ocho tarjetas en el encabezado de plaza: 4 + 4. */
+  body.dashboard-11-page .kpis { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   body.dashboard-11-page .kpi-card { min-height: 112px; }
-  body.dashboard-11-page .kpi-card__value { font-size: 2.1rem; }
+  body.dashboard-11-page .kpi-card__value { font-size: 2.2rem; }
 }
 @media (max-width: 720px) {
   body.dashboard-11-page .mix { grid-template-columns: 1fr; }
@@ -112,28 +93,78 @@ body.dashboard-11-page .dash-footer__update-dot { width: 9px; height: 9px; borde
   body.dashboard-11-page .hide-mobile { display: none; }
 }
 
-/* Extremos de marcajes (top 5 / bottom 5 por asesor): dos columnas con las
-   mismas fichas del ranking de asesores, mas la definicion del indice visible
-   en el encabezado para que la cifra en puntos se pueda auditar. */
-body.dashboard-11-page .rank { margin-bottom: 12px; }
-body.dashboard-11-page .rank-def { max-width: 70ch; margin-top: 4px; color: var(--du-muted); font-size: 12px; line-height: 1.4; }
-body.dashboard-11-page .rank-cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-body.dashboard-11-page .rank-head { margin: 0 0 8px; font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
-body.dashboard-11-page .rank-head--top { color: var(--mark-green); }
-body.dashboard-11-page .rank-head--bottom { color: var(--mark-red); }
-body.dashboard-11-page .rank-list { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; list-style: none; counter-reset: rank; }
-body.dashboard-11-page .rank-row { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 7px 10px; align-items: start; padding: 10px 12px; border: 1px solid var(--du-border); border-radius: 12px; background: var(--du-soft); counter-increment: rank; }
-body.dashboard-11-page .rank-row::before { content: counter(rank); color: var(--du-muted); font-family: var(--font-display); font-size: 14px; font-weight: 800; }
-body.dashboard-11-page .rank-row-main { grid-column: 2 / -1; display: flex; align-items: baseline; justify-content: space-between; gap: 10px; min-width: 0; }
-body.dashboard-11-page .rank-name { min-width: 0; overflow: hidden; flex: 1 1 auto; font-size: 12px; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
-body.dashboard-11-page .rank-score { color: var(--tone, var(--du-text)); font-family: var(--font-display); font-size: 17px; font-weight: 800; line-height: 1; }
-body.dashboard-11-page .rank-progress { grid-column: 2 / -1; position: relative; height: 8px; border-radius: 999px; background: #e9e3df; }
-body.dashboard-11-page .rank-progress__fill { display: block; height: 100%; border-radius: inherit; background: var(--tone, var(--du-text)); }
-body.dashboard-11-page .rank-progress__target { position: absolute; top: -3px; width: 2px; height: 14px; border-radius: 2px; background: var(--du-text); transform: translateX(-1px); }
-body.dashboard-11-page .rank-meta { grid-column: 2 / -1; display: flex; flex-wrap: wrap; gap: 4px 10px; color: var(--du-muted); font-size: 11px; font-weight: 700; }
-body.dashboard-11-page .rank-goal { color: var(--tone, var(--du-text)); }
-body.dashboard-11-page .rank-list .state { min-height: 80px; }
+body.dashboard-11-page .legend-row small { color: var(--du-muted); font-weight: 700; }
+body.dashboard-11-page .legend-row:hover, body.dashboard-11-page .legend-row[aria-pressed="true"] { border-color: var(--c, var(--du-red)); box-shadow: inset 3px 0 0 var(--c, var(--du-red)); }
+body.dashboard-11-page .legend-row[aria-pressed="true"] { background: #fff; }
 
+/* Variacion contra la semana anterior (▲ verde, ▼ rojo). */
+body.dashboard-11-page .d11-var { font-weight: 800; white-space: nowrap; }
+body.dashboard-11-page .d11-var--sube { color: #16864f; }
+body.dashboard-11-page .d11-var--baja { color: #bd1625; }
+body.dashboard-11-page .d11-var--igual { color: var(--du-muted); }
+body.dashboard-11-page .kpi-card__value .d11-var { font-size: .8em; }
+
+/* Tendencia en SVG. */
+body.dashboard-11-page .d11-trend-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+body.dashboard-11-page .d11-trend-tools label { color: var(--du-muted); font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+body.dashboard-11-page .d11-trend-tools .filtro-select { min-width: 220px; min-height: 36px; }
+body.dashboard-11-page .d11-trend { min-height: 220px; }
+body.dashboard-11-page .d11-svg { display: block; width: 100%; height: auto; }
+body.dashboard-11-page .d11-grid { stroke: #ece5df; }
+body.dashboard-11-page .d11-eje { fill: var(--du-muted); font: 700 11px var(--font-body); }
+body.dashboard-11-page .d11-meta { stroke: var(--du-text); stroke-width: 1.5; stroke-dasharray: 6 5; }
+body.dashboard-11-page .d11-meta-txt { fill: var(--du-text); font: 800 11px var(--font-body); }
+body.dashboard-11-page .d11-linea { fill: none; stroke: var(--c); stroke-width: var(--w); stroke-linejoin: round; stroke-linecap: round; }
+body.dashboard-11-page .d11-valor { fill: var(--du-text); font: 800 12px var(--font-body); }
+body.dashboard-11-page .d11-trend-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 8px; color: var(--du-muted); font-size: 12px; font-weight: 700; }
+body.dashboard-11-page .d11-trend-legend i { display: inline-block; width: 18px; height: 3px; margin-right: 6px; vertical-align: middle; border-radius: 2px; background: var(--c); }
+body.dashboard-11-page .d11-trend-legend i.punteada { background: repeating-linear-gradient(90deg, var(--c) 0 5px, transparent 5px 9px); }
+body.dashboard-11-page .d11-trend-legend i.meta { background: repeating-linear-gradient(90deg, var(--du-text) 0 6px, transparent 6px 11px); }
+
+/* Ranking de asesores. */
+body.dashboard-11-page .d11-asesores td { vertical-align: middle; }
+body.dashboard-11-page .d11-n { width: 28px; color: var(--du-muted); font-family: var(--font-display); font-weight: 800; }
+body.dashboard-11-page .d11-asesor small { display: block; margin-top: 2px; color: var(--du-muted); font-size: 11px; }
+body.dashboard-11-page .d11-link { padding: 0; border: 0; background: none; color: var(--du-text); font: 800 13px var(--font-body); text-align: left; cursor: pointer; }
+body.dashboard-11-page .d11-link:hover { color: var(--du-red-dark); text-decoration: underline; }
+body.dashboard-11-page .d11-link:focus-visible { outline: 2px solid var(--du-red); outline-offset: 2px; }
+body.dashboard-11-page .d11-foco { display: inline-block; margin-left: 8px; padding: 2px 7px; border-radius: 999px; background: var(--mark-red); color: #fff; font-size: 9px; font-weight: 900; letter-spacing: .08em; vertical-align: 1px; }
+body.dashboard-11-page tr.is-foco { background: #fdf1f2; }
+body.dashboard-11-page tr.is-sel { box-shadow: inset 4px 0 0 var(--mark-blue); }
+body.dashboard-11-page .d11-rango span { display: inline-grid; min-width: 26px; place-items: center; padding: 2px 6px; border-radius: 8px; background: color-mix(in srgb, var(--c) 16%, transparent); color: var(--du-text); font-weight: 800; }
+body.dashboard-11-page .d11-tag { display: inline-flex; padding: 3px 9px; border-radius: 999px; font-size: 11px; font-weight: 900; white-space: nowrap; }
+body.dashboard-11-page .d11-tag--si { background: #e7f7ef; color: #16864f; }
+body.dashboard-11-page .d11-tag--no { background: #fde8ea; color: #bd1625; }
+body.dashboard-11-page .d11-tag--na { color: var(--du-muted); }
+
+/* Tiendas: vistas rapidas y cambio de rango. */
+body.dashboard-11-page .d11-views { display: flex; flex-wrap: wrap; gap: 6px; }
+body.dashboard-11-page .d11-chip { min-height: 34px; padding: 6px 12px; border: 1px solid var(--du-border); border-radius: 999px; background: #fff; color: var(--du-text); font: 700 12px var(--font-body); cursor: pointer; }
+body.dashboard-11-page .d11-chip b { margin-left: 4px; color: var(--du-red-dark); }
+body.dashboard-11-page .d11-chip[aria-pressed="true"] { border-color: var(--du-red-dark); background: var(--du-red-dark); color: #fff; }
+body.dashboard-11-page .d11-chip[aria-pressed="true"] b { color: #ffd200; }
+body.dashboard-11-page .d11-chip:focus-visible { outline: 2px solid var(--du-red); outline-offset: 2px; }
+body.dashboard-11-page .d11-baja { color: #bd1625; font-weight: 800; white-space: nowrap; }
+body.dashboard-11-page .d11-sube { color: #16864f; font-weight: 800; white-space: nowrap; }
+body.dashboard-11-page .d11-mut { color: var(--du-muted); }
+
+/* Calidad y contexto regional. */
+body.dashboard-11-page .d11-quality { max-height: 360px; }
+body.dashboard-11-page .d11-plazas { display: flex; flex-direction: column; gap: 8px; }
+body.dashboard-11-page .d11-plaza { display: grid; grid-template-columns: 22px minmax(110px, 1fr) minmax(90px, 1.3fr) 56px 88px; gap: 10px; align-items: center; padding: 9px 12px; border: 1px solid var(--du-border); border-radius: 12px; background: var(--du-soft); font-size: 13px; }
+body.dashboard-11-page .d11-plaza.is-mia { border-color: var(--du-red-dark); background: #fff; box-shadow: inset 4px 0 0 var(--du-red-dark); }
+body.dashboard-11-page .d11-plaza__pos { color: var(--du-muted); font-family: var(--font-display); font-weight: 800; }
+body.dashboard-11-page .d11-plaza__nombre { overflow: hidden; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
+body.dashboard-11-page .d11-plaza__bar { position: relative; height: 10px; border-radius: 999px; background: #ebe3dc; }
+body.dashboard-11-page .d11-plaza__bar i { display: block; height: 100%; border-radius: inherit; background: var(--c); }
+body.dashboard-11-page .d11-plaza__bar b { position: absolute; top: -4px; bottom: -4px; width: 2px; background: var(--du-text); }
+body.dashboard-11-page .d11-plaza__var { text-align: right; font-size: 12px; }
+
+@media (max-width: 1180px) {
+  body.dashboard-11-page .layout.d11-bottom { grid-template-columns: 1fr; }
+}
 @media (max-width: 720px) {
-  body.dashboard-11-page .rank-cols { grid-template-columns: 1fr; }
+  body.dashboard-11-page .d11-plaza { grid-template-columns: 20px minmax(0, 1fr) 56px; }
+  body.dashboard-11-page .d11-plaza__bar, body.dashboard-11-page .d11-plaza__var { display: none; }
+  body.dashboard-11-page .d11-trend-tools .filtro-select { min-width: 0; width: 100%; }
 }
