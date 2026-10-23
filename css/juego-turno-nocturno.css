@@ -68,6 +68,14 @@ body.turno-page .salir:hover { color: var(--tn-amarillo); }
 body.turno-page .stats { font-size: 24px; color: var(--tn-amarillo); font-variant-numeric: tabular-nums; }
 body.turno-page .aviso { max-width: 46ch; font-size: 16px; color: var(--tn-tenue); }
 
+/* Selector de dificultad: tres botones, el elegido en rojo. */
+body.turno-page .dificultad { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px; }
+body.turno-page .dificultad span { margin-right: 4px; font-family: var(--tn-ui); font-size: 11px; letter-spacing: .12em; color: var(--tn-tenue); }
+body.turno-page .dificultad button { min-width: 92px; padding: 8px 12px; border: 2px solid #3d2a2a; background: var(--tn-panel); color: var(--tn-hueso); font-family: var(--tn-ui); font-size: 13px; letter-spacing: .06em; cursor: pointer; }
+body.turno-page .dificultad button:hover { border-color: var(--tn-rojo); }
+body.turno-page .dificultad button[aria-pressed="true"] { border-color: var(--tn-amarillo); background: var(--tn-rojo); box-shadow: 0 3px 0 var(--tn-rojo-osc); }
+body.turno-page .dificultad button:focus-visible { outline: 3px solid var(--tn-amarillo); outline-offset: 3px; }
+
 /* Ranking de la oficina: top 10 en la portada y al terminar. */
 body.turno-page .ranking { width: min(360px, 100%); }
 body.turno-page .ranking h2 { margin: 0 0 6px; font-family: var(--tn-ui); font-size: 12px; letter-spacing: .14em; color: var(--tn-amarillo); }

@@ -12,7 +12,7 @@
  * Despues de eso, admin.html publica directo sin pedir URL.
  */
 const SPREADSHEET_ID = '1EbUuyy-PRXiDwPmn9L14P93cGN6VXTyLfAHx-CE8M_A';
-const APP_VERSION = '52';
+const APP_VERSION = '53';
 const ADMIN_PASSWORD_PROPERTY = 'ADMIN_PASSWORD';
 const AUDIT_SHEET = '_Admin_Bitacora';
 const BACKUP_PREFIX = '_BK_';
@@ -157,7 +157,8 @@ function doGet(e) {
   const action = String((e && e.parameter && e.parameter.action) || '');
   if (action === 'ranking') {
     try {
-      return jsonResponse({ ok: true, ranking: leerRanking_(SpreadsheetApp.openById(SPREADSHEET_ID), RANKING_TOP) });
+      const dificultad = dificultadRanking_((e.parameter && e.parameter.dificultad) || 'normal');
+      return jsonResponse({ ok: true, dificultad: dificultad, ranking: leerRanking_(SpreadsheetApp.openById(SPREADSHEET_ID), RANKING_TOP, dificultad) });
     } catch (error) {
       return jsonResponse({ ok: false, error: String(error.message || error), ranking: [] });
     }
@@ -2214,11 +2215,14 @@ function jsonResponse(data) {
    Mejores tiempos de toda la oficina. La escritura es publica (el juego no
    tiene contraseña), asi que todo se valida aqui: nombre corto sin
    simbolos, tiempo y monitos en rangos posibles, los 3 turnos completos, y
-   un tope de envios para que nadie llene la hoja. La hoja queda oculta y
+   un tope de envios para que nadie llene la hoja. Cada dificultad tiene
+   su propia tabla (columna Dificultad; sin valor cuenta como normal).
+   La hoja queda oculta y
    nunca crece de mas: al pasar de RANKING_MAX_FILAS se conservan las
    mejores marcas. */
 const RANKING_SHEET = 'Juego_Ranking';
-const RANKING_HEADERS = ['Fecha', 'Nombre', 'Tiempo (s)', 'Monitos', 'Turnos'];
+const RANKING_HEADERS = ['Fecha', 'Nombre', 'Tiempo (s)', 'Monitos', 'Turnos', 'Dificultad'];
+const RANKING_DIFICULTADES = ['facil', 'normal', 'dificil'];
 const RANKING_TOP = 20;
 const RANKING_MAX_FILAS = 300;
 const RANKING_TIEMPO_MIN = 45;
@@ -2229,11 +2233,19 @@ function hojaRanking_(ss) {
   let sheet = ss.getSheetByName(RANKING_SHEET);
   if (!sheet) {
     sheet = ss.insertSheet(RANKING_SHEET);
-    sheet.getRange(1, 1, 1, RANKING_HEADERS.length).setValues([RANKING_HEADERS]);
     ajustarTamanoHoja_(sheet, 2, RANKING_HEADERS.length);
     sheet.hideSheet();
   }
+  // Tambien pone encabezados a una hoja de la v52, que no tenia Dificultad.
+  if (sheet.getMaxColumns() < RANKING_HEADERS.length) sheet.insertColumnsAfter(sheet.getMaxColumns(), RANKING_HEADERS.length - sheet.getMaxColumns());
+  sheet.getRange(1, 1, 1, RANKING_HEADERS.length).setValues([RANKING_HEADERS]);
   return sheet;
+}
+
+function dificultadRanking_(value) {
+  const d = normalizeHeader(value || 'normal');
+  if (RANKING_DIFICULTADES.indexOf(d) === -1) throw new Error('Dificultad desconocida');
+  return d;
 }
 
 function nombreRanking_(value) {
@@ -2242,12 +2254,13 @@ function nombreRanking_(value) {
   return limpio;
 }
 
-function leerRanking_(ss, limite) {
+function leerRanking_(ss, limite, dificultad) {
   const sheet = ss.getSheetByName(RANKING_SHEET);
   if (!sheet || sheet.getLastRow() < 2) return [];
   const tz = ss.getSpreadsheetTimeZone() || 'America/Mexico_City';
+  const quiere = dificultad || 'normal';
   return sheet.getRange(2, 1, sheet.getLastRow() - 1, RANKING_HEADERS.length).getValues()
-    .filter(function(row) { return row[1] && Number(row[2]) > 0; })
+    .filter(function(row) { return row[1] && Number(row[2]) > 0 && (String(row[5] || '') || 'normal') === quiere; })
     .sort(function(a, b) { return Number(a[2]) - Number(b[2]) || Number(b[3]) - Number(a[3]); })
     .slice(0, limite)
     .map(function(row) {
@@ -2264,6 +2277,7 @@ function guardarRanking_(payload) {
   if (!(tiempo >= RANKING_TIEMPO_MIN && tiempo <= RANKING_TIEMPO_MAX)) throw new Error('Tiempo fuera de rango');
   if (!(monitos >= 0 && monitos <= 300)) throw new Error('Monitos fuera de rango');
   if (turnos !== RANKING_TURNOS) throw new Error('Solo cuentan los turnos completos');
+  const dificultad = dificultadRanking_(payload.dificultad);
 
   // Tope de envios: 1 por nombre cada 30 s y 40 en total cada 10 min.
   const cache = CacheService.getScriptCache();
@@ -2277,19 +2291,28 @@ function guardarRanking_(payload) {
   try {
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     const sheet = hojaRanking_(ss);
-    sheet.appendRow([new Date(), nombre, tiempo, monitos, turnos]);
+    sheet.appendRow([new Date(), nombre, tiempo, monitos, turnos, dificultad]);
     if (sheet.getLastRow() - 1 > RANKING_MAX_FILAS) {
-      const mejores = sheet.getRange(2, 1, sheet.getLastRow() - 1, RANKING_HEADERS.length).getValues()
-        .sort(function(a, b) { return Number(a[2]) - Number(b[2]); }).slice(0, RANKING_MAX_FILAS / 2);
+      // Se conservan las mejores de CADA dificultad, no solo las mas rapidas
+      // del total (que serian casi todas de facil).
+      const porDif = {};
+      sheet.getRange(2, 1, sheet.getLastRow() - 1, RANKING_HEADERS.length).getValues().forEach(function(row) {
+        const d = String(row[5] || '') || 'normal';
+        (porDif[d] = porDif[d] || []).push(row);
+      });
+      const cupo = Math.floor(RANKING_MAX_FILAS / 2 / RANKING_DIFICULTADES.length);
+      const mejores = Object.keys(porDif).reduce(function(acc, d) {
+        return acc.concat(porDif[d].sort(function(a, b) { return Number(a[2]) - Number(b[2]); }).slice(0, cupo));
+      }, []);
       sheet.getRange(2, 1, sheet.getLastRow() - 1, RANKING_HEADERS.length).clearContent();
       sheet.getRange(2, 1, mejores.length, RANKING_HEADERS.length).setValues(mejores);
       ajustarTamanoHoja_(sheet, mejores.length + 1, RANKING_HEADERS.length);
     }
     cache.put(claveNombre, '1', 30);
     cache.put('ranking_total', String(total + 1), 600);
-    const ranking = leerRanking_(ss, RANKING_TOP);
+    const ranking = leerRanking_(ss, RANKING_TOP, dificultad);
     const lugar = ranking.findIndex(function(r) { return r.nombre === nombre && r.tiempo === tiempo; });
-    return { ok: true, ranking: ranking, lugar: lugar >= 0 ? lugar + 1 : null };
+    return { ok: true, dificultad: dificultad, ranking: ranking, lugar: lugar >= 0 ? lugar + 1 : null };
   } finally {
     lock.releaseLock();
   }

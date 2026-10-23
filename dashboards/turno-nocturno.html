@@ -48,6 +48,12 @@
         <kbd>M</kbd><span>mapa</span>
         <kbd>N</kbd><span>música</span>
       </div>
+      <div class="dificultad" role="group" aria-label="Dificultad">
+        <span>DIFICULTAD</span>
+        <button type="button" data-dificultad="facil" aria-pressed="false">FÁCIL</button>
+        <button type="button" data-dificultad="normal" aria-pressed="true">NORMAL</button>
+        <button type="button" data-dificultad="dificil" aria-pressed="false">DIFÍCIL</button>
+      </div>
       <div class="record" id="titleRecord"></div>
       <div class="acciones">
         <button class="btn" id="bStart" type="button">ENTRAR AL TURNO</button>
@@ -92,6 +98,12 @@
       </form>
       <p class="rank-msg" id="rankMsg" aria-live="polite"></p>
       <section class="ranking" aria-label="Ranking de la oficina"><div id="rankEnd" hidden></div></section>
+      <div class="dificultad" role="group" aria-label="Dificultad">
+        <span>DIFICULTAD</span>
+        <button type="button" data-dificultad="facil" aria-pressed="false">FÁCIL</button>
+        <button type="button" data-dificultad="normal" aria-pressed="true">NORMAL</button>
+        <button type="button" data-dificultad="dificil" aria-pressed="false">DIFÍCIL</button>
+      </div>
       <div class="acciones">
         <button class="btn" id="bAgain" type="button">OTRO TURNO</button>
         <a class="salir" href="../index.html">← VOLVER AL INICIO</a>
