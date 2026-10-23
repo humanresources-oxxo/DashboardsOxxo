@@ -28,6 +28,7 @@ class FakeSheet {
   }
   deleteColumns(start, n) { this.maxCols -= n; this.values.forEach(r => r.splice(start - 1, n)); }
   hideSheet() {}
+  getDataRange() { return this.getRange(1, 1, this.getLastRow(), this.getLastColumn()); }
   getRange(row, col, rows, cols) {
     const sheet = this;
     return {
@@ -147,4 +148,74 @@ test('la limpieza completa solo corre con el libro desde LIMPIEZA_DESDE_PCT', ()
   const gs = fs.readFileSync(path.join(root, 'apps-script', 'admin-upload.gs'), 'utf8');
   assert.match(gs, /if \(usoCeldas_\(ss\)\.pct >= LIMPIEZA_DESDE_PCT\) liberarEspacio_\(ss, Date\.now\(\) \+ LIMPIEZA_MAX_MS\);/);
   assert.match(gs, /try \{\s*actualizarPortadaSiCambio_\(ss\);\s*\} catch/);
+});
+
+// Respaldo por copia (v51): la hoja se duplica dentro de Google y queda con
+// el mismo formato de siempre (metadatos en la fila 1, datos desde la 3).
+function hojaCopiable(name, values, opts = {}) {
+  const sheet = new FakeSheet(name, { rows: values.length, cols: values[0].length, values });
+  sheet.frozen = 2;
+  sheet.formats = [];
+  sheet.copyTo = (ss) => {
+    if (opts.copyFails) throw new Error('copyTo no disponible');
+    const copia = new FakeSheet('Copia de ' + name, { rows: sheet.maxRows, cols: sheet.maxCols, values: sheet.values });
+    copia.frozen = sheet.frozen;
+    copia.setName = (n) => { copia.name = n; };
+    copia.setFrozenRows = (n) => { copia.frozen = n; };
+    copia.insertRowsBefore = (at, n) => {
+      if (opts.insertFails) throw new Error('fallo a medias');
+      copia.maxRows += n; copia.values.splice(at - 1, 0, ...Array.from({ length: n }, () => []));
+    };
+    copia.hidden = false; copia.hideSheet = () => { copia.hidden = true; };
+    const getRange = copia.getRange.bind(copia);
+    copia.getRange = (r, c, rs, cs) => Object.assign(getRange(r, c, rs, cs), {
+      clearFormat() { copia.formatoLimpio = true; },
+      clearContent() { for (let i = 0; i < rs; i++) copia.values[r - 1 + i] = []; },
+    });
+    ss.list.push(copia);
+    return copia;
+  };
+  return sheet;
+}
+const datosD4 = [['_buffer_', '_buffer_'], ['Semana', 'Horas'], ['Sem 42', '5'], ['Sem 43', '7']];
+
+test('el respaldo por copia queda con el formato de siempre y del tamaño exacto', () => {
+  const gs = cargar();
+  const origen = hojaCopiable('Dashboard_4_Semanal', datosD4);
+  const ss = new FakeSpreadsheet([origen, ...[1, 2, 3].map(d => respaldo('Dashboard_4_Semanal', new Date(2026, 9, d)))]);
+  const nombre = gs.backupCurrentSheet(ss, origen, 'Dashboard_4_Semanal', 'TE S43.xlsx');
+  const bk = ss.getSheetByName(nombre);
+  assert.ok(nombre.startsWith('_BK_Dashboard_4_Semanal_'));
+  assert.equal(bk.values[0][0], 'Respaldo creado');
+  assert.ok(bk.values[0][1] instanceof Date, 'la fecha queda como Fecha para ordenar y podar');
+  assert.deepEqual(bk.values[0].slice(2, 6), ['Hoja origen', 'Dashboard_4_Semanal', 'Archivo origen', 'TE S43.xlsx']);
+  assert.deepEqual(bk.values.slice(2), datosD4, 'los datos empiezan en la fila 3, iguales al origen');
+  assert.equal(bk.getMaxRows(), datosD4.length + 2);
+  assert.equal(bk.getMaxColumns(), 6);
+  assert.equal(bk.frozen, 0);
+  assert.equal(bk.hidden, true);
+  assert.equal(bk.formatoLimpio, true);
+  assert.deepEqual(origen.values, datosD4, 'la hoja publicada no se toca');
+  const meta = gs.readBackupMetadata(ss, 'Dashboard_4_Semanal');
+  assert.equal(meta.length, vm.runInContext('BACKUP_LIMIT', gs));
+  assert.equal(meta[0].backupSheet, nombre, 'el nuevo es el mas reciente');
+  assert.equal(meta[0].rows, datosD4.length - 2);
+});
+
+test('si la copia falla se usa el respaldo por valores', () => {
+  const gs = cargar();
+  const origen = hojaCopiable('Dashboard_4_Semanal', datosD4, { copyFails: true });
+  const ss = new FakeSpreadsheet([origen]);
+  const bk = ss.getSheetByName(gs.backupCurrentSheet(ss, origen, 'Dashboard_4_Semanal', 'x'));
+  assert.equal(bk.values[0][0], 'Respaldo creado');
+  assert.deepEqual(bk.values.slice(2, 2 + datosD4.length).map(r => r.slice(0, 2)), datosD4);
+});
+
+test('una copia a medias se borra y no queda como respaldo', () => {
+  const gs = cargar();
+  const origen = hojaCopiable('Dashboard_4_Semanal', datosD4, { insertFails: true });
+  const ss = new FakeSpreadsheet([origen]);
+  const nombre = gs.backupCurrentSheet(ss, origen, 'Dashboard_4_Semanal', 'x');
+  assert.equal(ss.getSheets().filter(s => s.getName().startsWith('Copia de') || s.getName().startsWith('_BK_')).length, 1);
+  assert.ok(ss.getSheetByName(nombre), 'queda solo el respaldo por valores');
 });
