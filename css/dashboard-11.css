@@ -168,3 +168,40 @@ body.dashboard-11-page .d11-plaza__var { text-align: right; font-size: 12px; }
   body.dashboard-11-page .d11-plaza__bar, body.dashboard-11-page .d11-plaza__var { display: none; }
   body.dashboard-11-page .d11-trend-tools .filtro-select { min-width: 0; width: 100%; }
 }
+
+/* Celular y tablet (hasta 900px): cada fila de las tablas se vuelve una tarjeta con todos sus datos
+   (antes solo cabian 2 o 3 columnas y lo demas quedaba fuera de la vista). */
+body.dashboard-11-page .d11-movil { display: none; }
+body.dashboard-11-page .d11-pills { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px; }
+@media (max-width: 900px) {
+  /* El canon fija min-width: 680px a .tbl en celular (para desplazar la
+     tabla de lado); en tarjetas eso las cortaba por la derecha. */
+  body.dashboard-11-page .d11-tarjetas { min-width: 0; width: 100%; }
+  body.dashboard-11-page .d11-tarjetas, body.dashboard-11-page .d11-tarjetas tbody { display: block; }
+  body.dashboard-11-page .d11-tarjetas thead { display: none; }
+  body.dashboard-11-page .d11-tarjetas tr { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2px 12px; margin-bottom: 8px; padding: 10px 12px; border: 1px solid var(--du-border); border-radius: 12px; background: #fff; }
+  body.dashboard-11-page .d11-tarjetas tr.is-foco { background: #fdf1f2; border-color: #f2b8be; }
+  body.dashboard-11-page .d11-tarjetas td { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; min-width: 0; padding: 4px 0; border: 0; font-size: 13px; }
+  body.dashboard-11-page .d11-tarjetas td { background: transparent !important; }
+  body.dashboard-11-page .d11-tarjetas td[data-l]::before { content: attr(data-l); flex: 0 0 auto; color: var(--du-muted); font: 800 10px/1.3 var(--font-body); letter-spacing: .04em; text-transform: uppercase; }
+  body.dashboard-11-page .d11-tarjetas td.d11-cab, body.dashboard-11-page .d11-tarjetas td.d11-ancho { grid-column: 1 / -1; }
+  body.dashboard-11-page .d11-tarjetas td.d11-cab { display: block; padding-bottom: 6px; border-bottom: 1px solid var(--du-border); }
+  body.dashboard-11-page .d11-tarjetas td.d11-vacio { display: none; }
+  body.dashboard-11-page .d11-tarjetas td > div.state { grid-column: 1 / -1; width: 100%; }
+  body.dashboard-11-page .d11-tarjetas tr:has(> td[colspan]) { display: block; }
+  body.dashboard-11-page .d11-tarjetas .store strong { max-width: none; white-space: normal; }
+  body.dashboard-11-page .d11-asesores td.d11-n { display: none; }
+  body.dashboard-11-page .d11-asesores td.d11-desk { display: none; }
+  body.dashboard-11-page .d11-asesores td.d11-movil { display: flex; }
+  body.dashboard-11-page .d11-asesores .d11-asesor .d11-link { font-size: 14px; }
+  body.dashboard-11-page .d11-asesores .d11-asesor::before { content: counter(d11-lugar) ". "; color: var(--du-muted); font-weight: 800; }
+  body.dashboard-11-page .d11-asesores tbody { counter-reset: d11-lugar; }
+  body.dashboard-11-page .d11-asesores tr { counter-increment: d11-lugar; }
+  body.dashboard-11-page .d11-tarjetas .d11-rango span { min-width: 0; font-size: 11px; }
+  /* Asesores (~12) caben completos; tiendas (~260) y calidad se desplazan
+     dentro de su caja para no hacer la pagina interminable. */
+  body.dashboard-11-page .tbl-wrap { overflow-x: hidden; }
+  body.dashboard-11-page section:has(#advisor-table) .tbl-wrap { max-height: none; overflow: visible; }
+  body.dashboard-11-page section:has(#detail-table) .tbl-wrap, body.dashboard-11-page .d11-quality { max-height: 70vh; overflow-y: auto; }
+  body.dashboard-11-page .d11-trend { min-height: 0; }
+}
