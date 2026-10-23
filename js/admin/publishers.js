@@ -111,7 +111,32 @@ window.OXXO_ADMIN_PUBLISHERS = function createAdminPublishers(deps){
       ?` Verificación interna correcta: ${Number(verification.actualRows||0).toLocaleString('es-MX')} filas y ${Number(verification.expectedColumns||0)} columnas.`
       :' Atención: Apps Script terminó la escritura, pero la comprobación interna requiere revisión.';
   }
-  async function verifyPublicReadback(dash,result){
+  // En modo compatible no hay respuesta del servidor: la unica prueba de que
+  // la publicacion llego es que la hoja publica traiga ESTAS filas. Se cuentan
+  // las filas de los periodos y plazas enviados; si no son las mismas, la
+  // escritura no termino (ej. el 23/10/2026 Google corto el script por tiempo
+  // y el panel marcaba "Lectura publica verificada" con la base anterior).
+  const keyOf=value=>String(value??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');
+  function publishedExpectation(dash,rows,period){
+    const scope=(dash.scopeColumns||[])[0]||'';
+    const periodColumn=period?.enabled?period.column:'';
+    return {
+      count:rows.length,
+      periodColumn,
+      periods:periodColumn?new Set((period.values||[]).map(keyOf)):null,
+      scope,
+      scopes:scope?new Set(rows.map(row=>keyOf(row[scope])).filter(Boolean)):null
+    };
+  }
+  function countPublishedRows(rows,expect){
+    if(!rows.length)return 0;
+    const headers=Object.keys(rows[0]||{});
+    const find=name=>name?headers.find(header=>normHeader(header)===normHeader(name)):'';
+    const periodKey=find(expect.periodColumn), scopeKey=find(expect.scope);
+    if((expect.periods&&!periodKey)||(expect.scopes&&!scopeKey))return 0;
+    return rows.filter(row=>(!expect.periods||expect.periods.has(keyOf(row[periodKey])))&&(!expect.scopes||expect.scopes.has(keyOf(row[scopeKey])))).length;
+  }
+  async function verifyPublicReadback(dash,result,expect){
     if(!dash?.tab)return null;
     // Modo compatible (fallback no-cors en postAdminPayload): el navegador
     // nunca pudo leer la respuesta real del servidor, asi que no hay
@@ -129,7 +154,10 @@ window.OXXO_ADMIN_PUBLISHERS = function createAdminPublishers(deps){
     const expectedRows=Number(result?.verification?.expectedRows ?? (Number(result?.rows||0)+Number(result?.keptRows||0)));
     const required=(dash.output||[]).map(normHeader).filter(Boolean);
     let last={ok:false,rows:0,missing:required,error:''};
-    for(const delay of [700,1200,1800]){
+    // Sin respuesta del servidor la escritura puede seguir en curso: se le da
+    // hasta ~1 minuto antes de declararla sin confirmar.
+    const delays=compatibilityMode&&expect?[3000,5000,8000,12000,15000,20000]:[700,1200,1800];
+    for(const delay of delays){
       await new Promise(resolve=>setTimeout(resolve,delay));
       try{
         OXXO.clearSheetDataCache(dash.tab);
@@ -149,8 +177,9 @@ window.OXXO_ADMIN_PUBLISHERS = function createAdminPublishers(deps){
         if(!Array.isArray(rows)||!rows.length){last={ok:false,rows:0,missing:required,error:'La lectura pública respondió sin filas.'};continue;}
         const headers=Object.keys(rows[0]||{}).map(normHeader);
         const missing=required.filter(header=>!headers.includes(header));
-        const countOk=compatibilityMode||rows.length===expectedRows;
-        last={ok:countOk&&!missing.length,rows:rows.length,missing,countOk,error:''};
+        const published=compatibilityMode&&expect?countPublishedRows(rows,expect):null;
+        const countOk=compatibilityMode?(!expect||published===expect.count):rows.length===expectedRows;
+        last={ok:countOk&&!missing.length,rows:rows.length,missing,countOk,published,expected:expect?.count,error:''};
         if(last.ok)return last;
       }catch(error){
         // La escritura ya fue confirmada por Apps Script. Un 404/timeout del
@@ -161,8 +190,17 @@ window.OXXO_ADMIN_PUBLISHERS = function createAdminPublishers(deps){
     }
     return last;
   }
+  // Uso del libro (Apps Script v49+): Google bloquea toda escritura al llegar
+  // a su limite de celdas, asi que se avisa antes de que pase.
+  function workbookLevel(result){const pct=Number(result?.workbook?.pct);return !Number.isFinite(pct)?'':pct>=90?'bad':pct>=75?'warn':'ok';}
+  function workbookText(result){
+    const level=workbookLevel(result);
+    if(level!=='warn'&&level!=='bad')return '';
+    return ` ⚠ El libro de Google Sheets ya usa el ${result.workbook.pct}% de su límite de celdas: al llegar al 100% ninguna base se podrá publicar.`;
+  }
   function readbackText(readback){
     if(!readback)return '';
+    if(readback.published!=null&&!readback.ok)return ` La hoja pública todavía no tiene las filas enviadas (se encontraron ${Number(readback.published).toLocaleString('es-MX')} de ${Number(readback.expected||0).toLocaleString('es-MX')}).`;
     if(readback.ok)return ` Lectura pública comprobada: ${Number(readback.rows||0).toLocaleString('es-MX')} registros visibles en el dashboard.`;
     const detail=readback.error
       ?` la comprobación respondió ${readback.error}`
@@ -259,7 +297,10 @@ window.OXXO_ADMIN_PUBLISHERS = function createAdminPublishers(deps){
       }
       notifyConfigDate(dash.key);
       $('publish-btn').textContent='Verificando...';
-      const readback=await verifyPublicReadback(dash,result);
+      const readback=await verifyPublicReadback(dash,result,publishedExpectation(dash,state.validation.rows,period));
+      // Modo compatible sin las filas en la hoja: no se puede afirmar que se
+      // publico. Se dice claro en vez de un "Solicitud enviada" que parecia exito.
+      const unconfirmed=Boolean(result.compatibilityMode&&!readback?.ok);
       let autoMsg='';
       let autoOk=true;
       if(AUTO_PUBLISH_MAP[dash.key]){
@@ -289,13 +330,13 @@ window.OXXO_ADMIN_PUBLISHERS = function createAdminPublishers(deps){
       const orphanedMsg=orphanedColumns.length
         ?` ⚠ Atención: la columna ${orphanedColumns.join(', ')} existía con datos y ya no aparece en el esquema publicado — revisa si se renombró en dashboard-definitions.js, las filas conservadas de periodos anteriores pudieron perder ese dato.`
         :'';
-      const message=(result.compatibilityMode?`Solicitud enviada en modo compatible a ${dash.tab}. Espera unos segundos y valida el dashboard.`:`Base publicada correctamente en ${dash.tab}. ${period.enabled?'Periodo actualizado: '+period.values.join(', '):'Pestaña reemplazada completa'}.`)+serverVerificationText(result)+readbackText(readback)+catalogMsg+autoMsg+orphanedMsg;
+      const message=(unconfirmed?`Google no respondió a tiempo y la publicación en ${dash.tab} no se pudo confirmar.`+readbackText(readback)+' Revisa la pestaña Bitácora en un minuto; si no aparece como Correcta, vuelve a publicar (reemplaza las mismas semanas, no duplica).'+workbookText(result):result.compatibilityMode?`Solicitud enviada en modo compatible a ${dash.tab}. Google no respondió, pero la hoja pública ya tiene las filas enviadas.`:`Base publicada correctamente en ${dash.tab}. ${period.enabled?'Periodo actualizado: '+period.values.join(', '):'Pestaña reemplazada completa'}.`)+(unconfirmed?'':serverVerificationText(result)+readbackText(readback)+catalogMsg+autoMsg+orphanedMsg+workbookText(result));
       renderPublicationResult?.({
-        type:result.compatibilityMode||!readback?.ok||!autoOk||orphanedColumns.length?'warn':'ok',
-        title:result.compatibilityMode?'Solicitud enviada':'Publicación completada',
+        type:unconfirmed?'bad':workbookLevel(result)==='bad'||result.compatibilityMode||!readback?.ok||!autoOk||orphanedColumns.length||workbookLevel(result)==='warn'?'warn':'ok',
+        title:unconfirmed?'Publicación sin confirmar':result.compatibilityMode?'Publicada (sin respuesta del servidor)':'Publicación completada',
         area:getAdminArea?.()||'Panel Admin',
         text:message,
-        facts:[`${Number(result.rows||state.validation.rows.length).toLocaleString('es-MX')} filas`,`${Number(result.columns||dash.output.length)} columnas`,result.backupSheet?`Respaldo: ${result.backupSheet}`:'Respaldo pendiente',readback?.ok?'Lectura pública verificada':'Verificación pendiente']
+        facts:[`${Number(result.rows||state.validation.rows.length).toLocaleString('es-MX')} filas`,`${Number(result.columns||dash.output.length)} columnas`,result.backupSheet?`Respaldo: ${result.backupSheet}`:'Respaldo pendiente',unconfirmed?'Filas no encontradas':readback?.ok?'Lectura pública verificada':'Verificación pendiente',...(result.workbook?[`Libro al ${result.workbook.pct}%`]:[])]
       });
     }catch(error){
       const message=String(error?.message||error||'Error desconocido');

@@ -26,9 +26,29 @@
     $('backup-history-note').textContent = filter === 'all' && overviewData.backups.length > 15 ? `Mostrando los 15 más recientes de ${overviewData.backups.length}. Filtra una base para ver sus tres respaldos.` : `${matches.length} respaldo${matches.length === 1 ? '' : 's'} disponible${matches.length === 1 ? '' : 's'}. Se conservan hasta tres por base.`;
   }
 
+  // Espacio del libro de Google Sheets (Apps Script v49+). Al llegar al 100%
+  // Google rechaza cualquier publicacion, asi que se avisa desde el 75%.
+  function renderWorkbookMeter(workbook) {
+    const box = $('workbook-meter');
+    if (!box) return;
+    const pct = Number(workbook?.pct);
+    if (!Number.isFinite(pct)) { box.hidden = true; return; }
+    const level = pct >= 90 ? 'bad' : pct >= 75 ? 'warn' : 'ok';
+    const nota = level === 'bad'
+      ? 'Casi lleno: las publicaciones pueden bloquearse. Pide revisar respaldos o historial.'
+      : level === 'warn' ? 'Se está llenando: conviene revisar el historial de las bases más grandes.' : 'Espacio suficiente para publicar.';
+    const millones = (n) => (Number(n || 0) / 1e6).toLocaleString('es-MX', { maximumFractionDigits: 1 });
+    box.className = `workbook-meter ${level}`;
+    box.hidden = false;
+    box.innerHTML = `<div class="workbook-meter__head"><span>Espacio del libro de Google Sheets</span><strong>${pct.toLocaleString('es-MX')}%</strong></div>
+      <div class="workbook-meter__bar" role="meter" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}" aria-label="Celdas usadas del libro"><i style="width:${Math.min(100, pct)}%"></i></div>
+      <small>${millones(workbook.cells)} de ${millones(workbook.limit)} millones de celdas · ${nota}</small>`;
+  }
+
   function renderOverview(result) {
     overviewData = { backups: Array.isArray(result.backups) ? result.backups : [], sources: Array.isArray(result.sources) ? result.sources : [] };
     const summary = result.summary || {};
+    renderWorkbookMeter(result.workbook);
     $('admin-overview-summary').innerHTML = `
       <div class="overview-kpi"><span>Bases monitoreadas</span><strong>${Number(summary.sources || 0)}</strong></div>
       <div class="overview-kpi ok"><span>Con respaldo</span><strong>${Number(summary.withBackups || 0)}</strong></div>
