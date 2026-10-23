@@ -70,7 +70,7 @@ test('el motor no lee ni envia datos: el ranking va aparte y solo manda la marca
   }
   // El modulo de ranking solo habla con la URL que recibe y solo envia estos campos.
   assert.doesNotMatch(ranking, /docs\.google\.com|XMLHttpRequest|sendBeacon|localStorage/);
-  assert.match(ranking, /JSON\.stringify\(\{ action: 'rankingGuardar', nombre: marca\.nombre, tiempo: marca\.tiempo, monitos: marca\.monitos, turnos: marca\.turnos \}\)/);
+  assert.match(ranking, /JSON\.stringify\(\{ action: 'rankingGuardar', nombre: marca\.nombre, tiempo: marca\.tiempo, monitos: marca\.monitos, turnos: marca\.turnos, dificultad: marca\.dificultad \}\)/);
 });
 
 test('la portada lo ofrece y la pagina carga el candado del sitio', () => {
@@ -78,6 +78,7 @@ test('la portada lo ofrece y la pagina carga el candado del sitio', () => {
   const pagina = fs.readFileSync(path.join(raiz, 'dashboards', 'turno-nocturno.html'), 'utf8');
   assert.match(pagina, /js\/site-lock\.js\?v=/);
   assert.match(pagina, /OXXO_TURNO_NOCTURNO\.montar\(\{ monitos: '\.\.\/assets\/juego\/monitos\.png', armas: '\.\.\/assets\/juego\/armas\.png', ranking: OXXO_TURNO_RANKING\.crear\(/);
+  assert.equal((pagina.match(/data-dificultad="(facil|normal|dificil)"/g) || []).length, 6, 'selector de dificultad en portada y fin');
   for (const id of ['scrTurno', 'bNext', 'turnoTitle', 'turnoNombre', 'turnoText', 'turnoStats', 'hTurno', 'rankTitle', 'rankEnd', 'rankForm', 'rankNombre', 'bRank', 'rankMsg']) {
     assert.match(pagina, new RegExp(`id="${id}"`), `falta #${id} en la pagina`);
   }
@@ -108,4 +109,15 @@ test('cada arma recorta su propio tramo de la hoja de armas, sin encimarse', () 
     if (i) assert.ok(a.x >= todas[i - 1].x + todas[i - 1].w, `${a.arma} se encima con ${todas[i - 1].arma}`);
     assert.ok(a.bx <= a.w && a.by <= alto, `la boca de ${a.arma} queda fuera de su imagen`);
   });
+});
+
+test('las 3 dificultades existen y escalan en el orden correcto', () => {
+  const bloque = juego.match(/const DIFICULTADES = \{([\s\S]*?)\n  \};/);
+  assert.ok(bloque, 'no se encontro DIFICULTADES');
+  const d = {};
+  for (const [, k, cuerpo] of bloque[1].matchAll(/(\w+): \{([^}]*)\}/g)) d[k] = Object.fromEntries([...cuerpo.matchAll(/(\w+): ([\d.]+)/g)].map(m => [m[1], Number(m[2])]));
+  assert.deepEqual(Object.keys(d), ['facil', 'normal', 'dificil']);
+  assert.deepEqual(d.normal, { vida: 1, dano: 1, pilas: 50, descanso: 40, refuerzos: 1 }, 'normal es el juego de siempre');
+  for (const k of ['vida', 'dano']) assert.ok(d.facil[k] < d.normal[k] && d.normal[k] < d.dificil[k], k);
+  for (const k of ['pilas', 'descanso', 'refuerzos']) assert.ok(d.facil[k] > d.normal[k] && d.normal[k] > d.dificil[k], k);
 });

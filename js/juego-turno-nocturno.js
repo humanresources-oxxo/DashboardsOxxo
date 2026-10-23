@@ -15,7 +15,7 @@
    detalle. No usa librerias y el motor no lee ni envia datos: el
    mejor tiempo vive en localStorage y el ranking de la oficina lo
    maneja aparte js/juego-ranking.js, que se pasa como opciones.ranking
-   ({ listar(), guardar(marca) }, ambas devuelven promesas).
+   ({ listar(dificultad), guardar(marca) }, ambas devuelven promesas).
 
    Uso: OXXO_TURNO_NOCTURNO.montar({ monitos: 'ruta/monitos.png',
    armas: 'ruta/armas.png', ranking }) sobre
@@ -27,6 +27,15 @@
   const RECORD_KEY = 'oxxo-turno-nocturno-record';
   const MUSICA_KEY = 'oxxo-turno-nocturno-musica';
   const NOMBRE_KEY = 'oxxo-turno-nocturno-nombre';
+  const DIFICULTAD_KEY = 'oxxo-turno-nocturno-dificultad';
+  // vida/dano: multiplican a los monitos · pilas: con cuantas empiezas ·
+  // descanso: salud que recuperas entre turnos · refuerzos: cada cuanto
+  // llama chihuahuas el Oso gerente (1 = normal; menor = mas seguido).
+  const DIFICULTADES = {
+    facil: { nombre: 'FÁCIL', vida: 0.7, dano: 0.6, pilas: 80, descanso: 60, refuerzos: 1.3 },
+    normal: { nombre: 'NORMAL', vida: 1, dano: 1, pilas: 50, descanso: 40, refuerzos: 1 },
+    dificil: { nombre: 'DIFÍCIL', vida: 1.3, dano: 1.45, pilas: 35, descanso: 25, refuerzos: 0.7 }
+  };
 
   function montar(opciones = {}) {
     const W = 320, H = 200, TS = 64;
@@ -323,6 +332,8 @@
     // nivel: turno actual (0-2) · killsRun: monitos de toda la partida ·
     // jefe: el Oso gerente del ultimo turno · numeros: daño flotante.
     let nivel = 0, killsRun = 0, jefe = null, numeros = [], shakeT = 0;
+    let dificultad = (() => { try { const v = localStorage.getItem(DIFICULTAD_KEY); return v in DIFICULTADES ? v : 'normal'; } catch (e) { return 'normal'; } })();
+    const dif = () => DIFICULTADES[dificultad];
 
     // nuevo: true al empezar partida; false al pasar de turno (se conservan
     // armas, municion, tiempo y parte de la salud).
@@ -343,19 +354,20 @@
       total = ents.filter(e => e.kind === 'enemy').length; kills = 0;
       if (nuevo) {
         elapsed = 0; killsRun = 0;
-        ammo = { pilas: 50, cafe: 0, senal: 0 }; have = { trapeador: true, escaner: true, cafe: false, terminal: false, escudo: false }; cur = 'escaner';
+        ammo = { pilas: dif().pilas, cafe: 0, senal: 0 }; have = { trapeador: true, escaner: true, cafe: false, terminal: false, escudo: false }; cur = 'escaner';
       } else {
         // Descanso entre turnos: se recupera salud y llegan pilas.
-        player.hp = Math.min(100, Math.max(hpAntes, 0) + 40);
+        player.hp = Math.min(100, Math.max(hpAntes, 0) + dif().descanso);
         ammo.pilas = Math.min(200, ammo.pilas + 20);
       }
       senalT = 0; particulas = [];
       wcool = 0; flashT = 0; recoil = 0; hurtT = 0; pickT = 0; bobT = 0; moving = false; swapT = 0; deathT = 0; shakeT = 0;
     }
     function enemy(cfg, x, y, extra = false) {
-      // Cada turno los monitos aguantan y pegan un poco mas.
-      const m = 1 + nivel * 0.18;
-      return { kind: 'enemy', cfg, type: cfg.tipo, x, y, hp: cfg.vida * m, max: cfg.vida * m, mult: m, awake: extra, cool: 1 + Math.random(),
+      // Cada turno los monitos aguantan y pegan un poco mas; la dificultad
+      // escala las dos cosas por separado.
+      const m = 1 + nivel * 0.18, vida = cfg.vida * m * dif().vida;
+      return { kind: 'enemy', cfg, type: cfg.tipo, x, y, hp: vida, max: vida, mult: m * dif().dano, awake: extra, cool: 1 + Math.random(),
         painT: 0, atkT: 0, hitT: 0, dead: false, walkT: Math.random() * 10, moved: false, strafe: 1, strafeT: 0, extra, fase: 1, llamaT: 4 };
     }
     function solidCell(x, y) {
@@ -551,8 +563,10 @@
     const scr = { title: document.getElementById('scrTitle'), pause: document.getElementById('scrPause'), end: document.getElementById('scrEnd'), turno: document.getElementById('scrTurno') };
     function showScreen(name) { for (const k in scr) scr[k].hidden = k !== name; }
     const fmtTime = s => `${s / 60 | 0}:${String(s % 60 | 0).padStart(2, '0')}`;
-    function leerRecord() { try { const v = Number(localStorage.getItem(RECORD_KEY)); return v > 0 ? v : 0; } catch (e) { return 0; } }
-    function guardarRecord(v) { try { localStorage.setItem(RECORD_KEY, String(v)); } catch (e) { /* sin almacenamiento: no hay record */ } }
+    // Un record por dificultad; normal conserva la llave de antes.
+    const llaveRecord = () => dificultad === 'normal' ? RECORD_KEY : RECORD_KEY + '-' + dificultad;
+    function leerRecord() { try { const v = Number(localStorage.getItem(llaveRecord())); return v > 0 ? v : 0; } catch (e) { return 0; } }
+    function guardarRecord(v) { try { localStorage.setItem(llaveRecord(), String(v)); } catch (e) { /* sin almacenamiento: no hay record */ } }
     function endScreen(won) {
       state = won ? 'won' : 'dead';
       musica(false);
@@ -566,7 +580,7 @@
         if (!antes || elapsed < antes) { guardarRecord(elapsed); extra = ' · ¡NUEVO RÉCORD!'; }
         else extra = ` · RÉCORD ${fmtTime(antes)}`;
       }
-      document.getElementById('endStats').textContent = `MONITOS ${killsRun} · TIEMPO ${fmtTime(elapsed)}${extra}`;
+      document.getElementById('endStats').textContent = `${dif().nombre} · MONITOS ${killsRun} · TIEMPO ${fmtTime(elapsed)}${extra}`;
       showScreen('end'); releaseLock(); touchLayer.hidden = true;
       prepararRanking(won);
       setTimeout(() => (won && rk.nombre ? rk.nombre : document.getElementById('bAgain')).focus(), 50);
@@ -584,7 +598,7 @@
       document.getElementById('turnoTitle').textContent = `TURNO ${nivel + 2} DE ${NIVELES.length}`;
       document.getElementById('turnoNombre').textContent = sig.nombre;
       document.getElementById('turnoText').textContent = sig.intro;
-      document.getElementById('turnoStats').textContent = `TURNO ${nivel + 1}: MONITOS ${kills}/${total} · TIEMPO ${fmtTime(elapsed)} · +40 SALUD · +20 PILAS`;
+      document.getElementById('turnoStats').textContent = `TURNO ${nivel + 1}: MONITOS ${kills}/${total} · TIEMPO ${fmtTime(elapsed)} · +${dif().descanso} SALUD · +20 PILAS`;
       showScreen('turno'); sfx('turno');
       setTimeout(() => document.getElementById('bNext').focus(), 50);
     }
@@ -784,7 +798,7 @@
         e.llamaT -= dt;
         const vivos = ents.filter(m => m.extra && !m.dead).length;
         if (e.llamaT <= 0 && vivos < 4) {
-          e.llamaT = fase === 3 ? 6 : 8;
+          e.llamaT = (fase === 3 ? 6 : 8) * dif().refuerzos;
           for (const lado of [-1, 1]) {
             const a = Math.atan2(uy, ux) + lado * 1.3, x = e.x + Math.cos(a) * 1.2, y = e.y + Math.sin(a) * 1.2;
             if (!blockedAt(x, y, 0.3, false)) ents.push(enemy(MONITOS.c, x, y, true));
@@ -1105,12 +1119,13 @@
       if (!ranking || !destino) return;
       destino.hidden = false; destino.textContent = 'Cargando ranking…';
       // En la portada caben 5 sin tapar las instrucciones; al terminar, 10.
-      ranking.listar().then(lista => pintarRanking(lista, destino, null, destino === rk.titulo ? 5 : 10)).catch(() => { destino.textContent = 'No se pudo cargar el ranking.'; });
+      const pedida = dificultad;
+      ranking.listar(pedida).then(lista => { if (pedida === dificultad) pintarRanking(lista, destino, null, destino === rk.titulo ? 5 : 10); }).catch(() => { destino.textContent = 'No se pudo cargar el ranking.'; });
     }
     function prepararRanking(won) {
       if (!rk.form) return;
       rk.form.hidden = !(won && ranking); rk.msg.textContent = ''; rk.boton.disabled = false;
-      marcaPendiente = won ? { tiempo: Math.round(elapsed), monitos: killsRun, turnos: NIVELES.length } : null;
+      marcaPendiente = won ? { tiempo: Math.round(elapsed), monitos: killsRun, turnos: NIVELES.length, dificultad } : null;
       try { rk.nombre.value = localStorage.getItem(NOMBRE_KEY) || ''; } catch (e) { /* sin almacenamiento */ }
       if (ranking) cargarRanking(rk.fin); else if (rk.fin) rk.fin.hidden = true;
     }
@@ -1128,11 +1143,27 @@
         rk.form.hidden = true; rk.msg.hidden = false;
       }).catch(err => { rk.boton.disabled = false; rk.msg.textContent = String(err && err.message || 'No se pudo guardar. Intenta de nuevo.'); });
     });
-    cargarRanking(rk.titulo);
 
 
-    const record = leerRecord();
-    if (record) document.getElementById('titleRecord').textContent = `Mejor tiempo en este navegador: ${fmtTime(record)}`;
+    /* ---------- dificultad ---------- */
+    // Se elige en la portada y se recuerda. Cambia el ranking que se ve,
+    // porque cada dificultad tiene su propia tabla.
+    const botonesDif = [...document.querySelectorAll('[data-dificultad]')];
+    function mostrarRecord() {
+      const record = leerRecord();
+      document.getElementById('titleRecord').textContent = record ? `Mejor tiempo en ${dif().nombre} en este navegador: ${fmtTime(record)}` : '';
+    }
+    function elegirDificultad(d) {
+      if (!(d in DIFICULTADES)) return;
+      dificultad = d;
+      try { localStorage.setItem(DIFICULTAD_KEY, d); } catch (e) { /* sin almacenamiento */ }
+      for (const b of botonesDif) b.setAttribute('aria-pressed', String(b.dataset.dificultad === d));
+      const titulo = document.getElementById('rankTitleH');
+      if (titulo) titulo.textContent = `RANKING DE LA OFICINA · ${dif().nombre}`;
+      mostrarRecord(); cargarRanking(rk.titulo);
+    }
+    for (const b of botonesDif) b.addEventListener('click', () => elegirDificultad(b.dataset.dificultad));
+    elegirDificultad(dificultad);
 
     /* ---------- bucle ---------- */
     loadLevel(0, true);

@@ -19,6 +19,7 @@ class FakeSheet {
   getFrozenRows() { return 0; }
   deleteRows(start, n) { this.maxRows -= n; }
   deleteColumns(start, n) { this.maxCols -= n; }
+  insertColumnsAfter(after, n) { this.maxCols += n; }
   hideSheet() { this.hidden = true; }
   appendRow(row) { this.values.push([...row]); this.maxRows = Math.max(this.maxRows, this.values.length); }
   getRange(row, col, rows, cols) {
@@ -51,7 +52,7 @@ function cargar() {
   vm.runInContext(fs.readFileSync(path.join(root, 'apps-script', 'admin-upload.gs'), 'utf8'), sandbox);
   return { gs: sandbox, ss, hojas, cache };
 }
-const marca = (extra = {}) => ({ nombre: 'Ana López', tiempo: 600, monitos: 25, turnos: 3, ...extra });
+const marca = (extra = {}) => ({ nombre: 'Ana López', tiempo: 600, monitos: 25, turnos: 3, dificultad: 'normal', ...extra });
 
 test('guarda una marca valida en una hoja oculta y devuelve el lugar', () => {
   const { gs, hojas } = cargar();
@@ -61,12 +62,13 @@ test('guarda una marca valida en una hoja oculta y devuelve el lugar', () => {
   assert.equal(r.ranking[0].nombre, 'Ana López');
   const hoja = hojas.get('Juego_Ranking');
   assert.equal(hoja.hidden, true, 'la hoja no aparece en la portada');
-  assert.deepEqual(hoja.values[0], ['Fecha', 'Nombre', 'Tiempo (s)', 'Monitos', 'Turnos']);
+  assert.deepEqual(hoja.values[0], ['Fecha', 'Nombre', 'Tiempo (s)', 'Monitos', 'Turnos', 'Dificultad']);
+  assert.equal(hoja.values[1][5], 'normal');
 });
 
 test('rechaza nombres, tiempos, monitos y turnos imposibles', () => {
   const { gs } = cargar();
-  for (const [campo, valor] of [['nombre', 'x'], ['nombre', '<<>>'], ['tiempo', 10], ['tiempo', 99999], ['tiempo', 'abc'], ['monitos', -1], ['turnos', 2]]) {
+  for (const [campo, valor] of [['nombre', 'x'], ['nombre', '<<>>'], ['tiempo', 10], ['tiempo', 99999], ['tiempo', 'abc'], ['monitos', -1], ['turnos', 2], ['dificultad', 'imposible']]) {
     assert.throws(() => gs.guardarRanking_(marca({ [campo]: valor })), undefined, `${campo}=${valor}`);
   }
 });
@@ -104,4 +106,32 @@ test('doGet ranking y doPost rankingGuardar son publicos y no tocan la contrase�
   const get = JSON.parse(gs.doGet({ parameter: { action: 'ranking' } }).texto);
   assert.equal(get.ok, true);
   assert.equal(get.ranking[0].nombre, 'Ana López');
+});
+
+test('cada dificultad tiene su propia tabla', () => {
+  const { gs, cache } = cargar();
+  gs.guardarRanking_(marca({ nombre: 'Facilito', tiempo: 200, dificultad: 'facil' }));
+  cache.clear();
+  gs.guardarRanking_(marca({ nombre: 'Normalito', tiempo: 500 }));
+  cache.clear();
+  const r = gs.guardarRanking_(marca({ nombre: 'Rudo', tiempo: 900, dificultad: 'Difícil' }));
+  assert.equal(r.dificultad, 'dificil');
+  assert.equal(r.lugar, 1, 'en dificil no compite contra el tiempo de facil');
+  const ss = gs.SpreadsheetApp.openById();
+  assert.deepEqual(gs.leerRanking_(ss, 10, 'facil').map(x => x.nombre), ['Facilito']);
+  assert.deepEqual(gs.leerRanking_(ss, 10, 'normal').map(x => x.nombre), ['Normalito']);
+  assert.deepEqual(gs.leerRanking_(ss, 10, 'dificil').map(x => x.nombre), ['Rudo']);
+  const get = JSON.parse(gs.doGet({ parameter: { action: 'ranking', dificultad: 'facil' } }).texto);
+  assert.deepEqual(get.ranking.map(x => x.nombre), ['Facilito']);
+});
+
+test('una hoja de la v52 sin columna Dificultad se actualiza y sus filas cuentan como normal', () => {
+  const { gs, hojas } = cargar();
+  const ss = gs.SpreadsheetApp.openById();
+  const vieja = ss.insertSheet('Juego_Ranking');
+  vieja.maxCols = 5;
+  vieja.values = [['Fecha', 'Nombre', 'Tiempo (s)', 'Monitos', 'Turnos'], [new Date(), 'Pionero', 400, 20, 3]];
+  const r = gs.guardarRanking_(marca({ nombre: 'Nuevo', tiempo: 450 }));
+  assert.deepEqual(r.ranking.map(x => x.nombre), ['Pionero', 'Nuevo']);
+  assert.equal(hojas.get('Juego_Ranking').values[0][5], 'Dificultad');
 });
