@@ -115,32 +115,41 @@ window.OXXO_ADMIN_PUBLISHERS = function createAdminPublishers(deps){
   // basta como prueba: una foto diaria trae casi las mismas filas cada dia
   // (23/10/2026: Dashboard_3_Diario se "confirmo" con la base del 22/10). La
   // prueba real es la bitacora: Apps Script escribe "Correcta" solo al
-  // terminar, o "Error" con el motivo. Se busca la entrada de esta hoja, con
-  // estas filas, posterior al envio.
+  // terminar, o "Error" con el motivo. Antes de enviar se anota cual es la
+  // ultima entrada y despues solo se miran las nuevas: no se comparan horas,
+  // porque la bitacora usa la zona del libro (una hora antes que la del
+  // navegador en Oaxaca) y la comparacion daba falsos "no realizada".
   const keyOf=value=>String(value??'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');
-  function auditDate(value){
-    const m=String(value||'').match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})[ T](\d{1,2}):(\d{2})(?::(\d{2}))?/);
-    return m?new Date(+m[3],+m[2]-1,+m[1],+m[4],+m[5],+(m[6]||0)).getTime():NaN;
+  const AUDIT_SHEET='_Admin_Bitacora';
+  const auditField=(row,name)=>row?.[Object.keys(row||{}).find(key=>keyOf(key)===keyOf(name))];
+  const auditSignature=row=>row?['Fecha','Hoja','Filas publicadas','Estado','Respaldo'].map(name=>String(auditField(row,name)??'')).join('|'):'';
+  async function readAudit(){
+    OXXO.clearSheetDataCache(AUDIT_SHEET);
+    return await OXXO.fetchSheetData(AUDIT_SHEET,{fresh:true,allowStale:false,scoped:false})||[];
   }
-  // La hora de la bitacora es la del libro (Mexico) y la del navegador puede
-  // diferir un poco: se acepta desde 10 minutos antes del envio.
-  const AUDIT_SKEW_MS=10*60*1000;
-  function findAuditEntry(rows,{tab,count,since}){
-    const field=(row,name)=>row[Object.keys(row).find(key=>keyOf(key)===keyOf(name))];
-    const matches=(rows||[]).filter(row=>keyOf(field(row,'Hoja'))===keyOf(tab)
-      &&Number(String(field(row,'Filas publicadas')||'').replace(/,/g,''))===Number(count)
-      &&auditDate(field(row,'Fecha'))>=since-AUDIT_SKEW_MS);
+  async function auditBaseline(){
+    try{const rows=await readAudit();return {length:rows.length,last:auditSignature(rows[rows.length-1])};}
+    catch(error){console.warn('No se pudo leer la bitácora antes de publicar:',error);return null;}
+  }
+  function entriesAfter(rows,baseline){
+    if(!baseline)return [];
+    let index=-1;
+    if(baseline.last)for(let i=rows.length-1;i>=0;i--){if(auditSignature(rows[i])===baseline.last){index=i;break;}}
+    return rows.slice(index>=0?index+1:baseline.length);
+  }
+  function findAuditEntry(rows,{tab,count,baseline}){
+    const matches=entriesAfter(rows||[],baseline).filter(row=>keyOf(auditField(row,'Hoja'))===keyOf(tab)
+      &&Number(String(auditField(row,'Filas publicadas')||'').replace(/,/g,''))===Number(count));
     const last=matches[matches.length-1];
-    return last?{status:String(field(last,'Estado')||''),detail:String(field(last,'Detalle')||''),backup:String(field(last,'Respaldo')||'')}:null;
+    return last?{status:String(auditField(last,'Estado')||''),detail:String(auditField(last,'Detalle')||''),backup:String(auditField(last,'Respaldo')||'')}:null;
   }
   async function waitForAudit(target){
+    if(!target.baseline)return null;
     // Sin respuesta la escritura puede seguir en curso: hasta ~1 minuto.
     for(const delay of [3000,5000,8000,12000,15000,20000]){
       await new Promise(resolve=>setTimeout(resolve,delay));
       try{
-        const sheet='_Admin_Bitacora';
-        OXXO.clearSheetDataCache(sheet);
-        const entry=findAuditEntry(await OXXO.fetchSheetData(sheet,{fresh:true,allowStale:false,scoped:false}),target);
+        const entry=findAuditEntry(await readAudit(),target);
         if(entry)return entry;
       }catch(error){console.warn('No se pudo leer la bitácora para confirmar la publicación:',error);}
     }
@@ -250,9 +259,17 @@ window.OXXO_ADMIN_PUBLISHERS = function createAdminPublishers(deps){
         if(!matrix.length)continue;
         const parsed=rowsFromMatrix(matrix,dashDef);
         if(!parsed.rows.length)continue;
+        const baseline=await auditBaseline();
         const result=await postAdminPayload({adminPassword:getAdminPassword(),targetSheet:dashDef.tab,rows:parsed.rows,requiredHeaders:dashDef.required||[],scopeColumns:dashDef.scopeColumns||[],source:`DashboardsOxxo Admin (auto desde ${parentKey})`,sourceFile:state.fileName||'',updateMode:'replaceAll'});
         OXXO.clearSheetDataCache(dashDef.tab);
         notifyConfigDate(dashDef.key);
+        // Sin respuesta del servidor, igual que la publicacion principal: solo
+        // la bitacora confirma.
+        if(result.compatibilityMode){
+          const audit=await waitForAudit({tab:dashDef.tab,count:parsed.rows.length,baseline});
+          publicados.push({label:dashDef.label,count:parsed.rows.length,verified:audit?.status==='Correcta'});
+          continue;
+        }
         const readback=await verifyPublicReadback(dashDef,result);
         publicados.push({label:dashDef.label,count:parsed.rows.length,verified:Boolean(result?.verification?.ok&&readback?.ok)});
       }catch(error){
@@ -295,7 +312,7 @@ window.OXXO_ADMIN_PUBLISHERS = function createAdminPublishers(deps){
       if(!confirmPublication(dash.label,dash.tab,state.validation.rows.length,modeMessage,preflight))return;
       $('publish-btn').textContent='Publicando...';
       const payload={adminPassword:getAdminPassword(),targetSheet:dash.tab,rows:state.validation.rows,requiredHeaders:dash.required||[],scopeColumns:dash.scopeColumns||[],source:'DashboardsOxxo Admin',sourceFile:state.fileName||'',updateMode:period.enabled?'replacePeriod':'replaceAll',periodColumn:period.column,periodValues:period.values};
-      const startedAt=Date.now();
+      const baseline=await auditBaseline();
       const result=await postAdminPayload(payload);
       OXXO.clearSheetDataCache(dash.tab);
       if(dash.key==='s7'&&OXXO.SHEETS_CONFIG.STORE_CATALOG_SHEET){
@@ -305,7 +322,7 @@ window.OXXO_ADMIN_PUBLISHERS = function createAdminPublishers(deps){
       $('publish-btn').textContent='Verificando...';
       // Modo compatible: solo la bitacora dice si termino. Sin entrada
       // "Correcta" no se afirma que se publico.
-      const audit=result.compatibilityMode?await waitForAudit({tab:dash.tab,count:state.validation.rows.length,since:startedAt}):null;
+      const audit=result.compatibilityMode?await waitForAudit({tab:dash.tab,count:state.validation.rows.length,baseline}):null;
       if(audit?.backup&&!result.backupSheet)result.backupSheet=audit.backup;
       const unconfirmed=Boolean(result.compatibilityMode&&audit?.status!=='Correcta');
       const readback=unconfirmed?null:await verifyPublicReadback(dash,result);
@@ -338,10 +355,10 @@ window.OXXO_ADMIN_PUBLISHERS = function createAdminPublishers(deps){
       const orphanedMsg=orphanedColumns.length
         ?` ⚠ Atención: la columna ${orphanedColumns.join(', ')} existía con datos y ya no aparece en el esquema publicado — revisa si se renombró en dashboard-definitions.js, las filas conservadas de periodos anteriores pudieron perder ese dato.`
         :'';
-      const message=(unconfirmed?(audit?`Apps Script registró un error en ${dash.tab}: ${audit.detail||'sin detalle'}. No se modificaron los datos.`:`Google no respondió y la bitácora no registra la publicación en ${dash.tab}: los datos no cambiaron. Vuelve a publicar en un minuto (reemplaza lo mismo, no duplica).`):result.compatibilityMode?`Base publicada en ${dash.tab} (confirmada en la bitácora; Google tardó en responder).`:`Base publicada correctamente en ${dash.tab}. ${period.enabled?'Periodo actualizado: '+period.values.join(', '):'Pestaña reemplazada completa'}.`)+(unconfirmed?'':serverVerificationText(result)+readbackText(readback)+catalogMsg+autoMsg+orphanedMsg+workbookText(result));
+      const message=(unconfirmed?(audit?`Apps Script registró un error en ${dash.tab}: ${audit.detail||'sin detalle'}. No se modificaron los datos.`:(baseline?`Google no respondió y, después de un minuto, la bitácora no registra la publicación en ${dash.tab}. Revisa la pestaña Bitácora: si no aparece como Correcta, vuelve a publicar (reemplaza lo mismo, no duplica).`:`Google no respondió y no se pudo leer la bitácora para confirmar ${dash.tab}. Revisa la pestaña Bitácora antes de volver a publicar.`)):result.compatibilityMode?`Base publicada en ${dash.tab} (confirmada en la bitácora; Google tardó en responder).`:`Base publicada correctamente en ${dash.tab}. ${period.enabled?'Periodo actualizado: '+period.values.join(', '):'Pestaña reemplazada completa'}.`)+(unconfirmed?'':serverVerificationText(result)+readbackText(readback)+catalogMsg+autoMsg+orphanedMsg+workbookText(result));
       renderPublicationResult?.({
         type:unconfirmed?'bad':workbookLevel(result)==='bad'||result.compatibilityMode||!readback?.ok||!autoOk||orphanedColumns.length||workbookLevel(result)==='warn'?'warn':'ok',
-        title:unconfirmed?(audit?'Publicación con error':'Publicación no realizada'):'Publicación completada',
+        title:unconfirmed?(audit?'Publicación con error':'Publicación no confirmada'):'Publicación completada',
         area:getAdminArea?.()||'Panel Admin',
         text:message,
         facts:[`${Number(result.rows||state.validation.rows.length).toLocaleString('es-MX')} filas`,`${Number(result.columns||dash.output.length)} columnas`,result.backupSheet?`Respaldo: ${result.backupSheet}`:'Respaldo pendiente',unconfirmed?(audit?'Error en bitácora':'Sin registro en bitácora'):readback?.ok?'Lectura pública verificada':'Verificación pendiente',...(result.workbook?[`Libro al ${result.workbook.pct}%`]:[])]
