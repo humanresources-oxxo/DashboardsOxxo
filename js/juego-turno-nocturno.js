@@ -2,26 +2,31 @@
    TURNO NOCTURNO — juego en primera persona dentro de un OXXO
 
    Son las 3:00 a.m. y la tienda se lleno de monitos zombi con el
-   uniforme rojo: tlacuache, chihuahua, jaguar, lobos, mono,
-   pinguino y el oso gerente. Hay que cruzar bodega, camara fria
-   y pasillos hasta la puerta de SALIDA.
+   uniforme rojo: tlacuache, chihuahua, jaguar, lobos, mono y
+   pinguino. Son 3 turnos seguidos (NIVELES): bodega y pasillos,
+   camara fria y piso de venta, y la caja con el Oso gerente como
+   jefe final; la salida del ultimo turno abre al vencerlo.
 
    Motor de raycasting (estilo clasico) sobre un canvas de 320x200.
    Paredes y objetos se dibujan con formas al arrancar; los monitos
    salen de assets/juego/monitos.png (una celda de 128x128 por
    personaje) y las 5 armas de assets/juego/armas.png, que se dibujan
    en un segundo canvas (#armas) a 960x600 para que no pierdan
-   detalle. No usa librerias y, como la Torre de Cajas, no lee ni
-   envia datos; el mejor tiempo vive en localStorage.
+   detalle. No usa librerias y el motor no lee ni envia datos: el
+   mejor tiempo vive en localStorage y el ranking de la oficina lo
+   maneja aparte js/juego-ranking.js, que se pasa como opciones.ranking
+   ({ listar(), guardar(marca) }, ambas devuelven promesas).
 
    Uso: OXXO_TURNO_NOCTURNO.montar({ monitos: 'ruta/monitos.png',
-   armas: 'ruta/armas.png' }) sobre dashboards/turno-nocturno.html
-   (busca sus elementos por id).
+   armas: 'ruta/armas.png', ranking }) sobre
+   dashboards/turno-nocturno.html (busca sus elementos por id).
    ========================================================== */
 (function () {
   'use strict';
 
   const RECORD_KEY = 'oxxo-turno-nocturno-record';
+  const MUSICA_KEY = 'oxxo-turno-nocturno-musica';
+  const NOMBRE_KEY = 'oxxo-turno-nocturno-nombre';
 
   function montar(opciones = {}) {
     const W = 320, H = 200, TS = 64;
@@ -46,6 +51,8 @@
     }
     const fog = d => clamp(3.4 / (d + 1.5), 0.1, 1);
     // Monito congelado: se ve azul hielo.
+    // Destello al recibir un golpe: el monito se aclara un instante.
+    const blanco = c => 0xff000000 | (((c >> 16 & 255) + 255 >> 1) << 16) | (((c >> 8 & 255) + 255 >> 1) << 8) | ((c & 255) + 255 >> 1);
     const azul = c => 0xff000000 | (Math.min(255, (c >> 16 & 255) + 120) << 16) | (Math.min(255, (c >> 8 & 255) + 50) << 8) | ((c & 255) >> 1);
 
     function makeTex(draw, noise = 0) {
@@ -175,7 +182,9 @@
       L: { tipo: 'lobo2', celda: 4, vida: 50, ia: 'escupe', vel: 1.9, dano: [9, 16], escala: 0.62, z: 0.3, sonido: 'aullido', proj: 'baba' },
       m: { tipo: 'mono', celda: 5, vida: 40, ia: 'tirador', vel: 1.8, dano: [4, 9], escala: 0.85, sonido: 'chillido', suelta: 'a' },
       o: { tipo: 'oso', celda: 6, vida: 220, ia: 'cuerpo', vel: 1.3, embiste: 2.5, dano: [15, 24], escala: 1.3, sonido: 'gruñido' },
-      p: { tipo: 'pinguino', celda: 7, vida: 70, ia: 'escupe', vel: 1.2, dano: [8, 14], escala: 0.82, sonido: 'graznido', proj: 'nieve' }
+      p: { tipo: 'pinguino', celda: 7, vida: 70, ia: 'escupe', vel: 1.2, dano: [8, 14], escala: 0.82, sonido: 'graznido', proj: 'nieve' },
+      // Jefe final: el oso con mas vida y 3 fases (ver updateJefe).
+      G: { tipo: 'gerente', celda: 6, vida: 900, ia: 'jefe', vel: 1.4, embiste: 3.1, dano: [14, 22], escala: 1.75, sonido: 'gruñido', proj: 'moneda' }
     };
     const CELDA = 128;
     // Textura de sprite: pixeles + lado (64 para objetos, 128 para monitos).
@@ -222,60 +231,132 @@
     SPR.K = spr(makeTex(g => { rect(g, '#2a2d33', 14, 36, 36, 27); rect(g, '#16181c', 18, 42, 28, 14); rect(g, AMARILLO, 21, 45, 22, 3); rect(g, ROJO, 21, 50, 22, 3); poly(g, '#9aa0a6', [14, 36, 22, 36, 14, 42]); poly(g, '#9aa0a6', [50, 36, 42, 36, 50, 42]); }), 64);
     // Proyectiles: baba verde de los lobos y bola de nieve del pinguino.
     SPR.proj_baba = spr(makeTex(g => { el(g, 32, 32, 26, 26, 'rgba(120,255,90,.55)'); el(g, 32, 34, 16, 18, '#4fd14a'); el(g, 27, 28, 5, 6, '#c8ffb0'); }), 64);
+    SPR.proj_moneda = spr(makeTex(g => { el(g, 32, 32, 24, 24, 'rgba(255,210,0,.45)'); el(g, 32, 32, 16, 16, '#e0a800'); el(g, 32, 32, 12, 12, AMARILLO); rect(g, '#b07a00', 30, 24, 4, 16); el(g, 27, 27, 3, 3, '#fff6c0'); }), 64);
     SPR.proj_nieve = spr(makeTex(g => { el(g, 32, 32, 26, 26, 'rgba(170,220,255,.6)'); el(g, 32, 32, 17, 17, '#f4fbff'); el(g, 27, 27, 5, 5, '#ffffff'); el(g, 37, 37, 4, 4, '#cfe6f5'); }), 64);
 
-    /* ---------- mapa ---------- */
+    /* ---------- mapas: 3 turnos ---------- */
     // P inicio · monitos: z tlacuache, c chihuahua, j jaguar, l/L lobos,
-    // m mono, o oso, p pinguino · h torta · a pilas · b cargas de cafe
-    // S lanza-cafe · T terminal "No hay sistema" · K escudo "Caja cerrada"
-    // 1 anaquel · 2 refrigerador · 3 pared · 4 bodega · 5 barra de cafe
-    // D puerta · X salida
-    const MAP_SRC = [
-      "444444444444222222222222",
-      "4P....4....h2...l....z.2",
-      "4.....4.....2.......T..2",
-      "4..a..D..c..D....m....h2",
-      "4.....4.....2..........2",
-      "4..b..4.....2...a.....p2",
-      "444D444444D4222222D22222",
-      "3......................3",
-      "3.11111.111111.111111..3",
-      "3......z.........j.....3",
-      "3.11111.111111.111111..3",
-      "3..h....c....S.....a...3",
-      "3.11111.111111.111111..3",
-      "3...L.........m.....b..3",
-      "3.11111.111111.111111..3",
-      "3....K.................3",
-      "3555...p.....j....z..h.3",
-      "3555.......o...........3",
-      "333333333333X33333333333"
+    // m mono, p pinguino, G Oso gerente (jefe) · h torta · a pilas ·
+    // b cargas de cafe · S lanza-cafe · T terminal "No hay sistema" ·
+    // K escudo "Caja cerrada" · 1 anaquel · 2 refrigerador · 3 pared ·
+    // 4 bodega · 5 barra de cafe · D puerta · X salida
+    // mira: hacia donde ve el jugador al empezar (radianes).
+    const NIVELES = [
+      {
+        nombre: 'BODEGA Y PASILLOS',
+        intro: 'Los monitos salieron de la bodega. Cruza los pasillos hasta la puerta del frente.',
+        aviso: 'Turno 1: llega a la puerta de SALIDA al frente de la tienda',
+        mapa: [
+          "444444444444222222222222",
+          "4P....4....h2...l....z.2",
+          "4.....4.....2.......a..2",
+          "4..a..D..c..D....m....h2",
+          "4.....4.....2..........2",
+          "4..b..4.....2...a.....p2",
+          "444D444444D4222222D22222",
+          "3......................3",
+          "3.11111.111111.111111..3",
+          "3......z.........j.....3",
+          "3.11111.111111.111111..3",
+          "3..h....c....S.....a...3",
+          "3.11111.111111.111111..3",
+          "3...L.........m.....b..3",
+          "3.11111.111111.111111..3",
+          "3....K.................3",
+          "3555...p.....j....z..h.3",
+          "3555.......c...........3",
+          "333333333333X33333333333"
+        ]
+      },
+      {
+        nombre: 'CÁMARA FRÍA Y PISO DE VENTA',
+        intro: 'Los pingüinos y los lobos tomaron los refrigeradores. En el cuarto de sistemas quedó la terminal "No hay sistema".',
+        aviso: 'Turno 2: busca la terminal en el cuarto de sistemas y sal por el frente',
+        mapa: [
+          "2222222222222222222222",
+          "2P.....2......p...j..2",
+          "2......2....c....z...2",
+          "2..h...D....l...2222.2",
+          "2......2........2..2.2",
+          "222D2222........2T.D.2",
+          "2..........L....2..2.2",
+          "2.111.111.111...2222.2",
+          "2.....p.......m.....a2",
+          "2.111.111.111........2",
+          "2..b.......c.....j...2",
+          "2.......z........L..h2",
+          "2.111.111.111..m.....2",
+          "2..a.........p...b...2",
+          "22222222222X2222222222"
+        ]
+      },
+      {
+        nombre: 'CAJA Y OFICINA DEL GERENTE',
+        intro: 'El Oso gerente cerró la tienda y tiene las llaves. Véncelo para abrir la salida.',
+        aviso: 'Turno 3: vence al Oso gerente para abrir la SALIDA',
+        mapa: [
+          "33333333333333333333",
+          "3P......3..........3",
+          "3...h...D....a.....3",
+          "3.......3..........3",
+          "3333D3333.....b....3",
+          "3..................3",
+          "3..5555.....5555...3",
+          "3..................3",
+          "3........G.........3",
+          "3..................3",
+          "3..5555.....5555...3",
+          "3.b..............h.3",
+          "3..........a.......3",
+          "3....c.......c.....3",
+          "3.h................3",
+          "333333333X3333333333"
+        ]
+      }
     ];
-    const MH = MAP_SRC.length, MW = MAP_SRC[0].length;
+    let MH = 0, MW = 0;
     const WALLCH = { '1': 0, '2': 1, '3': 2, '4': 3, 'D': 4, 'X': 5, '5': 6 };
     const DOOR = 4, EXIT = 5;
 
     let grid, doors, ents, player, kills, total, elapsed, state = 'title', mapOn = false;
     let ammo, have, cur, wcool, flashT, recoil, hurtT, pickT, bobT, moving, swapT, deathT, senalT, particulas;
+    // nivel: turno actual (0-2) · killsRun: monitos de toda la partida ·
+    // jefe: el Oso gerente del ultimo turno · numeros: daño flotante.
+    let nivel = 0, killsRun = 0, jefe = null, numeros = [], shakeT = 0;
 
-    function loadLevel() {
-      grid = new Int8Array(MW * MH).fill(-1); doors = new Map(); ents = [];
+    // nuevo: true al empezar partida; false al pasar de turno (se conservan
+    // armas, municion, tiempo y parte de la salud).
+    function loadLevel(n = 0, nuevo = true) {
+      nivel = n;
+      const N = NIVELES[n], src = N.mapa;
+      MH = src.length; MW = src[0].length;
+      grid = new Int8Array(MW * MH).fill(-1); doors = new Map(); ents = []; jefe = null; numeros = [];
+      const hpAntes = player ? player.hp : 100;
       for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) {
-        const ch = MAP_SRC[y][x], i = y * MW + x;
+        const ch = src[y][x], i = y * MW + x;
         if (ch in WALLCH) { grid[i] = WALLCH[ch]; if (ch === 'D') doors.set(i, { open: 0, target: 0, timer: 0 }); continue; }
         const cx = x + .5, cy = y + .5;
-        if (ch === 'P') player = { x: cx, y: cy, a: 0, hp: 100 };
-        else if (ch in MONITOS) ents.push(enemy(MONITOS[ch], cx, cy));
+        if (ch === 'P') player = { x: cx, y: cy, a: N.mira || 0, hp: 100 };
+        else if (ch in MONITOS) { const e = enemy(MONITOS[ch], cx, cy); ents.push(e); if (e.cfg.ia === 'jefe') jefe = e; }
         else if ('habSTK'.includes(ch)) ents.push({ kind: 'pick', item: ch, x: cx, y: cy });
       }
-      total = ents.filter(e => e.kind === 'enemy').length; kills = 0; elapsed = 0;
-      ammo = { pilas: 50, cafe: 0, senal: 0 }; have = { trapeador: true, escaner: true, cafe: false, terminal: false, escudo: false }; cur = 'escaner';
+      total = ents.filter(e => e.kind === 'enemy').length; kills = 0;
+      if (nuevo) {
+        elapsed = 0; killsRun = 0;
+        ammo = { pilas: 50, cafe: 0, senal: 0 }; have = { trapeador: true, escaner: true, cafe: false, terminal: false, escudo: false }; cur = 'escaner';
+      } else {
+        // Descanso entre turnos: se recupera salud y llegan pilas.
+        player.hp = Math.min(100, Math.max(hpAntes, 0) + 40);
+        ammo.pilas = Math.min(200, ammo.pilas + 20);
+      }
       senalT = 0; particulas = [];
-      wcool = 0; flashT = 0; recoil = 0; hurtT = 0; pickT = 0; bobT = 0; moving = false; swapT = 0; deathT = 0;
+      wcool = 0; flashT = 0; recoil = 0; hurtT = 0; pickT = 0; bobT = 0; moving = false; swapT = 0; deathT = 0; shakeT = 0;
     }
-    function enemy(cfg, x, y) {
-      return { kind: 'enemy', cfg, type: cfg.tipo, x, y, hp: cfg.vida, awake: false, cool: 1 + Math.random(),
-        painT: 0, atkT: 0, dead: false, walkT: Math.random() * 10, moved: false, strafe: 1, strafeT: 0 };
+    function enemy(cfg, x, y, extra = false) {
+      // Cada turno los monitos aguantan y pegan un poco mas.
+      const m = 1 + nivel * 0.18;
+      return { kind: 'enemy', cfg, type: cfg.tipo, x, y, hp: cfg.vida * m, max: cfg.vida * m, mult: m, awake: extra, cool: 1 + Math.random(),
+        painT: 0, atkT: 0, hitT: 0, dead: false, walkT: Math.random() * 10, moved: false, strafe: 1, strafeT: 0, extra, fase: 1, llamaT: 4 };
     }
     function solidCell(x, y) {
       if (x < 0 || y < 0 || x >= MW || y >= MH) return true;
@@ -355,6 +436,10 @@
         case 'baba': noise(.3 * v, .3, 'lowpass', 500); tone(.18 * v, .3, 'sine', 180, 90); break;
         case 'nieve': noise(.35 * v, .25, 'highpass', 1800); break;
         case 'bienvenido': tone(.18, .14, 'sine', 880, 880); setTimeout(() => AC && tone(.18, .22, 'sine', 660, 660), 150); break;
+        case 'turno': for (const [k, f] of [[0, 523], [1, 659], [2, 784], [3, 1047]]) setTimeout(() => AC && tone(.16, .18, 'square', f, f), k * 110); break;
+        case 'fase': tone(.35, .9, 'sawtooth', 70, 140); noise(.25, .6, 'lowpass', 250); break;
+        case 'jefeMuere': tone(.4, 1.6, 'sawtooth', 160, 25); noise(.35, 1.2, 'lowpass', 300); setTimeout(() => sfx('turno'), 900); break;
+        case 'cerrada': tone(.22, .1, 'square', 300, 300); setTimeout(() => AC && tone(.22, .2, 'square', 200, 200), 120); break;
       }
     }
 
@@ -426,17 +511,22 @@
     }
     function wake(e) { if (e.awake) return; e.awake = true; sfx(e.cfg.sonido, e.x, e.y); }
     function hurtEnemy(e, dmg) {
-      e.hp -= dmg; wake(e);
+      e.hp -= dmg; e.hitT = 0.09; wake(e);
+      numeros.push({ x: e.x, y: e.y, z: (e.cfg.z || 0) + e.cfg.escala * 0.9, v: dmg, t: 0.8 });
       if (e.hp <= 0) {
-        e.dead = true; kills++; sfx('muere', e.x, e.y);
+        e.dead = true; sfx(e === jefe ? 'jefeMuere' : 'muere', e.x, e.y);
+        // Los chihuahuas que llama el jefe no cuentan en el contador del turno.
+        if (!e.extra) { kills++; killsRun++; }
+        if (e === jefe) { shakeT = 0.8; say('¡Venciste al Oso gerente! La SALIDA ya abre'); for (const m of ents) if (m.extra && !m.dead) { m.dead = true; } }
         if (e.cfg.suelta) ents.push({ kind: 'pick', item: e.cfg.suelta, x: e.x + 0.15, y: e.y + 0.1, drop: true });
-      } else if (Math.random() < 0.55) { e.painT = 0.22; sfx('dolor', e.x, e.y); }
+      } else if (e !== jefe && Math.random() < 0.55) { e.painT = 0.22; sfx('dolor', e.x, e.y); }
     }
     function hurtPlayer(n) {
       if (state !== 'play') return;
       // Con "Caja cerrada" en las manos el golpe llega a la cuarta parte.
       if (cur === 'escudo' && swapT <= 0) { n = Math.ceil(n * 0.25); sfx('escudo'); }
-      player.hp -= n; hurtT = 0.4; sfx('herido');
+      player.hp -= n; hurtT = 0.4; shakeT = Math.max(shakeT, 0.22); sfx('herido');
+      try { if (isTouch && navigator.vibrate) navigator.vibrate(40); } catch (e) { /* sin vibracion */ }
       if (player.hp <= 0) { player.hp = 0; state = 'dying'; deathT = 0; releaseLock(); }
     }
 
@@ -448,7 +538,7 @@
         const tx = (player.x + Math.cos(player.a) * reach) | 0, ty = (player.y + Math.sin(player.a) * reach) | 0;
         const c = grid[ty * MW + tx];
         if (c === DOOR) { openDoor(ty * MW + tx); return; }
-        if (c === EXIT) { win(); return; }
+        if (c === EXIT) { salir(); return; }
         if (c >= 0) break;
       }
       sfx('uf');
@@ -458,28 +548,51 @@
     /* ---------- mensajes y pantallas ---------- */
     const msgEl = document.getElementById('msg'); let msgT = 0;
     function say(t) { msgEl.textContent = t; msgT = 2.4; }
-    const scr = { title: document.getElementById('scrTitle'), pause: document.getElementById('scrPause'), end: document.getElementById('scrEnd') };
+    const scr = { title: document.getElementById('scrTitle'), pause: document.getElementById('scrPause'), end: document.getElementById('scrEnd'), turno: document.getElementById('scrTurno') };
     function showScreen(name) { for (const k in scr) scr[k].hidden = k !== name; }
     const fmtTime = s => `${s / 60 | 0}:${String(s % 60 | 0).padStart(2, '0')}`;
     function leerRecord() { try { const v = Number(localStorage.getItem(RECORD_KEY)); return v > 0 ? v : 0; } catch (e) { return 0; } }
     function guardarRecord(v) { try { localStorage.setItem(RECORD_KEY, String(v)); } catch (e) { /* sin almacenamiento: no hay record */ } }
     function endScreen(won) {
       state = won ? 'won' : 'dead';
+      musica(false);
       document.getElementById('endTitle').textContent = won ? 'SOBREVIVISTE AL TURNO' : 'FIN DEL TURNO';
       document.getElementById('endText').textContent = won
-        ? 'Saliste por la puerta automática antes del amanecer. La tienda queda en manos de los monitos.'
-        : 'Los monitos se quedaron con la tienda. Vuelve a intentarlo.';
+        ? 'Venciste al Oso gerente y saliste por la puerta automática antes del amanecer. La tienda es tuya.'
+        : `Los monitos te ganaron en el turno ${nivel + 1} de ${NIVELES.length} (${NIVELES[nivel].nombre}). Vuelve a intentarlo.`;
       let extra = '';
       if (won) {
         const antes = leerRecord();
         if (!antes || elapsed < antes) { guardarRecord(elapsed); extra = ' · ¡NUEVO RÉCORD!'; }
         else extra = ` · RÉCORD ${fmtTime(antes)}`;
       }
-      document.getElementById('endStats').textContent = `MONITOS ${kills}/${total} · TIEMPO ${fmtTime(elapsed)}${extra}`;
+      document.getElementById('endStats').textContent = `MONITOS ${killsRun} · TIEMPO ${fmtTime(elapsed)}${extra}`;
       showScreen('end'); releaseLock(); touchLayer.hidden = true;
-      setTimeout(() => document.getElementById('bAgain').focus(), 50);
+      prepararRanking(won);
+      setTimeout(() => (won && rk.nombre ? rk.nombre : document.getElementById('bAgain')).focus(), 50);
     }
     function win() { sfx('bienvenido'); endScreen(true); }
+    // La salida de cada turno lleva al siguiente; la del ultimo solo abre
+    // con el Oso gerente vencido.
+    function salir() {
+      if (jefe && !jefe.dead) { sfx('cerrada'); say('La SALIDA está cerrada: el Oso gerente tiene las llaves'); return; }
+      if (nivel < NIVELES.length - 1) pantallaTurno(); else win();
+    }
+    function pantallaTurno() {
+      state = 'turno'; releaseLock(); touchLayer.hidden = true; musica(false);
+      const sig = NIVELES[nivel + 1];
+      document.getElementById('turnoTitle').textContent = `TURNO ${nivel + 2} DE ${NIVELES.length}`;
+      document.getElementById('turnoNombre').textContent = sig.nombre;
+      document.getElementById('turnoText').textContent = sig.intro;
+      document.getElementById('turnoStats').textContent = `TURNO ${nivel + 1}: MONITOS ${kills}/${total} · TIEMPO ${fmtTime(elapsed)} · +40 SALUD · +20 PILAS`;
+      showScreen('turno'); sfx('turno');
+      setTimeout(() => document.getElementById('bNext').focus(), 50);
+    }
+    function siguienteTurno() {
+      if (state !== 'turno') return;
+      loadLevel(nivel + 1, false); state = 'play'; showScreen(null);
+      touchLayer.hidden = !isTouch; requestLock(); musica(true); say(NIVELES[nivel].aviso);
+    }
 
     /* ---------- entrada ---------- */
     const keys = {}; let mouseDX = 0, mouseDown = false, dragging = false;
@@ -494,8 +607,10 @@
         if (n >= 0) switchTo(TECLAS[n]);
         if (e.code === 'KeyQ') cycle();
         if (e.code === 'KeyM' || e.code === 'Tab') mapOn = !mapOn;
+        if (e.code === 'KeyN') alternarMusica();
         if (e.code === 'Escape' || e.code === 'KeyP') pause();
       } else if (state === 'pause' && (e.code === 'KeyP')) resume();
+      else if (state === 'turno' && e.code === 'Enter') { e.preventDefault(); siguienteTurno(); }
       keys[e.code] = true;
     });
     addEventListener('keyup', e => { keys[e.code] = false; });
@@ -550,14 +665,16 @@
 
     /* botones de menu */
     function start() {
-      initAudio(); loadLevel(); state = 'play'; showScreen(null);
-      touchLayer.hidden = !isTouch; requestLock(); say('Llega a la puerta de SALIDA al frente de la tienda');
+      initAudio(); loadLevel(0, true); state = 'play'; showScreen(null);
+      touchLayer.hidden = !isTouch; requestLock(); musica(true); say(NIVELES[0].aviso);
     }
-    function pause() { if (state !== 'play') return; state = 'pause'; mouseDown = false; showScreen('pause'); releaseLock(); touchLayer.hidden = true; }
-    function resume() { if (state !== 'pause') return; state = 'play'; showScreen(null); touchLayer.hidden = !isTouch; requestLock(); initAudio(); }
+    function pause() { if (state !== 'play') return; state = 'pause'; mouseDown = false; showScreen('pause'); releaseLock(); touchLayer.hidden = true; musica(false); }
+    function resume() { if (state !== 'pause') return; state = 'play'; showScreen(null); touchLayer.hidden = !isTouch; requestLock(); initAudio(); musica(true); }
     document.getElementById('bStart').addEventListener('click', start);
     document.getElementById('bAgain').addEventListener('click', start);
     document.getElementById('bResume').addEventListener('click', resume);
+    document.getElementById('bNext').addEventListener('click', siguienteTurno);
+    for (const b of document.querySelectorAll('[data-musica]')) b.addEventListener('click', alternarMusica);
 
     /* ---------- logica ---------- */
     function update(dt) {
@@ -574,7 +691,8 @@
       moving = len > 0.15; if (moving) bobT += dt * (keys.ShiftLeft || keys.ShiftRight ? 12 : 9);
 
       wcool -= dt; swapT = Math.max(0, swapT - dt); flashT -= dt; recoil = Math.max(0, recoil - dt * 6);
-      hurtT = Math.max(0, hurtT - dt); pickT = Math.max(0, pickT - dt);
+      hurtT = Math.max(0, hurtT - dt); pickT = Math.max(0, pickT - dt); shakeT = Math.max(0, shakeT - dt);
+      for (let k = numeros.length - 1; k >= 0; k--) { numeros[k].t -= dt; if (numeros[k].t <= 0) numeros.splice(k, 1); }
       if (keys.Space || mouseDown || touch.fire) fire();
       // La terminal recupera una senal cada 12 s, hasta 3.
       if (have.terminal && ammo.senal < 3) { senalT += dt; if (senalT >= 12) { senalT = 0; ammo.senal++; } }
@@ -615,7 +733,7 @@
     }
     function updateEnemy(e, dt) {
       if (e.dead) return;
-      e.moved = false;
+      e.moved = false; e.hitT -= dt;
       if (e.congeladoT > 0) { e.congeladoT -= dt; return; }
       e.cool -= dt; e.painT -= dt; e.atkT -= dt;
       const dx = player.x - e.x, dy = player.y - e.y, d = Math.hypot(dx, dy);
@@ -623,7 +741,8 @@
       if (e.painT > 0) return;
       const see = d < 16 && los(e, d);
       const ux = dx / d, uy = dy / d;
-      const cfg = e.cfg, golpe = () => cfg.dano[0] + Math.random() * (cfg.dano[1] - cfg.dano[0]) | 0;
+      const cfg = e.cfg, golpe = () => (cfg.dano[0] + Math.random() * (cfg.dano[1] - cfg.dano[0])) * e.mult | 0;
+      if (cfg.ia === 'jefe') { updateJefe(e, dt, d, ux, uy, see, golpe); if (e.moved) e.walkT += dt; return; }
       if (cfg.ia === 'escupe') {
         if (d < 1.15 && e.cool <= 0) { hurtPlayer(golpe()); e.cool = 1.1; e.atkT = 0.3; sfx(cfg.sonido, e.x, e.y); return; }
         if (see && d > 2 && d < 12 && e.cool <= 0 && Math.random() < dt * 1.3) {
@@ -649,6 +768,40 @@
         else e.moved = move(e, -uy * e.strafe * 1.2 * dt, ux * e.strafe * 1.2 * dt, 0.28, true);
       }
       if (e.moved) e.walkT += dt;
+    }
+
+    // Oso gerente. Fase 1: persigue y embiste. Fase 2 (60% de vida): llama
+    // chihuahuas. Fase 3 (30%): mas rapido y avienta monedas.
+    function updateJefe(e, dt, d, ux, uy, see, golpe) {
+      const cfg = e.cfg, vida = e.hp / e.max;
+      const fase = vida > 0.6 ? 1 : vida > 0.3 ? 2 : 3;
+      if (fase !== e.fase) {
+        e.fase = fase; shakeT = 0.6; sfx('fase');
+        say(fase === 2 ? '¡El Oso gerente llama refuerzos!' : '¡El Oso gerente se enoja: cuidado con las monedas!');
+      }
+      const prisa = fase === 3 ? 1.35 : 1;
+      if (fase >= 2) {
+        e.llamaT -= dt;
+        const vivos = ents.filter(m => m.extra && !m.dead).length;
+        if (e.llamaT <= 0 && vivos < 4) {
+          e.llamaT = fase === 3 ? 6 : 8;
+          for (const lado of [-1, 1]) {
+            const a = Math.atan2(uy, ux) + lado * 1.3, x = e.x + Math.cos(a) * 1.2, y = e.y + Math.sin(a) * 1.2;
+            if (!blockedAt(x, y, 0.3, false)) ents.push(enemy(MONITOS.c, x, y, true));
+          }
+          sfx('ladrido', e.x, e.y);
+        }
+      }
+      if (fase === 3 && see && d > 2.5 && e.cool <= 0 && Math.random() < dt * 1.6) {
+        for (const abre of [-0.18, 0, 0.18]) {
+          const a = Math.atan2(uy, ux) + abre;
+          ents.push({ kind: 'proj', skin: 'moneda', dano: golpe() * 0.5 | 0, x: e.x + ux * 0.7, y: e.y + uy * 0.7, vx: Math.cos(a) * 7, vy: Math.sin(a) * 7, life: 4 });
+        }
+        e.cool = 2; e.atkT = 0.4; sfx('moneda', e.x, e.y); return;
+      }
+      const alcance = 1.6;
+      if (d < alcance && e.cool <= 0) { hurtPlayer(golpe()); e.cool = 1.1; e.atkT = 0.35; shakeT = 0.3; sfx(cfg.sonido, e.x, e.y); return; }
+      if (e.atkT <= 0 && d > alcance - 0.3) { const v = (see && d < 5 ? cfg.embiste : cfg.vel) * prisa; e.moved = move(e, ux * v * dt, uy * v * dt, 0.45, true); }
     }
 
     /* ---------- render ---------- */
@@ -716,6 +869,7 @@
         const bottom = h2 + full / 2 - z * full, top = bottom - sh, left = scrX - sh / 2;
         const f = bright ? 1 : Math.min(1, fog(tY) * boost);
         const helado = e.kind === 'enemy' && e.congeladoT > 0;
+        const golpeado = e.kind === 'enemy' && !e.dead && e.hitT > 0;
         const x0 = Math.max(0, left | 0), x1 = Math.min(W, (left + sh) | 0);
         const y0 = Math.max(0, top | 0), y1 = Math.min(H, bottom | 0);
         for (let x = x0; x < x1; x++) {
@@ -724,14 +878,19 @@
           for (let y = y0; y < y1; y++) {
             const c = tex.px[(((y - top) * n / sh) & m) * n + tx];
             if ((c >>> 24) === 0) continue;
-            buf[y * W + x] = helado ? azul(shade(c, f)) : shade(c, f);
+            buf[y * W + x] = golpeado ? blanco(c) : helado ? azul(shade(c, f)) : shade(c, f);
           }
         }
       }
       ctx.putImageData(img, 0, 0);
       if (mapOn && state === 'play') drawMap();
       actx.clearRect(0, 0, AW, AH);
+      if (state === 'play') { drawNumeros(invDet, dX, dY, pX, pY); drawMira(); }
       if (state !== 'title') drawWeapon();
+      if (jefe && jefe.awake && !jefe.dead && (state === 'play' || state === 'dying')) drawBarraJefe();
+      const sacude = shakeT > 0 ? shakeT * 18 : 0;
+      stage.style.setProperty('--tn-sx', `${(Math.random() - 0.5) * sacude}px`);
+      stage.style.setProperty('--tn-sy', `${(Math.random() - 0.5) * sacude}px`);
       if (hurtT > 0) { actx.fillStyle = `rgba(190,20,8,${Math.min(.55, hurtT * 1.3)})`; actx.fillRect(0, 0, AW, AH); }
       if (pickT > 0) { actx.fillStyle = `rgba(255,214,120,${pickT})`; actx.fillRect(0, 0, AW, AH); }
       if (state === 'dying' || state === 'dead') { actx.fillStyle = `rgba(110,0,0,${Math.min(.6, deathT)})`; actx.fillRect(0, 0, AW, AH); }
@@ -803,6 +962,51 @@
         actx.restore();
       }
     }
+    // Mira al centro: se pone roja cuando hay un monito en la linea de tiro.
+    function enMira() {
+      const muro = castRay(player.x, player.y, player.a, 30);
+      return ents.some(e => {
+        if (e.kind !== 'enemy' || e.dead) return false;
+        const dx = e.x - player.x, dy = e.y - player.y, d = Math.hypot(dx, dy);
+        return d < muro && Math.abs(angDiff(Math.atan2(dy, dx), player.a)) < Math.atan2(0.3 * Math.max(1, e.cfg.escala), d);
+      });
+    }
+    function drawMira() {
+      const cx = AW / 2, cy = AH / 2, rojo = enMira(), g = 10, l = 16;
+      actx.save(); actx.lineWidth = 4; actx.strokeStyle = 'rgba(0,0,0,.6)';
+      const trazo = () => { actx.beginPath(); actx.moveTo(cx - g - l, cy); actx.lineTo(cx - g, cy); actx.moveTo(cx + g, cy); actx.lineTo(cx + g + l, cy); actx.moveTo(cx, cy - g - l); actx.lineTo(cx, cy - g); actx.moveTo(cx, cy + g); actx.lineTo(cx, cy + g + l); actx.stroke(); };
+      trazo(); actx.lineWidth = 2; actx.strokeStyle = rojo ? '#ff3b30' : 'rgba(255,255,255,.85)'; trazo();
+      actx.restore();
+    }
+    // Numeros de daño: suben y se desvanecen sobre el monito golpeado.
+    function drawNumeros(invDet, dX, dY, pX, pY) {
+      if (!numeros.length) return;
+      actx.save(); actx.textAlign = 'center'; actx.font = 'bold 34px "VT323", monospace'; actx.lineWidth = 5;
+      for (const n of numeros) {
+        const sx = n.x - player.x, sy = n.y - player.y;
+        const tX = invDet * (dY * sx - dX * sy), tY = invDet * (-pY * sx + pX * sy);
+        if (tY < 0.3) continue;
+        const sub = (0.8 - n.t) * 60, full = H / tY;
+        const x = W / 2 * (1 + tX / tY) * AS, y = (H / 2 + full / 2 - n.z * full) * AS - sub;
+        actx.globalAlpha = clamp(n.t / 0.5, 0, 1);
+        actx.strokeStyle = '#000'; actx.strokeText(String(n.v), x, y);
+        actx.fillStyle = n.v >= 25 ? '#ffd200' : '#ffffff'; actx.fillText(String(n.v), x, y);
+      }
+      actx.restore();
+    }
+    function drawBarraJefe() {
+      // Debajo de los mensajes (#msg), que salen arriba a la izquierda.
+      const w = 560, h = 22, x = (AW - w) / 2, y = 78, vida = clamp(jefe.hp / jefe.max, 0, 1);
+      actx.save();
+      actx.fillStyle = 'rgba(0,0,0,.65)'; actx.fillRect(x - 6, y - 30, w + 12, h + 40);
+      actx.fillStyle = '#ffd200'; actx.font = 'bold 22px "Silkscreen", monospace'; actx.textAlign = 'center';
+      actx.fillText(`OSO GERENTE · FASE ${jefe.fase}`, AW / 2, y - 8);
+      actx.fillStyle = '#3a0a0c'; actx.fillRect(x, y, w, h);
+      actx.fillStyle = jefe.fase === 3 ? '#ff3b30' : jefe.fase === 2 ? '#f07b22' : '#d91f2d'; actx.fillRect(x, y, w * vida, h);
+      actx.strokeStyle = '#ffd200'; actx.lineWidth = 2; actx.strokeRect(x, y, w, h);
+      for (const marca of [0.3, 0.6]) { actx.fillStyle = 'rgba(255,255,255,.6)'; actx.fillRect(x + w * marca - 1, y, 2, h); }
+      actx.restore();
+    }
     function drawMap() {
       const s = 3, ox = W - MW * s - 4, oy = 4;
       ctx.fillStyle = 'rgba(0,0,0,.6)'; ctx.fillRect(ox - 2, oy - 2, MW * s + 4, MH * s + 4);
@@ -814,7 +1018,7 @@
     }
 
     /* ---------- HUD ---------- */
-    const hud = { hp: document.getElementById('hHp'), ammo: document.getElementById('hAmmo'), ammoL: document.getElementById('hAmmoL'), weap: document.getElementById('hWeap'), inv: document.getElementById('hInv'), kills: document.getElementById('hKills'), time: document.getElementById('hTime') };
+    const hud = { hp: document.getElementById('hHp'), ammo: document.getElementById('hAmmo'), ammoL: document.getElementById('hAmmoL'), weap: document.getElementById('hWeap'), inv: document.getElementById('hInv'), kills: document.getElementById('hKills'), time: document.getElementById('hTime'), turno: document.getElementById('hTurno') };
     const last = {};
     function setT(k, v) { if (last[k] !== v) { last[k] = v; hud[k].textContent = v; } }
     function updateHud() {
@@ -823,7 +1027,7 @@
       const w = WEAP[cur];
       setT('ammo', w.ammo ? String(ammo[w.ammo]) : '∞'); setT('ammoL', w.label); setT('weap', w.name);
       setT('inv', `${ammo.pilas} pilas · ${ammo.cafe} café · ${ammo.senal} señal`);
-      setT('kills', `${kills}/${total}`); setT('time', fmtTime(elapsed));
+      setT('kills', `${kills}/${total}`); setT('time', fmtTime(elapsed)); setT('turno', `${nivel + 1}/${NIVELES.length}`);
     }
 
     // Las dos hojas se cargan antes de dejar entrar. Si alguna falla el juego
@@ -839,11 +1043,99 @@
       bStart.disabled = false; bStart.textContent = textoEntrar;
     });
 
+    /* ---------- musica ---------- */
+    // Bajo y arpegio sintetizados, uno por turno; tecla N o el boton de la
+    // pausa la apagan (se recuerda en este navegador).
+    const PIEZAS = [
+      { bajo: [55, 55, 65.4, 49], arpe: [220, 261.6, 329.6, 261.6], tempo: 0.42 },
+      { bajo: [49, 49, 58.3, 43.7], arpe: [196, 233.1, 293.7, 233.1], tempo: 0.38 },
+      { bajo: [41.2, 41.2, 49, 46.2], arpe: [164.8, 196, 246.9, 220], tempo: 0.3 }
+    ];
+    let musicaOn = (() => { try { return localStorage.getItem(MUSICA_KEY) !== '0'; } catch (e) { return true; } })();
+    let musicaTimer = null, paso = 0;
+    function nota(f, dur, vol, tipo) {
+      const o = AC.createOscillator(), g = AC.createGain(), t = AC.currentTime;
+      o.type = tipo; o.frequency.value = f; g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0008, t + dur);
+      o.connect(g); g.connect(AC.destination); o.start(t); o.stop(t + dur);
+    }
+    function musica(on) {
+      clearInterval(musicaTimer); musicaTimer = null;
+      if (!on || !musicaOn || !AC) return;
+      const pieza = PIEZAS[nivel] || PIEZAS[0];
+      musicaTimer = setInterval(() => {
+        if (!AC || state !== 'play') return;
+        const k = paso++ % 16, prisa = jefe && jefe.awake && !jefe.dead;
+        if (k % 4 === 0) nota(pieza.bajo[(k / 4) | 0], pieza.tempo * 3.5, 0.07, 'triangle');
+        if (k % 2 === 0 || prisa) nota(pieza.arpe[k % 4] * (k >= 8 ? 2 : 1), 0.16, 0.025, 'square');
+      }, pieza.tempo * 1000 / 2);
+      actualizarBotonMusica();
+    }
+    function alternarMusica() {
+      musicaOn = !musicaOn;
+      try { localStorage.setItem(MUSICA_KEY, musicaOn ? '1' : '0'); } catch (e) { /* sin almacenamiento */ }
+      musica(state === 'play'); actualizarBotonMusica();
+      if (state === 'play') say(musicaOn ? 'Música encendida (N)' : 'Música apagada (N)');
+    }
+    function actualizarBotonMusica() { for (const b of document.querySelectorAll('[data-musica]')) b.textContent = musicaOn ? 'MÚSICA: SÍ' : 'MÚSICA: NO'; }
+    actualizarBotonMusica();
+
+    /* ---------- ranking de la oficina ---------- */
+    // Lo maneja opciones.ranking (js/juego-ranking.js); sin el, el juego
+    // solo guarda el mejor tiempo de este navegador.
+    const ranking = opciones.ranking || null;
+    const rk = {
+      titulo: document.getElementById('rankTitle'), fin: document.getElementById('rankEnd'), form: document.getElementById('rankForm'),
+      nombre: document.getElementById('rankNombre'), msg: document.getElementById('rankMsg'), boton: document.getElementById('bRank')
+    };
+    let marcaPendiente = null;
+    function pintarRanking(lista, destino, resaltar, max = 10) {
+      if (!destino) return;
+      destino.replaceChildren();
+      if (!lista.length) { const p = document.createElement('p'); p.className = 'rank-vacio'; p.textContent = 'Todavía nadie termina los 3 turnos. ¡Sé el primero!'; destino.append(p); return; }
+      const ol = document.createElement('ol');
+      lista.slice(0, max).forEach((r, i) => {
+        const li = document.createElement('li'); if (resaltar === i + 1) li.className = 'tuyo';
+        const n = document.createElement('span'); n.textContent = r.nombre;
+        const t = document.createElement('b'); t.textContent = fmtTime(r.tiempo);
+        li.append(n, t); ol.append(li);
+      });
+      destino.append(ol);
+    }
+    function cargarRanking(destino) {
+      if (!ranking || !destino) return;
+      destino.hidden = false; destino.textContent = 'Cargando ranking…';
+      // En la portada caben 5 sin tapar las instrucciones; al terminar, 10.
+      ranking.listar().then(lista => pintarRanking(lista, destino, null, destino === rk.titulo ? 5 : 10)).catch(() => { destino.textContent = 'No se pudo cargar el ranking.'; });
+    }
+    function prepararRanking(won) {
+      if (!rk.form) return;
+      rk.form.hidden = !(won && ranking); rk.msg.textContent = ''; rk.boton.disabled = false;
+      marcaPendiente = won ? { tiempo: Math.round(elapsed), monitos: killsRun, turnos: NIVELES.length } : null;
+      try { rk.nombre.value = localStorage.getItem(NOMBRE_KEY) || ''; } catch (e) { /* sin almacenamiento */ }
+      if (ranking) cargarRanking(rk.fin); else if (rk.fin) rk.fin.hidden = true;
+    }
+    if (rk.form) rk.form.addEventListener('submit', ev => {
+      ev.preventDefault();
+      if (!marcaPendiente || !ranking) return;
+      const nombre = rk.nombre.value.trim();
+      if (nombre.replace(/[^0-9A-Za-zÁÉÍÓÚÜÑáéíóúüñ]/g, '').length < 2) { rk.msg.textContent = 'Escribe un nombre de al menos 2 letras.'; return; }
+      try { localStorage.setItem(NOMBRE_KEY, nombre); } catch (e) { /* sin almacenamiento */ }
+      rk.boton.disabled = true; rk.msg.textContent = 'Guardando…';
+      ranking.guardar({ nombre, ...marcaPendiente }).then(r => {
+        marcaPendiente = null; rk.form.hidden = true;
+        pintarRanking(r.ranking || [], rk.fin, r.lugar);
+        rk.msg.textContent = r.lugar ? `¡Quedaste en el lugar ${r.lugar}!` : 'Guardado. Tu tiempo no entró al top 20 esta vez.';
+        rk.form.hidden = true; rk.msg.hidden = false;
+      }).catch(err => { rk.boton.disabled = false; rk.msg.textContent = String(err && err.message || 'No se pudo guardar. Intenta de nuevo.'); });
+    });
+    cargarRanking(rk.titulo);
+
+
     const record = leerRecord();
     if (record) document.getElementById('titleRecord').textContent = `Mejor tiempo en este navegador: ${fmtTime(record)}`;
 
     /* ---------- bucle ---------- */
-    loadLevel();
+    loadLevel(0, true);
     let prev = performance.now();
     function frame(now) {
       const dt = Math.min(0.05, (now - prev) / 1000); prev = now;
