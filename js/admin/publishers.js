@@ -111,32 +111,42 @@ window.OXXO_ADMIN_PUBLISHERS = function createAdminPublishers(deps){
       ?` Verificación interna correcta: ${Number(verification.actualRows||0).toLocaleString('es-MX')} filas y ${Number(verification.expectedColumns||0)} columnas.`
       :' Atención: Apps Script terminó la escritura, pero la comprobación interna requiere revisión.';
   }
-  // En modo compatible no hay respuesta del servidor: la unica prueba de que
-  // la publicacion llego es que la hoja publica traiga ESTAS filas. Se cuentan
-  // las filas de los periodos y plazas enviados; si no son las mismas, la
-  // escritura no termino (ej. el 23/10/2026 Google corto el script por tiempo
-  // y el panel marcaba "Lectura publica verificada" con la base anterior).
-  const keyOf=value=>String(value??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');
-  function publishedExpectation(dash,rows,period){
-    const scope=(dash.scopeColumns||[])[0]||'';
-    const periodColumn=period?.enabled?period.column:'';
-    return {
-      count:rows.length,
-      periodColumn,
-      periods:periodColumn?new Set((period.values||[]).map(keyOf)):null,
-      scope,
-      scopes:scope?new Set(rows.map(row=>keyOf(row[scope])).filter(Boolean)):null
-    };
+  // En modo compatible no hay respuesta del servidor y la hoja publica no
+  // basta como prueba: una foto diaria trae casi las mismas filas cada dia
+  // (23/10/2026: Dashboard_3_Diario se "confirmo" con la base del 22/10). La
+  // prueba real es la bitacora: Apps Script escribe "Correcta" solo al
+  // terminar, o "Error" con el motivo. Se busca la entrada de esta hoja, con
+  // estas filas, posterior al envio.
+  const keyOf=value=>String(value??'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');
+  function auditDate(value){
+    const m=String(value||'').match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})[ T](\d{1,2}):(\d{2})(?::(\d{2}))?/);
+    return m?new Date(+m[3],+m[2]-1,+m[1],+m[4],+m[5],+(m[6]||0)).getTime():NaN;
   }
-  function countPublishedRows(rows,expect){
-    if(!rows.length)return 0;
-    const headers=Object.keys(rows[0]||{});
-    const find=name=>name?headers.find(header=>normHeader(header)===normHeader(name)):'';
-    const periodKey=find(expect.periodColumn), scopeKey=find(expect.scope);
-    if((expect.periods&&!periodKey)||(expect.scopes&&!scopeKey))return 0;
-    return rows.filter(row=>(!expect.periods||expect.periods.has(keyOf(row[periodKey])))&&(!expect.scopes||expect.scopes.has(keyOf(row[scopeKey])))).length;
+  // La hora de la bitacora es la del libro (Mexico) y la del navegador puede
+  // diferir un poco: se acepta desde 10 minutos antes del envio.
+  const AUDIT_SKEW_MS=10*60*1000;
+  function findAuditEntry(rows,{tab,count,since}){
+    const field=(row,name)=>row[Object.keys(row).find(key=>keyOf(key)===keyOf(name))];
+    const matches=(rows||[]).filter(row=>keyOf(field(row,'Hoja'))===keyOf(tab)
+      &&Number(String(field(row,'Filas publicadas')||'').replace(/,/g,''))===Number(count)
+      &&auditDate(field(row,'Fecha'))>=since-AUDIT_SKEW_MS);
+    const last=matches[matches.length-1];
+    return last?{status:String(field(last,'Estado')||''),detail:String(field(last,'Detalle')||''),backup:String(field(last,'Respaldo')||'')}:null;
   }
-  async function verifyPublicReadback(dash,result,expect){
+  async function waitForAudit(target){
+    // Sin respuesta la escritura puede seguir en curso: hasta ~1 minuto.
+    for(const delay of [3000,5000,8000,12000,15000,20000]){
+      await new Promise(resolve=>setTimeout(resolve,delay));
+      try{
+        const sheet='_Admin_Bitacora';
+        OXXO.clearSheetDataCache(sheet);
+        const entry=findAuditEntry(await OXXO.fetchSheetData(sheet,{fresh:true,allowStale:false,scoped:false}),target);
+        if(entry)return entry;
+      }catch(error){console.warn('No se pudo leer la bitácora para confirmar la publicación:',error);}
+    }
+    return null;
+  }
+  async function verifyPublicReadback(dash,result){
     if(!dash?.tab)return null;
     // Modo compatible (fallback no-cors en postAdminPayload): el navegador
     // nunca pudo leer la respuesta real del servidor, asi que no hay
@@ -154,10 +164,7 @@ window.OXXO_ADMIN_PUBLISHERS = function createAdminPublishers(deps){
     const expectedRows=Number(result?.verification?.expectedRows ?? (Number(result?.rows||0)+Number(result?.keptRows||0)));
     const required=(dash.output||[]).map(normHeader).filter(Boolean);
     let last={ok:false,rows:0,missing:required,error:''};
-    // Sin respuesta del servidor la escritura puede seguir en curso: se le da
-    // hasta ~1 minuto antes de declararla sin confirmar.
-    const delays=compatibilityMode&&expect?[3000,5000,8000,12000,15000,20000]:[700,1200,1800];
-    for(const delay of delays){
+    for(const delay of [700,1200,1800]){
       await new Promise(resolve=>setTimeout(resolve,delay));
       try{
         OXXO.clearSheetDataCache(dash.tab);
@@ -177,9 +184,8 @@ window.OXXO_ADMIN_PUBLISHERS = function createAdminPublishers(deps){
         if(!Array.isArray(rows)||!rows.length){last={ok:false,rows:0,missing:required,error:'La lectura pública respondió sin filas.'};continue;}
         const headers=Object.keys(rows[0]||{}).map(normHeader);
         const missing=required.filter(header=>!headers.includes(header));
-        const published=compatibilityMode&&expect?countPublishedRows(rows,expect):null;
-        const countOk=compatibilityMode?(!expect||published===expect.count):rows.length===expectedRows;
-        last={ok:countOk&&!missing.length,rows:rows.length,missing,countOk,published,expected:expect?.count,error:''};
+        const countOk=compatibilityMode||rows.length===expectedRows;
+        last={ok:countOk&&!missing.length,rows:rows.length,missing,countOk,error:''};
         if(last.ok)return last;
       }catch(error){
         // La escritura ya fue confirmada por Apps Script. Un 404/timeout del
@@ -200,7 +206,6 @@ window.OXXO_ADMIN_PUBLISHERS = function createAdminPublishers(deps){
   }
   function readbackText(readback){
     if(!readback)return '';
-    if(readback.published!=null&&!readback.ok)return ` La hoja pública todavía no tiene las filas enviadas (se encontraron ${Number(readback.published).toLocaleString('es-MX')} de ${Number(readback.expected||0).toLocaleString('es-MX')}).`;
     if(readback.ok)return ` Lectura pública comprobada: ${Number(readback.rows||0).toLocaleString('es-MX')} registros visibles en el dashboard.`;
     const detail=readback.error
       ?` la comprobación respondió ${readback.error}`
@@ -290,6 +295,7 @@ window.OXXO_ADMIN_PUBLISHERS = function createAdminPublishers(deps){
       if(!confirmPublication(dash.label,dash.tab,state.validation.rows.length,modeMessage,preflight))return;
       $('publish-btn').textContent='Publicando...';
       const payload={adminPassword:getAdminPassword(),targetSheet:dash.tab,rows:state.validation.rows,requiredHeaders:dash.required||[],scopeColumns:dash.scopeColumns||[],source:'DashboardsOxxo Admin',sourceFile:state.fileName||'',updateMode:period.enabled?'replacePeriod':'replaceAll',periodColumn:period.column,periodValues:period.values};
+      const startedAt=Date.now();
       const result=await postAdminPayload(payload);
       OXXO.clearSheetDataCache(dash.tab);
       if(dash.key==='s7'&&OXXO.SHEETS_CONFIG.STORE_CATALOG_SHEET){
@@ -297,10 +303,12 @@ window.OXXO_ADMIN_PUBLISHERS = function createAdminPublishers(deps){
       }
       notifyConfigDate(dash.key);
       $('publish-btn').textContent='Verificando...';
-      const readback=await verifyPublicReadback(dash,result,publishedExpectation(dash,state.validation.rows,period));
-      // Modo compatible sin las filas en la hoja: no se puede afirmar que se
-      // publico. Se dice claro en vez de un "Solicitud enviada" que parecia exito.
-      const unconfirmed=Boolean(result.compatibilityMode&&!readback?.ok);
+      // Modo compatible: solo la bitacora dice si termino. Sin entrada
+      // "Correcta" no se afirma que se publico.
+      const audit=result.compatibilityMode?await waitForAudit({tab:dash.tab,count:state.validation.rows.length,since:startedAt}):null;
+      if(audit?.backup&&!result.backupSheet)result.backupSheet=audit.backup;
+      const unconfirmed=Boolean(result.compatibilityMode&&audit?.status!=='Correcta');
+      const readback=unconfirmed?null:await verifyPublicReadback(dash,result);
       let autoMsg='';
       let autoOk=true;
       if(AUTO_PUBLISH_MAP[dash.key]){
@@ -330,13 +338,13 @@ window.OXXO_ADMIN_PUBLISHERS = function createAdminPublishers(deps){
       const orphanedMsg=orphanedColumns.length
         ?` ⚠ Atención: la columna ${orphanedColumns.join(', ')} existía con datos y ya no aparece en el esquema publicado — revisa si se renombró en dashboard-definitions.js, las filas conservadas de periodos anteriores pudieron perder ese dato.`
         :'';
-      const message=(unconfirmed?`Google no respondió a tiempo y la publicación en ${dash.tab} no se pudo confirmar.`+readbackText(readback)+' Revisa la pestaña Bitácora en un minuto; si no aparece como Correcta, vuelve a publicar (reemplaza las mismas semanas, no duplica).'+workbookText(result):result.compatibilityMode?`Solicitud enviada en modo compatible a ${dash.tab}. Google no respondió, pero la hoja pública ya tiene las filas enviadas.`:`Base publicada correctamente en ${dash.tab}. ${period.enabled?'Periodo actualizado: '+period.values.join(', '):'Pestaña reemplazada completa'}.`)+(unconfirmed?'':serverVerificationText(result)+readbackText(readback)+catalogMsg+autoMsg+orphanedMsg+workbookText(result));
+      const message=(unconfirmed?(audit?`Apps Script registró un error en ${dash.tab}: ${audit.detail||'sin detalle'}. No se modificaron los datos.`:`Google no respondió y la bitácora no registra la publicación en ${dash.tab}: los datos no cambiaron. Vuelve a publicar en un minuto (reemplaza lo mismo, no duplica).`):result.compatibilityMode?`Base publicada en ${dash.tab} (confirmada en la bitácora; Google tardó en responder).`:`Base publicada correctamente en ${dash.tab}. ${period.enabled?'Periodo actualizado: '+period.values.join(', '):'Pestaña reemplazada completa'}.`)+(unconfirmed?'':serverVerificationText(result)+readbackText(readback)+catalogMsg+autoMsg+orphanedMsg+workbookText(result));
       renderPublicationResult?.({
         type:unconfirmed?'bad':workbookLevel(result)==='bad'||result.compatibilityMode||!readback?.ok||!autoOk||orphanedColumns.length||workbookLevel(result)==='warn'?'warn':'ok',
-        title:unconfirmed?'Publicación sin confirmar':result.compatibilityMode?'Publicada (sin respuesta del servidor)':'Publicación completada',
+        title:unconfirmed?(audit?'Publicación con error':'Publicación no realizada'):'Publicación completada',
         area:getAdminArea?.()||'Panel Admin',
         text:message,
-        facts:[`${Number(result.rows||state.validation.rows.length).toLocaleString('es-MX')} filas`,`${Number(result.columns||dash.output.length)} columnas`,result.backupSheet?`Respaldo: ${result.backupSheet}`:'Respaldo pendiente',unconfirmed?'Filas no encontradas':readback?.ok?'Lectura pública verificada':'Verificación pendiente',...(result.workbook?[`Libro al ${result.workbook.pct}%`]:[])]
+        facts:[`${Number(result.rows||state.validation.rows.length).toLocaleString('es-MX')} filas`,`${Number(result.columns||dash.output.length)} columnas`,result.backupSheet?`Respaldo: ${result.backupSheet}`:'Respaldo pendiente',unconfirmed?(audit?'Error en bitácora':'Sin registro en bitácora'):readback?.ok?'Lectura pública verificada':'Verificación pendiente',...(result.workbook?[`Libro al ${result.workbook.pct}%`]:[])]
       });
     }catch(error){
       const message=String(error?.message||error||'Error desconocido');
