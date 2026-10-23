@@ -150,7 +150,16 @@ body.dashboard-11-page .d11-mut { color: var(--du-muted); }
 
 /* Calidad y contexto regional. */
 body.dashboard-11-page .d11-quality { max-height: 360px; }
-body.dashboard-11-page .d11-plazas { display: flex; flex-direction: column; gap: 8px; }
+/* La lista ocupa el alto que deja la tarjeta vecina (Calidad suele ser mas
+   alta): las filas se reparten el espacio y abajo va el resumen. */
+body.dashboard-11-page .d11-plazas { display: flex; flex: 1; flex-direction: column; gap: 8px; }
+body.dashboard-11-page .d11-plazas > .d11-plaza { flex: 1 1 auto; max-height: 64px; }
+body.dashboard-11-page .d11-resumen { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 12px; }
+body.dashboard-11-page .d11-resumen:empty { display: none; }
+body.dashboard-11-page .d11-resumen__dato { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border: 1px solid var(--du-border); border-radius: 12px; background: #fff; min-width: 0; }
+body.dashboard-11-page .d11-resumen__dato span { color: var(--du-muted); font-size: 10px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+body.dashboard-11-page .d11-resumen__dato b { font-family: var(--font-display); font-size: 1.35rem; line-height: 1.1; color: var(--du-text); }
+body.dashboard-11-page .d11-resumen__dato small { overflow: hidden; color: var(--du-muted); font-size: 11px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
 body.dashboard-11-page .d11-plaza { display: grid; grid-template-columns: 22px minmax(110px, 1fr) minmax(90px, 1.3fr) 56px 88px; gap: 10px; align-items: center; padding: 9px 12px; border: 1px solid var(--du-border); border-radius: 12px; background: var(--du-soft); font-size: 13px; }
 body.dashboard-11-page .d11-plaza.is-mia { border-color: var(--du-red-dark); background: #fff; box-shadow: inset 4px 0 0 var(--du-red-dark); }
 body.dashboard-11-page .d11-plaza__pos { color: var(--du-muted); font-family: var(--font-display); font-weight: 800; }
@@ -166,6 +175,7 @@ body.dashboard-11-page .d11-plaza__var { text-align: right; font-size: 12px; }
 @media (max-width: 720px) {
   body.dashboard-11-page .d11-plaza { grid-template-columns: 20px minmax(0, 1fr) 56px; }
   body.dashboard-11-page .d11-plaza__bar, body.dashboard-11-page .d11-plaza__var { display: none; }
+  body.dashboard-11-page .d11-resumen { grid-template-columns: 1fr; }
   body.dashboard-11-page .d11-trend-tools .filtro-select { min-width: 0; width: 100%; }
 }
 
