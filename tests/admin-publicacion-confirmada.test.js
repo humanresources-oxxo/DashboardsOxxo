@@ -1,7 +1,8 @@
-// En modo compatible (sin respuesta de Apps Script) el panel solo puede
-// confirmar la publicacion leyendo la hoja publica: deben estar las filas de
-// los periodos y plazas enviados. Caso real (23/10/2026): Dashboard_6 se
-// "verifico" con la base anterior aunque Sem 42 nunca llego.
+// En modo compatible (sin respuesta de Apps Script) el panel confirma la
+// publicacion con la bitacora: Apps Script escribe "Correcta" solo al
+// terminar. La hoja publica no sirve de prueba: el 23/10/2026
+// Dashboard_3_Diario (foto diaria, ~1,055 filas cada dia) se "confirmo" con
+// la base del dia anterior.
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -12,45 +13,49 @@ const source = fs.readFileSync(path.join(__dirname, '../js/admin/publishers.js')
 const pick = (re) => { const m = source.match(re); assert.ok(m, String(re)); return m[0]; };
 const ctx = {};
 vm.runInNewContext([
-  pick(/function normHeader\(value\)\{[^\n]*\}/),
   pick(/const keyOf=[^\n]*/),
-  pick(/function publishedExpectation\(dash,rows,period\)\{[\s\S]*?\n  \}/),
-  pick(/function countPublishedRows\(rows,expect\)\{[\s\S]*?\n  \}/),
-  'globalThis.api={publishedExpectation,countPublishedRows};',
+  pick(/function auditDate\(value\)\{[\s\S]*?\n  \}/),
+  pick(/const AUDIT_SKEW_MS=[^\n]*/),
+  pick(/function findAuditEntry\(rows,\{tab,count,since\}\)\{[\s\S]*?\n  \}/),
+  'globalThis.api={findAuditEntry,auditDate};',
 ].join('\n'), ctx);
-const { publishedExpectation, countPublishedRows } = ctx.api;
+const { findAuditEntry, auditDate } = ctx.api;
 
-const dash = { scopeColumns: ['Plaza'] };
-const period = { enabled: true, column: 'Semana', values: ['Sem 40', 'Sem 41', 'Sem 42'] };
-const enviados = [
-  { Plaza: 'Oaxaca', Semana: 'Sem 40' }, { Plaza: 'Tuxtla', Semana: 'Sem 41' }, { Plaza: 'Oaxaca', Semana: 'Sem 42' },
+const bitacora = [
+  { Fecha: '22/10/2026 8:50:16', Hoja: 'Dashboard_3_Diario', 'Filas publicadas': '1055', Estado: 'Correcta', Respaldo: '_BK_viejo' },
+  { Fecha: '23/10/2026 9:04:41', Hoja: 'Dashboard_6_Semanal', 'Filas publicadas': '2729', Estado: 'Correcta', Respaldo: '_BK_Dashboard_6_Semanal_20261023_090353_339' },
+  { Fecha: '23/10/2026 9:12:03', Hoja: 'Dashboard_3_Otras_Plazas', 'Filas publicadas': '4', Estado: 'Correcta', Respaldo: '_BK_x' },
+  { Fecha: '23/10/2026 9:20:00', Hoja: 'Dashboard_4_Semanal', 'Filas publicadas': '18,825', Estado: 'Error', Detalle: 'limite de celdas' },
 ];
+const envio = (h, m) => new Date(2026, 9, 23, h, m).getTime();
 
-test('con la base anterior (sin Sem 42) no se confirma', () => {
-  const expect = publishedExpectation(dash, enviados, period);
-  const hojaVieja = [
-    { Plaza: 'Oaxaca', Semana: 'Sem 39' }, { Plaza: 'Oaxaca', Semana: 'Sem 40' }, { Plaza: 'Tuxtla', Semana: 'Sem 41' },
-  ];
-  assert.notEqual(countPublishedRows(hojaVieja, expect), expect.count);
+test('la publicacion de ayer no confirma la de hoy', () => {
+  assert.equal(findAuditEntry(bitacora, { tab: 'Dashboard_3_Diario', count: 1055, since: envio(9, 10) }), null);
 });
 
-test('con las filas enviadas si se confirma, sin contar otras semanas ni otras plazas', () => {
-  const expect = publishedExpectation(dash, enviados, period);
-  const hojaNueva = [
-    { Plaza: 'Oaxaca', Semana: 'Sem 39' }, { Plaza: 'Chontalpa', Semana: 'Sem 42' },
-    { Plaza: 'Oaxaca', Semana: 'Sem 40' }, { Plaza: 'Tuxtla', Semana: 'Sem 41' }, { Plaza: 'Oaxaca', Semana: 'Sem42' },
-  ];
-  assert.equal(countPublishedRows(hojaNueva, expect), expect.count);
+test('una entrada Correcta posterior al envio confirma y trae el respaldo', () => {
+  const entry = findAuditEntry(bitacora, { tab: 'Dashboard_6_Semanal', count: 2729, since: envio(9, 3) });
+  assert.equal(entry.status, 'Correcta');
+  assert.equal(entry.backup, '_BK_Dashboard_6_Semanal_20261023_090353_339');
 });
 
-test('sin periodo ni plaza se compara el total de filas', () => {
-  const expect = publishedExpectation({ scopeColumns: [] }, [{ a: 1 }, { a: 2 }], { enabled: false });
-  assert.equal(countPublishedRows([{ a: 1 }, { a: 2 }], expect), 2);
-  assert.equal(countPublishedRows([{ a: 1 }], expect), 1);
+test('un Error del servidor se reporta con su motivo', () => {
+  const entry = findAuditEntry(bitacora, { tab: 'Dashboard_4_Semanal', count: 18825, since: envio(9, 19) });
+  assert.equal(entry.status, 'Error');
+  assert.equal(entry.detail, 'limite de celdas');
 });
 
-test('el panel marca la publicacion sin confirmar en vez de "Solicitud enviada"', () => {
-  assert.match(source, /const unconfirmed=Boolean\(result\.compatibilityMode&&!readback\?\.ok\)/);
-  assert.match(source, /title:unconfirmed\?'Publicación sin confirmar'/);
-  assert.match(source, /type:unconfirmed\?'bad'/);
+test('otra cantidad de filas no cuenta como esta publicacion', () => {
+  assert.equal(findAuditEntry(bitacora, { tab: 'Dashboard_6_Semanal', count: 100, since: envio(9, 3) }), null);
+});
+
+test('la fecha de la bitacora se lee como hora local', () => {
+  assert.equal(auditDate('23/10/2026 9:04:41'), new Date(2026, 9, 23, 9, 4, 41).getTime());
+  assert.ok(Number.isNaN(auditDate('')));
+});
+
+test('el panel ya no afirma exito en modo compatible sin la bitacora', () => {
+  assert.match(source, /const unconfirmed=Boolean\(result\.compatibilityMode&&audit\?\.status!=='Correcta'\)/);
+  assert.match(source, /'Publicación no realizada'/);
+  assert.doesNotMatch(source, /la hoja pública ya tiene las filas enviadas/);
 });
