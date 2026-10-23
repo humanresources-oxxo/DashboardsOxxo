@@ -41,7 +41,9 @@ const d11 = definitions.find((definition) => definition.key === 'd11');
 assert(d11, 'Debe existir la definición d11');
 assert.deepStrictEqual(Array.from(d11.preferredSheets), ['Ranking por Tienda']);
 assert.deepStrictEqual(Array.from(d11.scopeColumns), [], 'La carga debe reemplazar toda la región, no solo la plaza activa');
-assert.strictEqual(d11.periodColumn, undefined, 'No debe conservar histórico semanal');
+// Conserva el historico: cada carga reemplaza solo su semana (tendencia,
+// variacion contra la semana anterior y compromiso dependen de eso).
+assert.strictEqual(d11.periodColumn, 'Semana', 'Debe publicar por semana y conservar las anteriores');
 
 const row = d11.derive({
   Region: 'TABASCO', Plaza: 'Oaxaca', Asesor: '  Angel  Perez ', Tienda: ' OXXO Centro ',

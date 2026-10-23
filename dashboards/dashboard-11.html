@@ -17,44 +17,48 @@
 </head>
 <body class="dashboard-11-page hr-dashboard rh-unified rh-layered rh-cabecera">
 <nav class="topbar"><div class="topbar__brand"><div class="topbar__logo"><img src="../assets/oxxo-logo-original.png" alt="OXXO"></div><div><div class="topbar__title">Dashboards Ats</div><div class="topbar__subtitle">Región Tabasco</div></div></div><div class="topbar__meta"><a href="../index.html" class="topbar__back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>Inicio</a></div></nav>
-<main class="page">
+<main class="page" id="d11-root">
   <section class="hero">
-    <div class="hero-top"><div><div class="hero-eyebrow">Disciplina operativa · foto semanal</div><h1>Cumplimiento de Marcajes</h1></div></div>
+    <div class="hero-top"><div><div class="hero-eyebrow">Disciplina operativa · seguimiento semanal</div><h1>Cumplimiento de Marcajes</h1></div></div>
     <div class="hero-context"><span id="corte-badge">Semana actual</span></div>
   </section>
 
   <section class="filter-panel" aria-label="Filtros del dashboard">
     <div class="vac-filters">
+      <div class="vac-fbox"><label for="filtro-semana">Semana</label><select class="filtro-select" id="filtro-semana"><option value="">Cargando…</option></select></div>
       <div class="vac-fbox"><label for="filtro-asesor">Asesor</label><select class="filtro-select" id="filtro-asesor"><option value="">Todos los asesores</option></select></div>
-      <div class="vac-fbox"><label for="filtro-estatus">Nivel de atención</label><select class="filtro-select" id="filtro-estatus"><option value="">Todos los niveles</option><option>Sobresaliente</option><option>En seguimiento</option><option>Prioridad</option><option>Critico</option><option>Sin dato</option></select></div>
+      <div class="vac-fbox"><label for="filtro-estatus">Rango</label><select class="filtro-select" id="filtro-estatus"><option value="">Todos los rangos</option><option value="Sobresaliente">Sobresaliente · más de 90%</option><option value="En seguimiento">En seguimiento · 75–90%</option><option value="Prioridad">Prioridad · 50–75%</option><option value="Critico">Crítico · menos de 50%</option><option value="Sin dato">Sin dato</option></select></div>
       <div class="vac-fbox"><label for="filtro-tienda">Buscar tienda</label><input class="filtro-select" id="filtro-tienda" type="search" placeholder="Nombre de tienda…" autocomplete="off"></div>
-      <div class="vac-fbox vac-fbox--actions" role="group" aria-labelledby="d11-acciones-label"><label id="d11-acciones-label">Filtros y acciones</label><button class="filtro-btn" type="button" id="limpiar">× Limpiar</button><span id="hero-download"><button class="filtro-btn" type="button">Descargar base</button></span></div>
+      <div class="vac-fbox vac-fbox--actions" role="group" aria-labelledby="d11-acciones-label"><label id="d11-acciones-label">Filtros y acciones</label><button class="filtro-btn" type="button" id="limpiar">✕ Limpiar</button><button class="filtro-btn" type="button" id="exportar-lamina">Exportar lámina</button><span id="hero-download"><button class="filtro-btn" type="button">Descargar base</button></span></div>
     </div>
   </section>
 
-  <div class="rh-layer"><h2 class="rh-layer__title">Resumen ejecutivo</h2><p class="rh-layer__purpose">Cumplimiento de marcajes de la semana cargada.</p></div>
-
+  <div class="rh-layer"><h2 class="rh-layer__title">Encabezado de plaza</h2><p class="rh-layer__purpose">Cumplimiento contra la meta del 95%, brecha entre entradas y salidas, y cambio contra la semana anterior.</p></div>
   <section class="kpis" id="kpi-section" aria-label="Indicadores principales"><div class="state"><div class="spinner" aria-label="Cargando"></div></div></section>
-  <div class="rh-layer"><h2 class="rh-layer__title">Foco y responsables</h2><p class="rh-layer__purpose">Distribución del cumplimiento y asesores por atender.</p></div>
 
+  <div class="rh-layer"><h2 class="rh-layer__title">Tendencia</h2><p class="rh-layer__purpose">Últimas 8 semanas con la línea de meta. Elige un asesor para ver su tendencia junto a la de la plaza.</p></div>
   <section class="layout">
-    <article class="card"><div class="card-head"><div class="card-title">Distribución de cumplimiento</div><span class="card-chip" id="mix-chip">— tiendas</span></div><div class="mix"><div class="ring" id="mix-ring" style="--p1:0%;--p2:0%;--p3:0%"><div class="ring-center"><b id="ring-total">0</b><span>tiendas</span></div></div><div class="legend" id="mix-legend"></div></div></article>
-    <article class="card"><div class="card-head"><div class="card-title">Cumplimiento por asesor</div><span class="card-chip">Menor promedio primero</span></div><div class="advisor-list" id="advisor-list"><div class="state">Calculando asesores…</div></div></article>
+    <article class="card"><div class="card-head table-tools"><div class="card-title">Tendencia semanal</div><div class="d11-trend-tools"><label for="trend-asesor">Comparar asesor</label><select class="filtro-select" id="trend-asesor"><option value="">Sin asesor</option></select><span class="card-chip" id="trend-chip">—</span></div></div><div id="trend-chart" class="d11-trend"><div class="state">Calculando…</div></div><div class="d11-trend-legend" id="trend-legend"></div></article>
+    <article class="card"><div class="card-head"><div class="card-title">Tiendas por rango</div><span class="card-chip" id="mix-chip">— tiendas</span></div><div class="mix"><div class="ring" id="mix-ring" style="--p1:0%;--p2:0%;--p3:0%"><div class="ring-center"><b id="ring-total">0</b><span>tiendas</span></div></div><div class="legend" id="mix-legend"></div></div></article>
   </section>
-  <section class="card rank" id="rank-section" aria-label="Asesores con mayor y menor cumplimiento total">
-    <div class="card-head table-tools"><div><div class="card-title">Asesores con mayor y menor cumplimiento total</div><div class="rank-def" id="rank-def">Cumplimiento total = promedio del % Cumpl Reg Total de las tiendas del asesor. Meta siguiente = actual +5 puntos porcentuales, con tope de 100%.</div></div><span class="card-chip" id="rank-chip">—</span></div>
-    <div class="rank-cols">
-      <div class="rank-col"><h3 class="rank-head rank-head--top">Top 5 · mayor cumplimiento</h3><ol class="rank-list" id="rank-top"><li class="state">Calculando…</li></ol></div>
-      <div class="rank-col"><h3 class="rank-head rank-head--bottom">Bottom 5 · menor cumplimiento</h3><ol class="rank-list" id="rank-bottom"><li class="state">Calculando…</li></ol></div>
-    </div>
-  </section>
-  <div class="rh-layer"><h2 class="rh-layer__title">Exploración detallada</h2><p class="rh-layer__purpose">Detalle por tienda ordenado por prioridad.</p></div>
 
-  <section class="card"><div class="card-head table-tools"><div><div class="card-title">Detalle por tienda</div><div class="result-count" id="result-count">—</div></div><span class="card-chip">Ordenado por prioridad</span></div><div class="tbl-wrap"><table class="tbl" id="detail-table"><thead><tr><th>Tienda</th><th>Asesor</th><th>Plaza</th><th>Entradas</th><th>Salidas</th><th>Total</th><th>Estatus</th><th class="hide-mobile">Calidad</th></tr></thead><tbody><tr><td colspan="8"><div class="state"><div class="spinner"></div></div></td></tr></tbody></table></div></section>
-  <footer class="dash-footer"><div class="dash-footer__update"><span class="dash-footer__update-dot"></span>Datos cargados: <span id="load-time">—</span></div><div>La nueva carga reemplaza la semana anterior · Sin histórico</div></footer>
+  <div class="rh-layer"><h2 class="rh-layer__title">Asesores</h2><p class="rh-layer__purpose">Ranking con compromiso de la semana siguiente (+5 pts, tope 100%) y si se cumplió el de la semana anterior. FOCO: bajo 75% o cayó 3 pts o más contra la semana anterior; si nadie cae ahí, el más bajo.</p></div>
+  <section class="card" aria-label="Ranking de asesores">
+    <div class="card-head table-tools"><div class="card-title">Ranking de asesores</div><span class="card-chip" id="advisor-chip">—</span></div>
+    <div class="tbl-wrap"><table class="tbl d11-asesores" id="advisor-table"><thead><tr><th>#</th><th>Asesor</th><th>Total</th><th>Vs. ant.</th><th class="hide-mobile">Entradas</th><th class="hide-mobile">Salidas</th><th class="hide-mobile" title="Tiendas con más de 90%">&gt;90</th><th class="hide-mobile" title="Tiendas entre 75 y 90%">75–90</th><th class="hide-mobile" title="Tiendas entre 50 y 75%">50–75</th><th class="hide-mobile" title="Tiendas con menos de 50%">&lt;50</th><th>Compromiso sig.</th><th>¿Cumplió?</th></tr></thead><tbody><tr><td colspan="12"><div class="state"><div class="spinner"></div></div></td></tr></tbody></table></div>
+  </section>
+
+  <div class="rh-layer"><h2 class="rh-layer__title">Tiendas</h2><p class="rh-layer__purpose">Críticas, en 0% (sin registro) y las que bajaron de rango contra la semana anterior. Usa los filtros de arriba para asesor, rango y tienda.</p></div>
+  <section class="card"><div class="card-head table-tools"><div><div class="card-title">Detalle por tienda</div><div class="result-count" id="result-count">—</div></div><div class="d11-views" id="store-views" role="group" aria-label="Vista de tiendas"></div></div><div class="tbl-wrap"><table class="tbl" id="detail-table"><thead><tr><th>Tienda</th><th>Asesor</th><th>Entradas</th><th>Salidas</th><th>Total</th><th class="hide-mobile">Vs. ant.</th><th>Rango</th><th class="hide-mobile">Cambio</th><th class="hide-mobile">Calidad</th></tr></thead><tbody><tr><td colspan="9"><div class="state"><div class="spinner"></div></div></td></tr></tbody></table></div></section>
+
+  <section class="layout d11-bottom">
+    <article class="card"><div class="card-head"><div><div class="card-title">Calidad de datos</div><div class="result-count">Tiendas con más de 100% o sin dato: corrígelas antes de reportar.</div></div><span class="card-chip" id="quality-chip">—</span></div><div class="tbl-wrap d11-quality" id="quality-list"><div class="state">Calculando…</div></div></article>
+    <article class="card"><div class="card-head"><div><div class="card-title">Contexto en la región</div><div class="result-count">Promedio de las 5 plazas en la semana. La marca es la meta del 95%.</div></div><span class="card-chip" id="plazas-chip">—</span></div><div class="d11-plazas" id="plazas-list"><div class="state">Calculando…</div></div></article>
+  </section>
+  <footer class="dash-footer"><div class="dash-footer__update"><span class="dash-footer__update-dot"></span>Datos cargados: <span id="load-time">—</span></div><div>Cada carga agrega su semana y conserva las anteriores</div></footer>
 </main>
-<script src="../js/config.js?v=c564e9a2"></script><script src="../js/core.js?v=c564e9a2"></script><script>
-let BASE=[],VIEW=[],COL={},WEEK='SEMANA ACTUAL';
+<script src="../js/config.js?v=c564e9a2"></script><script src="../js/core.js?v=c564e9a2"></script><script src="../js/dashboard-11.js?v=c564e9a2"></script><script>
+let COL={};
 // Roster de ATs "oficiales" por plaza (pestana Compromisos_Bajas: Plaza | Asesor
 // | Compromiso, la misma que arma Dashboard 2). Ranking por Tienda (la fuente
 // real de este dashboard) trae marcajes de CUALQUIERA que haya registrado
@@ -106,27 +110,6 @@ async function loadRoster(){
   ROSTER_BY_PLAZA=byPlaza;
   ROSTER_CACHE.clear();
 }
-// El selector de asesor se arma con el MISMO criterio que el panel
-// "Cumplimiento por asesor": solo los ATs del roster de la plaza. Antes se
-// llenaba con todo lo que trajera la columna Asesor de la hoja, que incluye
-// a quien haya registrado una entrada o salida en una tienda de la plaza sin
-// ser AT de aqui (coberturas, encargados, gente de otra plaza cubriendo);
-// por eso aparecian nombres que no correspondian. Si esa plaza todavia no
-// tiene roster en Compromisos_Bajas no se filtra nada, igual que el panel.
-function poblarSelectAsesores(){
-  const select=document.getElementById('filtro-asesor');
-  if(!select)return;
-  const nombres=[...new Set(BASE.filter(esAsesorDeLaPlaza).map(r=>val(r,COL.asesor)).filter(Boolean))]
-    .sort((a,b)=>String(a).localeCompare(String(b),'es'));
-  const previo=select.value;
-  select.innerHTML='<option value="">Todos los asesores</option>';
-  nombres.forEach(a=>{const o=document.createElement('option');o.value=a;o.textContent=a;select.appendChild(o)});
-  // Si el asesor elegido ya no esta en la lista (era uno de los que sobraban),
-  // se vuelve a "Todos" para no dejar el tablero filtrado por un nombre que
-  // ya no se puede ver ni deseleccionar.
-  select.value=nombres.includes(previo)?previo:'';
-  return select.value!==previo;
-}
 // El roster se aplica FILA POR FILA, segun la plaza de esa fila, no una sola
 // vez para toda la vista. Compromisos_Bajas hoy solo tiene cargada Plaza
 // Oaxaca: resolviendo un unico roster para el alcance activo, en vista Region
@@ -171,57 +154,20 @@ const norm=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLo
 const key=(row,names)=>{const entries=Object.keys(row||{}).map(k=>[norm(k),k]);for(const name of names){const n=norm(name);const hit=entries.find(([x])=>x===n||x.includes(n));if(hit)return hit[1]}return ''};
 const val=(row,k)=>k?row[k]:'';
 function pct(v){const n=OXXO.metricsNum(v);if(!Number.isFinite(n))return null;return Math.abs(n)<=3?n*100:n}
-const pctText=v=>Number.isFinite(v)?`${v.toFixed(1).replace('.0','')}%`:'—';
-function statusOf(total){if(total===null)return'Sin dato';if(total>=90)return'Sobresaliente';if(total>=75)return'En seguimiento';if(total>=50)return'Prioridad';return'Critico'}
-const STATUS_COLOR={Sobresaliente:'#16a765','En seguimiento':'#f6b93b',Prioridad:'#f47b20',Critico:'#ed1c2e','Sin dato':'#c0aca7'};
-function tone(status){return{Sobresaliente:['#e7f7ef','#16864f'],'En seguimiento':['#fff6dd','#a36a00'],Prioridad:['#fff0e5','#c15a16'],Critico:['#fde8ea','#bd1625'],'Sin dato':['#eee9e7','#7f716d']}[status]||['#eee9e7','#7f716d']}
-function average(rows,column){const values=rows.map(r=>pct(val(r,column))).filter(Number.isFinite);return values.length?values.reduce((a,b)=>a+b,0)/values.length:null}
-function escapeHtml(v){return OXXO.escHtml(String(v??''))}
-function filtered(){const asesor=document.getElementById('filtro-asesor').value,status=document.getElementById('filtro-estatus').value,q=norm(document.getElementById('filtro-tienda').value);return BASE.filter(r=>(!asesor||val(r,COL.asesor)===asesor)&&(!status||statusOf(pct(val(r,COL.total)))===status)&&(!q||norm(val(r,COL.tienda)).includes(q)))}
-function kpi(label,value,delta,accent,code){return`<article class="kpi-card" style="--accent:${accent}" data-code="${code}"><div class="kpi-card__label">${label}</div><div class="kpi-card__value">${value}</div><div class="kpi-card__delta">${delta}</div></article>`}
-function render(){VIEW=filtered();const avgIn=average(VIEW,COL.entradas),avgOut=average(VIEW,COL.salidas),avgTotal=average(VIEW,COL.total),gap=Number.isFinite(avgIn)&&Number.isFinite(avgOut)?avgIn-avgOut:null;const under=VIEW.filter(r=>(pct(val(r,COL.total))??101)<75).length,quality=VIEW.filter(r=>String(val(r,COL.quality)||'').trim()||[COL.entradas,COL.salidas,COL.total].some(c=>(pct(val(r,c))??0)>100.001)).length;
-document.getElementById('kpi-section').innerHTML=kpi('Cumplimiento total',pctText(avgTotal),`${VIEW.length} tiendas visibles`,'#176d98','01')+kpi('Entradas',pctText(avgIn),'Registro de entrada','#16a765','02')+kpi('Salidas',pctText(avgOut),'Registro de salida','#f47b20','03')+kpi('Brecha entrada / salida',gap===null?'—':`${gap>=0?'+':''}${gap.toFixed(1)} pts`,'Oportunidad operativa','#f6b93b','04')+kpi('Tiendas bajo 75%',under,'Requieren seguimiento','#ed1c2e','05')+kpi('Datos fuera de rango',quality,'Porcentajes mayores a 100%','#651418','06');
-renderMix();renderAdvisors();renderRank();renderTable()}
-function renderMix(){const ranges=['Sobresaliente','En seguimiento','Prioridad','Critico'].map(s=>[s,STATUS_COLOR[s]]),counts=ranges.map(([s])=>VIEW.filter(r=>statusOf(pct(val(r,COL.total)))===s).length),total=Math.max(1,VIEW.length),p1=counts[0]/total*100,p2=p1+counts[1]/total*100,p3=p2+counts[2]/total*100;const ring=document.getElementById('mix-ring');ring.style.setProperty('--p1',p1+'%');ring.style.setProperty('--p2',p2+'%');ring.style.setProperty('--p3',p3+'%');document.getElementById('ring-total').textContent=VIEW.length;document.getElementById('mix-chip').textContent=`${VIEW.length} tiendas`;document.getElementById('mix-legend').innerHTML=ranges.map(([name,color],i)=>`<div class="legend-row"><i style="--c:${color}"></i><span>${name}</span><b>${counts[i]}</b><em>${VIEW.length?Math.round(counts[i]/VIEW.length*100):0}%</em></div>`).join('')}
-function renderAdvisors(){const rows=VIEW.filter(esAsesorDeLaPlaza);const groups=new Map;rows.forEach(r=>{const a=val(r,COL.asesor)||'Sin asesor';if(!groups.has(a))groups.set(a,[]);groups.get(a).push(r)});const list=[...groups].map(([name,rows])=>({name,avg:average(rows,COL.total),stores:rows.length})).sort((a,b)=>(a.avg??999)-(b.avg??999));// Los promedios de esta base pueden pasar de 100% (marcajes duplicados en la
-// fuente). Recortando la barra en 100% todos los asesores fuera de rango se
-// dibujaban identicos y el panel dejaba de comparar: se escala contra el
-// maximo real y se marca donde queda el 100% para no perder la referencia.
-const top=list.reduce((max,x)=>Math.max(max,x.avg||0),0),scale=Math.max(100,top),ref=100/scale*100;
-document.getElementById('advisor-list').innerHTML=list.length?list.map(x=>{const avg=Number.isFinite(x.avg)?x.avg:null,color=STATUS_COLOR[statusOf(avg)],width=avg===null?0:Math.max(2,avg/scale*100),over=avg!==null&&avg>100.001;return`<div class="advisor" style="--tone:${color}"><div class="advisor-top"><span class="advisor-name">${escapeHtml(x.name)}</span><span class="advisor-score">${pctText(avg)}</span></div><div class="advisor-bar${scale>100?' has-ref':''}" style="--ref:${ref.toFixed(2)}%"><span style="width:${width.toFixed(2)}%"></span></div><div class="advisor-meta"><span>${x.stores} tiendas</span>${over?'<span class="advisor-flag">Revisar &gt;100%</span>':''}</div></div>`}).join(''):'<div class="state">Sin asesores con estos filtros.</div>'}
-// Cumplimiento total por asesor: cada extremo se ordena por el promedio del
-// % Cumpl Reg Total de sus tiendas, que es la métrica que se muestra en D11.
-function cumplimientoTotalPorAsesor(rows){const groups=new Map();rows.filter(esAsesorDeLaPlaza).forEach(r=>{const a=val(r,COL.asesor)||'Sin asesor';if(!groups.has(a))groups.set(a,[]);groups.get(a).push(r)});
- return [...groups].map(([name,filas])=>{const total=average(filas,COL.total),meta=Number.isFinite(total)?Math.min(100,total+5):null;return{name,total,meta,gap:Number.isFinite(meta)?Math.max(0,meta-total):null,stores:filas.length}})
-// Sin un solo cumplimiento total legible no hay nada que rankear: el asesor
-// queda fuera de los dos extremos en vez de fingir cero.
- .filter(x=>x.total!==null)
-// Empates deterministas: mismo porcentaje -> orden alfabetico.
- .sort((a,b)=>b.total-a.total||String(a.name).localeCompare(String(b.name),'es'))}
-// Los dos extremos salen de la MISMA lista ordenada; con 10 asesores o menos se
-// tocarian, asi que el bottom excluye lo que ya salio en el top: ningun nombre
-// se repite entre paneles.
-function rankCumplimientoTotal(list,size=5){const top=list.slice(0,size),vistos=new Set(top.map(x=>x.name));const bottom=list.slice().reverse().filter(x=>!vistos.has(x.name)).slice(0,size);return{top,bottom,total:list.length,stores:list.reduce((n,x)=>n+x.stores,0)}}
-function renderRank(){const{top,bottom,total,stores}=rankCumplimientoTotal(cumplimientoTotalPorAsesor(VIEW));document.getElementById('rank-chip').textContent=`${total} asesores · ${stores} tiendas`;
-const pinta=(id,items)=>{document.getElementById(id).innerHTML=items.length?items.map(x=>{const actual=Math.min(100,Math.max(0,x.total)),objetivo=Math.min(100,Math.max(0,x.meta)),meta=x.total>=100?'Meta alcanzada':`Meta ${pctText(x.meta)} · faltan ${x.gap.toFixed(1).replace('.0','')} pts`;return`<li class="rank-row" style="--tone:${STATUS_COLOR[statusOf(x.total)]}"><div class="rank-row-main"><span class="rank-name">${escapeHtml(x.name)}</span><span class="rank-score">${pctText(x.total)}</span></div><div class="rank-progress" role="img" aria-label="Actual ${pctText(x.total)}, meta ${pctText(x.meta)}"><span class="rank-progress__fill" style="width:${actual.toFixed(2)}%"></span><i class="rank-progress__target" style="left:${objetivo.toFixed(2)}%" aria-hidden="true"></i></div><span class="rank-meta"><span>${x.stores} tiendas</span><span class="rank-goal">${meta}</span></span></li>`}).join(''):'<li class="state">Sin asesores con estos filtros.</li>'};
-pinta('rank-top',top);pinta('rank-bottom',bottom)}
-function renderTable(){const sorted=VIEW.slice().sort((a,b)=>(pct(val(a,COL.total))??999)-(pct(val(b,COL.total))??999));document.getElementById('result-count').textContent=`${sorted.length} registros`;document.querySelector('#detail-table tbody').innerHTML=sorted.length?sorted.map(r=>{const total=pct(val(r,COL.total)),status=statusOf(total),[bg,fg]=tone(status),quality=String(val(r,COL.quality)||'').trim()||([COL.entradas,COL.salidas,COL.total].some(c=>(pct(val(r,c))??0)>100.001)?'Revisar >100%':'');return`<tr><td class="store"><strong>${escapeHtml(val(r,COL.tienda)||'—')}</strong><small>${escapeHtml(WEEK)}</small></td><td>${escapeHtml(val(r,COL.asesor)||'—')}</td><td>${escapeHtml(val(r,COL.plaza)||'—')}</td><td class="pct">${pctText(pct(val(r,COL.entradas)))}</td><td class="pct">${pctText(pct(val(r,COL.salidas)))}</td><td class="pct">${pctText(total)}</td><td><span class="status" style="--bg:${bg};--fg:${fg}">${status}</span></td><td class="quality hide-mobile">${quality?`<span class="quality">${escapeHtml(quality)}</span>`:'—'}</td></tr>`}).join(''):'<tr><td colspan="8"><div class="state">No hay tiendas que coincidan con los filtros.</div></td></tr>'}
+// La pagina solo resuelve columnas, catalogo y roster; el calculo y el
+// dibujo viven en js/dashboard-11.js (OXXO_D11_PAGINA).
+let FILAS=[];
 async function initDashboard(){try{OXXO.renderDownloadButton('hero-download','d11');
-// El roster (Compromisos_Bajas) solo afecta un panel chico (Cumplimiento por
-// asesor) -- no debe bloquear el render principal si esa hoja tarda o el
-// gviz de Sheets va lento. Se pide en paralelo, sin esperarla: si llega
-// despues del primer render, se vuelve a pintar solo el panel de asesores;
-// si BASE nunca se llego a cargar, el then no hace nada visible.
-loadRoster().then(()=>{if(!BASE.length)return;
-  // El roster llega despues del primer render: hay que rehacer el selector
-  // (ya sin los nombres que no son de la plaza) y, si eso cambio el filtro
-  // activo, repintar todo y no solo el panel de asesores.
-  const cambioElFiltro=poblarSelectAsesores();
-  if(cambioElFiltro){render();return;}
-  VIEW=filtered();renderAdvisors();
-}).catch(()=>{});
-const data=await OXXO.fetchSheetData(OXXO.SHEETS_CONFIG.TABS.d11);if(data===null)throw new Error('No se pudo conectar con Google Sheets');if(!data.length){document.getElementById('kpi-section').innerHTML='<div class="state">La hoja todavía no tiene datos publicados.</div>';return}const h=data[0];COL={semana:key(h,['Semana','Fecha']),zona:key(h,['Zona']),region:key(h,['Region']),plaza:key(h,['Plaza']),asesor:key(h,['Asesor']),tienda:key(h,['Tienda']),cr:key(h,['CR','CR Tienda','CR TIENDA']),entradas:key(h,['% Cumpl Reg Entradas']),salidas:key(h,['% Cumpl Reg Salidas']),total:key(h,['% Cumpl Reg Total']),status:key(h,['Estatus']),quality:key(h,['Alerta Calidad'])};const asesorCatalog=await OXXO.loadAsesorCatalog();setCatalogoAsesores(asesorCatalog);const validData=OXXO.filterValidTiendas(data,asesorCatalog,COL.tienda,COL.cr);validData.forEach(row=>{OXXO.applyAsesorCatalog(row,asesorCatalog,{asesorKey:COL.asesor,tiendaKey:COL.tienda,crKey:COL.cr});if(COL.plaza)row[COL.plaza]=OXXO.metricsCanonicalPlazaLabel(row[COL.plaza]);});BASE=validData.filter(r=>String(val(r,COL.tienda)||'').trim()&&esAsesorDeLaPlaza(r));WEEK=String(val(BASE[0]||{},COL.semana)||'SEMANA ACTUAL').toUpperCase();const scope=OXXO.getActiveDataScope?.();document.getElementById('corte-badge').textContent=`${WEEK} · ${scope?.level==='region'?'Región Tabasco':scope?.plaza||'Plaza seleccionada'}`;poblarSelectAsesores();render();OXXO.updateFooterTime('load-time')}catch(error){console.error('[D11]',error);document.getElementById('kpi-section').innerHTML=`<div class="state"><div><strong>No se pudo cargar el tablero.</strong><br><button class="action" type="button" data-oxxo-retry style="margin-top:12px">Reintentar</button></div></div>`}}
-['filtro-asesor','filtro-estatus'].forEach(id=>document.getElementById(id).addEventListener('change',render));document.getElementById('filtro-tienda').addEventListener('input',render);document.getElementById('limpiar').addEventListener('click',()=>{document.getElementById('filtro-asesor').value='';document.getElementById('filtro-estatus').value='';document.getElementById('filtro-tienda').value='';render()});document.addEventListener('DOMContentLoaded',initDashboard);
-window.buildExcelSheets=async()=>[{name:'KPIs',rows:OXXO.scrapeKpiCards('kpi-section')},{name:'Detalle por tienda',rows:OXXO.scrapeHtmlTable('#detail-table')}];
+// Todas las plazas de la region: el encabezado usa la plaza activa y el
+// contexto compara las cinco.
+const data=await OXXO.fetchSheetData(OXXO.SHEETS_CONFIG.TABS.d11,{scoped:false});if(data===null)throw new Error('No se pudo conectar con Google Sheets');if(!data.length){document.getElementById('kpi-section').innerHTML='<div class="state">La hoja todavía no tiene datos publicados.</div>';return}const h=data[0];COL={semana:key(h,['Semana','Fecha']),zona:key(h,['Zona']),region:key(h,['Region']),plaza:key(h,['Plaza']),asesor:key(h,['Asesor']),tienda:key(h,['Tienda']),cr:key(h,['CR','CR Tienda','CR TIENDA']),entradas:key(h,['% Cumpl Reg Entradas']),salidas:key(h,['% Cumpl Reg Salidas']),total:key(h,['% Cumpl Reg Total']),status:key(h,['Estatus']),quality:key(h,['Alerta Calidad'])};const asesorCatalog=await OXXO.loadAsesorCatalog();setCatalogoAsesores(asesorCatalog);const validData=OXXO.filterValidTiendas(data,asesorCatalog,COL.tienda,COL.cr);validData.forEach(row=>{OXXO.applyAsesorCatalog(row,asesorCatalog,{asesorKey:COL.asesor,tiendaKey:COL.tienda,crKey:COL.cr});if(COL.plaza)row[COL.plaza]=OXXO.metricsCanonicalPlazaLabel(row[COL.plaza]);});FILAS=validData.filter(r=>String(val(r,COL.tienda)||'').trim());
+const arrancar=()=>OXXO_D11_PAGINA.iniciar({columnas:COL,filasRegion:FILAS,esAsesor:esAsesorDeLaPlaza});
+arrancar();OXXO.updateFooterTime('load-time');
+// El roster (Compromisos_Bajas) llega despues y solo cambia que asesores se
+// cuentan: se vuelve a armar todo con el ya cargado.
+loadRoster().then(()=>{if(FILAS.length)arrancar()}).catch(()=>{});
+}catch(error){console.error('[D11]',error);document.getElementById('kpi-section').innerHTML=`<div class="state"><div><strong>No se pudo cargar el tablero.</strong><br><button class="action" type="button" data-oxxo-retry style="margin-top:12px">Reintentar</button></div></div>`}}
+document.addEventListener('DOMContentLoaded',initDashboard);
+window.buildExcelSheets=async()=>OXXO_D11_PAGINA.hojasExcel();
 </script>
 </body></html>
