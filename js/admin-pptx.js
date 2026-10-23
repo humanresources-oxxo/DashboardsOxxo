@@ -173,7 +173,7 @@
       const horas = num(val(r, horasKey));
       if(t.replace(/\s+/g,'') === 'TIEMPOEXTRADOBLE') byTipo.Doble += horas;
       else if(t.replace(/\s+/g,'') === 'TIEMPOEXTRATRIPLE') byTipo.Triple += horas;
-      else if(t.replace(/\s+/g,'').startsWith('DIADES')) byTipo.Descanso += horas;
+      else if(/^(DIADES|DESCANSOLAB)/.test(t.replace(/\s+/g,''))) byTipo.Descanso += horas; // "Día Des" (hasta Sem39) o "Descanso Laborado"
       else byTipo.Sencillo += horas;
     });
     return {
