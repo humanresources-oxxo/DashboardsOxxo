@@ -353,6 +353,17 @@
         <span class="d11-plaza__bar"><i style="width:${Math.min(100, Math.max(0, p.total)).toFixed(1)}%;--c:${rg.color}"></i><b style="left:${META}%"></b></span>
         <span class="pct">${fmt(p.total)}</span><span class="d11-plaza__var">${estado.anterior ? flecha(p.variacion) : ''}</span></div>`;
     }).join('') : '<div class="state">Sin datos de la región para esta semana.</div>';
+    // Resumen bajo la lista: cuanto le falta a la plaza para el 1.er lugar,
+    // el promedio de la region y la meta.
+    const region = resumen(REGION_POR_SEMANA.get(estado.semana) || []);
+    const mia = activa && OXXO.getActiveDataScope().level !== 'region' ? activa : null, lider = lista[0];
+    const dato = (t, v, sub) => `<div class="d11-resumen__dato"><span>${t}</span><b>${v}</b><small>${sub}</small></div>`;
+    $('plazas-resumen').innerHTML = lista.length ? [
+      dato('Promedio región', fmt(region.total), `${region.tiendas} tiendas · ${lista.length} plazas`),
+      mia ? dato(pos === 1 ? 'Ventaja sobre el 2.º' : 'Para el 1.er lugar', pos === 1 ? (lista[1] ? fmtPts(mia.total - lista[1].total) : '—') : fmtPts(lider.total - mia.total, false), pos === 1 ? (lista[1] ? `contra ${esc(lista[1].plaza)}` : '') : `${esc(lider.plaza)} va en ${fmt(lider.total)}`)
+        : dato('Mejor plaza', esc(lider.plaza), fmt(lider.total)),
+      dato(mia ? `${esc(mia.plaza)} vs. región` : 'Región vs. meta', mia ? fmtPts(mia.total - region.total) : fmtPts(region.vsMeta), mia ? `${mia.total >= region.total ? 'arriba' : 'abajo'} del promedio` : `meta ${META}%`)
+    ].join('') : '';
   }
 
   /* ---------- lamina PNG ---------- */
