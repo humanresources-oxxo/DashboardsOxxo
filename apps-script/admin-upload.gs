@@ -12,7 +12,7 @@
  * Despues de eso, admin.html publica directo sin pedir URL.
  */
 const SPREADSHEET_ID = '1EbUuyy-PRXiDwPmn9L14P93cGN6VXTyLfAHx-CE8M_A';
-const APP_VERSION = '49';
+const APP_VERSION = '50';
 const ADMIN_PASSWORD_PROPERTY = 'ADMIN_PASSWORD';
 const AUDIT_SHEET = '_Admin_Bitacora';
 const BACKUP_PREFIX = '_BK_';
@@ -28,6 +28,11 @@ const WORKBOOK_CELL_LIMIT = 20000000;
 // Apps Script corta toda ejecucion a los 6 minutos y el panel solo ve
 // "modo compatible" (paso el 23/10/2026 con la primera limpieza del libro).
 const LIMPIEZA_MAX_MS = 60000;
+// Con el libro holgado no hace falta revisar todas las hojas en cada
+// publicacion (cada hoja son varias llamadas a Sheets y alargan la
+// ejecucion): la limpieza completa solo corre desde este porcentaje.
+const LIMPIEZA_DESDE_PCT = 60;
+const HOME_SIGNATURE_PROPERTY = 'HOME_SHEET_SIGNATURE';
 const MAX_UPLOAD_ROWS = 100000;
 const MAX_UPLOAD_COLUMNS = 250;
 const SYSTEM_NOTICES_SHEET = 'Avisos_Sistema';
@@ -427,7 +432,7 @@ function doPost(e) {
       let backupName = '';
       let result;
       try {
-        liberarEspacio_(ss, Date.now() + LIMPIEZA_MAX_MS);
+        if (usoCeldas_(ss).pct >= LIMPIEZA_DESDE_PCT) liberarEspacio_(ss, Date.now() + LIMPIEZA_MAX_MS);
         backupName = backupCurrentSheet(ss, sheet, targetSheet, String(payload.sourceFile || payload.source || 'Publicación desde Panel Admin'));
         result = updateMode === 'replacePeriod'
           ? replacePeriod(sheet, rows, newHeaders, periodColumn, periodValues, scopeColumns)
@@ -453,7 +458,14 @@ function doPost(e) {
       sheet.setFrozenRows(2); // fila 1 = sacrificio, fila 2 = encabezados reales
       sheet.autoResizeColumns(1, Math.min(result.columns, 20));
       const verification = verifyPublishedSheet(sheet, result, newHeaders);
-      ensureHomeSheet_(ss);
+      // La publicacion ya quedo escrita y en bitacora: un fallo al redibujar
+      // la portada no debe devolverla como error (el panel diria "no se pudo
+      // publicar" con los datos ya cambiados).
+      try {
+        actualizarPortadaSiCambio_(ss);
+      } catch (homeError) {
+        console.warn('No se pudo actualizar la portada: ' + (homeError && homeError.message || homeError));
+      }
 
       return jsonResponse({
         ok: true,
@@ -480,6 +492,24 @@ function doPost(e) {
   } catch (error) {
     return jsonResponse({ ok: false, error: String(error.message || error) });
   }
+}
+
+// La portada solo cambia si cambia la lista de hojas visibles; redibujarla
+// en cada publicacion eran decenas de llamadas de formato por publicacion.
+// refreshHomeSheet() y repairSystemStructure() la siguen forzando.
+function firmaPortada_(ss) {
+  return ss.getSheets().filter(function(sheet) {
+    return sheet.getName().indexOf(BACKUP_PREFIX) !== 0 && !sheet.isSheetHidden();
+  }).map(function(sheet) { return sheet.getName(); }).join('|');
+}
+
+function actualizarPortadaSiCambio_(ss) {
+  const props = PropertiesService.getScriptProperties();
+  const firma = firmaPortada_(ss);
+  if (ss.getSheetByName(HOME_SHEET) && props.getProperty(HOME_SIGNATURE_PROPERTY) === firma) return false;
+  ensureHomeSheet_(ss);
+  props.setProperty(HOME_SIGNATURE_PROPERTY, firmaPortada_(ss));
+  return true;
 }
 
 function ensureHomeSheet_(ss) {

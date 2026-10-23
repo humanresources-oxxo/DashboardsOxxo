@@ -124,3 +124,27 @@ test('el uso del libro suma todas las celdas, vacias incluidas', () => {
   assert.equal(uso.limit, 20000000);
   assert.equal(uso.pct, 25.1);
 });
+
+test('la portada solo se redibuja si cambia la lista de hojas', () => {
+  const gs = cargar();
+  const props = new Map();
+  gs.PropertiesService = { getScriptProperties: () => ({ getProperty: (k) => props.get(k) ?? null, setProperty: (k, v) => props.set(k, v) }) };
+  let dibujos = 0;
+  vm.runInContext('ensureHomeSheet_ = function() { globalThis.__dibujos = (globalThis.__dibujos || 0) + 1; }', gs);
+  const hoja = (name, hidden = false) => Object.assign(new FakeSheet(name), { isSheetHidden: () => hidden });
+  const ss = new FakeSpreadsheet([hoja('00_INICIO'), hoja('Dashboard_1_Diario'), hoja('_BK_Dashboard_1_Diario_1', true)]);
+  assert.equal(gs.actualizarPortadaSiCambio_(ss), true);
+  assert.equal(gs.actualizarPortadaSiCambio_(ss), false, 'misma lista: no se redibuja');
+  ss.list.push(hoja('_BK_Dashboard_1_Diario_2', true));
+  assert.equal(gs.actualizarPortadaSiCambio_(ss), false, 'un respaldo nuevo no cambia la portada');
+  ss.list.push(hoja('Dashboard_15_Nuevo'));
+  assert.equal(gs.actualizarPortadaSiCambio_(ss), true, 'una hoja nueva si');
+  dibujos = vm.runInContext('globalThis.__dibujos', gs);
+  assert.equal(dibujos, 2);
+});
+
+test('la limpieza completa solo corre con el libro desde LIMPIEZA_DESDE_PCT', () => {
+  const gs = fs.readFileSync(path.join(root, 'apps-script', 'admin-upload.gs'), 'utf8');
+  assert.match(gs, /if \(usoCeldas_\(ss\)\.pct >= LIMPIEZA_DESDE_PCT\) liberarEspacio_\(ss, Date\.now\(\) \+ LIMPIEZA_MAX_MS\);/);
+  assert.match(gs, /try \{\s*actualizarPortadaSiCambio_\(ss\);\s*\} catch/);
+});

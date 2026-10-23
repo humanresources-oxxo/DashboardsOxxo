@@ -1,8 +1,9 @@
 // En modo compatible (sin respuesta de Apps Script) el panel confirma la
 // publicacion con la bitacora: Apps Script escribe "Correcta" solo al
-// terminar. La hoja publica no sirve de prueba: el 23/10/2026
-// Dashboard_3_Diario (foto diaria, ~1,055 filas cada dia) se "confirmo" con
-// la base del dia anterior.
+// terminar. La hoja publica no sirve de prueba (el 23/10/2026
+// Dashboard_3_Diario, una foto diaria de ~1,055 filas, se "confirmo" con la
+// base del dia anterior) y tampoco se comparan horas: la bitacora usa la zona
+// del libro, una hora antes que el navegador en Oaxaca.
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -14,48 +15,52 @@ const pick = (re) => { const m = source.match(re); assert.ok(m, String(re)); ret
 const ctx = {};
 vm.runInNewContext([
   pick(/const keyOf=[^\n]*/),
-  pick(/function auditDate\(value\)\{[\s\S]*?\n  \}/),
-  pick(/const AUDIT_SKEW_MS=[^\n]*/),
-  pick(/function findAuditEntry\(rows,\{tab,count,since\}\)\{[\s\S]*?\n  \}/),
-  'globalThis.api={findAuditEntry,auditDate};',
+  pick(/const auditField=[^\n]*/),
+  pick(/const auditSignature=[^\n]*/),
+  pick(/function entriesAfter\(rows,baseline\)\{[\s\S]*?\n  \}/),
+  pick(/function findAuditEntry\(rows,\{tab,count,baseline\}\)\{[\s\S]*?\n  \}/),
+  'globalThis.api={findAuditEntry,auditSignature};',
 ].join('\n'), ctx);
-const { findAuditEntry, auditDate } = ctx.api;
+const { findAuditEntry, auditSignature } = ctx.api;
 
-const bitacora = [
+const antes = [
   { Fecha: '22/10/2026 8:50:16', Hoja: 'Dashboard_3_Diario', 'Filas publicadas': '1055', Estado: 'Correcta', Respaldo: '_BK_viejo' },
-  { Fecha: '23/10/2026 9:04:41', Hoja: 'Dashboard_6_Semanal', 'Filas publicadas': '2729', Estado: 'Correcta', Respaldo: '_BK_Dashboard_6_Semanal_20261023_090353_339' },
-  { Fecha: '23/10/2026 9:12:03', Hoja: 'Dashboard_3_Otras_Plazas', 'Filas publicadas': '4', Estado: 'Correcta', Respaldo: '_BK_x' },
-  { Fecha: '23/10/2026 9:20:00', Hoja: 'Dashboard_4_Semanal', 'Filas publicadas': '18,825', Estado: 'Error', Detalle: 'limite de celdas' },
+  { Fecha: '23/10/2026 9:04:41', Hoja: 'Dashboard_6_Semanal', 'Filas publicadas': '2729', Estado: 'Correcta', Respaldo: '_BK_d6' },
 ];
-const envio = (h, m) => new Date(2026, 9, 23, h, m).getTime();
+const baseline = { length: antes.length, last: auditSignature(antes[antes.length - 1]) };
 
-test('la publicacion de ayer no confirma la de hoy', () => {
-  assert.equal(findAuditEntry(bitacora, { tab: 'Dashboard_3_Diario', count: 1055, since: envio(9, 10) }), null);
+test('sin entradas nuevas no se confirma, aunque haya una igual de antes', () => {
+  assert.equal(findAuditEntry(antes, { tab: 'Dashboard_3_Diario', count: 1055, baseline }), null);
 });
 
-test('una entrada Correcta posterior al envio confirma y trae el respaldo', () => {
-  const entry = findAuditEntry(bitacora, { tab: 'Dashboard_6_Semanal', count: 2729, since: envio(9, 3) });
+test('una entrada nueva Correcta confirma, sin importar la hora que traiga', () => {
+  // Hora del libro: una hora antes que la del navegador.
+  const despues = [...antes, { Fecha: '23/10/2026 9:20:11', Hoja: 'Dashboard_3_Diario', 'Filas publicadas': '1,055', Estado: 'Correcta', Respaldo: '_BK_Dashboard_3_Diario_20261023_091953_560' }];
+  const entry = findAuditEntry(despues, { tab: 'Dashboard_3_Diario', count: 1055, baseline });
   assert.equal(entry.status, 'Correcta');
-  assert.equal(entry.backup, '_BK_Dashboard_6_Semanal_20261023_090353_339');
+  assert.equal(entry.backup, '_BK_Dashboard_3_Diario_20261023_091953_560');
 });
 
-test('un Error del servidor se reporta con su motivo', () => {
-  const entry = findAuditEntry(bitacora, { tab: 'Dashboard_4_Semanal', count: 18825, since: envio(9, 19) });
+test('un Error nuevo se reporta con su motivo', () => {
+  const despues = [...antes, { Fecha: '23/10/2026 9:30:00', Hoja: 'Dashboard_4_Semanal', 'Filas publicadas': '18825', Estado: 'Error', Detalle: 'limite de celdas' }];
+  const entry = findAuditEntry(despues, { tab: 'Dashboard_4_Semanal', count: 18825, baseline });
   assert.equal(entry.status, 'Error');
   assert.equal(entry.detail, 'limite de celdas');
 });
 
-test('otra cantidad de filas no cuenta como esta publicacion', () => {
-  assert.equal(findAuditEntry(bitacora, { tab: 'Dashboard_6_Semanal', count: 100, since: envio(9, 3) }), null);
+test('otra hoja u otra cantidad de filas no cuentan', () => {
+  const despues = [...antes, { Fecha: 'x', Hoja: 'Dashboard_3_Otras_Plazas', 'Filas publicadas': '4', Estado: 'Correcta' }];
+  assert.equal(findAuditEntry(despues, { tab: 'Dashboard_3_Diario', count: 1055, baseline }), null);
+  assert.equal(findAuditEntry(despues, { tab: 'Dashboard_3_Otras_Plazas', count: 5, baseline }), null);
 });
 
-test('la fecha de la bitacora se lee como hora local', () => {
-  assert.equal(auditDate('23/10/2026 9:04:41'), new Date(2026, 9, 23, 9, 4, 41).getTime());
-  assert.ok(Number.isNaN(auditDate('')));
+test('sin linea base no se adivina', () => {
+  assert.equal(findAuditEntry([...antes, { Hoja: 'Dashboard_3_Diario', 'Filas publicadas': '1055', Estado: 'Correcta' }], { tab: 'Dashboard_3_Diario', count: 1055, baseline: null }), null);
 });
 
-test('el panel ya no afirma exito en modo compatible sin la bitacora', () => {
+test('el panel confirma con la bitacora la principal y las automaticas', () => {
   assert.match(source, /const unconfirmed=Boolean\(result\.compatibilityMode&&audit\?\.status!=='Correcta'\)/);
-  assert.match(source, /'Publicación no realizada'/);
-  assert.doesNotMatch(source, /la hoja pública ya tiene las filas enviadas/);
+  assert.equal((source.match(/const baseline=await auditBaseline\(\);/g) || []).length, 2);
+  assert.match(source, /verified:audit\?\.status==='Correcta'/);
+  assert.doesNotMatch(source, /auditDate|since-/);
 });
