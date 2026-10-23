@@ -262,7 +262,8 @@
   }
   function renderTendencia() {
     const series = seriesTendencia();
-    $('trend-chart').innerHTML = svgTendencia(series);
+    const ancho = Math.round(Math.min(760, Math.max(320, $('trend-chart').clientWidth || 760)));
+    $('trend-chart').innerHTML = svgTendencia(series, { ancho, alto: ancho < 520 ? 240 : 260 });
     $('trend-legend').innerHTML = series.map(s => `<span><i style="--c:${s.color}"${s.punteada ? ' class="punteada"' : ''}></i>${esc(s.nombre)}</span>`).join('') + `<span><i class="meta"></i>Meta ${META}%</span>`;
     const n = series[0].datos.length;
     $('trend-chip').textContent = n > 1 ? `${n} semanas` : 'Se llena con cada carga semanal';
@@ -289,18 +290,20 @@
         : a.cumplio ? `<span class="d11-tag d11-tag--si" title="Tenía ${fmt(a.compromisoAnterior)}">Sí</span>` : `<span class="d11-tag d11-tag--no" title="Tenía ${fmt(a.compromisoAnterior)}">No · ${fmt(a.compromisoAnterior)}</span>`;
       return `<tr class="${a.foco ? 'is-foco' : ''}${estado.asesor === a.nombre ? ' is-sel' : ''}" data-asesor="${esc(a.nombre)}">
         <td class="d11-n">${i + 1}</td>
-        <td class="d11-asesor"><button type="button" class="d11-link" data-asesor="${esc(a.nombre)}">${esc(a.nombre)}</button>${a.foco ? '<span class="d11-foco">FOCO</span>' : ''}<small>${a.tiendas} tiendas</small></td>
-        <td class="pct" style="color:${rg.color}">${fmt(a.total)}</td>
-        <td>${hayAnterior ? flecha(a.variacion) : '—'}</td>
-        <td class="pct hide-mobile">${fmt(a.entradas)}</td>
-        <td class="pct hide-mobile">${fmt(a.salidas)}</td>
-        ${RANGOS.map(x => `<td class="d11-rango hide-mobile"><span style="--c:${x.color}">${a.rangos[x.id]}</span></td>`).join('')}
-        <td class="pct">${fmt(a.compromiso)}</td>
-        <td>${hayAnterior ? cumplio : '—'}</td>
+        <td class="d11-asesor d11-cab"><button type="button" class="d11-link" data-asesor="${esc(a.nombre)}">${esc(a.nombre)}</button>${a.foco ? '<span class="d11-foco">FOCO</span>' : ''}<small>${a.tiendas} tiendas</small></td>
+        <td class="pct" data-l="Total" style="color:${rg.color}">${fmt(a.total)}</td>
+        <td data-l="Vs. anterior">${hayAnterior ? flecha(a.variacion) : '—'}</td>
+        <td class="pct d11-desk" data-l="Entradas">${fmt(a.entradas)}</td>
+        <td class="pct d11-desk" data-l="Salidas">${fmt(a.salidas)}</td>
+        ${RANGOS.map(x => `<td class="d11-rango d11-desk"><span style="--c:${x.color}">${a.rangos[x.id]}</span></td>`).join('')}
+        <td class="d11-movil d11-ancho" data-l="Tiendas por rango"><span class="d11-pills">${RANGOS.map(x => `<span class="d11-rango"><span style="--c:${x.color}" title="${esc(x.etiqueta)}">${esc(x.etiqueta)} · ${a.rangos[x.id]}</span></span>`).join('')}</span></td>
+        <td class="d11-movil" data-l="Entradas / salidas">${fmt(a.entradas)} / ${fmt(a.salidas)}</td>
+        <td class="pct" data-l="Compromiso sig.">${fmt(a.compromiso)}</td>
+        <td data-l="¿Cumplió?">${hayAnterior ? cumplio : '—'}</td>
       </tr>`;
     };
     $('advisor-table').querySelector('tbody').innerHTML = lista.length ? lista.map(fila).join('')
-      : `<tr><td colspan="${8 + RANGOS.length}"><div class="state">Sin asesores con estos filtros.</div></td></tr>`;
+      : `<tr><td colspan="${10 + RANGOS.length}"><div class="state">Sin asesores con estos filtros.</div></td></tr>`;
   }
 
   const VISTAS = {
@@ -320,13 +323,13 @@
     $('detail-table').querySelector('tbody').innerHTML = lista.length ? lista.map(f => {
       const rg = rangoDe(f._t), cambio = cambios.get(claveTienda(f, COL)), calidad = calidadDe(f, COL);
       const mov = !cambio ? '<span class="d11-mut">Nueva</span>' : cambio.bajo ? `<span class="d11-baja">▼ de ${esc(cambio.antes.id)}</span>` : cambio.ahora.orden > cambio.antes.orden ? `<span class="d11-sube">▲ de ${esc(cambio.antes.id)}</span>` : '<span class="d11-mut">Igual</span>';
-      return `<tr><td class="store"><strong>${esc(f[COL.tienda] || '—')}</strong><small>${esc(f[COL.plaza] || '')}</small></td>
-        <td>${esc(f[COL.asesor] || '—')}</td>
-        <td class="pct">${fmt(f._e)}</td><td class="pct">${fmt(f._s)}</td><td class="pct" style="color:${rg.color}">${fmt(f._t)}</td>
-        <td class="hide-mobile">${cambio ? flecha(cambio.variacion) : '—'}</td>
-        <td><span class="status" style="--bg:${rg.color}22;--fg:${rg.color}">${esc(rg.id)}</span></td>
-        <td class="hide-mobile">${estado.anterior ? mov : '—'}</td>
-        <td class="hide-mobile">${calidad.length ? `<span class="quality">${esc(calidad.join(' · '))}</span>` : '—'}</td></tr>`;
+      return `<tr><td class="store d11-cab"><strong>${esc(f[COL.tienda] || '—')}</strong><small>${esc(f[COL.plaza] || '')}</small></td>
+        <td class="d11-ancho" data-l="Asesor">${esc(f[COL.asesor] || '—')}</td>
+        <td class="pct" data-l="Entradas">${fmt(f._e)}</td><td class="pct" data-l="Salidas">${fmt(f._s)}</td><td class="pct" data-l="Total" style="color:${rg.color}">${fmt(f._t)}</td>
+        <td data-l="Vs. anterior">${cambio ? flecha(cambio.variacion) : '—'}</td>
+        <td data-l="Rango"><span class="status" style="--bg:${rg.color}22;--fg:${rg.color}">${esc(rg.id)}</span></td>
+        <td data-l="Cambio">${estado.anterior ? mov : '—'}</td>
+        <td class="d11-ancho${calidad.length ? '' : ' d11-vacio'}" data-l="Calidad">${calidad.length ? `<span class="quality">${esc(calidad.join(' · '))}</span>` : '—'}</td></tr>`;
     }).join('') : '<tr><td colspan="9"><div class="state">No hay tiendas que coincidan con los filtros.</div></td></tr>';
   }
 
@@ -334,8 +337,8 @@
     const lista = filas.filter(filtrosTienda).map(f => ({ f, motivos: calidadDe(f, COL) })).filter(x => x.motivos.length)
       .sort((a, b) => String(a.f[COL.asesor] || '').localeCompare(String(b.f[COL.asesor] || ''), 'es'));
     $('quality-chip').textContent = lista.length ? `${lista.length} por corregir` : 'Todo en orden';
-    $('quality-list').innerHTML = lista.length ? `<table class="tbl d11-calidad"><thead><tr><th>Tienda</th><th>Asesor</th><th>Entradas</th><th>Salidas</th><th>Total</th><th>Qué corregir</th></tr></thead><tbody>${lista.map(({ f, motivos }) =>
-      `<tr><td class="store"><strong>${esc(f[COL.tienda])}</strong></td><td>${esc(f[COL.asesor] || '—')}</td><td class="pct">${fmt(f._e)}</td><td class="pct">${fmt(f._s)}</td><td class="pct">${fmt(f._t)}</td><td><span class="quality">${esc(motivos.join(' · '))}</span></td></tr>`).join('')}</tbody></table>`
+    $('quality-list').innerHTML = lista.length ? `<table class="tbl d11-calidad d11-tarjetas"><thead><tr><th>Tienda</th><th>Asesor</th><th>Entradas</th><th>Salidas</th><th>Total</th><th>Qué corregir</th></tr></thead><tbody>${lista.map(({ f, motivos }) =>
+      `<tr><td class="store d11-cab"><strong>${esc(f[COL.tienda])}</strong></td><td class="d11-ancho" data-l="Asesor">${esc(f[COL.asesor] || '—')}</td><td class="pct" data-l="Entradas">${fmt(f._e)}</td><td class="pct" data-l="Salidas">${fmt(f._s)}</td><td class="pct" data-l="Total">${fmt(f._t)}</td><td class="d11-ancho" data-l="Qué corregir"><span class="quality">${esc(motivos.join(' · '))}</span></td></tr>`).join('')}</tbody></table>`
       : '<div class="state">Ninguna tienda con más de 100% ni sin dato esta semana.</div>';
   }
 
@@ -478,6 +481,9 @@
     render();
   }
   conectar();
+  // Al girar el celular o cambiar el ancho, la grafica se redibuja a su medida.
+  let anchoPrevio = 0;
+  addEventListener('resize', () => { const w = $('trend-chart').clientWidth; if (ULTIMO && Math.abs(w - anchoPrevio) > 40) { anchoPrevio = w; renderTendencia(); } });
 
   // Para Descargar (Excel): lo que se ve, en hojas separadas.
   function hojasExcel() {
