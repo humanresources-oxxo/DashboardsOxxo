@@ -23,7 +23,7 @@
       <div class="backup-card__copy"><strong>${esc(item.targetSheet)}</strong><span>${esc(item.createdAt || 'Fecha no disponible')}</span><small>${esc(item.sourceFile || 'Origen no registrado')} · ${Number(item.rows || 0).toLocaleString('es-MX')} filas · ${Number(item.columns || 0).toLocaleString('es-MX')} columnas</small></div>
       <button type="button" class="audit-restore" data-restore-sheet="${esc(item.targetSheet)}" data-restore-backup="${esc(item.backupSheet)}">Comparar y restaurar</button>
     </article>`).join('') : '<div class="backup-empty">Esta base todavía no tiene respaldos disponibles.</div>';
-    $('backup-history-note').textContent = filter === 'all' && overviewData.backups.length > 15 ? `Mostrando los 15 más recientes de ${overviewData.backups.length}. Filtra una base para ver sus cinco respaldos.` : `${matches.length} respaldo${matches.length === 1 ? '' : 's'} disponible${matches.length === 1 ? '' : 's'}. Se conservan hasta cinco por base.`;
+    $('backup-history-note').textContent = filter === 'all' && overviewData.backups.length > 15 ? `Mostrando los 15 más recientes de ${overviewData.backups.length}. Filtra una base para ver sus tres respaldos.` : `${matches.length} respaldo${matches.length === 1 ? '' : 's'} disponible${matches.length === 1 ? '' : 's'}. Se conservan hasta tres por base.`;
   }
 
   function renderOverview(result) {

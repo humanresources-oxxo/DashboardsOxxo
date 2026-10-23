@@ -38,8 +38,11 @@ class FakeSheet {
   getName() { return this.name; }
   getLastRow() { return this.values.length; }
   getLastColumn() { return Math.max(0, ...this.values.map(row => row.length)); }
-  getMaxRows() { return Math.max(100, this.values.length); }
-  getMaxColumns() { return Math.max(20, this.getLastColumn()); }
+  getMaxRows() { return Math.max(this.maxRows ?? 100, this.values.length); }
+  getMaxColumns() { return Math.max(this.maxCols ?? 20, this.getLastColumn()); }
+  getFrozenRows() { return 0; }
+  deleteRows(start, count) { this.maxRows = this.getMaxRows() - count; this.values.splice(start - 1, count); }
+  deleteColumns(start, count) { this.maxCols = this.getMaxColumns() - count; this.values.forEach(row => row.splice(start - 1, count)); }
   getDataRange() { return new FakeRange(this, 1, 1, this.getLastRow(), this.getLastColumn()); }
   getRange(row, column, rows, columns) { return new FakeRange(this, row, column, rows, columns); }
   setFrozenRows() { return this; }
@@ -82,6 +85,10 @@ assert.equal(result.ok, true);
 assert.equal(result.rows, 2);
 const output = ss.getSheetByName('Catalogo_Tiendas').values;
 assert.equal(output[0].slice(0, 9).every(value => value === '_buffer_'), true);
+// La hoja publicada queda de su tamaño real: las celdas vacias cuentan para el limite del libro.
+const catalogo = ss.getSheetByName('Catalogo_Tiendas');
+assert.equal(catalogo.getMaxRows(), 4);
+assert.equal(catalogo.getMaxColumns(), 9);
 assert.deepEqual(output[1].slice(0, 9), ['CR', 'Tienda', 'Region', 'Plaza', 'Zona', 'Asesor', 'ACTIVA', 'Fuente', 'Actualizado']);
 assert.deepEqual(output.slice(2).map(row => row.slice(0, 7)), [
   ['50I34', 'OXXO Centro OAX', 'TABASCO', 'Plaza Oaxaca', '', 'Marisela', 'SI'],

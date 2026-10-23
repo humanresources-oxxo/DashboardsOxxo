@@ -12,11 +12,15 @@
  * Despues de eso, admin.html publica directo sin pedir URL.
  */
 const SPREADSHEET_ID = '1EbUuyy-PRXiDwPmn9L14P93cGN6VXTyLfAHx-CE8M_A';
-const APP_VERSION = '47';
+const APP_VERSION = '48';
 const ADMIN_PASSWORD_PROPERTY = 'ADMIN_PASSWORD';
 const AUDIT_SHEET = '_Admin_Bitacora';
 const BACKUP_PREFIX = '_BK_';
-const BACKUP_LIMIT = 5;
+// Cada respaldo es una copia completa y oculta de la hoja. Con 5 por hoja el
+// libro llego al limite de celdas de Google Sheets (bitacora del 23/10/2026:
+// Dashboard_4_Semanal no se pudo publicar); 3 alcanzan para deshacer los
+// ultimos cambios.
+const BACKUP_LIMIT = 3;
 const MAX_UPLOAD_ROWS = 100000;
 const MAX_UPLOAD_COLUMNS = 250;
 const SYSTEM_NOTICES_SHEET = 'Avisos_Sistema';
@@ -416,6 +420,7 @@ function doPost(e) {
       let backupName = '';
       let result;
       try {
+        liberarEspacio_(ss);
         backupName = backupCurrentSheet(ss, sheet, targetSheet, String(payload.sourceFile || payload.source || 'Publicación desde Panel Admin'));
         result = updateMode === 'replacePeriod'
           ? replacePeriod(sheet, rows, newHeaders, periodColumn, periodValues, scopeColumns)
@@ -842,16 +847,21 @@ function saveSnapshot(ss, targetSheet, values, sourceLabel) {
     backupName = (baseName + '_' + stamp + '_' + suffix).slice(0, 99);
     suffix++;
   }
+  // Primero se borran los respaldos que sobrarian: si se borraran despues, el
+  // libro tendria por un momento un respaldo de mas y es justo ahi donde se
+  // rebasa el limite de celdas.
+  pruneBackups(ss, targetSheet, BACKUP_LIMIT - 1);
   const backup = ss.insertSheet(backupName);
   const requiredRows = values.length + 2;
   const requiredCols = Math.max(values[0].length, 6);
   if (backup.getMaxRows() < requiredRows) backup.insertRowsAfter(backup.getMaxRows(), requiredRows - backup.getMaxRows());
   if (backup.getMaxColumns() < requiredCols) backup.insertColumnsAfter(backup.getMaxColumns(), requiredCols - backup.getMaxColumns());
+  // insertSheet crea 1000 x 26 celdas: se recorta al tamaño exacto del respaldo.
+  ajustarTamanoHoja_(backup, requiredRows, requiredCols);
   backup.getRange(1, 1, 1, 6).setValues([['Respaldo creado', createdAt, 'Hoja origen', targetSheet, 'Archivo origen', String(sourceLabel || '')]]);
   backup.getRange(3, 1, values.length, values[0].length).setValues(values);
   backup.hideSheet();
   SpreadsheetApp.flush();
-  pruneBackups(ss, targetSheet, BACKUP_LIMIT);
   return backupName;
 }
 
@@ -880,10 +890,58 @@ function readBackupMetadata(ss, targetSheet) {
 }
 
 function pruneBackups(ss, targetSheet, limit) {
+  const keep = Math.max(0, Number(limit === undefined ? BACKUP_LIMIT : limit));
   const backups = readBackupMetadata(ss, targetSheet);
-  backups.slice(Math.max(1, Number(limit || BACKUP_LIMIT))).forEach(function(item) {
-    ss.deleteSheet(item.sheet);
+  // Sin hoja de origen se agrupan por destino: cada hoja conserva sus propios
+  // respaldos mas recientes.
+  const porHoja = {};
+  backups.forEach(function(item) {
+    porHoja[item.targetSheet] = (porHoja[item.targetSheet] || 0) + 1;
+    if (porHoja[item.targetSheet] > keep) ss.deleteSheet(item.sheet);
   });
+}
+
+// Las celdas vacias tambien cuentan para el limite del libro. Google nunca
+// encoge una hoja sola: si una base trae menos filas que la anterior, las
+// filas sobrantes se quedan aunque esten vacias. Se borran filas y columnas
+// de mas (respetando las filas congeladas, que Sheets no deja quedar solas).
+function ajustarTamanoHoja_(sheet, rows, columns) {
+  const keepRows = Math.max(rows, (sheet.getFrozenRows ? sheet.getFrozenRows() : 0) + 1, 1);
+  const keepCols = Math.max(columns, 1);
+  const maxRows = sheet.getMaxRows();
+  const maxCols = sheet.getMaxColumns();
+  let liberadas = 0;
+  if (maxRows > keepRows) {
+    sheet.deleteRows(keepRows + 1, maxRows - keepRows);
+    liberadas += (maxRows - keepRows) * maxCols;
+  }
+  if (maxCols > keepCols) {
+    sheet.deleteColumns(keepCols + 1, maxCols - keepCols);
+    liberadas += (maxCols - keepCols) * Math.min(maxRows, keepRows);
+  }
+  return liberadas;
+}
+
+// Mantenimiento del libro: deja cada hoja publicada y cada respaldo de su
+// tamaño real y borra los respaldos que pasen de BACKUP_LIMIT. Corre antes de
+// cada publicacion; tambien se puede ejecutar a mano desde el editor con
+// liberarEspacioLibro().
+function liberarEspacio_(ss) {
+  pruneBackups(ss, '', BACKUP_LIMIT);
+  let celdas = 0;
+  ss.getSheets().forEach(function(sheet) {
+    const name = sheet.getName();
+    if (ALLOWED_SHEETS.indexOf(name) === -1 && name.indexOf(BACKUP_PREFIX) !== 0) return;
+    celdas += ajustarTamanoHoja_(sheet, sheet.getLastRow(), sheet.getLastColumn());
+  });
+  return celdas;
+}
+
+function liberarEspacioLibro() {
+  const ss = SPREADSHEET_ID ? SpreadsheetApp.openById(SPREADSHEET_ID) : SpreadsheetApp.getActiveSpreadsheet();
+  const celdas = liberarEspacio_(ss);
+  Logger.log('Celdas liberadas: ' + celdas);
+  return celdas;
 }
 
 function resolveBackup(ss, targetSheet, requestedBackup) {
@@ -906,6 +964,7 @@ function writeSnapshot(sheet, values) {
   if (previousRows > rows) sheet.getRange(rows + 1, 1, previousRows - rows, Math.max(previousCols, columns)).clearContent();
   if (previousCols > columns) sheet.getRange(1, columns + 1, rows, previousCols - columns).clearContent();
   SpreadsheetApp.flush();
+  ajustarTamanoHoja_(sheet, rows, columns);
 }
 
 function getBackupPreview(payload) {
@@ -1594,6 +1653,10 @@ function writeWithBufferRow(sheet, values, numCols) {
   if (prevMaxCols > numCols) {
     sheet.getRange(1, numCols + 1, totalRows, prevMaxCols - numCols).clearContent();
   }
+  SpreadsheetApp.flush();
+  // Ya limpio el sobrante, se elimina: vacio tambien cuenta para el limite
+  // de celdas del libro.
+  ajustarTamanoHoja_(sheet, totalRows, numCols);
   SpreadsheetApp.flush();
 }
 
