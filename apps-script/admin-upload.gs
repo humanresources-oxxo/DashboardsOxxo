@@ -12,7 +12,7 @@
  * Despues de eso, admin.html publica directo sin pedir URL.
  */
 const SPREADSHEET_ID = '1EbUuyy-PRXiDwPmn9L14P93cGN6VXTyLfAHx-CE8M_A';
-const APP_VERSION = '48';
+const APP_VERSION = '49';
 const ADMIN_PASSWORD_PROPERTY = 'ADMIN_PASSWORD';
 const AUDIT_SHEET = '_Admin_Bitacora';
 const BACKUP_PREFIX = '_BK_';
@@ -21,6 +21,13 @@ const BACKUP_PREFIX = '_BK_';
 // Dashboard_4_Semanal no se pudo publicar); 3 alcanzan para deshacer los
 // ultimos cambios.
 const BACKUP_LIMIT = 3;
+// Limite de celdas de un libro de Google Sheets (vacias incluidas). Al
+// llegarle, Google rechaza cualquier escritura que agregue celdas.
+const WORKBOOK_CELL_LIMIT = 20000000;
+// La limpieza previa a publicar no debe comerse el tiempo de la publicacion:
+// Apps Script corta toda ejecucion a los 6 minutos y el panel solo ve
+// "modo compatible" (paso el 23/10/2026 con la primera limpieza del libro).
+const LIMPIEZA_MAX_MS = 60000;
 const MAX_UPLOAD_ROWS = 100000;
 const MAX_UPLOAD_COLUMNS = 250;
 const SYSTEM_NOTICES_SHEET = 'Avisos_Sistema';
@@ -420,7 +427,7 @@ function doPost(e) {
       let backupName = '';
       let result;
       try {
-        liberarEspacio_(ss);
+        liberarEspacio_(ss, Date.now() + LIMPIEZA_MAX_MS);
         backupName = backupCurrentSheet(ss, sheet, targetSheet, String(payload.sourceFile || payload.source || 'Publicación desde Panel Admin'));
         result = updateMode === 'replacePeriod'
           ? replacePeriod(sheet, rows, newHeaders, periodColumn, periodValues, scopeColumns)
@@ -464,7 +471,8 @@ function doPost(e) {
         audited: true,
         verification: verification,
         storeCatalog: result.storeCatalog || null,
-        orphanedColumns: result.orphanedColumns || []
+        orphanedColumns: result.orphanedColumns || [],
+        workbook: usoCeldas_(ss)
       });
     } finally {
       lock.releaseLock();
@@ -889,7 +897,7 @@ function readBackupMetadata(ss, targetSheet) {
   return items.sort(function(a, b) { return b.createdMillis - a.createdMillis; });
 }
 
-function pruneBackups(ss, targetSheet, limit) {
+function pruneBackups(ss, targetSheet, limit, deadline) {
   const keep = Math.max(0, Number(limit === undefined ? BACKUP_LIMIT : limit));
   const backups = readBackupMetadata(ss, targetSheet);
   // Sin hoja de origen se agrupan por destino: cada hoja conserva sus propios
@@ -897,8 +905,14 @@ function pruneBackups(ss, targetSheet, limit) {
   const porHoja = {};
   backups.forEach(function(item) {
     porHoja[item.targetSheet] = (porHoja[item.targetSheet] || 0) + 1;
-    if (porHoja[item.targetSheet] > keep) ss.deleteSheet(item.sheet);
+    if (porHoja[item.targetSheet] > keep && !(deadline && Date.now() > deadline)) ss.deleteSheet(item.sheet);
   });
+}
+
+function usoCeldas_(ss) {
+  let celdas = 0;
+  ss.getSheets().forEach(function(sheet) { celdas += sheet.getMaxRows() * sheet.getMaxColumns(); });
+  return { cells: celdas, limit: WORKBOOK_CELL_LIMIT, pct: Math.round((celdas / WORKBOOK_CELL_LIMIT) * 1000) / 10 };
 }
 
 // Las celdas vacias tambien cuentan para el limite del libro. Google nunca
@@ -925,11 +939,13 @@ function ajustarTamanoHoja_(sheet, rows, columns) {
 // Mantenimiento del libro: deja cada hoja publicada y cada respaldo de su
 // tamaño real y borra los respaldos que pasen de BACKUP_LIMIT. Corre antes de
 // cada publicacion; tambien se puede ejecutar a mano desde el editor con
-// liberarEspacioLibro().
-function liberarEspacio_(ss) {
-  pruneBackups(ss, '', BACKUP_LIMIT);
+// liberarEspacioLibro(). Con deadline (ms de Date.now()) se detiene al
+// llegarle y deja el resto para la siguiente vez: cada paso es idempotente.
+function liberarEspacio_(ss, deadline) {
+  pruneBackups(ss, '', BACKUP_LIMIT, deadline);
   let celdas = 0;
   ss.getSheets().forEach(function(sheet) {
+    if (deadline && Date.now() > deadline) return;
     const name = sheet.getName();
     if (ALLOWED_SHEETS.indexOf(name) === -1 && name.indexOf(BACKUP_PREFIX) !== 0) return;
     celdas += ajustarTamanoHoja_(sheet, sheet.getLastRow(), sheet.getLastColumn());
@@ -940,7 +956,8 @@ function liberarEspacio_(ss) {
 function liberarEspacioLibro() {
   const ss = SPREADSHEET_ID ? SpreadsheetApp.openById(SPREADSHEET_ID) : SpreadsheetApp.getActiveSpreadsheet();
   const celdas = liberarEspacio_(ss);
-  Logger.log('Celdas liberadas: ' + celdas);
+  const uso = usoCeldas_(ss);
+  Logger.log('Celdas liberadas: ' + celdas + ' · el libro usa ' + uso.cells + ' de ' + uso.limit + ' celdas (' + uso.pct + '%)');
   return celdas;
 }
 
@@ -1295,6 +1312,7 @@ function getAdminOverview(limit) {
     rows: audit.rows,
     sources: sources,
     backups: backups,
+    workbook: usoCeldas_(ss),
     summary: {
       sources: sources.length,
       withBackups: sources.filter(function(item) { return item.backupCount > 0; }).length,

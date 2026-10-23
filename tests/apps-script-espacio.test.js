@@ -105,3 +105,22 @@ test('una hoja con filas congeladas y sin datos no intenta quedarse solo con las
   gs.ajustarTamanoHoja_(hoja, 2, 1);
   assert.equal(hoja.getMaxRows(), 3);
 });
+
+test('con el tiempo agotado la limpieza no toca nada y la publicacion sigue', () => {
+  const gs = cargar();
+  const publicada = new FakeSheet('Dashboard_1_Diario', { rows: 40000, cols: 60, values: [['_buffer_'], ['Fecha'], ['x']] });
+  const bks = [1, 2, 3, 4].map(d => respaldo('Dashboard_1_Diario', new Date(2026, 9, d)));
+  const ss = new FakeSpreadsheet([publicada, ...bks]);
+  assert.equal(gs.liberarEspacio_(ss, Date.now() - 1), 0);
+  assert.equal(publicada.getMaxRows(), 40000);
+  assert.equal(ss.getSheets().length, 5);
+});
+
+test('el uso del libro suma todas las celdas, vacias incluidas', () => {
+  const gs = cargar();
+  const ss = new FakeSpreadsheet([new FakeSheet('A', { rows: 1000, cols: 26 }), new FakeSheet('B', { rows: 100000, cols: 50 })]);
+  const uso = gs.usoCeldas_(ss);
+  assert.equal(uso.cells, 26000 + 5000000);
+  assert.equal(uso.limit, 20000000);
+  assert.equal(uso.pct, 25.1);
+});
