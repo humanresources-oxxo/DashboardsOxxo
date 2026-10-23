@@ -12,7 +12,7 @@
  * Despues de eso, admin.html publica directo sin pedir URL.
  */
 const SPREADSHEET_ID = '1EbUuyy-PRXiDwPmn9L14P93cGN6VXTyLfAHx-CE8M_A';
-const APP_VERSION = '51';
+const APP_VERSION = '52';
 const ADMIN_PASSWORD_PROPERTY = 'ADMIN_PASSWORD';
 const AUDIT_SHEET = '_Admin_Bitacora';
 const BACKUP_PREFIX = '_BK_';
@@ -155,6 +155,13 @@ const CONFIG_DASHBOARD_REGISTRY = {
 // ALLOWED_SHEETS para diagnostico rapido.
 function doGet(e) {
   const action = String((e && e.parameter && e.parameter.action) || '');
+  if (action === 'ranking') {
+    try {
+      return jsonResponse({ ok: true, ranking: leerRanking_(SpreadsheetApp.openById(SPREADSHEET_ID), RANKING_TOP) });
+    } catch (error) {
+      return jsonResponse({ ok: false, error: String(error.message || error), ranking: [] });
+    }
+  }
   if (action === 'notices') {
     try {
       return jsonResponse({ ok: true, version: APP_VERSION, notices: getPublicSystemNotices() });
@@ -315,6 +322,12 @@ function doPost(e) {
     if (String(payload.action || '') === 'auth') {
       assertAuthorized(payload);
       return jsonResponse({ ok: true, authenticated: true });
+    }
+
+    // Ranking del juego Turno Nocturno: publico (no usa la contraseña del
+    // panel), solo agrega una fila validada a Juego_Ranking.
+    if (String(payload.action || '') === 'rankingGuardar') {
+      return jsonResponse(guardarRanking_(payload));
     }
 
     // Esta ruta no usa la credencial de administración: valida una contraseña
@@ -2195,4 +2208,89 @@ function jsonResponse(data) {
   return ContentService
     .createTextOutput(JSON.stringify(data))
     .setMimeType(ContentService.MimeType.JSON);
+}
+
+/* ---------- Ranking del juego Turno Nocturno ----------
+   Mejores tiempos de toda la oficina. La escritura es publica (el juego no
+   tiene contraseña), asi que todo se valida aqui: nombre corto sin
+   simbolos, tiempo y monitos en rangos posibles, los 3 turnos completos, y
+   un tope de envios para que nadie llene la hoja. La hoja queda oculta y
+   nunca crece de mas: al pasar de RANKING_MAX_FILAS se conservan las
+   mejores marcas. */
+const RANKING_SHEET = 'Juego_Ranking';
+const RANKING_HEADERS = ['Fecha', 'Nombre', 'Tiempo (s)', 'Monitos', 'Turnos'];
+const RANKING_TOP = 20;
+const RANKING_MAX_FILAS = 300;
+const RANKING_TIEMPO_MIN = 45;
+const RANKING_TIEMPO_MAX = 7200;
+const RANKING_TURNOS = 3;
+
+function hojaRanking_(ss) {
+  let sheet = ss.getSheetByName(RANKING_SHEET);
+  if (!sheet) {
+    sheet = ss.insertSheet(RANKING_SHEET);
+    sheet.getRange(1, 1, 1, RANKING_HEADERS.length).setValues([RANKING_HEADERS]);
+    ajustarTamanoHoja_(sheet, 2, RANKING_HEADERS.length);
+    sheet.hideSheet();
+  }
+  return sheet;
+}
+
+function nombreRanking_(value) {
+  const limpio = String(value == null ? '' : value).normalize('NFC').replace(/[^0-9A-Za-zÁÉÍÓÚÜÑáéíóúüñ .-]/g, '').replace(/\s+/g, ' ').trim().slice(0, 16);
+  if (limpio.replace(/[^0-9A-Za-zÁÉÍÓÚÜÑáéíóúüñ]/g, '').length < 2) throw new Error('Escribe un nombre de al menos 2 letras');
+  return limpio;
+}
+
+function leerRanking_(ss, limite) {
+  const sheet = ss.getSheetByName(RANKING_SHEET);
+  if (!sheet || sheet.getLastRow() < 2) return [];
+  const tz = ss.getSpreadsheetTimeZone() || 'America/Mexico_City';
+  return sheet.getRange(2, 1, sheet.getLastRow() - 1, RANKING_HEADERS.length).getValues()
+    .filter(function(row) { return row[1] && Number(row[2]) > 0; })
+    .sort(function(a, b) { return Number(a[2]) - Number(b[2]) || Number(b[3]) - Number(a[3]); })
+    .slice(0, limite)
+    .map(function(row) {
+      const fecha = Object.prototype.toString.call(row[0]) === '[object Date]' ? Utilities.formatDate(row[0], tz, 'dd/MM/yyyy') : String(row[0] || '');
+      return { nombre: String(row[1]), tiempo: Number(row[2]), monitos: Number(row[3]) || 0, fecha: fecha };
+    });
+}
+
+function guardarRanking_(payload) {
+  const nombre = nombreRanking_(payload.nombre);
+  const tiempo = Math.round(Number(payload.tiempo));
+  const monitos = Math.round(Number(payload.monitos));
+  const turnos = Math.round(Number(payload.turnos));
+  if (!(tiempo >= RANKING_TIEMPO_MIN && tiempo <= RANKING_TIEMPO_MAX)) throw new Error('Tiempo fuera de rango');
+  if (!(monitos >= 0 && monitos <= 300)) throw new Error('Monitos fuera de rango');
+  if (turnos !== RANKING_TURNOS) throw new Error('Solo cuentan los turnos completos');
+
+  // Tope de envios: 1 por nombre cada 30 s y 40 en total cada 10 min.
+  const cache = CacheService.getScriptCache();
+  const claveNombre = 'ranking_nombre_' + normalizeHeader(nombre);
+  if (cache.get(claveNombre)) throw new Error('Espera unos segundos antes de volver a guardar');
+  const total = Number(cache.get('ranking_total') || 0);
+  if (total >= 40) throw new Error('El ranking recibió muchos envíos; intenta en unos minutos');
+
+  const lock = LockService.getScriptLock();
+  lock.waitLock(15000);
+  try {
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const sheet = hojaRanking_(ss);
+    sheet.appendRow([new Date(), nombre, tiempo, monitos, turnos]);
+    if (sheet.getLastRow() - 1 > RANKING_MAX_FILAS) {
+      const mejores = sheet.getRange(2, 1, sheet.getLastRow() - 1, RANKING_HEADERS.length).getValues()
+        .sort(function(a, b) { return Number(a[2]) - Number(b[2]); }).slice(0, RANKING_MAX_FILAS / 2);
+      sheet.getRange(2, 1, sheet.getLastRow() - 1, RANKING_HEADERS.length).clearContent();
+      sheet.getRange(2, 1, mejores.length, RANKING_HEADERS.length).setValues(mejores);
+      ajustarTamanoHoja_(sheet, mejores.length + 1, RANKING_HEADERS.length);
+    }
+    cache.put(claveNombre, '1', 30);
+    cache.put('ranking_total', String(total + 1), 600);
+    const ranking = leerRanking_(ss, RANKING_TOP);
+    const lugar = ranking.findIndex(function(r) { return r.nombre === nombre && r.tiempo === tiempo; });
+    return { ok: true, ranking: ranking, lugar: lugar >= 0 ? lugar + 1 : null };
+  } finally {
+    lock.releaseLock();
+  }
 }

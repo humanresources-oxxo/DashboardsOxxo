@@ -31,12 +31,12 @@
     <div class="screen" id="scrTitle">
       <div class="tag">TIENDA 24 H · 3:00 A.M.</div>
       <h1>TURNO<br>NOCTURNO</h1>
-      <p>Los monitos del turno se volvieron zombis y no te dejan cerrar la tienda. Cruza la bodega, la cámara fría y los pasillos hasta la puerta de SALIDA.</p>
+      <p>Los monitos del turno se volvieron zombis y no te dejan cerrar la tienda. Aguanta 3 turnos: la bodega, la cámara fría y la caja, donde te espera el Oso gerente.</p>
       <div class="monitos">
         <span><b>Chihuahua y jaguar</b> · muerden</span>
         <span><b>Tlacuache y mono</b> · avientan monedas</span>
         <span><b>Lobos y pingüino</b> · escupen</span>
-        <span><b>Oso gerente</b> · cuida la salida</span>
+        <span><b>Oso gerente</b> · jefe final, tiene las llaves</span>
       </div>
       <div class="keys" id="keyHelp">
         <kbd>W A S D</kbd><span>moverse</span>
@@ -46,20 +46,36 @@
         <kbd>1–5 / Q</kbd><span>cambiar arma</span>
         <kbd>Shift</kbd><span>correr</span>
         <kbd>M</kbd><span>mapa</span>
+        <kbd>N</kbd><span>música</span>
       </div>
       <div class="record" id="titleRecord"></div>
       <div class="acciones">
         <button class="btn" id="bStart" type="button">ENTRAR AL TURNO</button>
         <a class="salir" href="../index.html">← VOLVER AL INICIO</a>
       </div>
-      <p class="aviso">El mejor tiempo se guarda en este navegador. El juego no lee ni envía ningún dato.</p>
+      <section class="ranking" aria-labelledby="rankTitleH">
+        <h2 id="rankTitleH">RANKING DE LA OFICINA</h2>
+        <div id="rankTitle" hidden></div>
+      </section>
+      <p class="aviso">El juego no lee ningún dato de los dashboards. Solo si terminas los 3 turnos y lo decides, envía tu nombre y tu tiempo al ranking.</p>
     </div>
 
     <div class="screen" id="scrPause" hidden>
       <h1>PAUSA</h1>
       <div class="acciones">
         <button class="btn" id="bResume" type="button">CONTINUAR</button>
+        <button class="btn btn--sec" type="button" data-musica>MÚSICA: SÍ</button>
         <a class="salir" href="../index.html">← VOLVER AL INICIO</a>
+      </div>
+    </div>
+
+    <div class="screen" id="scrTurno" hidden>
+      <div class="tag" id="turnoTitle">TURNO 2 DE 3</div>
+      <h1 id="turnoNombre">CÁMARA FRÍA</h1>
+      <p id="turnoText"></p>
+      <div class="stats" id="turnoStats"></div>
+      <div class="acciones">
+        <button class="btn" id="bNext" type="button">SIGUIENTE TURNO</button>
       </div>
     </div>
 
@@ -67,6 +83,15 @@
       <h1 id="endTitle">FIN DEL TURNO</h1>
       <p id="endText"></p>
       <div class="stats" id="endStats"></div>
+      <form class="rank-form" id="rankForm" hidden>
+        <label for="rankNombre">Tu nombre para el ranking</label>
+        <div class="rank-form__fila">
+          <input id="rankNombre" name="nombre" maxlength="16" autocomplete="nickname" required>
+          <button class="btn" id="bRank" type="submit">GUARDAR</button>
+        </div>
+      </form>
+      <p class="rank-msg" id="rankMsg" aria-live="polite"></p>
+      <section class="ranking" aria-label="Ranking de la oficina"><div id="rankEnd" hidden></div></section>
       <div class="acciones">
         <button class="btn" id="bAgain" type="button">OTRO TURNO</button>
         <a class="salir" href="../index.html">← VOLVER AL INICIO</a>
@@ -77,15 +102,18 @@
   <footer id="hud">
     <div class="cell"><b id="hHp">100%</b><span>SALUD</span></div>
     <div class="cell"><b id="hAmmo">50</b><span id="hAmmoL">PILAS</span></div>
-    <div class="cell"><b id="hWeap">ESCÁNER</b><small id="hInv">50 pilas · 0 café · 0 señal</small></div>
+    <div class="cell opt"><b id="hWeap">ESCÁNER</b><small id="hInv">50 pilas · 0 café · 0 señal</small></div>
     <div class="cell"><b id="hKills">0/0</b><span>MONITOS</span></div>
+    <div class="cell"><b id="hTurno">1/3</b><span>TURNO</span></div>
     <div class="cell opt"><b id="hTime">0:00</b><span>TIEMPO</span></div>
   </footer>
 </div>
 
+<script src="../js/config.js?v=30e3e087"></script>
+<script src="../js/juego-ranking.js?v=30e3e087"></script>
 <script src="../js/juego-turno-nocturno.js?v=30e3e087"></script>
 <script>
-  OXXO_TURNO_NOCTURNO.montar({ monitos: '../assets/juego/monitos.png', armas: '../assets/juego/armas.png' });
+  OXXO_TURNO_NOCTURNO.montar({ monitos: '../assets/juego/monitos.png', armas: '../assets/juego/armas.png', ranking: OXXO_TURNO_RANKING.crear(window.OXXO_CONFIG && OXXO_CONFIG.ADMIN_UPLOAD_URL) });
 </script>
 </body>
 </html>
