@@ -12,7 +12,7 @@
  * Despues de eso, admin.html publica directo sin pedir URL.
  */
 const SPREADSHEET_ID = '1EbUuyy-PRXiDwPmn9L14P93cGN6VXTyLfAHx-CE8M_A';
-const APP_VERSION = '50';
+const APP_VERSION = '51';
 const ADMIN_PASSWORD_PROPERTY = 'ADMIN_PASSWORD';
 const AUDIT_SHEET = '_Admin_Bitacora';
 const BACKUP_PREFIX = '_BK_';
@@ -869,14 +869,24 @@ function preflightPublication(payload) {
   };
 }
 
+// El respaldo previo a publicar duplica la hoja dentro de Google (copyTo)
+// en vez de leer y reescribir cada celda: con Dashboard_4_Semanal (~57 mil
+// filas) eso era casi la mitad de los ~2.5 min de la publicacion, cerca del
+// limite de 6 min de Apps Script. Queda con el mismo formato que
+// saveSnapshot (metadatos en la fila 1, datos desde la fila 3), asi que
+// restaurar y la vista previa no cambian. Si copyTo falla, se usa el camino
+// anterior.
 function backupCurrentSheet(ss, sourceSheet, targetSheet, sourceLabel) {
   if (!sourceSheet || sourceSheet.getLastRow() < 1 || sourceSheet.getLastColumn() < 1) return '';
-  return saveSnapshot(ss, targetSheet, sourceSheet.getDataRange().getValues(), sourceLabel);
+  try {
+    return copySnapshot_(ss, sourceSheet, targetSheet, sourceLabel);
+  } catch (copyError) {
+    console.warn('Respaldo por copia fallo, se usa el respaldo por valores: ' + (copyError && copyError.message || copyError));
+    return saveSnapshot(ss, targetSheet, sourceSheet.getDataRange().getValues(), sourceLabel);
+  }
 }
 
-function saveSnapshot(ss, targetSheet, values, sourceLabel) {
-  if (!values.length || !values[0].length) throw new Error('No hay datos para respaldar');
-  const createdAt = new Date();
+function backupName_(ss, targetSheet, createdAt) {
   const stamp = Utilities.formatDate(createdAt, ss.getSpreadsheetTimeZone() || 'America/Mexico_City', 'yyyyMMdd_HHmmss_SSS');
   const baseName = (BACKUP_PREFIX + targetSheet).slice(0, 76);
   let backupName = (baseName + '_' + stamp).slice(0, 99);
@@ -885,6 +895,43 @@ function saveSnapshot(ss, targetSheet, values, sourceLabel) {
     backupName = (baseName + '_' + stamp + '_' + suffix).slice(0, 99);
     suffix++;
   }
+  return backupName;
+}
+
+function copySnapshot_(ss, sourceSheet, targetSheet, sourceLabel) {
+  const createdAt = new Date();
+  const backupName = backupName_(ss, targetSheet, createdAt);
+  pruneBackups(ss, targetSheet, BACKUP_LIMIT - 1);
+  const rows = sourceSheet.getLastRow();
+  const cols = Math.max(sourceSheet.getLastColumn(), 6);
+  const backup = sourceSheet.copyTo(ss);
+  try {
+    backup.setName(backupName);
+    backup.setFrozenRows(0);
+    backup.insertRowsBefore(1, 2);
+    if (backup.getMaxColumns() < cols) backup.insertColumnsAfter(backup.getMaxColumns(), cols - backup.getMaxColumns());
+    ajustarTamanoHoja_(backup, rows + 2, cols);
+    // Las filas nuevas heredan el formato de la de abajo (puede ser texto
+    // plano '@'): se limpia para que la fecha quede como Fecha real, que es
+    // lo que readBackupMetadata usa para ordenar y podar.
+    const meta = backup.getRange(1, 1, 2, cols);
+    meta.clearFormat();
+    meta.clearContent();
+    backup.getRange(1, 1, 1, 6).setValues([['Respaldo creado', createdAt, 'Hoja origen', targetSheet, 'Archivo origen', String(sourceLabel || '')]]);
+    backup.hideSheet();
+    SpreadsheetApp.flush();
+  } catch (error) {
+    // Una copia a medias no debe quedarse ocupando celdas ni pasar por respaldo.
+    try { ss.deleteSheet(backup); } catch (ignored) {}
+    throw error;
+  }
+  return backupName;
+}
+
+function saveSnapshot(ss, targetSheet, values, sourceLabel) {
+  if (!values.length || !values[0].length) throw new Error('No hay datos para respaldar');
+  const createdAt = new Date();
+  const backupName = backupName_(ss, targetSheet, createdAt);
   // Primero se borran los respaldos que sobrarian: si se borraran despues, el
   // libro tendria por un momento un respaldo de mas y es justo ahi donde se
   // rebasa el limite de celdas.
