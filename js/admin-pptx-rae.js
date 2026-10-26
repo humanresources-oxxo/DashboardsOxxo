@@ -1528,6 +1528,11 @@
     }
   }
 
+  // Lecturas ya verificadas contra los dashboards: la presentacion General
+  // (admin-pptx.js) las reutiliza para Aprovechamiento y TREO en vez de
+  // mantener copias que se desfasen.
+  window.OXXO_RAE_DATA = { dataD2, dataD3, dataD7 };
+
   document.addEventListener('DOMContentLoaded', () => {
     const btn = document.getElementById('generate-pptx-rae-btn');
     if(btn) btn.addEventListener('click', generatePresentation);

@@ -54,7 +54,8 @@ const allText=pptx=>pptx.slides.flatMap(s=>s.texts.map(t=>t.t)).join('\n');
  fixture=[{Mes:'2026-09',Tienda:'OXXO A',Asesor:'Ana',Puesto:'ADMINISTRATIVO','Status ocupacion':'Vacante',Empleados:'','Dias Vacantes':2}];
  const d1=await sandbox.foro.kpiD1();assert.equal(d1.chart.values.reduce((a,b)=>a+b,0),Number(d1.value));assert.equal(d1.chart.labels.at(-1),'Otro');
  fixture=[{Mes:9,Ano:2026,Semana:10,Tienda:'OXXO A',Dias:3,Denominacion:'OTRA INCIDENCIA'}];
- const d6=await sandbox.foro.kpiD6();assert.equal(d6.chart.values.reduce((a,b)=>a+b,0),3);assert.equal(d6.chart.labels.at(-1),'Otro');
+ // Igual que la grafica "Dias Ausentes por Tipo" de dashboard-6.html: una barra por Denominacion tal cual viene.
+ const d6=await sandbox.foro.kpiD6();assert.equal(d6.chart.values.reduce((a,b)=>a+b,0),3);assert.equal(d6.chart.labels.at(-1),'OTRA INCIDENCIA');
  fixture=[{Tienda:'OXXO A',Asesor:'Ana',Fecha:'2026-09-09',Estatus:'CRITICA'}];
  const d3=await sandbox.foro.kpiD3();assert.equal(d3.ranking.items.length,1);assert.equal(d3.ranking.items[0].value,0);assert.match(d3.sub,/2026-09-09/);
  fixture=[];for(const d of sandbox.foro.DASHBOARDS)assert.equal(await d.fn(),null,d.name+' sin filas');

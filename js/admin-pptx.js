@@ -26,16 +26,6 @@
     });
     return [...counts.entries()].map(([name, value]) => ({ name, value })).sort((a,b) => b.value - a.value).slice(0, limit);
   }
-  function tipoAusentismo(desc){
-    const d = normText(desc);
-    if(d.includes('FALTA')) return 'Faltas';
-    if(d.includes('ACCIDENTE')) return 'Accidentes';
-    if(d.includes('INC') || d.includes('ENF')) return 'Incapacidades';
-    if(d.includes('VACAC')) return 'Vacaciones';
-    if(d.includes('MATERN') || d.includes('PATERN') || d.includes('PERMISO')) return 'Permisos';
-    return 'Otro';
-  }
-
   async function kpiD1(){
     const source = await OXXO.metricsD1Rows();
     if (!source) return null;
@@ -55,7 +45,10 @@
   }
 
   async function kpiD2(){
-    const source = await OXXO.metricsD2Rows();
+    // Igual que dashboard-2.html: el total conserva Entrenamiento/Operaciones
+    // y cada baja se atribuye al Asesor crudo de la fila ("Sin responsable
+    // identificado" si no trae uno valido), no a quien tiene hoy la tienda.
+    const source = await OXXO.metricsD2Rows('', { includeAdminUnits: true, asesorCrudo: true });
     if (!source) return null;
     const { rows, mes, puestoKey, asesorKey } = source;
     const byMonth = rows;
@@ -90,6 +83,23 @@
   }
 
   async function kpiD3(){
+    // Misma lectura que la RAE (verificada contra dashboard-3.html): todas las
+    // tiendas del corte vigente de Plaza Oaxaca, sin filtro de catalogo, y el
+    // ranking con el nombre canonico de cada AT (sin duplicados en mayusculas).
+    if(window.OXXO_RAE_DATA){
+      const d = await window.OXXO_RAE_DATA.dataD3();
+      if(!d) return null;
+      return {
+        label: 'Aprovechamiento General', value: d.pct.toFixed(2) + '%', sub: d.sub,
+        secondary: [
+          { label: 'Completas', value: String(d.completas) },
+          { label: 'Incompletas', value: String(d.incompletas) },
+          { label: 'Criticas', value: String(d.criticas) },
+        ],
+        chart: { title: 'Tiendas por Estatus', labels: ['Completas','Incompletas','Criticas'], values: [d.completas, d.incompletas, d.criticas], type: 'pie' },
+        ranking: { title: 'Aprovechamiento por AT', items: (d.rankingAll || []).filter(x => x.hasData).slice(0, 20), pct: true },
+      };
+    }
     const raw = await OXXO.fetchSheetData(OXXO.SHEETS_CONFIG.TABS.d3);
     if(!raw || !raw.length) return null;
     const estatusKey = findKey(raw[0], ['Clas Aprov','Estatus Con impacto Ausentismo','Estatus']);
@@ -158,9 +168,16 @@
     const horasKey = findKey(raw[0], ['Cantidad']);
     const tipoKey = findKey(raw[0], ['Textos homologados']);
     const catalog = await OXXO.loadAsesorCatalog();
+    // Mismas columnas que ALIASES_D4 en dashboard-4.html: la tienda es "Texto
+    // breve de unidad organizativa". Con un alias 'Tienda' suelto el match por
+    // subcadena tomaba "Cr de Tienda" y el filtro de tiendas validas no
+    // descartaba nada (la presentacion sumaba ~36 h de mas).
+    const findExact = OXXO.metricsFindKeyExact || findKey;
     const period = OXXO.metricsPreparePeriodSource(raw, catalog, {
       semanaKey, mesKey: findKey(raw[0], ['Mes']), anoKey: findKey(raw[0], ['Ano','Año']),
-      asesorKey: findKey(raw[0], ['Asesor']), tiendaKey: findKey(raw[0], ['Tienda']), crKey: findKey(raw[0], ['Cr de Tienda','CR'])
+      asesorKey: findKey(raw[0], ['Asesor']),
+      tiendaKey: findExact(raw[0], ['Texto breve de unidad organizativa','Tienda']),
+      crKey: findExact(raw[0], ['Cr de Tienda','CR de Tienda','CR'])
     });
     const rows = period.currentRows, semana = period.currentPeriod;
     const totalHoras = rows.reduce((s,r) => s + num(val(r, horasKey)), 0);
@@ -193,17 +210,19 @@
     const diasKey = findKey(raw[0], ['Dias_Restantes']);
     const bucketKey = findKey(raw[0], ['Bucket_Ant']);
     const totalDias = raw.reduce((s,r) => s + num(val(r, diasKey)), 0);
+    // Igual que dashboard-5: "colaboradores con saldo" = dias restantes > 0.
+    const conSaldo = raw.filter(r => num(val(r, diasKey)) > 0).length;
     const buckets = { 'ya vencieron sus dias': 0, '0 a 50 dias': 0, '51 a 100 dias': 0, '101 a 150 dias': 0, 'mas de 150 dias': 0 };
     raw.forEach(r => {
       const b = String(val(r, bucketKey) || '').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
       if(buckets[b] !== undefined) buckets[b]++;
     });
     return {
-      label: 'Días Restantes de Vacaciones', value: OXXO.formatNum(Math.round(totalDias)), sub: 'Base vigente · Corte no informado',
+      label: 'Días Restantes de Vacaciones', value: totalDias.toLocaleString('es-MX', { minimumFractionDigits: 1, maximumFractionDigits: 1 }), sub: 'Base vigente · Corte no informado',
       secondary: [
         { label: 'Vencidos', value: String(buckets['ya vencieron sus dias']) },
         { label: 'Vencen 0-50 días', value: String(buckets['0 a 50 dias']) },
-        { label: 'Colaboradores', value: String(raw.length) },
+        { label: 'Colaboradores con saldo', value: String(conSaldo) },
       ],
       chart: { title: 'Colaboradores por Vencimiento', labels: ['Vencidos','0-50 días','51-100 días','101-150 días','+150 días'], values: [buckets['ya vencieron sus dias'], buckets['0 a 50 dias'], buckets['51 a 100 dias'], buckets['101 a 150 dias'], buckets['mas de 150 dias']] },
     };
@@ -224,20 +243,44 @@
     });
     const rows = period.currentRows, semana = period.currentPeriod;
     const totalDias = rows.reduce((s,r) => s + num(val(r, diasKey)), 0);
-    const byTipo = { Faltas: 0, Incapacidades: 0, Vacaciones: 0, Permisos: 0, Accidentes: 0, Otro: 0 };
-    rows.forEach(r => { byTipo[tipoAusentismo(val(r, denomKey))] += num(val(r, diasKey)); });
+    // Mismas tarjetas que dashboard-6.html: Faltas / Incapacidades /
+    // Vacaciones cuentan REGISTROS segun 'Denominacion', y la grafica "Dias
+    // Ausentes por Tipo" suma dias por cada Denominacion tal cual viene.
+    const tipo = r => String(val(r, denomKey) || '').toLowerCase();
+    const faltas = rows.filter(r => tipo(r).includes('falta')).length;
+    const incapacidades = rows.filter(r => { const t = tipo(r); return t.includes('inc.') || t.includes('incap') || t.includes('accidente'); }).length;
+    const vacaciones = rows.filter(r => tipo(r).includes('vacac')).length;
+    const diasPorTipo = new Map();
+    rows.forEach(r => { const t = String(val(r, denomKey) || '').trim() || 'Sin tipo'; diasPorTipo.set(t, (diasPorTipo.get(t) || 0) + num(val(r, diasKey))); });
+    const tipos = [...diasPorTipo.entries()].sort((a,b) => b[1] - a[1]);
     return {
       label: 'Días Ausentes', value: OXXO.formatNum(Math.round(totalDias)), sub: semana ? semana : 'Plaza Oaxaca',
       secondary: [
-        { label: 'Faltas', value: OXXO.formatNum(Math.round(byTipo.Faltas)) },
-        { label: 'Incapacidades', value: OXXO.formatNum(Math.round(byTipo.Incapacidades)) },
-        { label: 'Vacaciones', value: OXXO.formatNum(Math.round(byTipo.Vacaciones)) },
+        { label: 'Faltas', value: OXXO.formatNum(faltas) },
+        { label: 'Incapacidades', value: OXXO.formatNum(incapacidades) },
+        { label: 'Vacaciones', value: OXXO.formatNum(vacaciones) },
       ],
-      chart: { title: 'Días Ausentes por Tipo', labels: ['Faltas','Incapacidades','Vacaciones','Permisos','Accidentes','Otro'], values: [byTipo.Faltas, byTipo.Incapacidades, byTipo.Vacaciones, byTipo.Permisos, byTipo.Accidentes, byTipo.Otro], type: 'pie' },
+      chart: { title: 'Días Ausentes por Tipo', labels: tipos.map(([t]) => t), values: tipos.map(([,d]) => Math.round(d)) },
     };
   }
 
   async function kpiD7(){
+    // Misma lectura que la RAE (verificada contra dashboard-7.html): estructura
+    // diaria de D1 aplicada y cada tienda clasificada por 'Movimiento Inicial'.
+    if(window.OXXO_RAE_DATA){
+      const d = await window.OXXO_RAE_DATA.dataD7();
+      if(!d) return null;
+      const pctAli = d.total > 0 ? (d.alineadas / d.total * 100) : 0;
+      return {
+        label: 'Alineación Global TREO', value: pctAli.toFixed(1) + '%', sub: 'TREO vigente · estructura diaria D1',
+        secondary: [
+          { label: 'Alineadas', value: String(d.alineadas) },
+          { label: 'Por Subir', value: String(d.subir) },
+          { label: 'Por Bajar', value: String(d.bajar) },
+        ],
+        chart: { title: 'Tiendas por Estatus TREO', labels: ['Alineadas','Por Subir','Por Bajar'], values: [d.alineadas, d.subir, d.bajar], type: 'pie' },
+      };
+    }
     const rawSheet = await OXXO.fetchSheetData(OXXO.SHEETS_CONFIG.TABS.s7);
     // Dashboard_7_Semanal es propensa al problema de exportacion de Google
     // donde el encabezado real queda pegado como texto en la primera fila
