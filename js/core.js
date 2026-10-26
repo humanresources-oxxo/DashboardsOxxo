@@ -2699,6 +2699,33 @@ async function metricsAprovechamientoPorAT() {
 
 // Bajas: mismos filtros predeterminados de dashboard-2, con todos los asesores.
 // Un mes solicitado sin registros nunca se sustituye por otro.
+// Responsable de una baja en Dashboard 2: el Asesor crudo de la fila (quien
+// tenia la tienda cuando ocurrio la baja). Sin Asesor valido la baja queda
+// "Sin responsable identificado". Misma regla que isPlaceholderAsesor() en
+// js/dashboard-2.js; la RAE la usa con metricsD2Rows(..., { asesorCrudo:true }).
+const METRICS_SIN_RESPONSABLE_D2 = 'Sin responsable identificado';
+function metricsIsPlaceholderAsesorD2(value) {
+  const c = metricsNormText(value);
+  return !c || /SIN ASESOR|NO ASIGNADO|SIN RESPONSABLE|POR ASIGNAR|PENDIENTE/.test(c)
+    || /^(N\/?A|#N\/A|NULL|NINGUNO|VACANTE|0|[-—.\s]+)$/.test(c);
+}
+function metricsAsesorBajaD2(value) {
+  return metricsIsPlaceholderAsesorD2(value) ? METRICS_SIN_RESPONSABLE_D2 : String(value).trim();
+}
+
+// Movimiento de una tienda en Dashboard 7 (TREO): la columna 'Movimiento
+// Inicial' es la clasificacion oficial y manda; solo si viene vacia o con un
+// texto desconocido se usa el signo de 'Dif SAP vs Est Optima Final'. Misma
+// regla que normalizeMov()/movDesdeDif() en dashboards/dashboard-7.html.
+function metricsMovimientoTreo(texto, dif) {
+  const k = metricsNormText(texto);
+  if (k.includes('ALINEAD')) return 'Alineada';
+  if (k.includes('SUBIR')) return 'Subir';
+  if (k.includes('BAJAR')) return 'Bajar';
+  const d = Number(dif) || 0;
+  return d === 0 ? 'Alineada' : d > 0 ? 'Subir' : 'Bajar';
+}
+
 async function metricsD2Rows(targetMes = '', options = {}) {
   const raw = await fetchSheetData(SHEETS_CONFIG.TABS.d2, options.scope ? { scope: options.scope } : {});
   if (!raw || !raw.length) return null;
@@ -2709,7 +2736,15 @@ async function metricsD2Rows(targetMes = '', options = {}) {
   const fechaKey = metricsFindKey(raw[0], ['Fecha']);
   const tiendaKey = metricsFindKey(raw[0], ['Tienda', 'Unidad org']);
   const catalog = await loadAsesorCatalog();
-  const mapped = raw.map(r => { const copy = {...r}; if (asesorKey) copy[asesorKey] = resolveAsesorD1(catalog, {tienda: metricsVal(r, tiendaKey), asesor: metricsVal(r, asesorKey)}); return copy; });
+  // asesorCrudo: responsable = Asesor crudo de la baja, como dashboard-2.html.
+  // Sin la opcion se conserva la lectura por catalogo vigente de la tienda.
+  const mapped = raw.map(r => {
+    const copy = {...r};
+    if (asesorKey) copy[asesorKey] = options.asesorCrudo
+      ? metricsAsesorBajaD2(metricsVal(r, asesorKey))
+      : resolveAsesorD1(catalog, {tienda: metricsVal(r, tiendaKey), asesor: metricsVal(r, asesorKey)});
+    return copy;
+  });
   let base = metricsFilterBajasD2(mapped.filter(r => Object.values(r).some(v => String(v ?? '').trim())), {medidaKey});
   if (puestoKey) {
     const operativos = base.filter(r => /AYUDANTE|ENCARGADO|LIDER/.test(metricsNormText(metricsVal(r, puestoKey))));
@@ -3321,6 +3356,10 @@ window.OXXO = {
   metricsAlineacionPorAsesor,
   metricsD1Rows,
   metricsD2Rows,
+  metricsIsPlaceholderAsesorD2,
+  metricsAsesorBajaD2,
+  METRICS_SIN_RESPONSABLE_D2,
+  metricsMovimientoTreo,
   metricsD3Rows,
   metricsD7Rows,
   getSystemNoticeContext,

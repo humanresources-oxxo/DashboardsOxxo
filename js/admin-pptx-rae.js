@@ -163,7 +163,10 @@
     // includeAdminUnits: el TOTAL de bajas de la RAE debe coincidir con el KPI
     // "Total Bajas" de dashboard-2.html, que conserva Entrenamiento/Operaciones
     // (cuentan como "Sin asesor asignado"). scope: Plaza Oaxaca explicita.
-    const source = await OXXO.metricsD2Rows(targetMes, { scope: OAXACA_SCOPE, includeAdminUnits: true });
+    // asesorCrudo: el responsable de cada baja es el Asesor crudo de la fila
+    // (quien tenia la tienda al ocurrir la baja), igual que dashboard-2.html;
+    // sin Asesor valido queda "Sin responsable identificado".
+    const source = await OXXO.metricsD2Rows(targetMes, { scope: OAXACA_SCOPE, includeAdminUnits: true, asesorCrudo: true });
     if (!source) return null;
     const { rows, mes, puestoKey, asesorKey } = source;
     const byPuesto = { Lider: 0, Encargado: 0, Ayudante: 0, Otro: 0 };
@@ -211,8 +214,8 @@
       const tenureIndex = antiguedades.indexOf(String(val(row, temporalidadKey) || '').trim());
       if(ageIndex >= 0 && tenureIndex >= 0) mapaCalor[ageIndex].values[tenureIndex]++;
     });
-    const asesores = rankBy(asesorKey, value => String(value || '').trim() || 'Sin asesor asignado', Infinity)
-      .filter(item => !normText(item.label).replace(/[^A-Z]/g,'').includes('SINASESOR'))
+    const asesores = rankBy(asesorKey, value => String(value || '').trim() || OXXO.METRICS_SIN_RESPONSABLE_D2, Infinity)
+      .filter(item => !OXXO.metricsIsPlaceholderAsesorD2(item.label) && item.label !== OXXO.METRICS_SIN_RESPONSABLE_D2)
       .map(item => ({ name: item.label, bajas: item.total }));
     return {
       total: rows.length, sub: mes ? `Mes ${mes}` : 'Plaza Oaxaca',
@@ -529,7 +532,9 @@
       .sort((a,b)=>a.fechaRescateEc-b.fechaRescateEc || a.tienda.localeCompare(b.tienda,'es'));
 
     return {
-      sub: fecha ? `Corte ${fecha}` : 'Corte no informado',
+      // La fecha del corte llega de Sheets como texto ISO; se presenta como
+      // "26 oct 2026" (si no se puede leer, se deja tal cual).
+      sub: fecha ? `Corte ${parseFecha(fecha) ? rescueDateLabel(parseFecha(fecha)) : fecha}` : 'Corte no informado',
       pct, completas, incompletas, criticas,
       plazas: plazas.slice(0, 5),
       ranking,
@@ -574,7 +579,7 @@
     const ensure=name=>{
       const clean=String(name||'').trim();
       const key=advisorKey(clean);
-      if(!key || key.includes('SINASESOR')) return null;
+      if(!key || key.includes('SINASESOR') || key.includes('SINRESPONSABLE')) return null;
       if(!rows.has(key)) rows.set(key,{ name:clean, aprovechamiento:null, diasPromedio:null, bajas:0, ...focusStaticMetrics(clean) });
       return rows.get(key);
     };
@@ -740,6 +745,7 @@
     // respaldo por nombre de tienda, que es menos preciso.
     const tiendaKey = findDataKey(raw, ['Tienda','Nombre Tienda','Unidad','Unidad Org','Unidad Organizativa']);
     const crKey = findDataKey(raw, ['CR','ID Tienda','ID_Tienda']);
+    const movKey = findDataKey(raw, ['Movimiento Inicial','Movimiento']);
     // Mismo catálogo y estado de tienda que dashboard-7.html. Los asesores
     // no se excluyen: cada tienda operativa debe entrar al total de TREO.
     const asesorCatalog = await OXXO.loadAsesorCatalog();
@@ -766,11 +772,17 @@
       });
     const total = rows.length;
     let alineadas = 0, subir = 0, bajar = 0, posSubir = 0, posBajar = 0;
+    // La tienda se clasifica con 'Movimiento Inicial' (clasificacion oficial)
+    // y solo cae al signo del dif si viene vacia, igual que dashboard-7.html.
+    // Las posiciones a agregar/liberar siguen saliendo del dif.
     rows.forEach(r => {
       const d = num(val(r, difKey));
-      if(d === 0) alineadas++;
-      else if(d > 0) { subir++; posSubir += d; }
-      else { bajar++; posBajar += -d; }
+      const mov = OXXO.metricsMovimientoTreo(movKey ? val(r, movKey) : '', d);
+      if(mov === 'Alineada') alineadas++;
+      else if(mov === 'Subir') subir++;
+      else bajar++;
+      if(d > 0) posSubir += d;
+      else if(d < 0) posBajar += -d;
     });
     const totalTreo = rows.reduce((s,r) => s + num(val(r, treoKey)), 0);
     const totalActivos = rows.reduce((s,r) => s + num(val(r, activosKey)), 0);
