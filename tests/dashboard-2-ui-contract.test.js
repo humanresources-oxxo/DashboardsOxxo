@@ -81,7 +81,7 @@ test('D2 usa el canon visual unificado y un solo css propio; sin capas legadas n
   const finales = orden.slice(orden.indexOf('config.js'));
   assert.deepEqual(finales, ['config.js', 'core.js', 'dashboard-dialogs.js', 'dashboard-2.js']);
   assert.equal(orden.filter(n => n === 'dashboard-2.js').length, 1);
-  ok(html, /<body class="hr-dashboard dashboard-2-page rh-unified"/);
+  ok(html, /<body class="hr-dashboard dashboard-2-page rh-unified rh-filtros-lateral"/);
 });
 
 test('ningun tablero monta el riel de Lectura rapida y la navegacion no depende de el', () => {

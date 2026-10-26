@@ -774,3 +774,12 @@ body.dashboard-2-page .d2-motivos-empty { display: none; padding: 24px 0; text-a
   body.dashboard-2-page .d2-panel { box-shadow: none; break-inside: avoid; }
   body.dashboard-2-page .d2-note--pending { break-inside: avoid; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
+
+/* Filtros en lateral (>=1280px, ver rh-filtros-lateral.css). El estado de
+   filtros del lateral sustituye a la linea de contexto bajo los filtros; por
+   debajo de 1280px se queda la linea de siempre. */
+@media (max-width: 1279.98px) { body.dashboard-2-page .rh-lateral-estado { display: none; } }
+@media (min-width: 1280px) {
+  body.dashboard-2-page .d2-active-context { display: none; }
+  body.dashboard-2-page .d2-filter-region .d2-region-title { margin-top: 2px; }
+}
