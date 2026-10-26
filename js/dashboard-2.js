@@ -699,6 +699,8 @@ function compromisoRoster(cols){
   // lista aunque no tenga bajas en el mes. Los datos y las metas solo agregan
   // nombres que el catalogo no traiga (p.ej. un AT que ya salio pero tuvo bajas).
   const roster=catalogAsesorRoster();
+  // Quien esta en el catalogo vigente de la plaza (antes de sumar los datos).
+  const vigentes=new Set(roster.keys());
   source.forEach(row=>{
     if(!isAtribucionConfirmada(row,cols))return;
     const name=getAsesorValue(row,cols);
@@ -707,8 +709,13 @@ function compromisoRoster(cols){
   // Oaxaca ya tenía metas configuradas incluso para asesores con cero bajas.
   // Se agregan al roster únicamente cuando Oaxaca es el alcance activo; las
   // demás plazas se construyen exclusivamente con sus propios datos.
+  // Una meta vieja en Compromisos_Bajas no revive a un AT que ya salio del
+  // catalogo (p.ej. Sofia C.J.G.: meta 8, sin tiendas ni bajas desde sep-26).
+  // Si el catalogo no cargo, no hay contra que validar y se listan todas.
   const configured=compromisoConfigForScope().values;
-  Object.keys(configured).filter(name=>!isPlaceholderAsesor(name)).forEach(name=>roster.set(cleanKey(name),name));
+  Object.keys(configured).filter(name=>!isPlaceholderAsesor(name))
+    .filter(name=>!vigentes.size||vigentes.has(cleanKey(name)))
+    .forEach(name=>roster.set(cleanKey(name),name));
   return roster;
 }
 

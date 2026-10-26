@@ -581,3 +581,17 @@ test('compromiso: el roster incluye a los asesores vigentes del catalogo con cer
   // Totales intactos: 2 bajas contra la meta default (4) de los dos del roster.
   ok(compromiso, /<tfoot><tr><td>Total<\/td><td class="num">2<\/td><td class="num">8<\/td><td class="num">-6<\/td>/);
 });
+
+// Una meta que quedo en Compromisos_Bajas no revive a un AT que ya salio del
+// catalogo vigente (caso real: Sofia C.J.G., meta 8, sin tiendas desde sep-26).
+test('compromiso: una meta vieja no lista a un asesor que ya no esta en el catalogo', () => {
+  const fila = (asesor, tienda) => ({ Mes: '2026-10', Asesor: asesor, Tienda: tienda, Puesto: 'Ayudante Tienda', Temporalidad: '0 - 45 días', 'Rot. Temp.': 'No', Edad: '25', Plaza: 'Oaxaca' });
+  const catalogo = { byTienda: new Map([['OXXO UNO', { asesor: 'Ana Perez', tienda: 'OXXO UNO', plaza: 'Oaxaca', activa: true }]]) };
+  const metas = new Map([['Oaxaca', { 'Ana Perez': 4, 'Sofia Caridad Jimenez Gomez': 8 }]]);
+  const { compromiso } = cargarD2().run([fila('Ana Perez', 'OXXO UNO'), fila('Sin Asesor Asignado', 'OXXO DOS')], metas, catalogo);
+  const celdas = [...compromiso.matchAll(/<td>([^<]*)<\/td>\s*<td class="num"><span class="pill [^"]*">(\d+)</g)].map(m => [m[1], Number(m[2])]);
+  assert.deepEqual(celdas, [['Ana Perez', 1], ['Sin responsable identificado', 1]]);
+  no(compromiso, /Sofia/);
+  // El pie ya no suma su meta de 8: 2 bajas contra 4.
+  ok(compromiso, /<tfoot><tr><td>Total<\/td><td class="num">2<\/td><td class="num">4<\/td><td class="num">-2<\/td>/);
+});
