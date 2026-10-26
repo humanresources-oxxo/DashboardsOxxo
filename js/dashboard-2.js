@@ -720,8 +720,9 @@ function compPillClass(bajas){
   return 'bad';
 }
 
-// Solo asesores con registro confirmado: las bajas sin responsable
-// identificado no se atribuyen a nadie y se reportan aparte en una nota.
+// Las bajas sin responsable identificado entran como una fila propia (sin
+// compromiso: todas cuentan como desfase) en la tabla y en la grafica, para
+// que el total de la tabla sea el de la plaza. Nunca se atribuyen a un AT.
 function renderCompromiso(data, cols){
   const counts = {};
   let pendientes = 0;
@@ -742,12 +743,16 @@ function renderCompromiso(data, cols){
   sorted.forEach(item => { totalBajas += item.bajas; totalComp += item.comp; });
   // La tabla lista el roster completo del catalogo vigente, incluidos los AT
   // con 0 bajas: esa fila (bajas 0 vs su compromiso) es justo la que muestra
-  // el desfase a favor. El pie no cambia: ya sumaba todo el roster.
-  const ranking = sorted;
+  // el desfase a favor. La fila sin responsable va en su lugar por bajas.
+  const ranking = pendientes
+    ? [...sorted, { id: '__sin_responsable__', full: SIN_RESPONSABLE, nombre: SIN_RESPONSABLE, bajas: pendientes, comp: null, pendiente: true }]
+        .sort((a,b) => b.bajas - a.bajas || Number(Boolean(a.pendiente)) - Number(Boolean(b.pendiente)) || a.full.localeCompare(b.full, 'es'))
+    : sorted;
+  totalBajas += pendientes;
   // La grafica solo dibuja a quienes tienen al menos una baja.
   const chartRanking = ranking.filter(item => item.bajas > 0);
   const pendienteNota = pendientes
-    ? `<p class="d2-note d2-note--pending">${d2Plural(pendientes, 'baja', 'bajas')} sin responsable identificado no ${pendientes === 1 ? 'se incluye' : 'se incluyen'} en esta comparación; sí cuentan en el total y en el detalle.</p>`
+    ? `<p class="d2-note d2-note--pending">${SIN_RESPONSABLE}: ${d2Plural(pendientes, 'baja', 'bajas')} sin AT en la base. No tienen compromiso propio, así que todas cuentan como desfase; nunca se atribuyen a un asesor.</p>`
     : '';
   const asesoresEmpty = document.getElementById('asesores-empty');
   if(!chartRanking.length){
@@ -756,16 +761,16 @@ function renderCompromiso(data, cols){
   }
   if(asesoresEmpty) asesoresEmpty.hidden = chartRanking.length > 0;
   if(!ranking.length){
-    document.getElementById('tabla-compromiso').innerHTML = `<div class="d2-empty">Sin asesores confirmados con los filtros activos.</div>${pendienteNota}`;
+    document.getElementById('tabla-compromiso').innerHTML = `<div class="d2-empty">Sin bajas ni asesores con los filtros activos.</div>`;
     return;
   }
   const filaHTML = item => {
     const bajas = item.bajas;
-    const desfase = bajas - item.comp;
-    return `<tr>
+    const desfase = bajas - (item.comp || 0);
+    return `<tr${item.pendiente ? ' class="is-pendiente"' : ''}>
       <td>${escHtml(item.nombre)}</td>
-      <td class="num"><span class="pill ${compPillClass(bajas)}">${bajas}</span></td>
-      <td class="num">${item.comp}</td>
+      <td class="num"><span class="pill ${item.pendiente ? 'pendiente' : compPillClass(bajas)}">${bajas}</span></td>
+      <td class="num">${item.pendiente ? '—' : item.comp}</td>
       <td class="num desfase ${desfase <= 0 ? 'pos' : 'neg'}">${desfase}</td>
     </tr>`;
   };
@@ -775,11 +780,17 @@ function renderCompromiso(data, cols){
     <div class="d2-scroll" data-scroll-label="Compromiso contra resultado por asesor"><table class="compromiso-table">
       <thead><tr><th>AT</th><th class="num">Bajas</th><th class="num">Comp.</th><th class="num">Desfase</th></tr></thead>
       <tbody>${rows}</tbody>
-      <tfoot><tr><td>Total confirmado</td><td class="num">${totalBajas}</td><td class="num">${totalComp}</td><td class="num">${totalDesfase}</td></tr></tfoot>
+      <tfoot><tr><td>Total</td><td class="num">${totalBajas}</td><td class="num">${totalComp}</td><td class="num">${totalDesfase}</td></tr></tfoot>
     </table></div>${pendienteNota}`;
   // Mismo orden que la tabla, sin los AT en 0: el degradado va de rojo (mas bajas) a verde.
+  // La barra sin responsable va en gris: no es un asesor y no entra al
+  // degradado (si entrara, su numero estiraria la escala y un AT con muchas
+  // bajas dejaria de verse rojo).
+  const deAsesores = chartRanking.filter(item => !item.pendiente);
+  const gradiente = rankingGradientColors(deAsesores.map(item=>item.bajas));
+  const colorDe = new Map(deAsesores.map((item, i) => [item, gradiente[i]]));
   if(chartRanking.length) renderChart('chart-asesores','bar',chartRanking.map(item=>OXXO.truncate(item.nombre,28)),chartRanking.map(item=>item.bajas),{horizontal:true,ranking:true,tickSize:12,label:'Bajas por asesor',
-    colors: rankingGradientColors(chartRanking.map(item=>item.bajas))});
+    colors: chartRanking.map(item => item.pendiente ? '#9A8F8A' : colorDe.get(item))});
 }
 
 // Tabla de detalle de bajas: columnas reducidas (lo esencial para escanear rápido).
@@ -1739,7 +1750,7 @@ function updatePanelScopeLabels(){
   const common = `${scope} · ${d2MonthShort(mes)}`;
   const commonFull = `${scope}. ${status}. Mes: ${d2MonthLong(mes)}.`;
   setPanelScope('detalle', `${common} · ${filtersShort(filters.count)}`, `${commonFull} ${filtersFull(filters)}.`);
-  ['compromiso', 'asesores'].forEach(kind => setPanelScope(kind, `${common} · ${filtersShort(filters.count)} · Solo asesores confirmados`, `${commonFull} ${filtersFull(filters)}. Solo asesores con registro confirmado.`));
+  ['compromiso', 'asesores'].forEach(kind => setPanelScope(kind, `${common} · ${filtersShort(filters.count)} · Incluye bajas sin responsable`, `${commonFull} ${filtersFull(filters)}. Incluye las bajas sin responsable identificado como una fila aparte.`));
   setPanelScope('tiendas', `${common} · ${filtersShort(filters.count)}`, `${commonFull} ${filtersFull(filters)}. Excluye unidades administrativas (no son tiendas operativas).`);
   setPanelScope('heatmap', `${common} · ${filtersShort(noHeat.count)}`, `${commonFull} ${filtersFull(noHeat)}. La selección del propio mapa no reduce su matriz.`);
   const mesActual = BASE_BAJAS_DATA.length ? latestMonthKey(BASE_BAJAS_DATA, BAJAS_COLS) : '';
