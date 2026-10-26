@@ -1,4 +1,5 @@
-/* Consumido por: dashboard-1, dashboard-2, dashboard-4. Va antes de
+/* Consumido por: dashboard-1, dashboard-2, dashboard-4, dashboard-5, dashboard-6,
+   dashboard-7, dashboard-8, dashboard-9, dashboard-11, dashboard-13. Va antes de
    dashboard-rh-unified.css (la cascada exige canon y hoja propia al final), asi
    que sus selectores llevan body.rh-filtros-lateral + atributos para ganar. */
 /* Filtros en lateral (escritorio ancho). Opt-in con body.rh-filtros-lateral:
@@ -59,6 +60,8 @@ body.rh-filtros-lateral .rh-lateral-alcance .oxxo-scope-switch__dot { display: n
     grid-column: 1; grid-row: 2 / span 60; align-self: start;
     position: relative; z-index: 20; margin: 0;
   }
+  /* Algunos paneles (D9) traen las cajas de filtro directo, sin envoltorio. */
+  body.rh-filtros-lateral [data-filtros-layout] > [data-filtros-lateral]:has(> .vac-fbox),
   body.rh-filtros-lateral [data-filtros-layout] > [data-filtros-lateral] :is(.vac-filters,.d2-filters) {
     display: grid; grid-template-columns: minmax(0,1fr); gap: 14px; align-items: stretch;
   }

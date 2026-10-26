@@ -54,8 +54,9 @@ test('D4 conserva el contrato de diálogos y herramientas de tabla al final de l
 test('D11 termina su cascada visual en su propia hoja (no usa diálogos ni table-tools)', () => {
   const head = headOf(read('dashboards/dashboard-11.html'));
   const links = linksOf(head);
-  assert.deepEqual(links, ['../css/global.css', '../css/dashboard-rh-unified.css', '../css/dashboard-11.css'],
-    'D11: global -> canon -> hoja propia, sin capas extra');
+  // rh-filtros-lateral.css es el lateral de filtros compartido (va antes del canon).
+  assert.deepEqual(links, ['../css/global.css', '../css/rh-filtros-lateral.css', '../css/dashboard-rh-unified.css', '../css/dashboard-11.css'],
+    'D11: global -> lateral compartido -> canon -> hoja propia, sin capas extra');
 });
 
 test('desaparecen los parches anti-skin por ID e !important en la hoja de D4', () => {
