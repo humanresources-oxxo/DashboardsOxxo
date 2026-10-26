@@ -367,6 +367,26 @@ sandbox.loadAsesorCatalog=async()=>null;sandbox.OXXO.loadAsesorCatalog=sandbox.l
  assert.equal(Number(mOax.value.toFixed(1)),75.0);  // gauge por plaza = todas las fechas
  fixtureByTab=null;
 
+ // RAE alineada a dashboard-2.html: el responsable de la baja es el Asesor
+ // crudo de la fila (no quien tiene hoy la tienda segun el catalogo) y los
+ // placeholders quedan como "Sin responsable identificado" en el ranking.
+ const catalogoTienda=sandbox.OXXO.loadAsesorCatalog;
+ sandbox.OXXO.loadAsesorCatalog=async()=>({byTienda:new Map([['OXXO A','Beto Actual']]),byCr:new Map()});
+ fixtureByTab=null;
+ fixture=[{Mes:'2026-09',Tienda:'OXXO A',Asesor:'Ana Anterior',Puesto:'AYUDANTE TIENDA',Medida:'BAJA'},
+  {Mes:'2026-09',Tienda:'OXXO A',Asesor:'Sin Asesor Asignado',Puesto:'AYUDANTE TIENDA',Medida:'BAJA'},
+  {Mes:'2026-09',Tienda:'OXXO A',Asesor:'',Puesto:'AYUDANTE TIENDA',Medida:'BAJA'}];
+ const crudo=await sandbox.rae.dataD2();
+ assert.equal(JSON.stringify(crudo.ranking.map(x=>[x.name,x.value])),JSON.stringify([['Sin responsable identificado',2],['Ana Anterior',1]]));
+ assert.equal(JSON.stringify(crudo.asesores.map(x=>[x.name,x.bajas])),JSON.stringify([['Ana Anterior',1]]));
+ sandbox.OXXO.loadAsesorCatalog=catalogoTienda;
+ // TREO: 'Movimiento Inicial' manda sobre el signo del dif (dashboard-7.html).
+ assert.equal(sandbox.OXXO.metricsMovimientoTreo('Subir',0),'Subir');
+ assert.equal(sandbox.OXXO.metricsMovimientoTreo('Alineada',3),'Alineada');
+ assert.equal(sandbox.OXXO.metricsMovimientoTreo('▼ Bajar',2),'Bajar');
+ assert.equal(sandbox.OXXO.metricsMovimientoTreo('',-1),'Bajar');
+ assert.equal(sandbox.OXXO.metricsMovimientoTreo('otro',0),'Alineada');
+
  fixture=[];assert.equal(await sandbox.general.kpiD1(),null);assert.equal(await sandbox.general.kpiD2(),null);
  console.log('PPTX: occupied positions, zero current vacancies, exact month, week/year, unassigned departures and chart totals OK');
  console.log('RAE sync: total con admin units, mes canonico, scope Oaxaca forzado, D3 sin catalogo y plazas vigentes OK');
