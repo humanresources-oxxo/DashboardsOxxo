@@ -14,13 +14,15 @@
   <script defer src="../assets/vendor/chart.umd.min.js?v=628af652"></script>
   <link rel="stylesheet" href="../css/rh-table-tools.css?v=628af652" />
   <link rel="stylesheet" href="../css/rh-filter-summary.css?v=628af652" />
+  <link rel="stylesheet" href="../css/rh-filtros-lateral.css?v=628af652" />
   <link rel="stylesheet" href="../css/dashboard-rh-unified.css?v=628af652" />
   <link rel="stylesheet" href="../css/dashboard-6.css?v=628af652" />
   <script defer src="../js/rh-dashboard-enhancements.js?v=628af652"></script>
   <script defer src="../js/rh-table-tools.js?v=628af652"></script>
   <script defer src="../js/rh-filter-summary.js?v=628af652"></script>
+  <script defer src="../js/rh-filtros-lateral.js?v=628af652"></script>
 </head>
-<body class="dashboard-6-page hr-dashboard rh-unified rh-layered rh-cabecera">
+<body class="dashboard-6-page hr-dashboard rh-unified rh-layered rh-cabecera rh-filtros-lateral">
 <nav class="topbar">
   <div class="topbar__brand">
     <div class="topbar__logo"><img src="../assets/oxxo-logo-original.png" alt="OXXO"></div>
@@ -35,7 +37,7 @@
   </div>
 </nav>
 
-<div class="page">
+<div class="page" data-filtros-layout>
 
   <!-- Hero con filtros -->
   <div class="hero">
@@ -48,7 +50,7 @@
     <div class="hero-context"><span id="semana-badge">Semanal · Plaza Oaxaca</span></div>
   </div>
 
-  <section class="filter-panel" aria-label="Filtros del dashboard">
+  <section class="filter-panel" aria-label="Filtros del dashboard" data-filtros-lateral data-filtros-auto>
     <div class="vac-filters">
       <div class="vac-fbox">
         <label for="filtro-asesor-button">Asesor</label>
