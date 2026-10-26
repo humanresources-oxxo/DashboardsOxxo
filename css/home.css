@@ -362,3 +362,41 @@ body[data-area="rh"] .group .card::after{color:var(--red)}
   .topbar__actions .btn{padding-inline:16px}
   .card{cursor:pointer}
 }
+
+/* ── Accesos rapidos (margen izquierdo) ─────────────── */
+/* Solo en escritorio: el riel queda fijo a la izquierda y el contenido se
+   recorre lo justo para que nunca lo tape. En pantallas angostas se oculta y
+   los mismos accesos siguen al final de la portada. */
+.rail{display:none}
+@media (min-width:1100px){
+  :root{--rail-w:96px;--shell:min(calc(100% - 36px - 2 * (var(--rail-w) + 20px)),1560px)}
+  .access,.group{max-width:calc(var(--shell) + 36px)}
+  .rail{
+    position:fixed;left:18px;top:50%;transform:translateY(-50%);z-index:25;
+    width:var(--rail-w);padding:12px 8px;border-radius:24px;
+    display:flex;flex-direction:column;align-items:stretch;gap:6px;
+  }
+  .rail>*{position:relative;z-index:1}
+  .rail__item{
+    display:flex;flex-direction:column;align-items:center;gap:6px;
+    padding:10px 4px 9px;border-radius:16px;color:#4a3a34;text-align:center;
+    transition:background .18s ease,transform .18s var(--ease);
+  }
+  .rail__item:hover{background:rgba(255,255,255,.62);transform:translateY(-1px);color:#211510}
+  .rail__item:focus-visible{outline:2px solid var(--red);outline-offset:2px}
+  .rail__icon{width:42px;height:42px;display:grid;place-items:center;border-radius:14px;transition:transform .18s var(--ease)}
+  .rail__item:hover .rail__icon{transform:scale(1.06)}
+  .rail__icon svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+  .rail__label{font-size:11.5px;font-weight:700;line-height:1.2}
+  .rail__item--me .rail__icon{color:#fff4d7;background:linear-gradient(145deg,#ef3e4a,#b0121d);box-shadow:0 6px 14px rgba(176,18,29,.25)}
+  .rail__item--store .rail__icon{color:#8D3C30;background:linear-gradient(145deg,#fff,rgba(242,165,43,.35));box-shadow:inset 0 0 0 .5px rgba(141,60,48,.22)}
+  .rail__item--juego .rail__icon{color:#8a6a5e;background:rgba(255,255,255,.6);box-shadow:inset 0 0 0 .5px rgba(130,54,38,.16)}
+  .rail__item--juego .rail__label{color:#6b5850;font-weight:600}
+  .rail__sep{
+    margin:6px 6px 0;padding-top:10px;border-top:.5px solid var(--rule);
+    font-size:10px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#a08b82;text-align:center;
+  }
+}
+@media (min-width:1100px) and (max-height:620px){
+  .rail{top:96px;transform:none;max-height:calc(100vh - 110px);overflow-y:auto}
+}
