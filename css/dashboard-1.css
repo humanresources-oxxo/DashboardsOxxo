@@ -167,3 +167,27 @@ body.dashboard-1-page .am-body .tbl-wrap { max-height: 420px; }
     display: grid; overflow: visible;
   }
 }
+
+/* Filtros en lateral (escritorio ancho): la pagina pasa a 2 columnas. El hero
+   ocupa todo el ancho arriba; el panel de filtros queda en la columna
+   izquierda, pegado al hacer scroll, y el resto del tablero en la derecha.
+   El panel abarca todas las filas implicitas del contenido (span 60); sin
+   row-gap esas filas vacias no ocupan alto. Debajo de 1280px se conserva la
+   barra horizontal de arriba. */
+@media (min-width: 1280px) {
+  body.dashboard-1-page .page {
+    display: grid; grid-template-columns: 250px minmax(0,1fr); column-gap: 20px; row-gap: 0;
+    align-items: start; max-width: 1640px;
+  }
+  body.dashboard-1-page .page > * { grid-column: 2; min-width: 0; }
+  body.dashboard-1-page .page > .hero { grid-column: 1 / -1; }
+  body.dashboard-1-page .page > .filter-panel {
+    grid-column: 1; grid-row: 2 / span 60; align-self: start;
+    position: sticky; top: 16px; z-index: 20; margin: 0;
+  }
+  body.dashboard-1-page .filter-panel .vac-filters { grid-template-columns: minmax(0,1fr); gap: 14px; align-items: stretch; }
+  body.dashboard-1-page .row-main { grid-template-columns: minmax(0,1fr); }
+}
+@media (min-width: 1480px) {
+  body.dashboard-1-page .row-main { grid-template-columns: minmax(0,2.05fr) minmax(300px,.95fr); }
+}
