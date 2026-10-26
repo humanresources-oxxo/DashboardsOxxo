@@ -32,7 +32,7 @@
       ]
     }
   };
-  const rhContent = [...document.querySelectorAll('.group, .access')];
+  const rhContent = [...document.querySelectorAll('.group')];
   const otherArea = document.getElementById('other-area');
   const pill = document.getElementById('home-pill');
   const summary = document.getElementById('home-summary');
