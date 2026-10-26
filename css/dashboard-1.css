@@ -183,7 +183,7 @@ body.dashboard-1-page .am-body .tbl-wrap { max-height: 420px; }
   body.dashboard-1-page .page > .hero { grid-column: 1 / -1; }
   body.dashboard-1-page .page > .filter-panel {
     grid-column: 1; grid-row: 2 / span 60; align-self: start;
-    position: sticky; top: 16px; z-index: 20; margin: 0;
+    position: relative; z-index: 20; margin: 0;
   }
   body.dashboard-1-page .filter-panel .vac-filters { grid-template-columns: minmax(0,1fr); gap: 14px; align-items: stretch; }
   body.dashboard-1-page .row-main { grid-template-columns: minmax(0,1fr); }
@@ -191,3 +191,46 @@ body.dashboard-1-page .am-body .tbl-wrap { max-height: 420px; }
 @media (min-width: 1480px) {
   body.dashboard-1-page .row-main { grid-template-columns: minmax(0,2.05fr) minmax(300px,.95fr); }
 }
+/* El lateral solo acompana el scroll si cabe completo en la ventana; en
+   pantallas bajas se queda en su lugar para que Limpiar y Descargar base no
+   queden fuera de vista. */
+@media (min-width: 1280px) and (min-height: 860px) {
+  body.dashboard-1-page .page > .filter-panel { position: sticky; top: 16px; }
+}
+
+/* Contador de filtros activos (arriba del panel de filtros). */
+body.dashboard-1-page .d1-fstatus {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; margin: 0 0 12px; padding: 8px 12px;
+  border: 1px solid var(--du-border); border-radius: 10px; background: var(--du-soft, #faf6f1);
+  color: var(--du-muted); font-size: 13px; font-weight: 700;
+}
+body.dashboard-1-page .d1-fstatus:empty { display: none; }
+body.dashboard-1-page .d1-fstatus b { color: var(--du-red-dark); font-family: var(--font-display); font-size: 1.15rem; }
+body.dashboard-1-page .d1-fstatus span { color: var(--du-muted); font-size: 12px; font-weight: 600; }
+@media (min-width: 1280px) { body.dashboard-1-page .d1-fstatus span { flex-basis: 100%; } }
+body.dashboard-1-page .d1-fstatus.has-active { border-color: var(--du-red); background: #fdecee; color: var(--du-red-dark); }
+
+/* Region / plaza y estado de tiendas dentro del lateral. */
+body.dashboard-1-page .d1-alcance[hidden] { display: none; }
+body.dashboard-1-page .d1-alcance { margin-bottom: 14px; }
+body.dashboard-1-page .filter-panel .oxxo-scope-selector {
+  display: flex; flex-direction: column; align-items: stretch; gap: 8px; width: 100%; margin: 0; padding: 0;
+  border: 0 !important; border-radius: 0; background: transparent !important; box-shadow: none !important;
+}
+body.dashboard-1-page .filter-panel .oxxo-scope-selector__intro { display: none; }
+body.dashboard-1-page .filter-panel .oxxo-scope-switch {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; overflow: visible; border-radius: 12px; background: #f3ede7; box-shadow: none;
+}
+body.dashboard-1-page .filter-panel .oxxo-scope-switch__opt:last-child:nth-child(odd) { grid-column: 1 / -1; }
+body.dashboard-1-page .filter-panel .oxxo-store-status {
+  display: grid; grid-template-columns: repeat(3,1fr); gap: 4px; padding: 4px; border: 0; border-radius: 12px; background: #f3ede7;
+}
+body.dashboard-1-page .filter-panel .oxxo-store-status__label { display: none; }
+body.dashboard-1-page .filter-panel :is(.oxxo-scope-switch__opt,.oxxo-store-status__opt) {
+  display: inline-flex; align-items: center; justify-content: center; gap: 4px; min-height: 36px; padding: 0 6px;
+  border: 0 !important; border-radius: 9px !important; background: transparent !important; color: var(--du-text) !important;
+  box-shadow: none !important; font: 700 13px/1.1 var(--font-body); transform: none !important; white-space: nowrap;
+}
+body.dashboard-1-page .filter-panel :is(.oxxo-scope-switch__opt,.oxxo-store-status__opt):hover { background: #fff !important; }
+body.dashboard-1-page .filter-panel :is(.oxxo-scope-switch__opt,.oxxo-store-status__opt).is-active { background: var(--du-red-dark) !important; color: #fff !important; }
+body.dashboard-1-page .filter-panel .oxxo-scope-switch__dot { display: none; }

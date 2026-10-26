@@ -55,6 +55,8 @@
   </div>
 
   <section class="filter-panel" aria-label="Filtros del dashboard">
+    <p class="d1-fstatus" id="d1-fstatus" aria-live="polite"></p>
+    <div class="vac-fbox d1-alcance" id="d1-alcance-slot" hidden><label>Región y tiendas</label></div>
     <div class="vac-filters">
       <div class="vac-fbox">
         <label for="asesor-button">Asesor</label>
@@ -638,6 +640,50 @@ function limpiarFiltros(){
   refreshDashboard();
 }
 
+// Contador de filtros activos: compara cada filtro contra lo que deja
+// "Limpiar", asi la vista por defecto (mes actual, tiendas operativas,
+// asesores sin "Sin asesor") no cuenta como filtro.
+function filtrosActivosD1(){
+  const mismos=(a,b)=>a.length===b.length && a.every(v=>b.includes(v));
+  const activos=[];
+  if(!mismos(selectedAsesorValues ?? asesorOptionsData, defaultAsesorSelection())) activos.push('Asesor');
+  if(activePuesto || !isDefaultPuestoSelection()) activos.push('Puesto');
+  if(selectedDiasValues.length) activos.push('Antigüedad');
+  if((document.getElementById('filtro-mes')?.value || '')!==DEFAULT_MES) activos.push('Mes');
+  if(!isDefaultTiendaSelection()) activos.push('Tienda');
+  return activos;
+}
+function actualizarContadorFiltros(){
+  const el=document.getElementById('d1-fstatus');
+  if(!el) return;
+  const activos=filtrosActivosD1();
+  el.classList.toggle('has-active', activos.length>0);
+  el.innerHTML=activos.length
+    ? `<b>${activos.length}</b> ${activos.length===1?'filtro activo':'filtros activos'}<span>${activos.join(' · ')}</span>`
+    : 'Vista estándar<span>Sin filtros extra</span>';
+}
+
+// En escritorio ancho (filtros en lateral) el selector de region/plaza y
+// estado de tiendas que core.js monta en el encabezado se muda al lateral,
+// para que todos los filtros vivan en un solo lugar. Por debajo de 1280px
+// regresa al encabezado.
+(function moverAlcanceAlLateral(){
+  const mq=window.matchMedia('(min-width: 1280px)');
+  const colocar=()=>{
+    const selector=document.querySelector('[data-oxxo-scope-selector]');
+    const slot=document.getElementById('d1-alcance-slot');
+    const encabezado=document.querySelector('.hero-top');
+    if(!selector || !slot || !encabezado) return false;
+    const destino=mq.matches ? slot : encabezado;
+    if(selector.parentElement!==destino) destino.appendChild(selector);
+    slot.hidden=!mq.matches;
+    return true;
+  };
+  mq.addEventListener('change', colocar);
+  let intentos=0;
+  (function esperar(){ if(!colocar() && intentos++<100) setTimeout(esperar,100); })();
+})();
+
 // Filtrar y ordenar datos
 function filtrarDatos(){
   const f=getFiltros();
@@ -1092,6 +1138,7 @@ function refreshDashboard(){
   renderVacantesPorAsesorDias(filtered);
   renderOverview(filtered);
   renderTabla(filtered);
+  actualizarContadorFiltros();
 }
 
 // Poblar selectores de filtro
