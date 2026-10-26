@@ -133,7 +133,8 @@
   }
 
   async function datosAsesorD2(nombre){
-    const d2 = await OXXO.metricsD2Rows();
+    // Igual que dashboard-2.html: la baja es del Asesor crudo de la fila.
+    const d2 = await OXXO.metricsD2Rows('', { includeAdminUnits: true, asesorCrudo: true });
     if(!d2) return null;
     const rows = d2.rows.filter(r => esMismoAsesor(r, d2.asesorKey, nombre));
     const byPuesto = { Lider: 0, Encargado: 0, Ayudante: 0, Otro: 0 };
@@ -163,10 +164,11 @@
     const rows = d7.rows.filter(r => esMismoAsesor(r, d7.asesorKey, nombre));
     const total = rows.length;
     let alineadas = 0, subir = 0, bajar = 0;
+    // 'Movimiento Inicial' manda; el dif solo si viene vacia (dashboard-7.html).
     rows.forEach(r => {
-      const d = num(val(r, d7.difKey));
-      if(d === 0) alineadas++;
-      else if(d > 0) subir++;
+      const mov = OXXO.metricsMovimientoTreo(d7.movKey ? val(r, d7.movKey) : '', num(val(r, d7.difKey)));
+      if(mov === 'Alineada') alineadas++;
+      else if(mov === 'Subir') subir++;
       else bajar++;
     });
     const totalTreo = rows.reduce((s,r) => s + num(val(r, d7.treoKey)), 0);

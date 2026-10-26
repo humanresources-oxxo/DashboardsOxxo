@@ -2781,6 +2781,7 @@ async function metricsD7Rows() {
   const asesorKey = metricsFindDataKey(raw, ['Asesor']);
   const tiendaKey = metricsFindDataKey(raw, ['Tienda', 'Nombre Tienda', 'Unidad', 'Unidad Org', 'Unidad Organizativa']);
   const crKey = metricsFindDataKey(raw, ['CR', 'ID Tienda', 'ID_Tienda']);
+  const movKey = metricsFindDataKey(raw, ['Movimiento Inicial', 'Movimiento']);
   const asesorCatalog = await loadAsesorCatalog();
   const estructuraD1 = await metricsBuildEstructuraDiariaD1();
   const rows = raw
@@ -2813,7 +2814,7 @@ async function metricsD7Rows() {
       });
       return copy;
     });
-  return { rows, difKey, treoKey, sapKey, activosKey, vacantesKey, asesorKey, tiendaKey };
+  return { rows, difKey, treoKey, sapKey, activosKey, vacantesKey, asesorKey, tiendaKey, movKey };
 }
 
 // Alineación de estructura por Asesor (Dashboard 7/TREO): mismo pipeline

@@ -79,9 +79,9 @@ sandbox.loadAsesorCatalog=async()=>null;sandbox.OXXO.loadAsesorCatalog=sandbox.l
  fixture=[{Mes:'2026-09',Tienda:'ENTRENAMIENTO OAXACA',Asesor:'Sin Asesor Asignado',Puesto:'AYUDANTE TIENDA',Medida:'BAJA',Motivo:'Renuncia',Edad:24,Temporalidad:'0 - 45 días'},
  {Mes:'2026-09',Tienda:'OPERACIONES 11 OAXACA',Asesor:'Sin Asesor Asignado',Puesto:'AYUDANTE TIENDA',Medida:'BAJA',Motivo:'Renuncia',Edad:24,Temporalidad:'0 - 45 días'},
  {Mes:'2026-09',Tienda:'OXXO A',Asesor:'Timoteo Antonio Perez',Puesto:'AYUDANTE TIENDA',Medida:'BAJA',Motivo:'Baja con causal',Edad:34,Temporalidad:'46 - 90 días'}];
- // La presentacion general (admin-pptx.js) sigue EXCLUYENDO Entrenamiento/
- // Operaciones: metricsD2Rows() sin includeAdminUnits. Solo cuenta OXXO A.
- assert.equal((await sandbox.general.kpiD2()).value,'1');
+ // La presentacion general (admin-pptx.js) ahora cuenta igual que el KPI
+ // "Total Bajas" de dashboard-2.html: conserva Entrenamiento/Operaciones.
+ assert.equal((await sandbox.general.kpiD2()).value,'3');
  const bajasRae = await sandbox.rae.dataD2();
  // RAE ahora INCLUYE Entrenamiento/Operaciones en el TOTAL (como el KPI
  // "Total Bajas" de dashboard-2.html): 2 bajas admin + 1 real = 3.
