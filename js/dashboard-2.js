@@ -1774,6 +1774,7 @@ function updateActiveContext(filters = d2FilterInfo()){
       : '';
     if(line.textContent !== text) line.textContent = text;
   }
+  if(BASE_BAJAS_DATA.length) window.OXXO_FILTROS_LATERAL?.estado(filters.items);
   const summary = document.getElementById('d2-filter-summary');
   if(summary && BASE_BAJAS_DATA.length){
     const text = `${d2MonthShort(mes)} · ${filters.count ? d2Plural(filters.count, 'activo', 'activos') : 'Sin filtros extra'}`;
@@ -1808,7 +1809,9 @@ function syncD2UI(){
 // persistencia, recarga) no se tocan.
 function enhanceD2ScopeSelector(){
   const mount = document.getElementById('d2-scope');
-  const host = mount?.querySelector('[data-oxxo-scope-selector]');
+  // En escritorio ancho rh-filtros-lateral.js puede haber mudado ya el
+  // selector al lateral de filtros: se busca en todo el documento.
+  const host = document.querySelector('[data-oxxo-scope-selector]');
   if(!mount || !host || mount.querySelector('.d2-scope-toggle')) return;
   host.id = host.id || 'd2-scope-panel';
   const toggle = document.createElement('button');
@@ -1818,7 +1821,7 @@ function enhanceD2ScopeSelector(){
   toggle.setAttribute('aria-expanded', 'false');
   toggle.setAttribute('aria-controls', host.id);
   toggle.innerHTML = `<svg class="d2-scope-toggle__pin" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 10c0 5.4-8 11-8 11S4 15.4 4 10a8 8 0 1 1 16 0Z"></path><circle cx="12" cy="10" r="2.5"></circle></svg><span class="d2-scope-toggle__text"><span class="d2-scope-toggle__label">Alcance</span><span class="d2-scope-toggle__value">${escHtml(d2ScopeName())} · ${escHtml(d2StoreStatus())}</span></span><svg class="d2-chevron" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>`;
-  mount.insertBefore(toggle, host);
+  if(host.parentElement === mount) mount.insertBefore(toggle, host); else mount.prepend(toggle);
   toggle.addEventListener('click', () => {
     const open = !mount.classList.contains('is-open');
     mount.classList.toggle('is-open', open);

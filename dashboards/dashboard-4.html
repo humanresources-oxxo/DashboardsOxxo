@@ -15,14 +15,16 @@
 
   <link rel="stylesheet" href="../css/rh-table-tools.css?v=66eb8ca6" />
   <link rel="stylesheet" href="../css/rh-filter-summary.css?v=66eb8ca6" />
+  <link rel="stylesheet" href="../css/rh-filtros-lateral.css?v=66eb8ca6" />
   <link rel="stylesheet" href="../css/dashboard-rh-unified.css?v=66eb8ca6"/>
   <link rel="stylesheet" href="../css/dashboard-4.css?v=66eb8ca6"/>
   <link rel="stylesheet" href="../css/dashboard-dialogs.css?v=66eb8ca6" />
   <script defer src="../js/rh-dashboard-enhancements.js?v=66eb8ca6"></script>
   <script defer src="../js/rh-table-tools.js?v=66eb8ca6"></script>
+  <script defer src="../js/rh-filtros-lateral.js?v=66eb8ca6"></script>
   <script defer src="../js/rh-filter-summary.js?v=66eb8ca6"></script>
 </head>
-<body class="dashboard-4-page hr-dashboard rh-unified rh-layered rh-cabecera">
+<body class="dashboard-4-page hr-dashboard rh-unified rh-layered rh-cabecera rh-filtros-lateral">
 <nav class="topbar">
   <div class="topbar__brand">
     <div class="topbar__logo"><img src="../assets/oxxo-logo-original.png" alt="OXXO"></div>
@@ -37,7 +39,7 @@
   </div>
 </nav>
 
-<div class="page">
+<div class="page" data-filtros-layout>
 
   <!-- Hero con filtros -->
   <div class="hero hero--orange">
@@ -50,7 +52,7 @@
     <div class="hero-context"><span id="semana-badge">Semanal · Plaza Oaxaca</span></div>
   </div>
 
-  <section class="filter-panel" aria-label="Filtros del dashboard">
+  <section class="filter-panel" aria-label="Filtros del dashboard" data-filtros-lateral>
     <div class="vac-filters">
       <div class="vac-fbox">
         <label for="filtro-semana">Semana</label>
@@ -262,7 +264,7 @@ function setTableSort(value){ TABLE_SORT = value || 'gasto-desc'; renderAll(); }
 
 let BASE_DATA = [];
 let ACTIVE_FILTER = null; // null | 'doble' | 'triple' | 'descanso'
-let DROP_ASESORES = null, DROP_TIPO = '', DROP_TIENDA = '', DROP_SEMANA = '';
+let DROP_ASESORES = null, DROP_TIPO = '', DROP_TIENDA = '', DROP_SEMANA = '', TOTAL_ASESORES = 0;
 let asesorFilterHandle = null;
 let DEFAULT_SEMANA = '';
 let TABLE_SORT = 'gasto-desc';
@@ -298,7 +300,19 @@ function filteredData() {
   return data;
 }
 
+// Filtros activos para el lateral: lo que difiere de lo que deja "Limpiar"
+// (semana mas reciente, todos los asesores, tipos y tiendas).
+function filtrosActivosD4(){
+  const activos=[];
+  if(DROP_SEMANA!==DEFAULT_SEMANA) activos.push('Semana');
+  if(DROP_ASESORES && DROP_ASESORES.length!==TOTAL_ASESORES) activos.push('Asesor');
+  if(DROP_TIPO || ACTIVE_FILTER) activos.push('Tipo de TE');
+  if(DROP_TIENDA) activos.push('Tienda');
+  return activos;
+}
+
 function renderAll() {
+  window.OXXO_FILTROS_LATERAL?.estado(filtrosActivosD4());
   const data = filteredData();
   const byAsesor = aggregateByAsesor(data);
   const scopedBase = baseForCurrentScope();
@@ -578,6 +592,7 @@ async function initDashboard() {
 
   const asesores = [...new Set(data.map(r=>r[C.asesor]).filter(Boolean))].sort();
   const tiendas  = [...new Set(data.map(r=>r[C.tienda]).filter(Boolean))].sort();
+  TOTAL_ASESORES = asesores.length;
   asesorFilterHandle = OXXO.mountAsesorFilter('filtro-asesor', asesores, {
     onChange: (selected) => { DROP_ASESORES = selected; renderAll(); },
   });

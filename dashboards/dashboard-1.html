@@ -15,15 +15,17 @@
 
 <link rel="stylesheet" href="../css/rh-table-tools.css?v=66eb8ca6" />
   <link rel="stylesheet" href="../css/rh-filter-summary.css?v=66eb8ca6" />
+  <link rel="stylesheet" href="../css/rh-filtros-lateral.css?v=66eb8ca6" />
   <link rel="stylesheet" href="../css/dashboard-rh-unified.css?v=66eb8ca6" />
   <link rel="stylesheet" href="../css/dashboard-1.css?v=66eb8ca6" />
   <link rel="stylesheet" href="../css/dashboard-dialogs.css?v=66eb8ca6" />
 
 <script defer src="../js/rh-dashboard-enhancements.js?v=66eb8ca6"></script>
   <script defer src="../js/rh-table-tools.js?v=66eb8ca6"></script>
+  <script defer src="../js/rh-filtros-lateral.js?v=66eb8ca6"></script>
   <script defer src="../js/rh-filter-summary.js?v=66eb8ca6"></script>
 </head>
-<body class="dashboard-1-page hr-dashboard rh-unified rh-layered">
+<body class="dashboard-1-page hr-dashboard rh-unified rh-layered rh-filtros-lateral">
 
 <nav class="topbar">
   <div class="topbar__brand">
@@ -42,7 +44,7 @@
   </div>
 </nav>
 
-<div class="page">
+<div class="page" data-filtros-layout>
 
   <div class="hero">
     <div class="hero-top">
@@ -54,9 +56,7 @@
     <div class="hero-context" id="hero-context" aria-live="polite"></div>
   </div>
 
-  <section class="filter-panel" aria-label="Filtros del dashboard">
-    <p class="d1-fstatus" id="d1-fstatus" aria-live="polite"></p>
-    <div class="vac-fbox d1-alcance" id="d1-alcance-slot" role="group" aria-labelledby="d1-alcance-label" hidden><label id="d1-alcance-label">Región y tiendas</label></div>
+  <section class="filter-panel" aria-label="Filtros del dashboard" data-filtros-lateral>
     <div class="vac-filters">
       <div class="vac-fbox">
         <label for="asesor-button">Asesor</label>
@@ -654,35 +654,8 @@ function filtrosActivosD1(){
   return activos;
 }
 function actualizarContadorFiltros(){
-  const el=document.getElementById('d1-fstatus');
-  if(!el) return;
-  const activos=filtrosActivosD1();
-  el.classList.toggle('has-active', activos.length>0);
-  el.innerHTML=activos.length
-    ? `<b>${activos.length}</b> ${activos.length===1?'filtro activo':'filtros activos'}<span>${activos.join(' · ')}</span>`
-    : 'Vista estándar<span>Sin filtros extra</span>';
+  window.OXXO_FILTROS_LATERAL?.estado(filtrosActivosD1());
 }
-
-// En escritorio ancho (filtros en lateral) el selector de region/plaza y
-// estado de tiendas que core.js monta en el encabezado se muda al lateral,
-// para que todos los filtros vivan en un solo lugar. Por debajo de 1280px
-// regresa al encabezado.
-(function moverAlcanceAlLateral(){
-  const mq=window.matchMedia('(min-width: 1280px)');
-  const colocar=()=>{
-    const selector=document.querySelector('[data-oxxo-scope-selector]');
-    const slot=document.getElementById('d1-alcance-slot');
-    const encabezado=document.querySelector('.hero-top');
-    if(!selector || !slot || !encabezado) return false;
-    const destino=mq.matches ? slot : encabezado;
-    if(selector.parentElement!==destino) destino.appendChild(selector);
-    slot.hidden=!mq.matches;
-    return true;
-  };
-  mq.addEventListener('change', colocar);
-  let intentos=0;
-  (function esperar(){ if(!colocar() && intentos++<100) setTimeout(esperar,100); })();
-})();
 
 // Filtrar y ordenar datos
 function filtrarDatos(){

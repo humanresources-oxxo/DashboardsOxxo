@@ -15,14 +15,16 @@
   <script defer src="../assets/vendor/chart.umd.min.js?v=66eb8ca6"></script>
   <link rel="stylesheet" href="../css/rh-table-tools.css?v=66eb8ca6" />
   <link rel="stylesheet" href="../css/rh-filter-summary.css?v=66eb8ca6" />
+  <link rel="stylesheet" href="../css/rh-filtros-lateral.css?v=66eb8ca6" />
   <link rel="stylesheet" href="../css/dashboard-rh-unified.css?v=66eb8ca6" />
   <link rel="stylesheet" href="../css/dashboard-dialogs.css?v=66eb8ca6" />
   <link rel="stylesheet" href="../css/dashboard-2.css?v=66eb8ca6" />
   <script defer src="../js/rh-dashboard-enhancements.js?v=66eb8ca6"></script>
   <script defer src="../js/rh-table-tools.js?v=66eb8ca6"></script>
+  <script defer src="../js/rh-filtros-lateral.js?v=66eb8ca6"></script>
   <script defer src="../js/rh-filter-summary.js?v=66eb8ca6"></script>
 </head>
-<body class="hr-dashboard dashboard-2-page rh-unified">
+<body class="hr-dashboard dashboard-2-page rh-unified rh-filtros-lateral">
 <nav class="topbar">
   <div class="topbar__brand">
     <div class="topbar__logo"><img src="../assets/oxxo-logo-original.png" alt="OXXO"></div>
@@ -38,7 +40,7 @@
   </div>
 </nav>
 
-<main class="d2-page" id="d2-main">
+<main class="d2-page" id="d2-main" data-filtros-layout>
   <!-- 1. Encabezado compacto: titulo, enlace a Analisis y alcance. -->
   <section class="d2-hero" aria-labelledby="d2-title">
     <div class="d2-hero__row">
@@ -55,7 +57,7 @@
   </section>
 
   <!-- 2. Filtros secundarios, justo bajo el encabezado (plegables en celular). -->
-  <section class="d2-filter-region" aria-labelledby="d2-filter-title">
+  <section class="d2-filter-region" aria-labelledby="d2-filter-title" data-filtros-lateral>
     <h2 class="d2-region-title" id="d2-filter-title">Filtros secundarios</h2>
     <button type="button" class="d2-filter-toggle" id="d2-filter-toggle" aria-expanded="true" aria-controls="filter-bar">
       <span class="d2-filter-toggle__title">Filtros secundarios</span>

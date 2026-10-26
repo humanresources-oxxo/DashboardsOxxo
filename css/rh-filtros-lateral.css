@@ -1,0 +1,73 @@
+/* Consumido por: dashboard-1, dashboard-2, dashboard-4. Va antes de
+   dashboard-rh-unified.css (la cascada exige canon y hoja propia al final), asi
+   que sus selectores llevan body.rh-filtros-lateral + atributos para ganar. */
+/* Filtros en lateral (escritorio ancho). Opt-in con body.rh-filtros-lateral:
+   el contenedor [data-filtros-layout] pasa a 2 columnas; su primer hijo (el
+   encabezado) ocupa todo el ancho arriba, el panel [data-filtros-lateral]
+   queda en la columna izquierda y el resto del tablero en la derecha. El
+   panel abarca todas las filas implicitas (span 60); sin row-gap esas filas
+   vacias no ocupan alto. Debajo de 1280px cada tablero conserva su barra de
+   filtros horizontal de siempre. Ver js/rh-filtros-lateral.js. */
+
+/* Estado de filtros activos (arriba del panel, todos los anchos). */
+body.rh-filtros-lateral .rh-lateral-estado {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; margin: 0 0 12px; padding: 8px 12px;
+  border: 1px solid var(--du-border, #ded6cf); border-radius: 10px; background: var(--du-soft, #faf6f1);
+  color: var(--du-muted, #6f625d); font-size: 13px; font-weight: 700;
+}
+body.rh-filtros-lateral .rh-lateral-estado b { color: var(--du-red-dark, #a91f26); font-family: var(--font-display); font-size: 1.15rem; }
+body.rh-filtros-lateral .rh-lateral-estado span { color: var(--du-muted, #6f625d); font-size: 12px; font-weight: 600; }
+body.rh-filtros-lateral .rh-lateral-estado.has-active { border-color: var(--du-red, #d91f2d); background: #fdecee; color: var(--du-red-dark, #a91f26); }
+
+/* Region / plaza y estado de tiendas dentro del lateral. */
+body.rh-filtros-lateral .rh-lateral-alcance[hidden] { display: none; }
+body.rh-filtros-lateral .rh-lateral-alcance { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+body.rh-filtros-lateral .rh-lateral-alcance__label { color: var(--du-muted, #6f625d); font-size: 13px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+body.rh-filtros-lateral .rh-lateral-alcance .oxxo-scope-selector {
+  display: flex; flex-direction: column; align-items: stretch; gap: 8px; width: 100%; margin: 0; padding: 0;
+  border: 0 !important; border-radius: 0; background: transparent !important; box-shadow: none !important;
+}
+body.rh-filtros-lateral .rh-lateral-alcance .oxxo-scope-selector__intro { display: none; }
+body.rh-filtros-lateral .rh-lateral-alcance .oxxo-scope-switch {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 4px; width: 100%; padding: 4px; overflow: visible;
+  border: 0; border-radius: 12px; background: #f3ede7; box-shadow: none;
+}
+body.rh-filtros-lateral .rh-lateral-alcance .oxxo-scope-switch__opt:last-child:nth-child(odd) { grid-column: 1 / -1; }
+body.rh-filtros-lateral .rh-lateral-alcance .oxxo-store-status {
+  display: grid; grid-template-columns: repeat(3,1fr); gap: 4px; width: 100%; padding: 4px;
+  border: 0; border-radius: 12px; background: #f3ede7;
+}
+body.rh-filtros-lateral .rh-lateral-alcance .oxxo-store-status__label { display: none; }
+body.rh-filtros-lateral .rh-lateral-alcance :is(.oxxo-scope-switch__opt,.oxxo-store-status__opt) {
+  display: inline-flex; align-items: center; justify-content: center; gap: 4px; min-width: 0; min-height: 36px; padding: 0 6px;
+  border: 0 !important; border-radius: 9px !important; background: transparent !important; color: var(--du-text, #2b1d1a) !important;
+  box-shadow: none !important; font: 700 13px/1.1 var(--font-body); transform: none !important; white-space: nowrap;
+}
+body.rh-filtros-lateral .rh-lateral-alcance :is(.oxxo-scope-switch__opt,.oxxo-store-status__opt):hover { background: #fff !important; }
+body.rh-filtros-lateral .rh-lateral-alcance :is(.oxxo-scope-switch__opt,.oxxo-store-status__opt).is-active { background: var(--du-red-dark, #a91f26) !important; color: #fff !important; }
+body.rh-filtros-lateral .rh-lateral-alcance :is(.oxxo-scope-switch__opt,.oxxo-store-status__opt).is-active::before { content: none; }
+body.rh-filtros-lateral .rh-lateral-alcance .oxxo-scope-switch__dot { display: none; }
+
+@media (min-width: 1280px) {
+  body.rh-filtros-lateral [data-filtros-layout] {
+    display: grid; grid-template-columns: 250px minmax(0,1fr); column-gap: 20px; row-gap: 0;
+    align-items: start; max-width: 1640px;
+  }
+  body.rh-filtros-lateral [data-filtros-layout] > * { grid-column: 2; min-width: 0; }
+  body.rh-filtros-lateral [data-filtros-layout] > :first-child { grid-column: 1 / -1; }
+  body.rh-filtros-lateral [data-filtros-layout] > [data-filtros-lateral] {
+    grid-column: 1; grid-row: 2 / span 60; align-self: start;
+    position: relative; z-index: 20; margin: 0;
+  }
+  body.rh-filtros-lateral [data-filtros-layout] > [data-filtros-lateral] :is(.vac-filters,.d2-filters) {
+    display: grid; grid-template-columns: minmax(0,1fr); gap: 14px; align-items: stretch;
+  }
+  body.rh-filtros-lateral [data-filtros-layout] > [data-filtros-lateral] :is(.vac-fbox,.filter-box) { grid-column: auto; min-width: 0; }
+  body.rh-filtros-lateral [data-filtros-lateral] .rh-lateral-estado span { flex-basis: 100%; }
+}
+/* El lateral solo acompana el scroll si cabe completo en la ventana; en
+   pantallas bajas se queda en su lugar para que Limpiar y Descargar base no
+   queden fuera de vista. */
+@media (min-width: 1280px) and (min-height: 860px) {
+  body.rh-filtros-lateral [data-filtros-layout] > [data-filtros-lateral] { position: sticky; top: 16px; }
+}
