@@ -370,7 +370,10 @@ body[data-area="rh"] .group .card::after{color:var(--red)}
 .rail{display:none}
 @media (min-width:1100px){
   :root{--rail-w:96px;--shell:min(calc(100% - 36px - 2 * (var(--rail-w) + 20px)),1560px)}
-  .access,.group{max-width:calc(var(--shell) + 36px)}
+  .group{max-width:calc(var(--shell) + 36px)}
+  /* En escritorio los accesos ya estan en el riel; los mosaicos solo se
+     quedan para celular. */
+  .access{display:none}
   .rail{
     position:fixed;left:18px;top:50%;transform:translateY(-50%);z-index:25;
     width:var(--rail-w);padding:12px 8px;border-radius:24px;
