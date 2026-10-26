@@ -758,9 +758,6 @@ function renderCompromiso(data, cols){
   totalBajas += pendientes;
   // La grafica solo dibuja a quienes tienen al menos una baja.
   const chartRanking = ranking.filter(item => item.bajas > 0);
-  const pendienteNota = pendientes
-    ? `<p class="d2-note d2-note--pending">${SIN_RESPONSABLE}: ${d2Plural(pendientes, 'baja', 'bajas')} sin AT en la base. No tienen compromiso propio, así que todas cuentan como desfase; nunca se atribuyen a un asesor.</p>`
-    : '';
   const asesoresEmpty = document.getElementById('asesores-empty');
   if(!chartRanking.length){
     const canvas = document.getElementById('chart-asesores');
@@ -788,7 +785,7 @@ function renderCompromiso(data, cols){
       <thead><tr><th>AT</th><th class="num">Bajas</th><th class="num">Comp.</th><th class="num">Desfase</th></tr></thead>
       <tbody>${rows}</tbody>
       <tfoot><tr><td>Total</td><td class="num">${totalBajas}</td><td class="num">${totalComp}</td><td class="num">${totalDesfase}</td></tr></tfoot>
-    </table></div>${pendienteNota}`;
+    </table></div>`;
   // Mismo orden que la tabla, sin los AT en 0: el degradado va de rojo (mas bajas) a verde.
   // La barra sin responsable va en gris: no es un asesor y no entra al
   // degradado (si entrara, su numero estiraria la escala y un AT con muchas

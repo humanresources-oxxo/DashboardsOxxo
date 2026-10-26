@@ -412,7 +412,7 @@ test('atribucion: marcadores, vacios y unidades admin sin asesor quedan Sin resp
   assert.deepEqual(celdas, [['Sin responsable identificado', 4], ['Ana Perez', 2], ['Beto Lopez', 1]]);
   ok(compromiso, /<tr class="is-pendiente">\s*<td>Sin responsable identificado<\/td>\s*<td class="num"><span class="pill pendiente">4<\/span><\/td>\s*<td class="num">—<\/td>\s*<td class="num desfase neg">4<\/td>/);
   ok(compromiso, /<tfoot><tr><td>Total<\/td><td class="num">7</);
-  ok(compromiso, /Sin responsable identificado: 4 bajas sin AT en la base/);
+  no(compromiso, /d2-note--pending/, 'sin nota debajo de la tabla: la fila gris ya lo dice');
   assert.deepEqual([...graficas['chart-asesores'].labels], ['Sin responsable identificado', 'Ana Perez', 'Beto Lopez']);
   assert.equal(graficas['chart-asesores'].opts.colors[0], '#9A8F8A', 'la barra sin responsable va en gris');
   // El 4 sin responsable no estira el degradado: Ana (el AT con mas bajas) sigue en rojo.
