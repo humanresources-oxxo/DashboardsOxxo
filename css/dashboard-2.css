@@ -554,6 +554,10 @@ body.dashboard-2-page .compromiso-table .pill.good { background: #157a49; }
 body.dashboard-2-page .compromiso-table .pill.mid { background: #f2c94c; color: #2a1c19; }
 body.dashboard-2-page .compromiso-table .pill.warn { background: #c25a00; }
 body.dashboard-2-page .compromiso-table .pill.bad { background: #c4262e; }
+/* Fila de bajas sin responsable identificado: gris (no es un asesor) y en
+   cursiva, igual que la barra gris de la grafica. */
+body.dashboard-2-page .compromiso-table .pill.pendiente { background: #8a7f7a; }
+body.dashboard-2-page .compromiso-table tr.is-pendiente td { background: #f3efec; color: #5c514b; font-style: italic; }
 body.dashboard-2-page .compromiso-table .desfase.pos { color: #157a49; font-weight: 800; }
 body.dashboard-2-page .compromiso-table .desfase.neg { color: #c4262e; font-weight: 800; }
 body.dashboard-2-page .compromiso-table tfoot td { background: #f8f3ee; border-top: 2px solid var(--du-text); border-bottom: 0; color: var(--du-text); font-weight: 800; }

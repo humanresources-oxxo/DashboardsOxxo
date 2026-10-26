@@ -306,7 +306,7 @@ function cargarD2(esAdminUnit = () => false) {
   const contexto = vm.createContext({ document: documento, window: ventana, OXXO, OXXO_DIALOGS: { register: () => ({ open() {}, close() {} }), bindRows() {} }, console });
   const exponer = `\n;globalThis.__d2 = { run(rows, metas, catalogo, filtroExtra) {
     const graficas = {};
-    renderChart = (id, _tipo, labels, values) => { graficas[id] = { labels, values }; };
+    renderChart = (id, _tipo, labels, values, opts) => { graficas[id] = { labels, values, opts }; };
     if(metas) COMPROMISOS_BY_PLAZA = metas;
     ASESOR_CATALOG = catalogo || null;
     const cols = buildCols(rows);
@@ -406,12 +406,17 @@ test('atribucion: marcadores, vacios y unidades admin sin asesor quedan Sin resp
   // Filtro: un solo grupo sin responsable, al final.
   assert.deepEqual(Array.from(asesores), ['Ana Perez', 'Beto Lopez', 'Sin responsable identificado']);
 
-  // Compromiso y ranking: solo asesores confirmados; la nota declara las 4 excluidas.
+  // Compromiso y ranking: las 4 sin responsable van en su propia fila (gris,
+  // sin compromiso) y el pie suma el total de la plaza.
   const celdas = [...compromiso.matchAll(/<td>([^<]*)<\/td>\s*<td class="num"><span class="pill [^"]*">(\d+)</g)].map(m => [m[1], Number(m[2])]);
-  assert.deepEqual(celdas, [['Ana Perez', 2], ['Beto Lopez', 1]]);
-  ok(compromiso, /<tfoot><tr><td>Total confirmado<\/td><td class="num">3</);
-  ok(compromiso, /4 bajas sin responsable identificado no se incluyen en esta comparación/);
-  assert.deepEqual([...graficas['chart-asesores'].labels], ['Ana Perez', 'Beto Lopez']);
+  assert.deepEqual(celdas, [['Sin responsable identificado', 4], ['Ana Perez', 2], ['Beto Lopez', 1]]);
+  ok(compromiso, /<tr class="is-pendiente">\s*<td>Sin responsable identificado<\/td>\s*<td class="num"><span class="pill pendiente">4<\/span><\/td>\s*<td class="num">—<\/td>\s*<td class="num desfase neg">4<\/td>/);
+  ok(compromiso, /<tfoot><tr><td>Total<\/td><td class="num">7</);
+  ok(compromiso, /Sin responsable identificado: 4 bajas sin AT en la base/);
+  assert.deepEqual([...graficas['chart-asesores'].labels], ['Sin responsable identificado', 'Ana Perez', 'Beto Lopez']);
+  assert.equal(graficas['chart-asesores'].opts.colors[0], '#9A8F8A', 'la barra sin responsable va en gris');
+  // El 4 sin responsable no estira el degradado: Ana (el AT con mas bajas) sigue en rojo.
+  assert.equal(graficas['chart-asesores'].opts.colors[1], 'rgb(217,31,45)', 'el AT con mas bajas conserva el rojo');
 
   // KPI: el tope es una persona confirmada; pendientes = 4 y filtrable.
   ok(tarjetaKpi(kpi, 'asesor'), /data-kpi-val="Ana Perez"/);
@@ -437,19 +442,21 @@ test('atribucion: el KPI de pendientes filtra solo las bajas sin responsable', (
   ok(kpi, /class="kpi-card d2-kpi rojo is-static" data-kpi="asesor"/);
   ok(tarjetaAsesor, /Sin asesor confirmado/);
   no(tarjetaAsesor, /data-kpi-val=/);
-  // El roster del mes conserva a los confirmados en 0; las 4 pendientes se declaran aparte.
+  // El roster del mes conserva a los confirmados en 0; las 4 pendientes son su propia fila.
   const celdas = [...compromiso.matchAll(/<td>([^<]*)<\/td>\s*<td class="num"><span class="pill [^"]*">(\d+)</g)].map(m => [m[1], Number(m[2])]);
-  assert.deepEqual(celdas, [['Ana Perez', 0], ['Beto Lopez', 0]]);
-  ok(compromiso, /4 bajas sin responsable identificado no se incluyen/);
-  // Todos los confirmados en 0: la grafica cae en su estado vacio.
-  assert.equal(asesoresVacio, false, 'sin bajas confirmadas la grafica muestra su estado vacio');
-  assert.equal(graficas['chart-asesores'], undefined, 'no se dibuja un ranking de puros ceros');
-  // Sin ningun asesor confirmado en el alcance: estado vacio en tabla y grafica.
+  assert.deepEqual(celdas, [['Sin responsable identificado', 4], ['Ana Perez', 0], ['Beto Lopez', 0]]);
+  // La grafica dibuja solo la barra sin responsable (los confirmados estan en 0).
+  assert.equal(asesoresVacio, true, 'hay barra que dibujar: no se muestra el estado vacio');
+  assert.deepEqual([...graficas['chart-asesores'].labels], ['Sin responsable identificado']);
+  assert.deepEqual([...graficas['chart-asesores'].values], [4]);
+  // Sin ningun asesor confirmado en el alcance: la tabla muestra la fila sin responsable.
   const soloPendientes = cargarD2().run([filaAt('', 'OXXO UNO'), filaAt('N/A', 'OXXO DOS')]);
-  ok(soloPendientes.compromiso, /class="d2-empty">Sin asesores confirmados con los filtros activos/);
-  ok(soloPendientes.compromiso, /2 bajas sin responsable identificado no se incluyen/);
-  assert.equal(soloPendientes.asesoresVacio, false, 'la grafica muestra su estado vacio');
-  assert.equal(soloPendientes.graficas['chart-asesores'], undefined, 'no se dibuja un ranking vacio');
+  const soloCeldas = [...soloPendientes.compromiso.matchAll(/<td>([^<]*)<\/td>\s*<td class="num"><span class="pill [^"]*">(\d+)</g)].map(m => [m[1], Number(m[2])]);
+  assert.deepEqual(soloCeldas, [['Sin responsable identificado', 2]]);
+  ok(soloPendientes.compromiso, /<tfoot><tr><td>Total<\/td><td class="num">2<\/td><td class="num">0<\/td><td class="num">2<\/td>/);
+  assert.deepEqual([...soloPendientes.graficas['chart-asesores'].values], [2]);
+  // Sin bajas ni asesores: estado vacio.
+  ok(js, /class="d2-empty">Sin bajas ni asesores con los filtros activos/);
   ok(js, /if\(kpi !== 'todos' && kpiVal === undefined\) return;/, 'una tarjeta sin valor no filtra');
 });
 
@@ -481,7 +488,7 @@ test('el panorama de decision ya no existe en D2', () => {
 
 // La tabla es el tablero de seguimiento de la plaza: un AT con meta y cero
 // bajas tambien se lista (su desfase a favor es informacion, no ruido).
-test('compromiso lista a los asesores con cero bajas, la grafica no; las bajas sin responsable quedan fuera', () => {
+test('compromiso lista a los asesores con cero bajas, la grafica no; las bajas sin responsable van en su propia fila', () => {
   const fila = (asesor, tienda) => ({ Mes: '2026-09', Asesor: asesor, Tienda: tienda, Puesto: 'Ayudante Tienda', Temporalidad: '0 - 45 días', 'Rot. Temp.': 'No', Edad: '25', Plaza: 'Oaxaca' });
   const esAdmin = t => /^ENTRENAMIENTO /.test(String(t || '').toUpperCase());
   const metas = new Map([['Oaxaca', { 'Ana Perez': 2, 'Zoe Fantasma': 5 }]]);
@@ -493,18 +500,17 @@ test('compromiso lista a los asesores con cero bajas, la grafica no; las bajas s
   const { compromiso, graficas } = cargarD2(esAdmin).run(filas, metas);
 
   const celdas = [...compromiso.matchAll(/<td>([^<]*)<\/td>\s*<td class="num"><span class="pill [^"]*">(\d+)</g)].map(m => [m[1], Number(m[2])]);
-  assert.deepEqual(celdas, [['Ana Perez', 3], ['Zoe Fantasma', 0]], 'el AT configurado con cero bajas se lista al final');
+  assert.deepEqual(celdas, [['Ana Perez', 3], ['Sin responsable identificado', 2], ['Zoe Fantasma', 0]], 'el AT configurado con cero bajas se lista al final');
 
-  // Pie confirmado: 3 bajas contra 7 de meta (Ana 2 + Zoe 5); las 2 sin responsable se declaran aparte.
-  ok(compromiso, /<tfoot><tr><td>Total confirmado<\/td><td class="num">3<\/td><td class="num">7<\/td><td class="num">-4<\/td>/);
-  ok(compromiso, /2 bajas sin responsable identificado no se incluyen/);
+  // Pie: 5 bajas de la plaza (3 de Ana + 2 sin responsable) contra 7 de meta (Ana 2 + Zoe 5).
+  ok(compromiso, /<tfoot><tr><td>Total<\/td><td class="num">5<\/td><td class="num">7<\/td><td class="num">-2<\/td>/);
   // La fila de Zoe muestra su meta y el desfase a favor.
   ok(compromiso, /<td>Zoe Fantasma<\/td>\s*<td class="num"><span class="pill good">0<\/span><\/td>\s*<td class="num">5<\/td>\s*<td class="num desfase pos">-5<\/td>/);
 
   // Grafica Bajas por Asesor: Zoe sigue en la tabla, pero su cero no llega a los datos.
   const ranking = graficas['chart-asesores'];
-  assert.deepEqual([...ranking.labels], ['Ana Perez']);
-  assert.deepEqual([...ranking.values], [3]);
+  assert.deepEqual([...ranking.labels], ['Ana Perez', 'Sin responsable identificado']);
+  assert.deepEqual([...ranking.values], [3, 2]);
 
   // Con roster el cuerpo lista filas; solo sin ningun asesor confirmado hay estado vacio.
   ok(js, /<tbody>\$\{rows\}<\/tbody>/);
@@ -542,14 +548,16 @@ test('ranking de asesores: tabla y grafica listan el roster completo, sin recort
   no(compromiso, /compromiso-grupo/, 'sin separadores de recorte');
 
   // Pie con el total real: 47 bajas.
-  ok(compromiso, /<tfoot><tr><td>Total confirmado<\/td><td class="num">47</);
+  ok(compromiso, /<tfoot><tr><td>Total<\/td><td class="num">47</);
+  no(compromiso, /is-pendiente/, 'sin bajas pendientes no hay fila gris');
 
   // La grafica usa exactamente la misma lista que la tabla.
   const ranking = graficas['chart-asesores'];
   assert.deepEqual([...ranking.labels], celdas.map(([n]) => n));
   assert.deepEqual([...ranking.values], celdas.map(([, n]) => n));
   ok(js, /function rankingGradientColors\(values\)/, 'la grafica de asesores define el degradado por nivel de bajas');
-  ok(js, /colors: rankingGradientColors\(chartRanking\.map\(item=>item\.bajas\)\)/, 'la grafica de asesores usa el degradado');
+  ok(js, /const gradiente = rankingGradientColors\(deAsesores\.map\(item=>item\.bajas\)\);/, 'la grafica de asesores usa el degradado solo con los asesores');
+  ok(js, /colors: chartRanking\.map\(item => item\.pendiente \? '#9A8F8A' : colorDe\.get\(item\)\)/, 'la barra sin responsable va en gris');
 });
 
 // El roster sale del Catalogo_Asesores vigente, no de los datos: un AT activo
@@ -571,5 +579,5 @@ test('compromiso: el roster incluye a los asesores vigentes del catalogo con cer
   assert.deepEqual([...graficas['chart-asesores'].values], [2]);
 
   // Totales intactos: 2 bajas contra la meta default (4) de los dos del roster.
-  ok(compromiso, /<tfoot><tr><td>Total confirmado<\/td><td class="num">2<\/td><td class="num">8<\/td><td class="num">-6<\/td>/);
+  ok(compromiso, /<tfoot><tr><td>Total<\/td><td class="num">2<\/td><td class="num">8<\/td><td class="num">-6<\/td>/);
 });
