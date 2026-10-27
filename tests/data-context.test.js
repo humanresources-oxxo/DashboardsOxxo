@@ -99,7 +99,12 @@ assert.equal(OXXO.isTiendaValid({ storeCatalog }, 'OXXO Cerrada', '50X99'), fals
 assert.equal(OXXO.isTiendaValid({ storeCatalog }, 'OXXO No Catalogada', '50N00'), true);
 assert.equal(OXXO.isTiendaValid({}, 'OXXO Respaldo', '50R00'), true);
 assert.equal(OXXO.isTiendaValid({ storeCatalog }, 'OXXO Papaya VSA'), false);
-assert.equal(OXXO.isTiendaValid({ storeCatalog }, 'OXXO Unión y Progreso VSA'), false);
+// Catalogo oficial (oct-2026): Union y Progreso ya es OPERATIVA; las
+// NOTIFICADA (p.ej. Santa Gertrudis) son no operativas, tambien por CR.
+assert.equal(OXXO.isTiendaValid({ storeCatalog }, 'OXXO Unión y Progreso VSA'), true);
+assert.equal(OXXO.isTiendaValid({ storeCatalog }, 'OXXO SANTA GERTRUDIS VSA'), false);
+assert.equal(OXXO.isTiendaValid({ storeCatalog }, 'Nombre distinto', '50QW3'), false);
+assert.equal(OXXO.setActiveStoreStatus('No operativas'), 'preapertura');
 assert.equal(OXXO.setActiveStoreStatus('Sin apertura'), 'preapertura');
 assert.equal(OXXO.isTiendaValid({ storeCatalog }, 'OXXO Papaya VSA'), true);
 assert.equal(OXXO.isTiendaValid({ storeCatalog }, 'OXXO Centro', '50I34'), false);

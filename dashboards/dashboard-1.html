@@ -714,7 +714,7 @@ function ordenarTabla(filtered){
 let PLAZAS_CACHE = null;
 let PLAZAS_REQUEST = 0;
 // El mismo catálogo que usa la tabla local. Se conserva para que el
-// comparativo regional también honre Operativas / Sin apertura / Todas.
+// comparativo regional también honre Operativas / No operativas / Todas.
 let D1_ASESOR_CATALOG = null;
 // Los encabezados de la hoja en su orden real, tal como los devolvio GViz.
 // Sirven para traducir "columna Plaza" -> "columna A" sin fijar la maquetacion
@@ -992,7 +992,7 @@ function renderVacantesPorAsesorDias(allData){
   const maxCarga = Math.max(1, ...Object.values(byAsesor).map(v=>v.count));
   if(badge){
     const storeStatus = OXXO.getActiveStoreStatus?.() || 'operativas';
-    const shortScope = storeStatus === 'todas' ? 'Todas' : storeStatus === 'preapertura' ? 'Sin apertura' : 'Operativas';
+    const shortScope = storeStatus === 'todas' ? 'Todas' : storeStatus === 'preapertura' ? 'No operativas' : 'Operativas';
     badge.textContent = `${asesores.length} asesor${asesores.length===1?'':'es'} · ${shortScope}`;
   }
   card?.classList.toggle('tabla-card--balanced',asesores.length>=6);
@@ -1472,7 +1472,7 @@ function renderOverview(allData){
     const tiendasConVacante=new Set(allData.map(r=>r.tienda).filter(Boolean)).size;
     const puestosSel=selectedPuestos().length;
     const statusActivo=OXXO.getActiveStoreStatus?.() || 'operativas';
-    const statusLabel=statusActivo==='preapertura' ? 'Sin apertura' : statusActivo==='todas' ? 'Todas' : 'Operativas';
+    const statusLabel=statusActivo==='preapertura' ? 'No operativas' : statusActivo==='todas' ? 'Todas' : 'Operativas';
     ctxEl.innerHTML=`<span><b>${asesoresUnicos}</b> asesores afectados</span>`
       +`<span><b>${tiendasConVacante}</b> tiendas con vacante</span>`
       +`<span><b>${puestosSel}</b> puestos en el filtro</span>`
