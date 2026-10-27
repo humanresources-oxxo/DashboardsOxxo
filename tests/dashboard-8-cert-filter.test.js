@@ -84,3 +84,12 @@ assert(!certB.includes('>100%</span>'));
 assert(certB.includes('>0%</span>'));
 
 console.log('dashboard 8: la tabla cambia sus columnas con el filtro de certificación');
+
+// iCash V2 entra con nombre legible y Tablero Amazon Counter ya no se muestra.
+const detectadas = JSON.parse(new vm.Script(`JSON.stringify(detectarCerts({
+  'Promedio de Resultado_Programa Certificación iCash V2': '1',
+  'Promedio de Capacidad Tablero Amazon Counter': '1'
+}))`).runInContext(context));
+assert.strictEqual(detectadas.length, 1);
+assert.strictEqual(detectadas[0].label, 'Certificación iCash V2');
+console.log('dashboard 8: muestra iCash V2 y oculta Tablero Amazon Counter');
