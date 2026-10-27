@@ -39,6 +39,7 @@
   const CAP_IGNORADAS = new Set([
     'promediodecobrodlssedesmundialistas2026',
     'promedioderesultadocertificacionalimentosybebidas2026',
+    'promediodecapacidadtableroamazoncounter',
     'panhorneado'
   ]);
   const CAP_ETIQUETAS = {
@@ -46,7 +47,7 @@
     'promediodeseguridadenlapersona2026': 'Seguridad en la Persona',
     'promediodepld2026certificacion': 'PLD 2026',
     'promediodemodulocercasiempre2026': 'Módulo Cerca Siempre',
-    'promediodecapacidadtableroamazoncounter': 'Tablero Amazon Counter'
+    'promedioderesultadoprogramacertificacionicashv2': 'Certificación iCash V2'
   };
   const capKey = value => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');
   const capLabel = key => CAP_ETIQUETAS[capKey(key)] || String(key).replace(/^\s*Promedio de\s+/i,'').trim();
