@@ -1376,9 +1376,11 @@
 
   function buildD7(pptx, d, dateLabel){
     const {text,rect}=editorialSlide(pptx,'TREO · Estructura',dateLabel);
-    text(d.cobertura.toFixed(0)+'%',.5,1.98,3.85,.9,56,RED,true);
-    text('COBERTURA DE ESTRUCTURA',.53,2.98,3.7,.28,11,DARK,true);
-    text(OXXO.formatNum(d.totalActivos)+' activos / '+OXXO.formatNum(d.totalTreo)+' posiciones TREO',.53,3.4,3.7,.6,12,MUTED);
+    // Indicador principal del TREO (igual que dashboard-7.html): % de tiendas alineadas.
+    const pctAlineadas=d.total>0?Math.round(d.alineadas/d.total*100):0;
+    text(pctAlineadas+'%',.5,1.98,3.85,.9,56,GREEN,true);
+    text('TIENDAS ALINEADAS',.53,2.98,3.7,.28,11,DARK,true);
+    text(OXXO.formatNum(d.alineadas)+' de '+OXXO.formatNum(d.total)+' tiendas · Cobertura '+d.cobertura.toFixed(0)+'% ('+OXXO.formatNum(d.totalActivos)+' / '+OXXO.formatNum(d.totalTreo)+' posiciones)',.53,3.4,3.7,.6,12,MUTED);
     text('Tiendas del alcance',.53,4.38,3.7,.3,14,DARK,true);
     text(OXXO.formatNum(d.total),.53,4.81,3.7,.62,34,DARK,true);
     text('Posiciones vacantes',.53,5.66,3.7,.3,14,DARK,true);

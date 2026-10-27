@@ -95,7 +95,9 @@ run('renderKPIs(data)');
 const kpis = elements['kpi-section'].innerHTML;
 const valores = [...kpis.matchAll(/kpi-card__label">([^<]*)<[\s\S]*?kpi-card__value">([^<]*)</g)]
   .reduce((acc, m) => Object.assign(acc, { [m[1].trim()]: m[2].trim() }), {});
-assert.strictEqual(valores['Alineadas ✔'], '2', 'KPI Alineadas debe contar r.mov, no dif===0');
+// Indicador principal: % de tiendas alineadas (2 de 3 = 67%), contado con r.mov.
+assert.strictEqual(valores['Tiendas Alineadas ✔'], '67%', 'KPI principal = % de tiendas alineadas por r.mov, no dif===0');
+assert(kpis.includes('2 de 3 tiendas'), 'el principal muestra cuantas tiendas alineadas de cuantas');
 assert.strictEqual(valores['Por Subir ▲'], '1', 'KPI Por Subir debe contar r.mov');
 assert.strictEqual(valores['Por Bajar ▼'], '0', 'KPI Por Bajar debe contar r.mov, no dif<0');
 // Las posiciones netas siguen saliendo del dif numérico.

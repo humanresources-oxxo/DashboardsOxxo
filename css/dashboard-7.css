@@ -128,3 +128,7 @@ body.dashboard-7-page .d7-tbl td:last-child { text-align: right; font-weight: 70
   body.dashboard-7-page .align-sum { grid-template-columns: 1fr; }
   body.dashboard-7-page .align-sum__item { flex-direction: row; justify-content: space-between; gap: 8px; }
 }
+
+/* Indicador principal del TREO: % de tiendas alineadas. */
+body.dashboard-7-page .kpi-card--lead { background: linear-gradient(145deg, #fff, #effaf3); }
+body.dashboard-7-page .kpi-card--lead .kpi-card__value { color: var(--du-green, #1e8a4c); }
