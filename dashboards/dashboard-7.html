@@ -135,20 +135,10 @@
     <!-- Panel lateral -->
     <div class="side-panel">
 
-      <!-- Alineación Global (velocímetro + mix de movimiento) -->
+      <!-- % de tiendas alineadas por AT: desglose del indicador principal -->
       <div class="card alignment-card">
-        <div class="card-head"><div class="card-title"><svg class="icon-inline" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>Alineación Global<span class="info-tip" tabindex="0" data-tip="Velocímetro con el número de tiendas alineadas (aguja en su % sobre el total) y la distribución del movimiento (Alineada / Subir / Bajar) de las tiendas filtradas."></span></div></div>
-        <div class="donut-wrap">
-          <div id="align-gauge">
-            <div class="state-box"><div class="spinner"></div></div>
-          </div>
-          <div class="align-sum" id="align-summary"></div>
-          <div class="stat-grid">
-            <div class="stat-card s"><div class="sv" id="mix-ali">—</div><div class="sl">✔ Alineada</div></div>
-            <div class="stat-card subir"><div class="sv" id="mix-sub">—</div><div class="sl">▲ Subir</div></div>
-            <div class="stat-card b"><div class="sv" id="mix-baj">—</div><div class="sl">▼ Bajar</div></div>
-          </div>
-        </div>
+        <div class="card-head"><div class="card-title"><svg class="icon-inline" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>Tiendas Alineadas por AT<span class="info-tip" tabindex="0" data-tip="Desglose del indicador principal: por cada AT, % de sus tiendas marcadas como 'Alineada' en 'Movimiento Inicial' (mismo criterio que la tarjeta Tiendas Alineadas). De menor a mayor: arriba los que más tiendas tienen por ajustar."></span></div></div>
+        <div id="align-por-at"><div class="state-box"><div class="spinner"></div></div></div>
       </div>
 
     </div>
@@ -183,26 +173,13 @@
 
   </div>
 
-  <div class="rh-layer"><h2 class="rh-layer__title">Exploración detallada</h2><p class="rh-layer__purpose">Composición por antigüedad, concepto y totales de estructura.</p></div>
+  <div class="rh-layer"><h2 class="rh-layer__title">Exploración detallada</h2><p class="rh-layer__purpose">Composición de las tiendas por antigüedad.</p></div>
 
-  <!-- FILA 3: Antigüedad + Concepto + Totales -->
+  <!-- FILA 3: Antigüedad -->
   <div class="row3">
     <div class="card">
       <div class="card-head"><div class="card-title"><svg class="icon-inline" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>Distribución por Antigüedad<span class="info-tip" tabindex="0" data-tip="Conteo de tiendas filtradas por antigüedad (Madura / Reciente / Nueva)."></span></div></div>
       <div id="dist-antiguedad"><div class="state-box"><div class="spinner"></div></div></div>
-    </div>
-    <div class="card">
-      <div class="card-head"><div class="card-title"><svg class="icon-inline" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.59 13.41L13.42 20.58a2 2 0 0 1-2.83 0L2.59 12.58a2 2 0 0 1 0-2.83L9.76 2.58A2 2 0 0 1 11.17 2H18a2 2 0 0 1 2 2v6.83a2 2 0 0 1-.59 1.41z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>Mix por Concepto<span class="info-tip" tabindex="0" data-tip="Conteo de tiendas filtradas agrupadas por Concepto de tienda."></span></div></div>
-      <div id="dist-concepto"><div class="state-box"><div class="spinner"></div></div></div>
-    </div>
-    <div class="card">
-      <div class="card-head"><div class="card-title"><svg class="icon-inline" viewBox="0 0 24 24" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>Totales de Estructura<span class="info-tip" tabindex="0" data-tip="Suma de SAP, TREO y Activos de las tiendas filtradas."></span></div></div>
-      <div class="stat-grid" id="tot-estructura">
-        <div class="stat-card m"><div class="sv" id="tot-sap">—</div><div class="sl">SAP</div></div>
-        <div class="stat-card s"><div class="sv" id="tot-treo">—</div><div class="sl">TREO</div></div>
-        <div class="stat-card active"><div class="sv" id="tot-act">—</div><div class="sl">Activos</div></div>
-      </div>
-      <div id="tot-bar"></div>
     </div>
   </div>
 
@@ -502,6 +479,7 @@ function renderKPIs(data){
   // Cobertura de estructura: activos vs objetivo TREO.
   const sumTreo = data.reduce((s,r)=>s+(Number(r.est_final)||0), 0);
   const sumAct  = data.reduce((s,r)=>s+(Number(r.empleados)||0), 0);
+  const sumSap  = data.reduce((s,r)=>s+(Number(r.est_sap)||0), 0);
   const cobertura = sumTreo>0 ? Math.round(sumAct/sumTreo*100) : 0;
   const cobClass = cobertura>=98 ? 'pos' : cobertura>=90 ? 'neu' : 'neg';
   // Sub / sobre-dotación por tienda.
@@ -522,9 +500,9 @@ function renderKPIs(data){
       <div class="kpi-card__icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg></div>
     </div>
     <div class="kpi-card azul">
-      <div class="kpi-card__label">Cobertura Estructura<span class="info-tip" tabindex="0" onclick="event.stopPropagation()" data-tip="Suma de Activos ÷ suma de TREO de las tiendas filtradas. Indica qué % de la estructura objetivo está cubierta con gente."></span></div>
+      <div class="kpi-card__label">Cobertura Estructura<span class="info-tip" tabindex="0" onclick="event.stopPropagation()" data-tip="Suma de Activos ÷ suma de TREO de las tiendas filtradas. Indica qué % de la estructura objetivo está cubierta con gente. SAP = estructura registrada en SAP."></span></div>
       <div class="kpi-card__value">${cobertura}%</div>
-      <div class="kpi-card__delta ${cobClass}">${sumAct} de ${sumTreo} posiciones</div>
+      <div class="kpi-card__delta ${cobClass}">${sumAct} de ${sumTreo} posiciones · SAP ${sumSap}</div>
       <div class="kpi-card__icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg></div>
     </div>
     <div class="kpi-card amarillo ${ACTIVE_KPI==='vacantes' ? 'active' : ''}" role="button" tabindex="0" onclick="setKpiFilter('vacantes')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();setKpiFilter('vacantes')}">
@@ -560,63 +538,38 @@ function renderKPIs(data){
 }
 
 // ─────────────────────────────────────────────────────────
-// Render Velocímetro de Alineación Global
-function renderDonut(data){
-  const total = data.length || 1;
-  // Mismo criterio que renderKPIs: r.mov ('Movimiento Inicial' normalizado).
-  const alineadas = data.filter(r=>r.mov==='Alineada').length;
-  const subir     = data.filter(r=>r.mov==='Subir').length;
-  const bajar     = data.filter(r=>r.mov==='Bajar').length;
-  // La cifra grande del velocimetro es el conteo de tiendas alineadas (r.mov === 'Alineada') y
-  // la aguja marca ese mismo dato en porcentaje (alineadas / total), asi el velocimetro queda
-  // internamente consistente. La Cobertura de estructura (Activos / TREO) vive en su KPI.
-  const pctAlineadas = Math.round(alineadas/total*100);
-
-  const el = document.getElementById('align-gauge');
-  if(el){
-    const v=Math.max(0,Math.min(100,pctAlineadas));
-    const cx=100, cy=100, r=80, len=Math.PI*r;
-    const arc=`M${cx-r},${cy} A${r},${r} 0 0 1 ${cx+r},${cy}`;
-    // Segmentos proporcionales sobre el semicírculo (igual que la dona, pero en velocímetro)
-    const segs=[{c:'#138c3e',n:alineadas},{c:'#B85000',n:subir},{c:'#C0393B',n:bajar}];
-    let off=0;
-    const segPaths=segs.map(s=>{
-      const segLen=(s.n/total)*len;
-      const p=`<path d="${arc}" fill="none" stroke="${s.c}" stroke-width="15" stroke-linecap="butt" stroke-dasharray="${segLen.toFixed(1)} ${len.toFixed(1)}" stroke-dashoffset="-${off.toFixed(1)}" style="transition:stroke-dasharray .9s ease,stroke-dashoffset .9s ease"/>`;
-      off+=segLen; return p;
-    }).join('');
-    const ang=Math.PI*(1 - v/100);  // aguja en el % de alineación (misma métrica que la cifra grande)
-    const nx=(cx+(r-12)*Math.cos(ang)).toFixed(1), ny=(cy-(r-12)*Math.sin(ang)).toFixed(1);
-    el.innerHTML = `
-      <svg viewBox="0 0 200 132" style="width:100%;overflow:visible">
-        <path d="${arc}" fill="none" stroke="var(--color-border)" stroke-width="15" stroke-linecap="round"/>
-        ${segPaths}
-        <line x1="${cx}" y1="${cy}" x2="${nx}" y2="${ny}" stroke="#3B1918" stroke-width="3.5" stroke-linecap="round" style="transition:all .9s ease"/>
-        <circle cx="${cx}" cy="${cy}" r="7" fill="#3B1918"/>
-        <text x="${cx}" y="78" text-anchor="middle" style="font-family:var(--font-display,sans-serif);font-weight:800;font-size:34px;fill:${pctAlineadas>=98?'#138c3e':pctAlineadas>=90?'#B8860B':'#C0393B'}">${alineadas}</text>
-        <text x="${cx}" y="95" text-anchor="middle" style="font-size:12px;fill:var(--color-gray);font-weight:600">tiendas alineadas</text>
-      </svg>`;
-  }
-
-  document.getElementById('mix-ali').textContent = alineadas;
-  document.getElementById('mix-sub').textContent = subir;
-  document.getElementById('mix-baj').textContent = bajar;
-
-  // Mini-resumen de acción en el espacio entre el gauge y las tarjetas.
-  const sum = document.getElementById('align-summary');
-  if(sum){
-    const posSubir = data.reduce((s,r)=>{const d=Number(r.dif)||0; return s+(d>0?d:0);},0);
-    const posBajar = data.reduce((s,r)=>{const d=Number(r.dif)||0; return s+(d<0?-d:0);},0);
-    const neto = posSubir - posBajar;
-    const subdot   = data.filter(r=>(Number(r.empleados)||0) < (Number(r.est_final)||0)).length;
-    const sobredot = data.filter(r=>(Number(r.empleados)||0) > (Number(r.est_final)||0)).length;
-    const item=(l,v,c)=>`<div class="align-sum__item"><span class="align-sum__lbl">${l}</span><span class="align-sum__val" style="color:${c||'var(--color-dark)'}">${v}</span></div>`;
-    // La Cobertura ya es la cifra grande del velocímetro; aquí no se repite.
-    sum.innerHTML =
-      item('Neto', (neto>0?'+':'')+neto, neto>0?'#B85000':neto<0?'#138c3e':'var(--color-gray)') +
-      item('Faltan', subdot, subdot>0?'#C0393B':'#138c3e') +
-      item('Sobran', sobredot, sobredot>0?'#B85000':'#138c3e');
-  }
+// % de tiendas alineadas por AT (desglose del indicador principal). Mismo
+// criterio que renderKPIs: r.mov ('Movimiento Inicial' normalizado). Orden de
+// menor a mayor %: arriba los AT con mas tiendas por ajustar.
+function renderAlineadasPorAT(data){
+  const el = document.getElementById('align-por-at'); if(!el) return;
+  const map = {};
+  data.filter(r => cleanKey(r.asesor) !== 'sinasesorasignado' && String(r.asesor||'').trim()).forEach(r=>{
+    const a = map[r.asesor] || (map[r.asesor] = { total:0, ali:0 });
+    a.total++; if(r.mov === 'Alineada') a.ali++;
+  });
+  const rows = Object.entries(map).map(([asesor,v])=>({ asesor, ...v, pct: v.total ? Math.round(v.ali/v.total*100) : 0 }))
+    .sort((x,y)=> x.pct - y.pct || y.total - x.total || x.asesor.localeCompare(y.asesor,'es'));
+  if(!rows.length){ el.innerHTML = '<div class="state-box" style="padding:20px 0">Sin tiendas con AT asignado</div>'; return; }
+  const color = p => p >= 90 ? '#138c3e' : p >= 75 ? '#B8860B' : '#C0393B';
+  el.innerHTML = '<div>' + rows.map((x,i)=>{
+    // Algunas filas traen el nombre todo en minusculas o mayusculas.
+    const nombre = x.asesor === x.asesor.toLowerCase() || x.asesor === x.asesor.toUpperCase()
+      ? x.asesor.toLowerCase().replace(/(^|\s)\S/g, c => c.toUpperCase()) : x.asesor;
+    const parts = nombre.split(' ');
+    const short = parts.length >= 3 ? `${parts[0]} ${parts[1][0]}. ${parts[parts.length-1]}` : nombre;
+    return `<div class="rank-item" title="${esc(nombre)}: ${x.ali} de ${x.total} tiendas alineadas">
+      <div class="rank-num">${i+1}</div>
+      <div>
+        <div class="rank-name">${esc(trunc(short, 26))} <span style="color:var(--color-gray);font-weight:600;font-size:11px">· ${x.ali} de ${x.total}</span></div>
+        <div class="rank-bar-bg"><div class="rank-bar-fill" style="width:0%;background:${color(x.pct)}" data-w="${x.pct}%"></div></div>
+      </div>
+      <div class="rank-val" style="color:${color(x.pct)}">${x.pct}%</div>
+    </div>`;
+  }).join('') + '</div>';
+  requestAnimationFrame(()=>{
+    el.querySelectorAll('.rank-bar-fill').forEach((b,i)=>setTimeout(()=>{ b.style.width = b.dataset.w; }, i*50));
+  });
 }
 
 // ─────────────────────────────────────────────────────────
@@ -821,14 +774,12 @@ function openTiendaModalD7(cr, tienda){
 // Render All
 function renderAll(){
   renderKPIs(VIEW);
-  renderDonut(VIEW);
+  renderAlineadasPorAT(VIEW);
   renderTabla();
   renderRankAsesor(VIEW, 'rank-subir',  'Subir',  '#B85000');
   renderRankAsesor(VIEW, 'rank-bajar',  'Bajar',  '#C0393B');
   renderBrecha(VIEW);
   renderAntiguedad(VIEW);
-  renderConcepto(VIEW);
-  renderTotales(VIEW);
 }
 
 // ─────────────────────────────────────────────────────────
@@ -866,43 +817,6 @@ function renderAntiguedad(data){
   }).join('');
   el.innerHTML=rows||'<div class="state-box">Sin datos</div>';
   requestAnimationFrame(()=>el.querySelectorAll('.dbar-fill').forEach((b,i)=>setTimeout(()=>b.style.width=b.dataset.w,i*60)));
-}
-
-// ─────────────────────────────────────────────────────────
-// Mix por concepto (barras)
-function renderConcepto(data){
-  const el=document.getElementById('dist-concepto'); if(!el) return;
-  const counts={}; data.forEach(r=>{const c=(r.concepto||'').trim()||'Sin concepto'; counts[c]=(counts[c]||0)+1;});
-  const sorted=Object.entries(counts).sort((a,b)=>b[1]-a[1]);
-  const total=data.length||1, max=sorted[0]?.[1]||1;
-  const palette=['#F71926','#B85000','#138c3e','#1565C0','#7B1FA2','#B8860B','#C0393B','#0F766E'];
-  const rows=sorted.map(([k,n],i)=>{
-    const w=(n/max*100).toFixed(0);
-    return `<div class="dbar-row"><div class="dbar-lbl" title="${esc(k)}" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(k)}</div><div class="dbar-bg"><div class="dbar-fill" data-w="${w}%" style="background:${palette[i%palette.length]}"></div></div><div class="dbar-val">${n}</div></div>`;
-  }).join('');
-  el.innerHTML=rows||'<div class="state-box">Sin datos</div>';
-  requestAnimationFrame(()=>el.querySelectorAll('.dbar-fill').forEach((b,i)=>setTimeout(()=>b.style.width=b.dataset.w,i*40)));
-}
-
-// ─────────────────────────────────────────────────────────
-// Totales de estructura (SAP / TREO / Activos)
-function renderTotales(data){
-  const sap=data.reduce((s,r)=>s+(Number(r.est_sap)||0),0);
-  const treo=data.reduce((s,r)=>s+(Number(r.est_final)||0),0);
-  const act=data.reduce((s,r)=>s+(Number(r.empleados)||0),0);
-  const set=(id,v)=>{const e=document.getElementById(id); if(e) e.textContent=v;};
-  set('tot-sap',sap); set('tot-treo',treo); set('tot-act',act);
-  const bar=document.getElementById('tot-bar');
-  if(bar){
-    const cob=treo>0?Math.min(100,Math.round(act/treo*100)):0;
-    const col=cob>=98?'#138c3e':cob>=90?'#B8860B':'#C0393B';
-    bar.innerHTML=`<div style="font-size:11px;color:var(--color-gray);font-weight:700;margin-bottom:5px">Cobertura: Activos ÷ TREO</div>
-      <div class="dbar-bg" style="height:14px;border-radius:7px;position:relative">
-        <div class="dbar-fill" data-w="${cob}%" style="background:${col};height:100%;border-radius:7px"></div>
-      </div>
-      <div style="text-align:right;font-weight:800;color:${col};margin-top:4px">${cob}%</div>`;
-    requestAnimationFrame(()=>{const f=bar.querySelector('.dbar-fill'); if(f) setTimeout(()=>f.style.width=f.dataset.w,80);});
-  }
 }
 
 // ─────────────────────────────────────────────────────────
