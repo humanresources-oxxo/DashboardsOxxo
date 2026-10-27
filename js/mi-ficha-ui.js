@@ -228,15 +228,13 @@
     { key: 'Promedio de Seguridad en la persona 2026', label: 'Seguridad en la Persona' },
     { key: 'Promedio de PLD2026Certificacion', label: 'PLD 2026' },
     { key: 'Promedio de ModuloCercaSiempre2026', label: 'Módulo Cerca Siempre' },
+    { key: 'Promedio de Resultado_Programa Certificación iCash V2', label: 'Certificación iCash V2' },
   ];
   // Una celda vacia significa "no le aplica", que NO es lo mismo que 0
   // (pendiente). Por eso devuelve null y no cero: mezclarlos hunde el
   // porcentaje de gente a la que simplemente no le toca ese modulo.
   function capValue(row, certKey, certRealKeys) {
-    const raw = row[(certRealKeys && certRealKeys[certKey]) || certKey];
-    if (raw === undefined || raw === null || String(raw).trim() === '') return null;
-    const value = OXXO.metricsNum(raw);
-    return Number.isFinite(value) ? value : null;
+    return OXXO.metricsCapAvance(row[(certRealKeys && certRealKeys[certKey]) || certKey]);
   }
 
   // Agrupa las filas por persona. La fuente publica una fila por empleado,

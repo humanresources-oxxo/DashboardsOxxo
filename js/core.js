@@ -2146,6 +2146,22 @@ function metricsNum(v) {
   const n = Number(asDecimal);
   return Number.isFinite(n) ? n : 0;
 }
+
+// Avance de una certificacion de Capacidades (Dashboard 8), de 0 a 1.
+// La hoja publica 1=completa, 0=pendiente, fraccion=parcial y vacio=no aplica
+// (null). iCash V2 llega en formato porcentaje ("62.50%", "100.00%"): ese ya
+// es el avance y solo se divide entre 100. Sin el "%", un valor >1 es el
+// decimal mal publicado ("0.3333" sale como "3.333") y se recuperan sus
+// digitos; leer "100.00%" por esa via lo convertia en 10%.
+function metricsCapAvance(raw) {
+  if (raw === undefined || raw === null || String(raw).trim() === '') return null;
+  const n = metricsNum(raw);
+  if (!Number.isFinite(n)) return null;
+  if (String(raw).includes('%')) return Math.min(Math.max(n / 100, 0), 1);
+  if (n <= 1) return n;
+  const v = parseFloat('0.' + String(raw).replace(/\D/g, ''));
+  return Number.isFinite(v) ? v : 0;
+}
 function metricsNormText(v) {
   return String(v || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
 }
@@ -3349,6 +3365,7 @@ window.OXXO = {
   metricsFindDataKey,
   metricsVal,
   metricsNum,
+  metricsCapAvance,
   metricsNormText,
   metricsTipoPuesto,
   metricsNormalizeMonthKey,
