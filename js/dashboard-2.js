@@ -125,17 +125,22 @@ function isPlaceholderAsesor(value){
     || /^(N\/?A|#N\/A|NULL|NINGUNO|VACANTE|0|[-—.\s]+)$/.test(c);
 }
 function isAtribucionConfirmada(row, cols){ return !isPlaceholderAsesor(val(row, cols, 'asesor', '')); }
-// Baja de tienda real que llega sin Asesor: se carga al AT que hoy tiene la
-// tienda (OXXO.metricsAsesorBajaD2, misma regla que las presentaciones). Las
-// que traen Asesor conservan el crudo y Entrenamiento/Operaciones siguen sin
-// responsable. La fila se marca para rotularla en el detalle.
+// Atribucion contra el catalogo (OXXO.metricsAsesorBajaD2, misma regla que las
+// presentaciones): en el mes en curso cada baja de tienda real va al AT que hoy
+// tiene la tienda (la base puede traer el asesor desactualizado); en meses
+// cerrados se respeta el Asesor de la base y solo si llega vacio se usa el AT
+// actual. Entrenamiento/Operaciones sin Asesor siguen sin responsable. Las
+// filas que cambian se marcan para rotularlas en el detalle.
 function asignarAtActualSinAsesor(rows, cols, catalog){
   if(!catalog || !cols.asesor || !rows.length || !OXXO.metricsAsesorBajaD2) return rows;
   const crKey = (OXXO.metricsFindKeyExact || OXXO.metricsFindKey)(rows[0], ['CR TIENDA','CR Tienda','CR']);
+  const mesEnCurso = latestMonthKey(rows, cols);
   return rows.map(r => {
-    if(isAtribucionConfirmada(r, cols)) return r;
-    const at = OXXO.metricsAsesorBajaD2('', { catalog, tienda: val(r, cols, 'tienda', ''), cr: crKey ? r[crKey] : '' });
-    return isPlaceholderAsesor(at) ? r : { ...r, [cols.asesor]: at, __atPorTienda: true };
+    const crudo = val(r, cols, 'asesor', '');
+    const at = OXXO.metricsAsesorBajaD2(crudo, { catalog, tienda: val(r, cols, 'tienda', ''), cr: crKey ? r[crKey] : '',
+      mesActual: Boolean(mesEnCurso) && monthKeyFromRow(r, cols) === mesEnCurso });
+    if(isPlaceholderAsesor(at) || cleanText(at) === cleanText(crudo)) return r;
+    return { ...r, [cols.asesor]: at, __atPorTienda: true };
   });
 }
 function getAsesorValue(row, cols){
@@ -1645,11 +1650,10 @@ async function initDashboard(){
   // contrario: que a ese asesor se le ATRIBUYEN las bajas sin asesor. Entro
   // sin comentario propio dentro de un commit de otro tema (112a9e2, sobre el
   // switch de Alcance), asi que fue un descuido, no una regla de negocio.
-  // El responsable es el Asesor crudo de cada baja (quien tenia la tienda al
-  // ocurrir); no se corrige contra el catalogo vigente. Unica excepcion: la
-  // baja de tienda real que llega SIN Asesor se carga al AT que hoy tiene la
-  // tienda (asignarAtActualSinAsesor). Entrenamiento/Operaciones sin Asesor
-  // quedan como "Sin responsable identificado".
+  // Responsable de cada baja: ver asignarAtActualSinAsesor (mes en curso =
+  // AT actual de la tienda segun catalogo; meses cerrados = Asesor de la base,
+  // o AT actual si llega vacio). Entrenamiento/Operaciones sin Asesor quedan
+  // como "Sin responsable identificado".
   const filasBajas = asignarAtActualSinAsesor(raw, cols, asesorCatalog);
   const data = filterData(filasBajas, cols);
   if(!data.length){ ['kpi-section','tabla-detalle'].forEach(id=>OXXO.showEmpty(id)); return; }
