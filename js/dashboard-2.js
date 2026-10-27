@@ -1711,7 +1711,7 @@ let LAST_FILTERED_COUNT = 0;
 const D2_MOBILE = window.matchMedia('(max-width: 767px)');
 document.body.classList.add('d2-enhanced');
 
-const D2_STORE_STATUS = { operativas: 'Operativas', preapertura: 'No operativas', todas: 'Todas' };
+const D2_STORE_STATUS = { operativas: 'Operativas', preapertura: 'Sin apertura', todas: 'Todas' };
 function d2ScopeName(){
   const scope = OXXO.getActiveDataScope();
   return scope.level === 'region' ? `Región ${scope.region}` : (scope.plaza || 'Plaza');
