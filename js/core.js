@@ -1657,7 +1657,11 @@ const PREOPENING_STORE_KEYS = new Set([
   'Piedra Parada VSA',
   'Gas Nopala VSA',
   '5 de Septiembre VSA',
-  'Union y Progreso VSA'
+  'Union y Progreso VSA',
+  // Confirmadas por el usuario (oct-2026): aun no abren.
+  'Gas Pancardo VSA',
+  'Santa Gertrudis VSA',
+  'Fuerza Aérea VSA'
 ].map(normalizeCatalogTienda));
 function isPreopeningStore(tienda) {
   return PREOPENING_STORE_KEYS.has(normalizeCatalogTienda(tienda));

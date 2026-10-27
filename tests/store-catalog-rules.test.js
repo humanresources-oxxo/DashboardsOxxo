@@ -68,7 +68,7 @@ test('ACTIVA=NO se rechaza; SI, vacia y ausente de TREO se aceptan', () => {
 });
 
 test('preaperturas: rechazadas en operativas, aceptadas con el filtro de preapertura o todas', () => {
-  const nombres = ['Papaya VSA', 'Small Beach OAX VSA', 'Piedra Parada VSA', 'Gas Nopala VSA', '5 de Septiembre VSA', 'Union y Progreso VSA', 'Parador Boca del Monte VSA'];
+  const nombres = ['Papaya VSA', 'Small Beach OAX VSA', 'Piedra Parada VSA', 'Gas Nopala VSA', '5 de Septiembre VSA', 'Union y Progreso VSA', 'Parador Boca del Monte VSA', 'Gas Pancardo VSA', 'Santa Gertrudis VSA', 'Fuerza Aérea VSA'];
   const operativas = core('');
   const catalogo = operativas.buildTiendaCatalog(FILAS, { source: 'fixture' });
   for (const nombre of nombres) assert.equal(valida(operativas, catalogo, nombre), false, `${nombre} no entra en operativas`);
