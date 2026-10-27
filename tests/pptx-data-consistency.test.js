@@ -380,6 +380,15 @@ sandbox.loadAsesorCatalog=async()=>null;sandbox.OXXO.loadAsesorCatalog=sandbox.l
  assert.equal(JSON.stringify(crudo.ranking.map(x=>[x.name,x.value])),JSON.stringify([['Sin responsable identificado',2],['Ana Anterior',1]]));
  assert.equal(JSON.stringify(crudo.asesores.map(x=>[x.name,x.bajas])),JSON.stringify([['Ana Anterior',1]]));
  sandbox.OXXO.loadAsesorCatalog=catalogoTienda;
+ // Baja de tienda real SIN asesor: se carga al AT que hoy tiene la tienda.
+ // Con asesor se conserva el crudo; Entrenamiento/Operaciones sin asesor siguen
+ // "Sin responsable identificado".
+ const catTienda={storeCatalog:{byCr:new Map(),byTienda:new Map([[sandbox.OXXO.normalizeCatalogTienda('OXXO B'),{asesor:'Carla Actual',region:'TABASCO',plaza:'Plaza Oaxaca',zona:''}]])}};
+ assert.equal(sandbox.OXXO.metricsAsesorBajaD2('',{catalog:catTienda,tienda:'OXXO B'}),'Carla Actual');
+ assert.equal(sandbox.OXXO.metricsAsesorBajaD2('Sin Asesor Asignado',{catalog:catTienda,tienda:'OXXO B'}),'Carla Actual');
+ assert.equal(sandbox.OXXO.metricsAsesorBajaD2('Ana Anterior',{catalog:catTienda,tienda:'OXXO B'}),'Ana Anterior');
+ assert.equal(sandbox.OXXO.metricsAsesorBajaD2('',{catalog:catTienda,tienda:'ENTRENAMIENTO OAXACA'}),'Sin responsable identificado');
+ assert.equal(sandbox.OXXO.metricsAsesorBajaD2('',{catalog:catTienda,tienda:'OXXO SIN CATALOGO'}),'Sin responsable identificado');
  // TREO: 'Movimiento Inicial' manda sobre el signo del dif (dashboard-7.html).
  assert.equal(sandbox.OXXO.metricsMovimientoTreo('Subir',0),'Subir');
  assert.equal(sandbox.OXXO.metricsMovimientoTreo('Alineada',3),'Alineada');

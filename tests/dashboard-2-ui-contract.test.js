@@ -213,7 +213,8 @@ test('rotulos de alcance: cada panel declara lo que de verdad usa', () => {
   // Se llama tras cada render, el toggle de plazas y las denominaciones.
   assert.ok((js.match(/syncD2UI\(\)/g) || []).length >= 3);
   ok(js, /if\(OXXO\.getActiveDataScope\(\)\.level==='region'\)return;\s*PLAZAS_SHOW_ALL = !PLAZAS_SHOW_ALL;\s*renderPlazasForScope\(BAJAS_COLS\);\s*updatePanelScopeLabels\(\);/);
-  ok(js, /REGIONAL_BAJAS_DATA = filterData\(rawRegional, REGIONAL_BAJAS_COLS\)/, 'el comparativo regional usa las mismas reglas de bajas');
+  ok(js, /REGIONAL_BAJAS_DATA = filterData\(asignarAtActualSinAsesor\(rawRegional, REGIONAL_BAJAS_COLS, asesorCatalog\), REGIONAL_BAJAS_COLS\)/, 'el comparativo regional usa las mismas reglas de bajas');
+  ok(js, /const filasBajas = asignarAtActualSinAsesor\(raw, cols, asesorCatalog\);/, 'la vista de plaza aplica la misma atribucion');
 });
 
 test('compromisos regionales suman las metas de todas las plazas sin duplicar la vista individual', () => {
@@ -595,3 +596,4 @@ test('compromiso: una meta vieja no lista a un asesor que ya no esta en el catal
   // El pie ya no suma su meta de 8: 2 bajas contra 4.
   ok(compromiso, /<tfoot><tr><td>Total<\/td><td class="num">2<\/td><td class="num">4<\/td><td class="num">-2<\/td>/);
 });
+

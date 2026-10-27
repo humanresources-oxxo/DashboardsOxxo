@@ -118,12 +118,26 @@ let SELECTED_ASESORES = null; // array de asesores seleccionados (multi-select)
 const SIN_RESPONSABLE = 'Sin responsable identificado';
 const ATRIBUCION_PENDIENTE = 'Pendiente de atribución';
 const ATRIBUCION_CONFIRMADA = 'Asesor registrado';
+const ATRIBUCION_TIENDA = 'AT actual de la tienda';
 function isPlaceholderAsesor(value){
   const c = cleanText(value);
   return !c || /SIN ASESOR|NO ASIGNADO|SIN RESPONSABLE|POR ASIGNAR|PENDIENTE/.test(c)
     || /^(N\/?A|#N\/A|NULL|NINGUNO|VACANTE|0|[-—.\s]+)$/.test(c);
 }
 function isAtribucionConfirmada(row, cols){ return !isPlaceholderAsesor(val(row, cols, 'asesor', '')); }
+// Baja de tienda real que llega sin Asesor: se carga al AT que hoy tiene la
+// tienda (OXXO.metricsAsesorBajaD2, misma regla que las presentaciones). Las
+// que traen Asesor conservan el crudo y Entrenamiento/Operaciones siguen sin
+// responsable. La fila se marca para rotularla en el detalle.
+function asignarAtActualSinAsesor(rows, cols, catalog){
+  if(!catalog || !cols.asesor || !rows.length || !OXXO.metricsAsesorBajaD2) return rows;
+  const crKey = (OXXO.metricsFindKeyExact || OXXO.metricsFindKey)(rows[0], ['CR TIENDA','CR Tienda','CR']);
+  return rows.map(r => {
+    if(isAtribucionConfirmada(r, cols)) return r;
+    const at = OXXO.metricsAsesorBajaD2('', { catalog, tienda: val(r, cols, 'tienda', ''), cr: crKey ? r[crKey] : '' });
+    return isPlaceholderAsesor(at) ? r : { ...r, [cols.asesor]: at, __atPorTienda: true };
+  });
+}
 function getAsesorValue(row, cols){
   return isAtribucionConfirmada(row, cols) ? String(val(row, cols, 'asesor')).trim() : SIN_RESPONSABLE;
 }
@@ -809,12 +823,12 @@ const DET_MAIN_COLS = [
 ];
 let DET_DATA = [], DET_COLS = null, DET_IDX = new Map();
 let DET_SORT = { col:'mes', dir:'desc' };
-function atribucionLabel(r, cols){ return isAtribucionConfirmada(r,cols) ? ATRIBUCION_CONFIRMADA : ATRIBUCION_PENDIENTE; }
+function atribucionLabel(r, cols){ return !isAtribucionConfirmada(r,cols) ? ATRIBUCION_PENDIENTE : r.__atPorTienda ? ATRIBUCION_TIENDA : ATRIBUCION_CONFIRMADA; }
 // Insignia con texto real (no solo color): se lee, se ordena y se exporta
 // igual. La marca visual vive en CSS para no ensuciar el texto exportado.
 function atribucionBadge(r, cols){
   const pending = !isAtribucionConfirmada(r,cols);
-  return `<span class="d2-attr ${pending ? 'is-pending' : 'is-confirmed'}">${pending ? ATRIBUCION_PENDIENTE : ATRIBUCION_CONFIRMADA}</span>`;
+  return `<span class="d2-attr ${pending ? 'is-pending' : 'is-confirmed'}">${atribucionLabel(r, cols)}</span>`;
 }
 function detValue(r, cols, key){
   if(key==='mes') return monthKeyFromRow(r,cols) || '';
@@ -1631,11 +1645,12 @@ async function initDashboard(){
   // contrario: que a ese asesor se le ATRIBUYEN las bajas sin asesor. Entro
   // sin comentario propio dentro de un commit de otro tema (112a9e2, sobre el
   // switch de Alcance), asi que fue un descuido, no una regla de negocio.
-  const filasBajas = raw;
-  // Las filas no se reescriben: el responsable es el Asesor crudo de cada baja.
-  // Ya no se corrige contra el catalogo por tienda vigente ni por herencias
-  // (eso le atribuia bajas a quien hoy tiene la tienda, no a quien la tenia).
-  // Sin Asesor crudo valido la baja queda como "Sin responsable identificado".
+  // El responsable es el Asesor crudo de cada baja (quien tenia la tienda al
+  // ocurrir); no se corrige contra el catalogo vigente. Unica excepcion: la
+  // baja de tienda real que llega SIN Asesor se carga al AT que hoy tiene la
+  // tienda (asignarAtActualSinAsesor). Entrenamiento/Operaciones sin Asesor
+  // quedan como "Sin responsable identificado".
+  const filasBajas = asignarAtActualSinAsesor(raw, cols, asesorCatalog);
   const data = filterData(filasBajas, cols);
   if(!data.length){ ['kpi-section','tabla-detalle'].forEach(id=>OXXO.showEmpty(id)); return; }
 
@@ -1644,7 +1659,7 @@ async function initDashboard(){
   BAJAS_COLS = cols;
   if(rawRegional && rawRegional.length){
     REGIONAL_BAJAS_COLS = buildCols(rawRegional);
-    REGIONAL_BAJAS_DATA = filterData(rawRegional, REGIONAL_BAJAS_COLS);
+    REGIONAL_BAJAS_DATA = filterData(asignarAtActualSinAsesor(rawRegional, REGIONAL_BAJAS_COLS, asesorCatalog), REGIONAL_BAJAS_COLS);
   }
   if(rawOtras && rawOtras.length) OTRAS_PLAZAS_DATA = rawOtras;
   FILTER_STATE = defaultFilterState(BASE_BAJAS_DATA, BAJAS_COLS);
