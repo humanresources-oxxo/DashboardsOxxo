@@ -132,3 +132,10 @@ body.dashboard-7-page .d7-tbl td:last-child { text-align: right; font-weight: 70
 /* Indicador principal del TREO: % de tiendas alineadas. */
 body.dashboard-7-page .kpi-card--lead { background: linear-gradient(145deg, #fff, #effaf3); }
 body.dashboard-7-page .kpi-card--lead .kpi-card__value { color: var(--du-green, #1e8a4c); }
+
+/* Exploracion detallada: solo queda Distribucion por Antiguedad (se quitaron
+   Mix por Concepto, sin dato en la base, y Totales de Estructura, que repetia
+   la tarjeta de Cobertura). */
+body.dashboard-7-page .row3.row3 { grid-template-columns: minmax(0,1fr); }
+/* % de tiendas alineadas por AT (reemplaza al velocimetro, que repetia los KPIs). */
+body.dashboard-7-page #align-por-at { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
