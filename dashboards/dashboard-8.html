@@ -271,7 +271,7 @@ function clasificarCerts(candidatas, data){
       if(raw === undefined || raw === null || String(raw).trim() === '') return;
       tieneDatos = true;
       const n = OXXO.metricsNum ? OXXO.metricsNum(raw) : parseFloat(String(raw).replace(',','.'));
-      if(Number.isFinite(n) && n > 1) CELDAS_CORREGIDAS++;
+      if(Number.isFinite(n) && n > 1 && !String(raw).includes('%')) CELDAS_CORREGIDAS++;
     });
     (tieneDatos ? CERT_COLS : CERT_PENDIENTES).push(c);
   });
@@ -284,23 +284,9 @@ function buildColsD8(sample){
   return cols;
 }
 
-// La hoja publica algunos decimales mal: "0.3333" sale como "3.333" porque
-// el punto se lee como separador de miles. Estas columnas son promedios de 0 a 1,
-// asi que CUALQUIER valor mayor a 1 es ese error de formato, no un dato real.
-// Sin esto un avance de 33% se cuenta como certificacion completada e infla el %.
-// Los digitos se conservan intactos, por eso se puede recuperar el valor original.
-function decimalRecuperado(raw){
-  const digitos = String(raw).replace(/\D/g, '');
-  const v = parseFloat('0.' + digitos);
-  return Number.isFinite(v) ? v : 0;
-}
-
 function capValue(row, certKey){
-  const raw = row[CERT_REAL_KEYS[certKey]];
-  if(raw === undefined || raw === null || String(raw).trim() === '') return null; // no aplica
-  const n = OXXO.metricsNum ? OXXO.metricsNum(raw) : parseFloat(String(raw).replace(',','.'));
-  if(!Number.isFinite(n)) return null;
-  return n > 1 ? decimalRecuperado(raw) : n;
+  // vacio = no aplica (null); "62.50%" = 0.625; "3.333" mal publicado = 0.3333
+  return OXXO.metricsCapAvance(row[CERT_REAL_KEYS[certKey]]);
 }
 function capColorPct(pct){
   if(pct === null) return 'na';

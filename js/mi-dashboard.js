@@ -447,6 +447,7 @@
     { key: 'Promedio de Seguridad en la persona 2026', label: 'Seguridad en la Persona' },
     { key: 'Promedio de PLD2026Certificacion', label: 'PLD 2026' },
     { key: 'Promedio de ModuloCercaSiempre2026', label: 'Módulo Cerca Siempre' },
+    { key: 'Promedio de Resultado_Programa Certificación iCash V2', label: 'Certificación iCash V2' },
   ];
   async function loadD8() {
     let raw = await OXXO.fetchSheetData(OXXO.SHEETS_CONFIG.TABS.d8);
@@ -466,10 +467,7 @@
     addAsesores(raw.map((r) => V(r, asesorKey)));
   }
   function capValue(row, certKey, certRealKeys) {
-    const raw = row[certRealKeys[certKey]];
-    if (raw === undefined || raw === null || String(raw).trim() === '') return null;
-    const num = OXXO.metricsNum(raw);
-    return Number.isFinite(num) ? num : null;
+    return OXXO.metricsCapAvance(row[certRealKeys[certKey]]);
   }
   function renderD8(asesor) {
     const d = DATA.d8;

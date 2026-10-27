@@ -39,6 +39,15 @@ const context = vm.createContext({
   },
 });
 
+// Lectura real del avance de certificaciones, tomada de js/core.js.
+const core = fs.readFileSync(path.join(root, 'js', 'core.js'), 'utf8');
+const coreFn = name => {
+  const start = core.indexOf(`function ${name}(`);
+  return core.slice(start, core.indexOf('\n}\n', start) + 3);
+};
+new vm.Script(`${coreFn('metricsNum')}${coreFn('metricsCapAvance')}
+  OXXO.metricsNum = metricsNum; OXXO.metricsCapAvance = metricsCapAvance;`).runInContext(context);
+
 new vm.Script(source, { filename: 'dashboards/dashboard-8.html' }).runInContext(context);
 new vm.Script(`
   C = { asesor:'asesor', empleado:'empleado', puesto:'puesto', unidad:'unidad' };
@@ -93,3 +102,14 @@ const detectadas = JSON.parse(new vm.Script(`JSON.stringify(detectarCerts({
 assert.strictEqual(detectadas.length, 1);
 assert.strictEqual(detectadas[0].label, 'Certificación iCash V2');
 console.log('dashboard 8: muestra iCash V2 y oculta Tablero Amazon Counter');
+
+// iCash V2 llega como porcentaje; "100.00%" es completa, no 10%.
+const avance = raw => new vm.Script(`OXXO.metricsCapAvance(${JSON.stringify(raw)})`).runInContext(context);
+assert.strictEqual(avance('100.00%'), 1);
+assert.strictEqual(avance('62.50%'), 0.625);
+assert.strictEqual(avance('0.00%'), 0);
+assert.strictEqual(avance('1'), 1);
+assert.strictEqual(avance('0'), 0);
+assert.strictEqual(avance(''), null);
+assert.strictEqual(avance('3.333'), 0.3333);
+console.log('dashboard 8: lee iCash V2 en porcentaje sin confundirlo con decimales mal publicados');

@@ -53,17 +53,8 @@
   const capLabel = key => CAP_ETIQUETAS[capKey(key)] || String(key).replace(/^\s*Promedio de\s+/i,'').trim();
   const isCapColumn = key => /^\s*Promedio de\s+/i.test(String(key || '')) && !CAP_IGNORADAS.has(capKey(key));
   function capValue(row, key){
-    const raw = row?.[key];
-    if(raw === undefined || raw === null || String(raw).trim() === '') return null;
-    const value = num(raw);
-    // El origen ocasionalmente publica 0.3333 como 3.333. Es un avance de
-    // certificación, así que valores >1 se recuperan igual que Dashboard 8.
-    if(value > 1){
-      const digits = String(raw).replace(/\D/g,'');
-      const fixed = Number('0.' + digits);
-      return Number.isFinite(fixed) ? fixed : 0;
-    }
-    return Number.isFinite(value) ? value : null;
+    // Misma lectura que Dashboard 8 (incluye iCash V2 en formato "62.50%").
+    return OXXO.metricsCapAvance(row?.[key]);
   }
   function findExactHeader(row, aliases){
     const keys=Object.keys(row||{});
