@@ -2709,16 +2709,20 @@ function metricsIsPlaceholderAsesorD2(value) {
   return !c || /SIN ASESOR|NO ASIGNADO|SIN RESPONSABLE|POR ASIGNAR|PENDIENTE/.test(c)
     || /^(N\/?A|#N\/A|NULL|NINGUNO|VACANTE|0|[-—.\s]+)$/.test(c);
 }
-// Si la baja llega sin Asesor y es de una tienda real, se carga al AT que hoy
-// tiene la tienda segun el catalogo (decision de negocio, oct-2026).
-// Entrenamiento/Operaciones no tienen AT: siguen "Sin responsable".
-function metricsAsesorBajaD2(value, { catalog = null, tienda = '', cr = '' } = {}) {
-  if (!metricsIsPlaceholderAsesorD2(value)) return String(value).trim();
-  if (catalog && !metricsIsTiendaEntrenamientoOperacionesD2(tienda)) {
+// Reglas de negocio (oct-2026) para tiendas reales:
+//  - Mes en curso (mesActual): la baja va al AT que hoy tiene la tienda segun
+//    el catalogo. La base de bajas puede traer el asesor desactualizado (p.ej.
+//    Caporales seguia a nombre de Hector cuando ya era de Luis).
+//  - Meses cerrados: se respeta el Asesor de la base; solo si llega vacio se
+//    usa el AT actual de la tienda.
+// Entrenamiento/Operaciones no tienen AT: sin Asesor siguen "Sin responsable".
+function metricsAsesorBajaD2(value, { catalog = null, tienda = '', cr = '', mesActual = false } = {}) {
+  const crudo = metricsIsPlaceholderAsesorD2(value) ? '' : String(value).trim();
+  if ((mesActual || !crudo) && catalog && !metricsIsTiendaEntrenamientoOperacionesD2(tienda)) {
     const actual = resolveAsesorD1(catalog, { cr, tienda, asesor: '' });
     if (!metricsIsPlaceholderAsesorD2(actual)) return String(actual).trim();
   }
-  return METRICS_SIN_RESPONSABLE_D2;
+  return crudo || METRICS_SIN_RESPONSABLE_D2;
 }
 
 // Movimiento de una tienda en Dashboard 7 (TREO): la columna 'Movimiento
@@ -2747,10 +2751,12 @@ async function metricsD2Rows(targetMes = '', options = {}) {
   const catalog = await loadAsesorCatalog();
   // asesorCrudo: responsable = Asesor crudo de la baja, como dashboard-2.html.
   // Sin la opcion se conserva la lectura por catalogo vigente de la tienda.
+  const mesEnCurso = options.asesorCrudo ? ([...new Set(raw.map(r => metricsRowMonthKeyD2(r, mesKey, fechaKey)).filter(Boolean))].sort().at(-1) || '') : '';
   const mapped = raw.map(r => {
     const copy = {...r};
     if (asesorKey) copy[asesorKey] = options.asesorCrudo
-      ? metricsAsesorBajaD2(metricsVal(r, asesorKey), { catalog, tienda: metricsVal(r, tiendaKey), cr: crKeyD2 ? metricsVal(r, crKeyD2) : '' })
+      ? metricsAsesorBajaD2(metricsVal(r, asesorKey), { catalog, tienda: metricsVal(r, tiendaKey), cr: crKeyD2 ? metricsVal(r, crKeyD2) : '',
+          mesActual: Boolean(mesEnCurso) && metricsRowMonthKeyD2(r, mesKey, fechaKey) === mesEnCurso })
       : resolveAsesorD1(catalog, {tienda: metricsVal(r, tiendaKey), asesor: metricsVal(r, asesorKey)});
     return copy;
   });
