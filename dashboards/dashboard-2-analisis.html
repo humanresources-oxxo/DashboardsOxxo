@@ -369,11 +369,22 @@ async function init(){
     return;
   }
   const asesorCatalog = await OXXO.loadAsesorCatalog();
-  raw.forEach(row => OXXO.applyAsesorCatalog(row, asesorCatalog, { asesorKey:'Asesor', tiendaKey:'Tienda', crKey:'CR' }));
+  // Mes canonico (AAAA-MM): la hoja trae "sep-26"/"oct-26" y ordenarlos como
+  // texto dejaba septiembre como el mes mas reciente.
+  const mesDe = r => OXXO.metricsRowMonthKeyD2 ? OXXO.metricsRowMonthKeyD2(r, 'Mes', 'Fecha') : String(r['Mes']||'').trim();
+  const mesEnCurso = [...new Set(raw.map(mesDe).filter(Boolean))].sort().pop() || '';
+  // Misma atribucion que dashboard-2.html (OXXO.metricsAsesorBajaD2): mes en
+  // curso = AT actual de la tienda; meses cerrados = Asesor de la base (o AT
+  // actual si llega vacio). Ya no se descartan las bajas de Timoteo: son bajas
+  // reales (mismo error que se corrigio en dashboard-2.js).
+  raw.forEach(row => {
+    row['Asesor'] = OXXO.metricsAsesorBajaD2(row['Asesor'], { catalog: asesorCatalog, tienda: row['Tienda'], cr: row['CR'] || row['CR TIENDA'] || '', mesActual: Boolean(mesEnCurso) && mesDe(row) === mesEnCurso });
+  });
 
+  // Sin filtro extra de tiendas validas: dashboard-2.html tampoco lo aplica
+  // (el alcance y el estado de tiendas ya vienen de fetchSheetData), y con el
+  // filtro este analisis perdia bajas que el D2 si cuenta.
   const conTienda = raw
-    .filter(r => OXXO.isTiendaValid(asesorCatalog, r['Tienda'], r['CR']))
-    .filter(r => String(r['Asesor']||'').trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]/g,'') !== 'timoteoantonioperez')
     .map(r => ({
       // Mismo bucket visible que dashboard-2.html: Entrenamiento/Operaciones
       // son unidades administrativas, no un asesor sin asignar.
@@ -386,7 +397,8 @@ async function init(){
       detalle: String(r['Detalle']||'').trim(),
       edad: Number(r['Edad']) || 0,
       genero: String(r['Genero']||'').trim(),
-      mes: String(r['Mes']||'').trim(),
+      mes: mesDe(r),
+      mesLabel: String(r['Mes']||'').trim(),
       fecha: String(r['Fecha']||'').trim(),
     }))
     .filter(r => r.tienda);
@@ -405,7 +417,8 @@ async function init(){
 
   const meses = [...new Set(ALL_DATA.map(r => r.mes).filter(Boolean))].sort();
   const selMes = document.getElementById('filtro-mes');
-  meses.forEach(m => { const o = document.createElement('option'); o.value = m; o.textContent = m; selMes.appendChild(o); });
+  const etiquetaMes = m => ALL_DATA.find(r => r.mes === m)?.mesLabel || m;
+  meses.forEach(m => { const o = document.createElement('option'); o.value = m; o.textContent = etiquetaMes(m); selMes.appendChild(o); });
   ACTIVE_MES = meses[meses.length - 1] || '';
   selMes.value = ACTIVE_MES;
   selMes.addEventListener('change', () => { ACTIVE_MES = selMes.value; renderAll(); });
