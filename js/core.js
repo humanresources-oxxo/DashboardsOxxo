@@ -1646,27 +1646,36 @@ function catalogValueByAliases(row, aliases) {
   }
   return '';
 }
-// Tiendas anunciadas, pero todavía sin apertura. Se excluyen por nombre y no
-// por ausencia en TREO: una tienda recién creada puede aparecer antes o
-// después en cada base operativa. Mantener esta lista corta y explícita evita
-// que se oculten tiendas reales por una demora del catálogo.
-const PREOPENING_STORE_KEYS = new Set([
-  'Parador Boca del Monte VSA',
-  'Papaya VSA',
-  'Small Beach OAX VSA',
-  'Piedra Parada VSA',
-  'Gas Nopala VSA',
-  '5 de Septiembre VSA',
-  'Union y Progreso VSA'
-].map(normalizeCatalogTienda));
-function isPreopeningStore(tienda) {
-  return PREOPENING_STORE_KEYS.has(normalizeCatalogTienda(tienda));
+// Tiendas NO operativas de Plaza Oaxaca: las marcadas como NOTIFICADA en el
+// catalogo oficial de tiendas (OPERATIVAS_TIENDAS.xlsx, oct-2026: 264
+// operativas y 10 notificadas). Se reconocen por CR (llave estable) y, como
+// respaldo, por nombre. Una tienda que no aparece aqui sigue siendo operativa
+// (mundo abierto: ver isTiendaValid). En los filtros se muestran con el boton
+// "No operativas" (internamente el estado se llama 'preapertura').
+const NON_OPERATIONAL_STORES = [
+  ['5005N', 'Peregrinos VSA'],
+  ['501A3', 'Parador Boca del Monte VSA'],
+  ['505GB', 'Papaya VSA'],
+  ['50AW9', 'Oyamel VSA'],
+  ['50F2Z', 'Gas Pancardo VSA'],
+  ['50F3A', 'Sector N VSA'],
+  ['50I7P', 'Hondura VSA'],
+  ['50QW3', 'Santa Gertrudis VSA'],
+  ['50U4T', 'Fuerza Aérea VSA'],
+  ['50V0D', 'Las Palmas VSA'],
+];
+const NON_OPERATIONAL_CR = new Set(NON_OPERATIONAL_STORES.map(([cr]) => normalizeCatalogCr(cr)));
+const NON_OPERATIONAL_TIENDA = new Set(NON_OPERATIONAL_STORES.map(([, tienda]) => normalizeCatalogTienda(tienda)));
+function isPreopeningStore(tienda, cr = '') {
+  const crKey = normalizeCatalogCr(cr);
+  if (crKey && NON_OPERATIONAL_CR.has(crKey)) return true;
+  return NON_OPERATIONAL_TIENDA.has(normalizeCatalogTienda(tienda));
 }
 const STORE_STATUS_STORAGE_KEY = 'oxxo_store_status_filter';
 const STORE_STATUS_QUERY_PARAM = 'tiendas';
 function normalizeStoreStatus(value) {
   const status = normalizeScopeToken(value);
-  if (['sin apertura', 'preapertura', 'pre apertura'].includes(status)) return 'preapertura';
+  if (['sin apertura', 'preapertura', 'pre apertura', 'no operativas', 'no operativa', 'notificadas', 'notificada'].includes(status)) return 'preapertura';
   if (['todas', 'todos'].includes(status)) return 'todas';
   return 'operativas';
 }
@@ -1759,7 +1768,7 @@ async function loadTiendaCatalog() {
 // una vacante que nadie estaba cubriendo.
 function isTiendaValid(catalog, tienda, cr='') {
   const stores = catalog?.storeCatalog;
-  const preopening = isPreopeningStore(tienda);
+  const preopening = isPreopeningStore(tienda, cr);
   const status = getActiveStoreStatus();
   // El catálogo sigue determinando las bajas reales. Las preaperturas se
   // muestran solo cuando el usuario las solicita con el filtro global.
@@ -3135,7 +3144,7 @@ function initScopeSelector() {
       <div class="oxxo-store-status" role="group" aria-label="Estado de tiendas">
         <span class="oxxo-store-status__label">Tiendas</span>
         <button type="button" class="oxxo-store-status__opt${isActiveStoreStatus('operativas') ? ' is-active' : ''}" data-store-status="operativas">Operativas</button>
-        <button type="button" class="oxxo-store-status__opt${isActiveStoreStatus('preapertura') ? ' is-active' : ''}" data-store-status="preapertura">Sin apertura</button>
+        <button type="button" class="oxxo-store-status__opt${isActiveStoreStatus('preapertura') ? ' is-active' : ''}" data-store-status="preapertura">No operativas</button>
         <button type="button" class="oxxo-store-status__opt${isActiveStoreStatus('todas') ? ' is-active' : ''}" data-store-status="todas">Todas</button>
       </div>`;
     if (!document.getElementById('oxxo-scope-selector-style')) {
@@ -3321,6 +3330,7 @@ window.OXXO = {
   resolveAsesorD1,
   applyAsesorCatalog,
   isTiendaValid,
+  isPreopeningStore,
   filterValidTiendas,
   normalizeCatalogCr,
   normalizeCatalogTienda,

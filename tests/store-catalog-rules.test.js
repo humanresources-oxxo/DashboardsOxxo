@@ -67,11 +67,15 @@ test('ACTIVA=NO se rechaza; SI, vacia y ausente de TREO se aceptan', () => {
   assert.equal(valida(OXXO, catalogo, 'OXXO Recien Abierta', '50N99'), true, 'ausente de TREO: mundo abierto');
 });
 
-test('preaperturas: rechazadas en operativas, aceptadas con el filtro de preapertura o todas', () => {
-  const nombres = ['Papaya VSA', 'Small Beach OAX VSA', 'Piedra Parada VSA', 'Gas Nopala VSA', '5 de Septiembre VSA', 'Union y Progreso VSA', 'Parador Boca del Monte VSA'];
+test('no operativas (NOTIFICADA en el catalogo oficial): fuera de operativas, dentro de "No operativas" o todas', () => {
+  const nombres = ['Peregrinos VSA', 'Parador Boca del Monte VSA', 'Papaya VSA', 'Oyamel VSA', 'Gas Pancardo VSA', 'Sector N VSA', 'Hondura VSA', 'Santa Gertrudis VSA', 'Fuerza Aérea VSA', 'Las Palmas VSA'];
   const operativas = core('');
   const catalogo = operativas.buildTiendaCatalog(FILAS, { source: 'fixture' });
   for (const nombre of nombres) assert.equal(valida(operativas, catalogo, nombre), false, `${nombre} no entra en operativas`);
+  // Las que el catalogo marca OPERATIVA ya no son "sin apertura".
+  for (const nombre of ['Small Beach OAX VSA', 'Piedra Parada VSA', 'Gas Nopala VSA', '5 de Septiembre VSA', 'Union y Progreso VSA']) {
+    assert.equal(valida(operativas, catalogo, nombre), true, `${nombre} es operativa`);
+  }
   const preapertura = core('?tiendas=preapertura');
   const cat2 = preapertura.buildTiendaCatalog(FILAS, { source: 'fixture' });
   assert.equal(valida(preapertura, cat2, 'Papaya VSA'), true);
