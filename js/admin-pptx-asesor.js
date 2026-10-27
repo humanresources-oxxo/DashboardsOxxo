@@ -226,10 +226,11 @@
     addHeader(slide, 'TREO · ESTRUCTURA', nombre, dateLabel);
     const cardW = 2.55, cardH = 1.9, gapX = 0.25, y = 1.4;
     const xs = [MARGIN_X, MARGIN_X + cardW + gapX, MARGIN_X + 2 * (cardW + gapX), MARGIN_X + 3 * (cardW + gapX)];
-    addMetricCard(slide, xs[0], y, cardW, cardH, 'Total Tiendas', d.total, 'Asignadas al asesor');
-    addMetricCard(slide, xs[1], y, cardW, cardH, 'Cobertura', `${d.cobertura.toFixed(0)}%`, `${OXXO.formatNum(d.totalActivos)} de ${OXXO.formatNum(d.totalTreo)} posiciones`);
-    addMetricCard(slide, xs[2], y, cardW, cardH, 'Vacantes TREO', OXXO.formatNum(d.totalVacantes), 'En tiendas del asesor');
-    addMetricCard(slide, xs[3], y, cardW, cardH, 'Alineadas', d.alineadas, `${d.total ? Math.round(d.alineadas/d.total*100) : 0}% del total`);
+    // Indicador principal del TREO (igual que dashboard-7.html): % de tiendas alineadas.
+    addMetricCard(slide, xs[0], y, cardW, cardH, 'Tiendas Alineadas', `${d.total ? Math.round(d.alineadas/d.total*100) : 0}%`, `${d.alineadas} de ${d.total} tiendas`);
+    addMetricCard(slide, xs[1], y, cardW, cardH, 'Total Tiendas', d.total, 'Asignadas al asesor');
+    addMetricCard(slide, xs[2], y, cardW, cardH, 'Cobertura', `${d.cobertura.toFixed(0)}%`, `${OXXO.formatNum(d.totalActivos)} de ${OXXO.formatNum(d.totalTreo)} posiciones`);
+    addMetricCard(slide, xs[3], y, cardW, cardH, 'Vacantes TREO', OXXO.formatNum(d.totalVacantes), 'En tiendas del asesor');
     addDoughnutCard(pptx, slide, MARGIN_X, y + cardH + 0.3, PAGE_W - MARGIN_X * 2, PAGE_H - (y + cardH + 0.3) - MARGIN_X, 'Alineación de estructura', [
       { label: 'Alineada', value: d.alineadas, color: GREEN },
       { label: 'Subir', value: d.subir, color: GOLD },

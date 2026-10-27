@@ -509,8 +509,14 @@ function renderKPIs(data){
   const sobredot = data.filter(r=>(Number(r.empleados)||0) > (Number(r.est_final)||0)).length;
 
   document.getElementById('kpi-section').innerHTML = `
+    <div class="kpi-card verde kpi-card--lead ${ACTIVE_KPI==='Alineada' ? 'active' : ''}" role="button" tabindex="0" onclick="setKpiFilter('Alineada')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();setKpiFilter('Alineada')}">
+      <div class="kpi-card__label">Tiendas Alineadas ✔<span class="info-tip" tabindex="0" onclick="event.stopPropagation()" data-tip="Indicador principal del TREO: % de tiendas marcadas como 'Alineada' en la columna 'Movimiento Inicial' (si viene vacía se usa 'Dif SAP vs Est Optima Final' = 0) sobre el total de tiendas filtradas. Clic para ver solo las alineadas."></span></div>
+      <div class="kpi-card__value">${pct}%</div>
+      <div class="kpi-card__delta pos">${alineadas} de ${total} tiendas</div>
+      <div class="kpi-card__icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg></div>
+    </div>
     <div class="kpi-card azul ${!ACTIVE_KPI ? 'active' : ''}" role="button" tabindex="0" onclick="setKpiFilter('')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();setKpiFilter('')}">
-      <div class="kpi-card__label">Total Tiendas<span class="info-tip" tabindex="0" onclick="event.stopPropagation()" data-tip="Número de tiendas distintas en Dashboard_7_Semanal con los filtros activos aplicados."></span></div>
+      <div class="kpi-card__label">Total Tiendas<span class="info-tip" tabindex="0" onclick="event.stopPropagation()" data-tip="Número de tiendas distintas en Dashboard_7_Semanal con los filtros activos aplicados. Clic para ver todas."></span></div>
       <div class="kpi-card__value">${total}</div>
       <div class="kpi-card__delta neu">Plaza Oaxaca</div>
       <div class="kpi-card__icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg></div>
@@ -520,12 +526,6 @@ function renderKPIs(data){
       <div class="kpi-card__value">${cobertura}%</div>
       <div class="kpi-card__delta ${cobClass}">${sumAct} de ${sumTreo} posiciones</div>
       <div class="kpi-card__icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg></div>
-    </div>
-    <div class="kpi-card verde ${ACTIVE_KPI==='Alineada' ? 'active' : ''}" role="button" tabindex="0" onclick="setKpiFilter('Alineada')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();setKpiFilter('Alineada')}">
-      <div class="kpi-card__label">Alineadas ✔<span class="info-tip" tabindex="0" onclick="event.stopPropagation()" data-tip="Tiendas marcadas como 'Alineada' en la columna 'Movimiento Inicial' de la hoja; si viene vacía se usa 'Dif SAP vs Est Optima Final' = 0."></span></div>
-      <div class="kpi-card__value">${alineadas}</div>
-      <div class="kpi-card__delta pos">${pct}% del total</div>
-      <div class="kpi-card__icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg></div>
     </div>
     <div class="kpi-card amarillo ${ACTIVE_KPI==='vacantes' ? 'active' : ''}" role="button" tabindex="0" onclick="setKpiFilter('vacantes')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();setKpiFilter('vacantes')}">
       <div class="kpi-card__label">Vacantes Totales<span class="info-tip" tabindex="0" onclick="event.stopPropagation()" data-tip="Suma de la columna 'Vacantes' de las tiendas filtradas."></span></div>
