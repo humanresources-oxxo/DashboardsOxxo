@@ -2709,8 +2709,16 @@ function metricsIsPlaceholderAsesorD2(value) {
   return !c || /SIN ASESOR|NO ASIGNADO|SIN RESPONSABLE|POR ASIGNAR|PENDIENTE/.test(c)
     || /^(N\/?A|#N\/A|NULL|NINGUNO|VACANTE|0|[-—.\s]+)$/.test(c);
 }
-function metricsAsesorBajaD2(value) {
-  return metricsIsPlaceholderAsesorD2(value) ? METRICS_SIN_RESPONSABLE_D2 : String(value).trim();
+// Si la baja llega sin Asesor y es de una tienda real, se carga al AT que hoy
+// tiene la tienda segun el catalogo (decision de negocio, oct-2026).
+// Entrenamiento/Operaciones no tienen AT: siguen "Sin responsable".
+function metricsAsesorBajaD2(value, { catalog = null, tienda = '', cr = '' } = {}) {
+  if (!metricsIsPlaceholderAsesorD2(value)) return String(value).trim();
+  if (catalog && !metricsIsTiendaEntrenamientoOperacionesD2(tienda)) {
+    const actual = resolveAsesorD1(catalog, { cr, tienda, asesor: '' });
+    if (!metricsIsPlaceholderAsesorD2(actual)) return String(actual).trim();
+  }
+  return METRICS_SIN_RESPONSABLE_D2;
 }
 
 // Movimiento de una tienda en Dashboard 7 (TREO): la columna 'Movimiento
@@ -2735,13 +2743,14 @@ async function metricsD2Rows(targetMes = '', options = {}) {
   const medidaKey = metricsFindKey(raw[0], ['Denominación Medida', 'Denominacion Medida', 'Medida', 'Med.']);
   const fechaKey = metricsFindKey(raw[0], ['Fecha']);
   const tiendaKey = metricsFindKey(raw[0], ['Tienda', 'Unidad org']);
+  const crKeyD2 = (typeof metricsFindKeyExact === 'function' ? metricsFindKeyExact : metricsFindKey)(raw[0], ['CR TIENDA', 'CR Tienda', 'CR']);
   const catalog = await loadAsesorCatalog();
   // asesorCrudo: responsable = Asesor crudo de la baja, como dashboard-2.html.
   // Sin la opcion se conserva la lectura por catalogo vigente de la tienda.
   const mapped = raw.map(r => {
     const copy = {...r};
     if (asesorKey) copy[asesorKey] = options.asesorCrudo
-      ? metricsAsesorBajaD2(metricsVal(r, asesorKey))
+      ? metricsAsesorBajaD2(metricsVal(r, asesorKey), { catalog, tienda: metricsVal(r, tiendaKey), cr: crKeyD2 ? metricsVal(r, crKeyD2) : '' })
       : resolveAsesorD1(catalog, {tienda: metricsVal(r, tiendaKey), asesor: metricsVal(r, asesorKey)});
     return copy;
   });
