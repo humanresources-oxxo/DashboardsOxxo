@@ -21,8 +21,8 @@
   const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
   const VACIO = '______________';
   const BORRADOR_KEY = 'oxxo_acta_borrador';
-  const CAMPOS = ['tienda', 'domicilio', 'cp', 'municipio', 'fecha', 'horaInicio', 'representante', 'funcion',
-    'trabajador', 'puesto', 'horaEntrada', 'horaSalida', 'testigo1', 'testigo2', 'fechaHechos', 'falta',
+  const CAMPOS = ['tienda', 'crTienda', 'domicilio', 'cp', 'municipio', 'fecha', 'horaInicio', 'representante', 'funcion',
+    'trabajador', 'numEmpleado', 'puesto', 'horaEntrada', 'horaSalida', 'testigo1', 'testigo2', 'fechaHechos', 'falta',
     'hechos', 'manifiesta', 'horaCierre', 'copia'];
   const OBLIGATORIOS = { tienda: 'Tienda', fecha: 'Fecha del acta', representante: 'Representante', trabajador: 'Trabajador', puesto: 'Puesto', fechaHechos: 'Fecha de los hechos', falta: 'Falta al reglamento', hechos: 'Hechos y pruebas' };
 
@@ -43,7 +43,7 @@
     return {
       parrafos: [
         { runs: [T('Oaxaca de Juárez, Oaxaca, siendo las '), C(d.horaInicio), T(' horas del día '), C(f.dia), T(' de '), C(f.mes),
-          T(' del '), C(f.anio), T(', en la tienda denominada OXXO '), C(d.tienda),
+          T(' del '), C(f.anio), T(', en la tienda denominada OXXO '), C(d.tienda), T(' con CR '), C(d.crTienda),
           T(' propiedad de la empresa Cadena Comercial Oxxo SA de CV, sita en '), C(d.domicilio), T(' Cp '), C(d.cp),
           T(' Municipio '), C(d.municipio), T(' Oaxaca y ante la presencia de la C. '), C(d.representante),
           T(' quien desempeña la función de '), C(d.funcion), T(' como representante del patrón en el centro de trabajo, el trabajador de nombre '),
@@ -51,7 +51,7 @@
           T(', trabajadores como testigos de asistencia. Se levanta la presente Acta Administrativa a fin de hacer constar los siguientes:')] },
         { titulo: true, runs: [T('HECHOS')] },
         { runs: [T('El día '), C(h.dia), T(' del mes de '), C(h.mes), T(' del año '), C(h.anio), T(', el empleado de nombre '), C(d.trabajador),
-          T(' con puesto '), C(d.puesto), T(', con horario de trabajo de las '), C(d.horaEntrada), T(' a las '), C(d.horaSalida),
+          T(' con número de empleado '), C(d.numEmpleado), T(' y puesto '), C(d.puesto), T(', con horario de trabajo de las '), C(d.horaEntrada), T(' a las '), C(d.horaSalida),
           T(', cometió las siguientes faltas al reglamento (proceso) '), C(d.falta), T(', hechos que se comprueban con: '), C(d.hechos)] },
         { runs: [T('Hecho por lo que EL TRABAJADOR '), C(d.trabajador), T(' en relación a los hechos manifiesta en este acto: '), C(d.manifiesta)] },
         { runs: [T('POR SU PARTE LOS INTERVINIENTES COMO TESTIGOS '), C(testigos),
@@ -182,8 +182,14 @@
     const estado = $('acta-estado');
     const val = () => Object.fromEntries(CAMPOS.map(k => [k, form.elements[k] ? form.elements[k].value : '']));
     let tiendas = [];       // [{ etiqueta, tienda, cr, asesor }]
-    let empleados = [];     // [{ cr, nombre, puesto }]
-    let auto = { representante: '', puesto: '' };   // ultimo valor puesto por el sistema
+    let empleados = [];     // [{ cr, nombre, puesto, numero }]
+    // Ultimo valor que puso el sistema en cada campo: se reemplaza al cambiar
+    // de tienda o trabajador, pero nunca lo que el asesor escribio a mano.
+    let auto = {};
+    function autoLlenar(campo, valor) {
+      const el = form.elements[campo];
+      if (valor && (!limpio(el.value) || el.value === auto[campo])) { el.value = valor; auto[campo] = valor; }
+    }
 
     function avisar(texto, tipo) {
       estado.textContent = texto;
@@ -218,8 +224,8 @@
       const t = tiendaElegida();
       if (t) {
         form.elements.tienda.value = t.tienda;
-        const rep = form.elements.representante;
-        if (!limpio(rep.value) || rep.value === auto.representante) { rep.value = t.asesor; auto.representante = t.asesor; }
+        autoLlenar('representante', t.asesor);
+        autoLlenar('crTienda', t.cr);
       }
       const lista = t ? empleados.filter(e => e.cr === t.cr) : [];
       $('acta-empleados').innerHTML = lista.map(e => `<option value="${xml(e.nombre)}">${xml(e.puesto)}</option>`).join('');
@@ -229,8 +235,7 @@
       const t = tiendaElegida();
       const nombre = limpio(form.elements.trabajador.value).toLowerCase();
       const e = empleados.find(x => (!t || x.cr === t.cr) && x.nombre.toLowerCase() === nombre);
-      const pu = form.elements.puesto;
-      if (e && (!limpio(pu.value) || pu.value === auto.puesto)) { pu.value = e.puesto; auto.puesto = e.puesto; }
+      if (e) { autoLlenar('puesto', e.puesto); autoLlenar('numEmpleado', e.numero); }
     }
     function validar() {
       const d = val();
@@ -292,7 +297,7 @@
       try { localStorage.removeItem(BORRADOR_KEY); } catch (e) { /* sin almacenamiento */ }
       form.elements.fecha.value = iso(new Date());
       form.elements.funcion.value = 'Asesor Tienda';
-      auto = { representante: '', puesto: '' };
+      auto = {};
       alCambiarTienda(); pintarVista(); avisar('', 'info');
     });
 
@@ -309,9 +314,9 @@
         const filas = await OXXO.fetchSheetData(OXXO.SHEETS_CONFIG.TABS.d8);
         if (filas && filas.length) {
           const k = n => OXXO.metricsFindKey(filas[0], n);
-          const kCr = k(['Cr de tienda', 'CR de Tienda']), kNom = k(['Empleados', 'Empleado']), kPu = k(['Puesto_Correcto', 'Puesto']);
+          const kCr = k(['Cr de tienda', 'CR de Tienda']), kNom = k(['Empleados', 'Empleado']), kPu = k(['Puesto_Correcto', 'Puesto']), kNum = k(['Nº personal', 'N personal', 'No Personal']);
           const vistos = new Set();
-          empleados = filas.map(r => ({ cr: String(r[kCr] || '').trim().toUpperCase(), nombre: String(r[kNom] || '').trim(), puesto: String(r[kPu] || '').trim() }))
+          empleados = filas.map(r => ({ cr: String(r[kCr] || '').trim().toUpperCase(), nombre: String(r[kNom] || '').trim(), puesto: String(r[kPu] || '').trim(), numero: kNum ? String(r[kNum] || '').trim() : '' }))
             .filter(e => e.nombre && e.cr && !vistos.has(e.cr + e.nombre) && vistos.add(e.cr + e.nombre))
             .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
         }
