@@ -107,7 +107,7 @@
   <div class="te-row1">
     <div class="card">
       <div class="card-head">
-        <div class="card-title"><svg class="icon-inline" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></svg>Ranking de Asesores por Gasto en TE<span class="info-tip" tabindex="0" data-tip="Suma de 'Importe' agrupada por Asesor, ordenado de mayor a menor gasto en tiempo extra."></span></div>
+        <div class="card-title"><svg class="icon-inline" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></svg>Ranking de Asesores por Gasto en TE<span class="info-tip" tabindex="0" data-tip="Suma de 'Importe' agrupada por Asesor, ordenado de mayor a menor gasto en tiempo extra. Debajo del gasto se muestran las horas de TE (suma de 'Cantidad')."></span></div>
         <span class="card-badge" id="ranking-badge">Top 10</span>
       </div>
       <div class="rank-list" id="ranking-container"><div class="state-box"><div class="spinner"></div></div></div>
@@ -132,7 +132,7 @@
   <div class="te-row2">
     <div class="card">
       <div class="card-head">
-        <div class="card-title"><svg class="icon-inline" viewBox="0 0 24 24" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>Top 10 Asesores — Gasto TE<span class="info-tip" tabindex="0" data-tip="Los 10 Asesores con mayor suma de 'Importe' en tiempo extra, de mayor a menor."></span></div>
+        <div class="card-title"><svg class="icon-inline" viewBox="0 0 24 24" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>Top 10 Asesores — Horas TE<span class="info-tip" tabindex="0" data-tip="Los 10 Asesores con más horas de tiempo extra (suma de 'Cantidad'), de mayor a menor, separadas en TE Doble, TE Triple y Día Descanso."></span></div>
       </div>
       <div class="bar-chart-area"><canvas id="chart-asesores"></canvas></div>
     </div>
@@ -388,7 +388,7 @@ function renderAll() {
       <div class="rank-num ${i<3?'top':''}">${i+1}</div>
       <div class="rank-name">${r.asesor}</div>
       <div class="rank-bar-wrap"><div class="rank-bar" style="width:${Math.round(r.gTot/maxG*100)}%;background:${i<3?'#FF6B00':'#FFD200'}"></div></div>
-      <div class="rank-val">${fmt$(r.gTot)}</div>
+      <div class="rank-val">${fmt$(r.gTot)}<span class="rank-val__h">${fmtH(r.hTot)} h</span></div>
     </div>`).join('');
   document.getElementById('ranking-badge').textContent = `${byAsesor.length} asesores`;
 
@@ -412,16 +412,24 @@ function renderAll() {
       plugins:{legend:{display:false},tooltip:{backgroundColor:'#251313',titleColor:'#FFF8EE',bodyColor:'#FFF8EE',padding:12,cornerRadius:14,displayColors:false,callbacks:{label:c=>' '+c.label+': '+fmtH(c.raw)+' h'}}}}
   });
 
-  // ── Bar Asesores ──
-  const top10a = byAsesor.slice(0,10);
+  // ── Bar Asesores: horas por tipo ──
+  const top10a = [...byAsesor].sort((a,b)=>b.hTot-a.hTot).slice(0,10);
+  const tiposH = [
+    { label:'TE Doble', key:'hDoble', color:'#FFD200' },
+    { label:'TE Triple', key:'hTriple', color:'#FF6B00' },
+    { label:'Día Descanso', key:'hDesc', color:'#AAAAAA' },
+  ];
   if(chartAsesores) chartAsesores.destroy();
   chartAsesores = new Chart(document.getElementById('chart-asesores').getContext('2d'),{
     type:'bar',
     data:{labels:top10a.map(r=>OXXO.truncate(r.asesor,14)),
-      datasets:[{data:top10a.map(r=>r.gTot),backgroundColor:'#F6B73C',borderColor:'rgba(255,255,255,.68)',borderWidth:1,borderRadius:999,borderSkipped:false,barPercentage:.72,categoryPercentage:.72}]},
+      datasets:tiposH.map(t=>({label:t.label,data:top10a.map(r=>r[t.key]),backgroundColor:t.color,borderColor:'rgba(255,255,255,.68)',borderWidth:1,borderRadius:6,borderSkipped:false,barPercentage:.72,categoryPercentage:.72,stack:'h'}))},
     options:{responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:false},tooltip:{backgroundColor:'#251313',titleColor:'#FFF8EE',bodyColor:'#FFF8EE',padding:12,cornerRadius:14,displayColors:false,callbacks:{label:c=>fmt$(c.raw)}}},
-      scales:{x:{border:{display:false},grid:{display:false},ticks:{font:{family:'Barlow',size:10,weight:'800'},color:'#5A4037'}},y:{border:{display:false},grid:{color:'rgba(128,63,38,.08)',drawTicks:false},ticks:{color:'#6A5148',font:{family:'Barlow',weight:'800'},callback:v=>'$'+OXXO.formatNum(Math.round(v))}}}}
+      plugins:{legend:{position:'bottom',labels:{color:'#5A4037',usePointStyle:true,pointStyle:'circle',boxWidth:8,font:{family:'Barlow',size:10,weight:'800'}}},
+        tooltip:{backgroundColor:'#251313',titleColor:'#FFF8EE',bodyColor:'#FFF8EE',padding:12,cornerRadius:14,
+          callbacks:{title:items=>top10a[items[0].dataIndex].asesor,label:c=>' '+c.dataset.label+': '+fmtH(c.raw)+' h',
+            footer:items=>{const r=top10a[items[0].dataIndex];return 'Total: '+fmtH(r.hTot)+' h · '+fmt$(r.gTot);}}}},
+      scales:{x:{stacked:true,border:{display:false},grid:{display:false},ticks:{font:{family:'Barlow',size:10,weight:'800'},color:'#5A4037'}},y:{stacked:true,border:{display:false},grid:{color:'rgba(128,63,38,.08)',drawTicks:false},ticks:{color:'#6A5148',font:{family:'Barlow',weight:'800'},callback:v=>OXXO.formatNum(Math.round(v))+' h'}}}}
   });
 
   // ── Bar Tiendas ──

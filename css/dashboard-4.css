@@ -43,7 +43,7 @@ body.dashboard-4-page .te-row1 .donut-body { flex: 1; display: flex; flex-direct
 body.dashboard-4-page .te-row1 .donut-chart-wrap { width: min(100%, 280px); height: 280px; flex-shrink: 0; }
 body.dashboard-4-page .te-row1 .donut-legend { display: flex; flex-direction: row; flex-wrap: wrap; gap: 10px 24px; justify-content: center; }
 body.dashboard-4-page .te-row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
-body.dashboard-4-page .bar-chart-area { position: relative; height: 220px; }
+body.dashboard-4-page .bar-chart-area { position: relative; height: 250px; }
 
 /* Ranking de asesores. Sin parche por ID: al no cargar dashboard-skin.css ya no
    compite el tema rojo/dorado, así que basta la clase con la especificidad normal. */
@@ -56,6 +56,7 @@ body.dashboard-4-page .rank-name { min-width: 0; overflow: hidden; color: var(--
 body.dashboard-4-page .rank-bar-wrap { height: 8px; overflow: hidden; border-radius: 999px; background: #f0f0f0; }
 body.dashboard-4-page .rank-bar { height: 100%; border-radius: 999px; background: var(--du-orange); }
 body.dashboard-4-page .rank-val { color: #FF6B00; font-size: 12px; font-weight: 800; text-align: right; white-space: nowrap; }
+body.dashboard-4-page .rank-val__h { display: block; color: var(--color-gray, #7a6a64); font-size: 10px; font-weight: 700; }
 
 /* Dona de distribución por tipo de TE. */
 body.dashboard-4-page .donut-body { display: flex; align-items: center; gap: 20px; padding: 16px 20px; }
