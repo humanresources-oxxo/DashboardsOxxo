@@ -69,3 +69,12 @@ body.dashboard-6-page .tbl td.center { text-align: center; }
   body.dashboard-6-page .chart-md { height: 200px; }
   body.dashboard-6-page .chart-lg { height: 240px; }
 }
+
+/* Justificados vs no justificados. */
+body.dashboard-6-page #ranking-justif { max-height: 260px; overflow: auto; padding-right: 6px; }
+body.dashboard-6-page .justif-bar { display: flex; height: 7px; }
+body.dashboard-6-page .justif-bar__no { background: #D92B2B; height: 100%; }
+body.dashboard-6-page .justif-bar__si { background: #1DB954; height: 100%; }
+body.dashboard-6-page .justif-pill { display: inline-flex; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+body.dashboard-6-page .justif-pill.no { background: #fdeaea; color: #C0393B; }
+body.dashboard-6-page .justif-pill.si { background: #e8f8f0; color: #138c3e; }
