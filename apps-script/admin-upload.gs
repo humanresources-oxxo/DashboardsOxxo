@@ -12,7 +12,7 @@
  * Despues de eso, admin.html publica directo sin pedir URL.
  */
 const SPREADSHEET_ID = '1EbUuyy-PRXiDwPmn9L14P93cGN6VXTyLfAHx-CE8M_A';
-const APP_VERSION = '56';
+const APP_VERSION = '57';
 const ADMIN_PASSWORD_PROPERTY = 'ADMIN_PASSWORD';
 const AUDIT_SHEET = '_Admin_Bitacora';
 const BACKUP_PREFIX = '_BK_';
@@ -2356,7 +2356,9 @@ const ACTAS_CONSULTA_MAX_FILAS = 5000;
 const ACTAS_REGISTRO_HOJA = 'Actas';
 const ACTAS_RESUMEN_HOJA = 'Resumen por empleado';
 const ACTAS_REGISTRO_HEADERS = ['Registrado', 'Fecha del acta', 'Fecha de los hechos', 'No. empleado', 'Trabajador', 'Puesto',
-  'Tienda', 'CR', 'Falta (proceso)', 'Representante', 'Copia a', 'Archivo'];
+  'Tienda', 'CR', 'Falta (proceso)', 'Representante', 'Copia a', 'Archivo', 'Tipo'];
+// Tipo por omision de las filas anteriores a que el registro guardara el tipo.
+const ACTAS_TIPO_DEFAULT = 'Acta administrativa';
 
 function listaCorreos_(texto) {
   return String(texto || '').split(/[\s,;]+/).map(function(c) { return c.trim().toLowerCase(); }).filter(Boolean);
@@ -2397,11 +2399,12 @@ function enviarActa_(payload) {
   const trabajador = textoActa_(payload.trabajador, 80);
   const representante = textoActa_(payload.representante, 80);
   const fecha = textoActa_(payload.fecha, 20);
-  const asunto = ['Acta administrativa', trabajador, tienda ? 'OXXO ' + tienda : '', fecha].filter(Boolean).join(' · ');
-  const cuerpo = 'Se adjunta el Acta Administrativa' + (trabajador ? ' de ' + trabajador : '')
-    + (tienda ? ' (tienda OXXO ' + tienda + ')' : '') + (representante ? ', levantada por ' + representante : '')
-    + (fecha ? ' el ' + fecha : '') + '.\n\nEl acta debe imprimirse y firmarse por el representante, el trabajador y los testigos.'
-    + '\n\nEnviado desde Dashboards Ats · Acta Administrativa.';
+  const tipo = textoActa_(payload.tipo, 60) || ACTAS_TIPO_DEFAULT;
+  const asunto = [tipo, trabajador, tienda ? 'OXXO ' + tienda : '', fecha].filter(Boolean).join(' · ');
+  const cuerpo = 'Se adjunta el documento "' + tipo + '"' + (trabajador ? ' de ' + trabajador : '')
+    + (tienda ? ' (tienda OXXO ' + tienda + ')' : '') + (representante ? ', levantado por ' + representante : '')
+    + (fecha ? ' el ' + fecha : '') + '.\n\nDebe imprimirse y firmarse por todas las personas que participan.'
+    + '\n\nEnviado desde Dashboards Ats · Actas y Formatos.';
 
   MailApp.sendEmail({
     to: fijos.join(','),
@@ -2420,7 +2423,7 @@ function enviarActa_(payload) {
     registro = registrarActa_({
       fecha: fecha, fechaHechos: textoActa_(payload.fechaHechos, 20), numEmpleado: textoActa_(payload.numEmpleado, 20),
       trabajador: trabajador, puesto: textoActa_(payload.puesto, 60), tienda: tienda, cr: textoActa_(payload.crTienda, 12).toUpperCase(),
-      falta: textoActa_(payload.falta, 200), representante: representante, copia: copias.join(', '), archivo: archivo,
+      falta: textoActa_(payload.falta, 200), representante: representante, copia: copias.join(', '), archivo: archivo, tipo: tipo,
     });
   } catch (err) {
     registro = { error: String(err && err.message || err) };
@@ -2450,7 +2453,7 @@ function libroActas_() {
   hoja.getRange('H:H').setNumberFormat('@');
   // Conteo por empleado y tienda, siempre al dia (se recalcula solo).
   const resumen = ss.insertSheet(ACTAS_RESUMEN_HOJA);
-  resumen.getRange('A1').setFormula("=QUERY(" + ACTAS_REGISTRO_HOJA + "!A:L,\"select D, E, G, H, count(A), max(B) where E is not null group by D, E, G, H order by count(A) desc, max(B) desc label D 'No. empleado', E 'Trabajador', G 'Tienda', H 'CR', count(A) 'Actas', max(B) 'Última acta'\",1)");
+  resumen.getRange('A1').setFormula("=QUERY(" + ACTAS_REGISTRO_HOJA + "!A:M,\"select D, E, G, H, count(A), max(B) where E is not null group by D, E, G, H order by count(A) desc, max(B) desc label D 'No. empleado', E 'Trabajador', G 'Tienda', H 'CR', count(A) 'Actas', max(B) 'Última acta'\",1)");
   resumen.setFrozenRows(1);
   props.setProperty(ACTAS_REGISTRO_PROPERTY, ss.getId());
   return ss;
@@ -2465,8 +2468,14 @@ function registrarActa_(acta) {
     const ss = libroActas_();
     const hoja = ss.getSheetByName(ACTAS_REGISTRO_HOJA) || ss.insertSheet(ACTAS_REGISTRO_HOJA);
     if (hoja.getLastRow() === 0) hoja.appendRow(ACTAS_REGISTRO_HEADERS);
+    // Libros creados antes de la columna Tipo: se le pone su encabezado.
+    else if (String(hoja.getRange(1, ACTAS_REGISTRO_HEADERS.length, 1, 1).getValues()[0][0] || '') === '') {
+      hoja.getRange(1, ACTAS_REGISTRO_HEADERS.length, 1, 1).setValues([[ACTAS_REGISTRO_HEADERS[ACTAS_REGISTRO_HEADERS.length - 1]]]);
+    }
     hoja.appendRow([new Date(), fechaActa_(acta.fecha), fechaActa_(acta.fechaHechos), acta.numEmpleado, acta.trabajador, acta.puesto,
-      acta.tienda, acta.cr, acta.falta, acta.representante, acta.copia, acta.archivo]);
+      acta.tienda, acta.cr, acta.falta, acta.representante, acta.copia, acta.archivo, acta.tipo || ACTAS_TIPO_DEFAULT]);
+    // Un acta de hechos puede no tener trabajador: no hay a quien contarle.
+    if (!acta.numEmpleado && !acta.trabajador) return { ok: true, actasEnTienda: 0, actasTotal: 0, mismoTipo: 0 };
     const filas = hoja.getRange(2, 1, hoja.getLastRow() - 1, ACTAS_REGISTRO_HEADERS.length).getValues();
     const clave = function(v) { return normalizeHeader(String(v == null ? '' : v)); };
     const mismaPersona = function(f) {
@@ -2475,7 +2484,11 @@ function registrarActa_(acta) {
     const enTienda = filas.filter(function(f) {
       return mismaPersona(f) && (acta.cr ? clave(f[7]) === clave(acta.cr) : clave(f[6]) === clave(acta.tienda));
     }).length;
-    return { ok: true, actasEnTienda: enTienda, actasTotal: filas.filter(mismaPersona).length };
+    const tipoDe = function(f) { return clave(f[12] || ACTAS_TIPO_DEFAULT); };
+    const mismoTipo = filas.filter(function(f) {
+      return mismaPersona(f) && (acta.cr ? clave(f[7]) === clave(acta.cr) : clave(f[6]) === clave(acta.tienda)) && tipoDe(f) === clave(acta.tipo || ACTAS_TIPO_DEFAULT);
+    }).length;
+    return { ok: true, actasEnTienda: enTienda, actasTotal: filas.filter(mismaPersona).length, mismoTipo: mismoTipo };
   } finally {
     lock.releaseLock();
   }
@@ -2507,12 +2520,13 @@ function consultarActas_(payload) {
   const tz = ss.getSpreadsheetTimeZone ? ss.getSpreadsheetTimeZone() : 'America/Mexico_City';
   const n = Math.min(hoja.getLastRow() - 1, ACTAS_CONSULTA_MAX_FILAS);
   const filas = hoja.getRange(hoja.getLastRow() - n + 1, 1, n, ACTAS_REGISTRO_HEADERS.length).getValues();
-  const actas = filas.filter(function(f) { return String(f[4] || '').trim(); }).map(function(f) {
+  // Las actas de hechos pueden venir sin trabajador: basta con que tengan tienda.
+  const actas = filas.filter(function(f) { return String(f[4] || '').trim() || String(f[6] || '').trim(); }).map(function(f) {
     return {
       registrado: textoFechaActa_(f[0], tz), fecha: textoFechaActa_(f[1], tz), fechaHechos: textoFechaActa_(f[2], tz),
       numEmpleado: String(f[3] || '').trim(), trabajador: String(f[4] || '').trim(), puesto: String(f[5] || '').trim(),
       tienda: String(f[6] || '').trim(), cr: String(f[7] || '').trim(), falta: String(f[8] || '').trim(),
-      representante: String(f[9] || '').trim(),
+      representante: String(f[9] || '').trim(), tipo: String(f[12] || '').trim() || ACTAS_TIPO_DEFAULT,
     };
   });
   return { ok: true, actas: actas };

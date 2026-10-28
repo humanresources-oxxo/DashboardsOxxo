@@ -65,7 +65,7 @@ test('escapa caracteres especiales y deja hueco en campos vacios', () => {
 });
 
 test('pide los datos obligatorios y arma un nombre de archivo limpio', () => {
-  assert.deepEqual([...ACTA.faltantes({ ...datos, trabajador: ' ', hechos: '' })], ['Trabajador', 'Hechos y pruebas']);
+  assert.deepEqual([...ACTA.faltantes({ ...datos, trabajador: ' ', hechos: '' })], ['Trabajador', 'Hechos']);
   assert.equal(ACTA.faltantes(datos).length, 0);
   assert.equal(ACTA.nombreArchivo(datos), 'Acta administrativa - Lourdes Elisa Ortiz Lopez - Chihuahua OAX - 2026-07-31.docx');
   assert.equal(ACTA.fechaPartes('2026-07-31').mes, 'julio');
@@ -195,6 +195,10 @@ test('el registro agrupa actas por tienda y por empleado', () => {
   assert.deepEqual([...g.empleados[0].faltas], ['Pulsos', 'Faltas']);
   assert.equal(g.empleados.length, 3, 'la misma persona en otra tienda va aparte');
   assert.equal(R.fechaCorta('2026-07-31'), '31 jul 2026');
+  assert.deepEqual({ ...g.empleados[0].tipos }, { 'Acta administrativa': 2 }, 'filas viejas sin tipo cuentan como acta administrativa');
+  const conHechos = R.agrupar([{ tienda: 'X', cr: '1', fecha: '2026-01-01', tipo: 'Acta de hechos' }]);
+  assert.equal(conHechos.tiendas[0].actas, 1);
+  assert.equal(conHechos.empleados.length, 0, 'un acta de hechos sin trabajador no crea una persona vacia');
 });
 
 test('consultar el registro exige su propia contraseña y no expone el Word', () => {
@@ -213,4 +217,61 @@ test('consultar el registro exige su propia contraseña y no expone el Word', ()
   assert.equal(r.actas[0].falta, 'Pulsos');
   assert.equal(r.actas[0].fecha, '2026-07-31');
   assert.ok(!('archivo' in r.actas[0]) && !('docx' in r.actas[0]));
+});
+
+test('cada tipo de documento sale con su formato', () => {
+  const base = { ...datos, participante1: 'Ernesto Cruz Marquez', funcionP1: 'Asesor de Tienda', participante2: 'Cristian Carbajal', funcionP2: 'Responsable de RH',
+    ciudad: 'Oaxaca de Juárez', compromisos: 'Foros de alta escucha', fechaIngreso: '2016-01-21' };
+  const texto = tipo => {
+    const m = ACTA.modelo({ ...base, tipo });
+    return { m, txt: m.parrafos.map(p => p.runs.map(r => r.t).join('')).join('\n'), doc: ACTA.documentXml({ ...base, tipo }) };
+  };
+  const ult = texto('ultimatum');
+  assert.equal(ult.m.titulo, 'ACTA ULTIMÁTUM');
+  assert.match(ult.txt, /ante la presencia de los C\. Ernesto Cruz Marquez y Cristian Carbajal, quienes desempeñan la función de Asesor de Tienda y Responsable de RH, respectivamente/);
+  assert.match(ult.txt, /se levanta la presente ACTA ULTIMÁTUM/);
+  assert.ok(ult.txt.includes('Foros de alta escucha'));
+  assert.deepEqual([...ult.m.firmas.map(f => f.nombre)], ['Ernesto Cruz Marquez', 'Cristian Carbajal', 'Lourdes Elisa Ortiz Lopez']);
+  assert.ok(ult.doc.includes('Si alguien se niega a firmar'));
+
+  const retro = texto('retroalimentacion');
+  assert.equal(retro.m.titulo, 'RETROALIMENTACIÓN');
+  assert.match(retro.txt, /La presente Retroalimentación se levanta/);
+
+  const hechos = texto('hechos');
+  assert.match(hechos.txt, /estando presentes los C\. Ernesto Cruz Marquez y Cristian Carbajal.*sucursal Chihuahua OAX, que se encuentra ubicada en: Av\. Siempre Viva 1/);
+  assert.equal(ACTA.modelo({ ...base, tipo: 'hechos', trabajador: '' }).firmas.length, 2, 'sin trabajador solo firman los presentes');
+
+  const prob = texto('probidad');
+  assert.equal(prob.m.subtitulo, 'Falta de probidad');
+  assert.match(prob.txt, /^Oaxaca de Juárez, Oaxaca, siendo las 10:30/);
+  assert.match(prob.txt, /cometió las siguientes faltas al reglamento \(proceso\) Resultados de pulsos:/);
+
+  const ren = texto('renuncia');
+  assert.equal(ren.m.carta, true);
+  assert.equal(ren.m.resumen, null, 'la renuncia no lleva recuadro de datos');
+  assert.match(ren.txt, /Oaxaca de Juárez, Oaxaca a 31 de julio de 2026/);
+  assert.match(ren.txt, /al puesto de LIDER DE TIENDA, que venía desempeñando desde el día 21 DE ENERO DE 2016/);
+  assert.equal(ren.m.firmas[0].nombre, '5721936 LOURDES ELISA ORTIZ LOPEZ');
+  assert.ok(!ren.doc.includes('FIRMAS'));
+
+  // Cada tipo pide lo suyo.
+  assert.deepEqual([...ACTA.faltantes({ tipo: 'renuncia', tienda: 'X', fecha: '2026-01-01', ciudad: 'Oax', trabajador: 'A', puesto: 'B' })], ['Fecha de ingreso']);
+  assert.deepEqual([...ACTA.faltantes({ tipo: 'hechos', tienda: 'X', fecha: '2026-01-01', ciudad: 'Oax', hechos: 'algo' })], ['Al menos una persona presente']);
+  assert.match(ACTA.nombreArchivo({ ...base, tipo: 'ultimatum' }), /^Acta ultimatum - Lourdes/);
+});
+
+test('el registro guarda el tipo y cuenta por tipo', () => {
+  const srv = servidor({ ACTAS_DESTINATARIOS: 'rh@empresa.com' });
+  const env = extra => srv.gs.enviarActa_(pedido({ numEmpleado: '1', crTienda: '504DV', ...extra }));
+  env({ tipo: 'Acta administrativa' });
+  const r = env({ tipo: 'Acta ultimátum' });
+  assert.equal(r.registro.actasEnTienda, 2);
+  assert.equal(r.registro.mismoTipo, 1);
+  assert.match(srv.enviados[1].subject, /^Acta ultimátum · /);
+  const actas = srv.libros[0].getSheetByName('Actas');
+  assert.equal(actas.filas[0][12], 'Tipo');
+  assert.equal(actas.filas[2][12], 'Acta ultimátum');
+  const sinTrabajador = env({ tipo: 'Acta de hechos', numEmpleado: '', trabajador: '' });
+  assert.equal(sinTrabajador.registro.actasEnTienda, 0);
 });

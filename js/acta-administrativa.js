@@ -21,10 +21,40 @@
   const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
   const VACIO = '______________';
   const BORRADOR_KEY = 'oxxo_acta_borrador';
-  const CAMPOS = ['tienda', 'domicilio', 'cp', 'municipio', 'fecha', 'horaInicio', 'representante', 'funcion',
-    'trabajador', 'numEmpleado', 'puesto', 'horaEntrada', 'horaSalida', 'testigo1', 'testigo2', 'fechaHechos', 'falta',
-    'hechos', 'manifiesta', 'horaCierre', 'copia'];
-  const OBLIGATORIOS = { tienda: 'Tienda', fecha: 'Fecha del acta', representante: 'Representante', trabajador: 'Trabajador', puesto: 'Puesto', fechaHechos: 'Fecha de los hechos', falta: 'Falta al reglamento', hechos: 'Hechos y pruebas' };
+  const PARTICIPANTES = 4;
+  const CAMPOS = ['tipo', 'tienda', 'ciudad', 'domicilio', 'cp', 'municipio', 'fecha', 'horaInicio', 'representante', 'funcion',
+    'trabajador', 'numEmpleado', 'puesto', 'horaEntrada', 'horaSalida', 'fechaIngreso', 'testigo1', 'testigo2',
+    ...Array.from({ length: PARTICIPANTES }, (_, i) => [`participante${i + 1}`, `funcionP${i + 1}`]).flat(),
+    'fechaHechos', 'falta', 'hechos', 'manifiesta', 'compromisos', 'horaCierre', 'copia'];
+  // Tipos de documento: lo que pide cada formato de RH. "campos" decide que
+  // se muestra en el formulario; "obligatorios", que se valida.
+  const ETIQUETAS = { tienda: 'Tienda', fecha: 'Fecha', representante: 'Representante', trabajador: 'Trabajador', puesto: 'Puesto',
+    fechaHechos: 'Fecha de los hechos', falta: 'Falta al reglamento', hechos: 'Hechos', participante1: 'Al menos una persona presente',
+    fechaIngreso: 'Fecha de ingreso', municipio: 'Municipio', ciudad: 'Ciudad' };
+  const PRESENTES = Array.from({ length: PARTICIPANTES }, (_, i) => [`participante${i + 1}`, `funcionP${i + 1}`]).flat();
+  const TIPOS = {
+    administrativa: { nombre: 'Acta administrativa', titulo: 'ACTA ADMINISTRATIVA',
+      campos: ['domicilio', 'cp', 'municipio', 'horaInicio', 'representante', 'funcion', 'horaEntrada', 'horaSalida', 'testigo1', 'testigo2', 'fechaHechos', 'falta', 'hechos', 'manifiesta', 'horaCierre'],
+      obligatorios: ['tienda', 'fecha', 'representante', 'trabajador', 'puesto', 'fechaHechos', 'falta', 'hechos'] },
+    probidad: { nombre: 'Acta por falta de probidad', titulo: 'ACTA ADMINISTRATIVA', subtitulo: 'Falta de probidad',
+      campos: ['domicilio', 'municipio', 'horaInicio', 'representante', 'funcion', 'testigo1', 'testigo2', 'falta', 'hechos', 'manifiesta', 'horaCierre'],
+      obligatorios: ['tienda', 'fecha', 'municipio', 'representante', 'trabajador', 'puesto', 'hechos'] },
+    ultimatum: { nombre: 'Acta ultimátum', titulo: 'ACTA ULTIMÁTUM', ref: 'ACTA ULTIMÁTUM', cierre: 'Acta Ultimátum',
+      campos: ['ciudad', 'horaInicio', ...PRESENTES, 'falta', 'hechos', 'manifiesta', 'compromisos'],
+      obligatorios: ['tienda', 'fecha', 'ciudad', 'trabajador', 'puesto', 'participante1', 'hechos'] },
+    retroalimentacion: { nombre: 'Retroalimentación', titulo: 'RETROALIMENTACIÓN', ref: 'Retroalimentación', cierre: 'Retroalimentación',
+      campos: ['ciudad', 'horaInicio', ...PRESENTES, 'falta', 'hechos', 'manifiesta', 'compromisos'],
+      obligatorios: ['tienda', 'fecha', 'ciudad', 'trabajador', 'puesto', 'participante1', 'hechos'] },
+    hechos: { nombre: 'Acta de hechos', titulo: 'ACTA DE HECHOS',
+      campos: ['ciudad', 'domicilio', 'horaInicio', ...PRESENTES, 'falta', 'hechos'],
+      obligatorios: ['tienda', 'fecha', 'ciudad', 'participante1', 'hechos'] },
+    renuncia: { nombre: 'Renuncia voluntaria', titulo: 'RENUNCIA VOLUNTARIA', carta: true,
+      campos: ['ciudad', 'fechaIngreso'],
+      obligatorios: ['tienda', 'fecha', 'ciudad', 'trabajador', 'puesto', 'fechaIngreso'] },
+  };
+  // Siempre visibles: tienda, fecha, trabajador, No. de empleado, puesto y la copia del correo.
+  const CAMPOS_COMUNES = ['tipo', 'tienda', 'fecha', 'trabajador', 'numEmpleado', 'puesto', 'copia'];
+  const tipoDe = d => TIPOS[d && d.tipo] ? d.tipo : 'administrativa';
 
   function limpio(v) { return String(v == null ? '' : v).trim(); }
   function fechaPartes(iso) {
@@ -32,52 +62,167 @@
     return m ? { dia: String(+m[3]), mes: MESES[+m[2] - 1] || '', anio: m[1] } : { dia: '', mes: '', anio: '' };
   }
 
-  // ── Modelo: el texto del formato, con los huecos marcados como campo ──
+  // ── Modelo: el texto de cada formato, con los huecos marcados como campo ──
+  const T = t => ({ t });
+  const C = t => ({ t: limpio(t), campo: true });
+  // Textos largos: misma tipografia de dato, sin negrita ni subrayado (se leen mejor).
+  const L = t => ({ t: limpio(t), campo: true, largo: true });
+  const seccion = t => ({ titulo: true, runs: [T(t)] });
+  function enLista(nombres) {
+    const n = nombres.filter(Boolean);
+    return n.length > 1 ? n.slice(0, -1).join(', ') + ' y ' + n[n.length - 1] : (n[0] || '');
+  }
+  function presentes(d) {
+    return Array.from({ length: PARTICIPANTES }, (_, i) => ({ nombre: limpio(d[`participante${i + 1}`]), rol: limpio(d[`funcionP${i + 1}`]) }))
+      .filter(p => p.nombre);
+  }
+  const NOTA_FIRMA = 'NOTA: Si alguien se niega a firmar, debe asentarse tal hecho.';
+  const CIERRE_TESTIGOS = ' se le dio el uso de la palabra y argumentó en su defensa y están dispuestos a ratificar los hechos que les consta ante cualquier autoridad que se les indique o requiera. Por ese motivo se firma la presente acta siendo las ';
+
+  function resumenDe(d, f) {
+    return [
+      [['Tienda', limpio(d.tienda) ? 'OXXO ' + limpio(d.tienda) : ''], ['Fecha', f.dia ? `${f.dia} de ${f.mes} de ${f.anio}` : ''], ['Hora de inicio', limpio(d.horaInicio)]],
+      [['Trabajador', limpio(d.trabajador)], ['No. de empleado', limpio(d.numEmpleado)], ['Puesto', limpio(d.puesto)]],
+    ];
+  }
+
+  const MODELOS = {
+    administrativa(d, f) {
+      const h = fechaPartes(d.fechaHechos);
+      const testigos = enLista([limpio(d.testigo1), limpio(d.testigo2)]);
+      return {
+        parrafos: [
+          { runs: [T('Oaxaca de Juárez, Oaxaca, siendo las '), C(d.horaInicio), T(' horas del día '), C(f.dia), T(' de '), C(f.mes),
+            T(' del '), C(f.anio), T(', en la tienda denominada OXXO '), C(d.tienda),
+            T(' propiedad de la empresa Cadena Comercial Oxxo SA de CV, sita en '), C(d.domicilio), T(' Cp '), C(d.cp),
+            T(' Municipio '), C(d.municipio), T(' Oaxaca y ante la presencia de la C. '), C(d.representante),
+            T(' quien desempeña la función de '), C(d.funcion), T(' como representante del patrón en el centro de trabajo, el trabajador de nombre '),
+            C(d.trabajador), T(' y los C. '), C(d.testigo1), T(' y '), C(d.testigo2),
+            T(', trabajadores como testigos de asistencia. Se levanta la presente Acta Administrativa a fin de hacer constar los siguientes:')] },
+          seccion('HECHOS'),
+          { runs: [T('El día '), C(h.dia), T(' del mes de '), C(h.mes), T(' del año '), C(h.anio), T(', el empleado de nombre '), C(d.trabajador),
+            T(' con número de empleado '), C(d.numEmpleado), T(' y puesto '), C(d.puesto), T(', con horario de trabajo de las '), C(d.horaEntrada), T(' a las '), C(d.horaSalida),
+            T(', cometió las siguientes faltas al reglamento (proceso) '), C(d.falta), T(', hechos que se comprueban con: '), L(d.hechos)] },
+          seccion('MANIFESTACIÓN DEL TRABAJADOR'),
+          { runs: [T('Hecho por lo que EL TRABAJADOR '), C(d.trabajador), T(' en relación a los hechos manifiesta en este acto: '), L(d.manifiesta)] },
+          seccion('DECLARACIÓN DE LOS TESTIGOS'),
+          { runs: [T('POR SU PARTE LOS INTERVINIENTES COMO TESTIGOS '), C(testigos),
+            T(' SEÑALAN: Que al estar presentes y escuchar las manifestaciones les consta que el acta levantada a la C. '), C(d.trabajador),
+            T(CIERRE_TESTIGOS), C(d.horaCierre), T(' horas del día de su inicio, firmando los que en ella intervinieron.')] },
+        ],
+        firmas: [
+          { rol: 'REPRESENTANTE DEL CENTRO DE TRABAJO', nombre: limpio(d.representante) },
+          { rol: 'TRABAJADOR', nombre: limpio(d.trabajador) },
+          { rol: 'TESTIGO', nombre: limpio(d.testigo1) },
+          { rol: 'TESTIGO', nombre: limpio(d.testigo2) },
+        ],
+        resumen: resumenDe(d, f),
+      };
+    },
+    probidad(d, f) {
+      const testigos = enLista([limpio(d.testigo1), limpio(d.testigo2)]);
+      return {
+        parrafos: [
+          { runs: [C(d.municipio), T(', Oaxaca, siendo las '), C(d.horaInicio), T(' horas del día '), C(f.dia), T(' de '), C(f.mes), T(' del '), C(f.anio),
+            T(', en las instalaciones de la empresa Cadena Comercial Oxxo SA de CV, tienda OXXO '), C(d.tienda), T(', sita en '), C(d.domicilio),
+            T(', '), C(d.municipio), T(', Oaxaca y ante la presencia del C. '), C(d.representante), T(', quien desempeña la función de '), C(d.funcion),
+            T(', como representante del patrón en el centro de trabajo, el trabajador de nombre '), C(d.trabajador), T(', y los C. '), C(d.testigo1), T(' y '), C(d.testigo2),
+            T(', trabajadores como testigos de asistencia. Se levanta la presente Acta Administrativa a fin de hacer constar los siguientes hechos:')] },
+          seccion('HECHOS'),
+          { runs: [T('El empleado de nombre '), C(d.trabajador), T(' con número de empleado '), C(d.numEmpleado), T(' y puesto de '), C(d.puesto),
+            T(' cometió las siguientes faltas al reglamento (proceso) '), C(d.falta), T(': '), L(d.hechos)] },
+          seccion('MANIFESTACIÓN DEL TRABAJADOR'),
+          { runs: [T('EL TRABAJADOR '), C(d.trabajador), T(' en relación a los hechos manifiesta: '), L(d.manifiesta)] },
+          seccion('DECLARACIÓN DE LOS TESTIGOS'),
+          { runs: [T('POR SU PARTE LOS INTERVINIENTES COMO TESTIGOS '), C(testigos),
+            T(': Que al estar presentes y escuchar las manifestaciones les consta que el acta levantada al C. '), C(d.trabajador),
+            T(CIERRE_TESTIGOS), C(d.horaCierre), T(' horas del día de su inicio, firmando los que en ella intervinieron.')] },
+        ],
+        firmas: [
+          { rol: 'ASESOR DE TIENDA', nombre: limpio(d.representante) },
+          { rol: 'TRABAJADOR', nombre: limpio(d.trabajador) },
+          { rol: 'TESTIGO', nombre: limpio(d.testigo1) },
+          { rol: 'TESTIGO', nombre: limpio(d.testigo2) },
+        ],
+        resumen: resumenDe(d, f),
+      };
+    },
+    // Ultimatum y Retroalimentacion comparten formato; cambia el nombre.
+    ultimatum(d, f, tipo) {
+      const lista = presentes(d);
+      const t = TIPOS[tipo];
+      return {
+        parrafos: [
+          { runs: [T('En la Ciudad de '), C(d.ciudad), T(' del Estado de Oaxaca, siendo las '), C(d.horaInicio), T(' horas del día '), C(f.dia), T(' de '), C(f.mes),
+            T(' del año '), C(f.anio), T(', y ante la presencia de los C. '), C(enLista(lista.map(p => p.nombre))), T(', quienes desempeñan la función de '),
+            C(enLista(lista.map(p => p.rol))), T(', respectivamente, dentro de la Empresa Cadena Comercial Oxxo S.A. de C.V., se levanta la presente '), T(t.ref),
+            T(' a fin de hacer constar los siguientes hechos. En la cual participa el C. '), C(d.trabajador), T(' quien desempeña la función de '), C(d.puesto),
+            T(' y que consiste en lo siguiente:')] },
+          seccion('HECHOS'),
+          { runs: [L(d.hechos)] },
+          seccion('MANIFESTACIÓN DEL TRABAJADOR'),
+          { runs: [T('Así mismo, en este acto el C. '), C(d.trabajador), T(' manifiesta lo siguiente: '), L(d.manifiesta)] },
+          seccion('Y SE COMPROMETE A'),
+          { runs: [L(d.compromisos)] },
+          { runs: [T(`La presente ${t.cierre} se levanta el día y lugar arriba mencionados, para los fines legales correspondientes, firmando para constancia cada una de las personas que participan en la misma.`)] },
+        ],
+        firmas: [...lista.map(p => ({ rol: p.rol || 'PARTICIPANTE', nombre: p.nombre })), { rol: 'TRABAJADOR', nombre: limpio(d.trabajador) }],
+        nota: NOTA_FIRMA,
+        resumen: resumenDe(d, f),
+      };
+    },
+    hechos(d, f) {
+      const lista = presentes(d);
+      const firmas = lista.map(p => ({ rol: p.rol || 'PARTICIPANTE', nombre: p.nombre }));
+      if (limpio(d.trabajador)) firmas.push({ rol: 'TRABAJADOR', nombre: limpio(d.trabajador) });
+      return {
+        parrafos: [
+          { runs: [T('En la Ciudad de '), C(d.ciudad), T(', del Estado de Oaxaca, siendo las '), C(d.horaInicio), T(' horas del día '), C(f.dia), T(' del mes de '), C(f.mes),
+            T(' del año '), C(f.anio), T(', estando presentes los C. '), C(enLista(lista.map(p => p.nombre))), T(', quienes desempeñan la función de '),
+            C(enLista(lista.map(p => p.rol))), T(', respectivamente, dentro de la Empresa Cadena Comercial Oxxo SA de CV, sucursal '), C(d.tienda),
+            T(', que se encuentra ubicada en: '), C(d.domicilio), T(', procedemos a levantar la presente Acta a fin de hacer constar los siguientes hechos que a continuación detallamos:')] },
+          seccion('HECHOS'),
+          { runs: [L(d.hechos)] },
+          { runs: [T('La presente Acta se levanta el día y lugar arriba mencionados, para los fines legales correspondientes, firmando para constancia cada una de las personas que participan en la misma.')] },
+        ],
+        firmas,
+        nota: NOTA_FIRMA,
+        resumen: resumenDe(d, f),
+      };
+    },
+    // Carta del trabajador: sin membrete ni recuadro de datos.
+    renuncia(d, f) {
+      const ing = fechaPartes(d.fechaIngreso);
+      const larga = x => x.dia ? `${x.dia} de ${x.mes} de ${x.anio}` : '';
+      return {
+        parrafos: [
+          { alinear: 'right', runs: [C(d.ciudad), T(', Oaxaca a '), C(larga(f))] },
+          { alinear: 'left', negrita: true, antes: 360, despues: 0, runs: [T('CADENA COMERCIAL OXXO, S.A. DE C.V.')] },
+          { alinear: 'left', negrita: true, despues: 0, runs: [T('AL REPRESENTANTE LEGAL')] },
+          { alinear: 'left', negrita: true, despues: 240, runs: [T('P R E S E N T E.-')] },
+          { runs: [T('Por medio de la presente me permito comunicarle a Usted mi renuncia de carácter irrevocable al puesto de '), C(limpio(d.puesto).toUpperCase()),
+            T(', que venía desempeñando desde el día '), C(larga(ing).toUpperCase()), T(' del cual me separo en forma voluntaria a partir del día de hoy, por así convenir a mis intereses personales.')] },
+          { runs: [T('Rogándole a Usted se sirva aceptar mi renuncia voluntaria, reiterando que durante mi estancia en esta empresa, siempre me fueron cubiertas todas y cada una de las prestaciones a que tuve derecho no adeudándome a la fecha ninguna cantidad por concepto de: salarios, séptimo día, tiempo extra fijo, aguinaldo, vacaciones, utilidades, riesgos profesionales, primas legales, sobre salarios, ni por ningún otro concepto derivado del contrato de trabajo que tenía celebrado con dicha empresa.')] },
+          { runs: [T('Así mismo manifiesto que durante el tiempo que laboré con ustedes, jamás sufrí accidente ni enfermedad profesional alguna que me impida seguir prestando mis servicios para otra empresa.')] },
+          { runs: [T('Aprovecho la presente para agradecerle a Usted todas las atenciones que me dispensaron durante todo el tiempo en que presté mis servicios personales para esta empresa.')] },
+          { alinear: 'center', antes: 360, runs: [T('A t e n t a m e n t e.-')] },
+        ],
+        firmas: [{ rol: '', nombre: [limpio(d.numEmpleado), limpio(d.trabajador).toUpperCase()].filter(Boolean).join(' ') }],
+        resumen: null,
+      };
+    },
+  };
+  MODELOS.retroalimentacion = (d, f) => MODELOS.ultimatum(d, f, 'retroalimentacion');
+
   function modelo(d) {
     d = d || {};
-    const f = fechaPartes(d.fecha);
-    const h = fechaPartes(d.fechaHechos);
-    const T = t => ({ t });
-    const C = t => ({ t: limpio(t), campo: true });
-    // Textos largos: misma tipografia de dato, sin negrita ni subrayado (se leen mejor).
-    const L = t => ({ t: limpio(t), campo: true, largo: true });
-    const testigos = [limpio(d.testigo1), limpio(d.testigo2)].filter(Boolean).join(' y ');
-    return {
-      parrafos: [
-        { runs: [T('Oaxaca de Juárez, Oaxaca, siendo las '), C(d.horaInicio), T(' horas del día '), C(f.dia), T(' de '), C(f.mes),
-          T(' del '), C(f.anio), T(', en la tienda denominada OXXO '), C(d.tienda),
-          T(' propiedad de la empresa Cadena Comercial Oxxo SA de CV, sita en '), C(d.domicilio), T(' Cp '), C(d.cp),
-          T(' Municipio '), C(d.municipio), T(' Oaxaca y ante la presencia de la C. '), C(d.representante),
-          T(' quien desempeña la función de '), C(d.funcion), T(' como representante del patrón en el centro de trabajo, el trabajador de nombre '),
-          C(d.trabajador), T(' y los C. '), C(d.testigo1), T(' y '), C(d.testigo2),
-          T(', trabajadores como testigos de asistencia. Se levanta la presente Acta Administrativa a fin de hacer constar los siguientes:')] },
-        { titulo: true, runs: [T('HECHOS')] },
-        { runs: [T('El día '), C(h.dia), T(' del mes de '), C(h.mes), T(' del año '), C(h.anio), T(', el empleado de nombre '), C(d.trabajador),
-          T(' con número de empleado '), C(d.numEmpleado), T(' y puesto '), C(d.puesto), T(', con horario de trabajo de las '), C(d.horaEntrada), T(' a las '), C(d.horaSalida),
-          T(', cometió las siguientes faltas al reglamento (proceso) '), C(d.falta), T(', hechos que se comprueban con: '), L(d.hechos)] },
-        { titulo: true, runs: [T('MANIFESTACIÓN DEL TRABAJADOR')] },
-        { runs: [T('Hecho por lo que EL TRABAJADOR '), C(d.trabajador), T(' en relación a los hechos manifiesta en este acto: '), L(d.manifiesta)] },
-        { titulo: true, runs: [T('DECLARACIÓN DE LOS TESTIGOS')] },
-        { runs: [T('POR SU PARTE LOS INTERVINIENTES COMO TESTIGOS '), C(testigos),
-          T(' SEÑALAN: Que al estar presentes y escuchar las manifestaciones les consta que el acta levantada a la C. '), C(d.trabajador),
-          T(' se le dio el uso de la palabra y argumentó en su defensa y están dispuestos a ratificar los hechos que les consta ante cualquier autoridad que se les indique o requiera. Por ese motivo se firma la presente acta siendo las '),
-          C(d.horaCierre), T(' horas del día de su inicio, firmando los que en ella intervinieron.')] },
-      ],
-      firmas: [
-        { rol: 'REPRESENTANTE DEL CENTRO DE TRABAJO', nombre: limpio(d.representante) },
-        { rol: 'TRABAJADOR', nombre: limpio(d.trabajador) },
-      ],
-      testigos: [limpio(d.testigo1), limpio(d.testigo2)],
-      // Recuadro de datos al inicio: lo que RH busca primero al archivar.
-      resumen: [
-        [['Tienda', limpio(d.tienda) ? 'OXXO ' + limpio(d.tienda) : ''], ['Fecha del acta', f.dia ? `${f.dia} de ${f.mes} de ${f.anio}` : ''], ['Hora de inicio', limpio(d.horaInicio)]],
-        [['Trabajador', limpio(d.trabajador)], ['No. de empleado', limpio(d.numEmpleado)], ['Puesto', limpio(d.puesto)]],
-      ],
-    };
+    const tipo = tipoDe(d);
+    const m = (tipo === 'ultimatum' ? MODELOS.ultimatum(d, fechaPartes(d.fecha), tipo) : MODELOS[tipo](d, fechaPartes(d.fecha)));
+    return { tipo, ...TIPOS[tipo], ...m };
   }
 
   function nombreArchivo(d) {
-    const base = ['Acta administrativa', limpio(d.trabajador), limpio(d.tienda), limpio(d.fecha)].filter(Boolean).join(' - ');
+    const base = [TIPOS[tipoDe(d)].nombre, limpio(d.trabajador), limpio(d.tienda), limpio(d.fecha)].filter(Boolean).join(' - ');
     return base.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Za-z0-9 ._-]/g, '').replace(/\s+/g, ' ').trim().slice(0, 120) + '.docx';
   }
 
@@ -138,21 +283,27 @@
       + parrafoXml(runXml(rol, { negrita: true, color: COLOR_GRIS, tam: 16 }), { alinear: 'center', antes: 0, despues: 80, linea: 240 }));
   }
   function filaFirmasXml(a, b) {
-    return `<w:tr><w:trPr><w:cantSplit/></w:trPr>${celdaFirmaXml(a.rol, a.nombre)}${celdaFirmaXml(b.rol, b.nombre)}</w:tr>`;
+    return `<w:tr><w:trPr><w:cantSplit/></w:trPr>${celdaFirmaXml(a.rol, a.nombre)}${b ? celdaFirmaXml(b.rol, b.nombre) : celdaXml(4985, parrafoXml(''))}</w:tr>`;
+  }
+  // Firmas de dos en dos; una sola (renuncia) va centrada.
+  function firmasXml(firmas) {
+    if (firmas.length === 1) return tablaXml([4985], [`<w:tr><w:trPr><w:cantSplit/></w:trPr>${celdaFirmaXml(firmas[0].rol, firmas[0].nombre)}</w:tr>`]);
+    const filas = [];
+    for (let i = 0; i < firmas.length; i += 2) filas.push(filaFirmasXml(firmas[i], firmas[i + 1]));
+    return tablaXml([4985, 4985], filas);
   }
   function documentXml(d) {
     const m = modelo(d);
     const cuerpo = m.parrafos.map(p => p.titulo
       ? seccionXml(p.runs.map(r => r.t).join(''))
-      : parrafoXml(p.runs.map(r => runXml(r.t, { campo: r.campo, largo: r.largo })).join(''))).join('');
-    const firmas = seccionXml('FIRMAS') + tablaXml([4985, 4985], [
-      filaFirmasXml(m.firmas[0], m.firmas[1]),
-      filaFirmasXml({ rol: 'TESTIGO', nombre: m.testigos[0] }, { rol: 'TESTIGO', nombre: m.testigos[1] }),
-    ]);
+      : parrafoXml(p.runs.map(r => runXml(r.t, { campo: r.campo, largo: r.largo, negrita: p.negrita })).join(''),
+        { alinear: p.alinear || 'both', ...(p.antes != null ? { antes: p.antes } : {}), ...(p.despues != null ? { despues: p.despues } : {}) })).join('');
+    const firmas = (m.carta ? parrafoXml('', { antes: 120, despues: 0 }) : seccionXml('FIRMAS')) + firmasXml(m.firmas)
+      + (m.nota ? parrafoXml(runXml(m.nota, { color: COLOR_GRIS, tam: 16 }), { alinear: 'left', antes: 160, despues: 0, linea: 240 }) : '');
     return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
       + '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><w:body>'
-      + resumenXml(m.resumen) + parrafoXml('', { despues: 60, linea: 240 }) + cuerpo + firmas
-      + '<w:sectPr><w:headerReference w:type="default" r:id="rId4"/><w:footerReference w:type="default" r:id="rId2"/><w:pgSz w:w="12240" w:h="15840"/><w:pgMar w:top="1330" w:right="1134" w:bottom="1134" w:left="1134" w:header="510" w:footer="510" w:gutter="0"/></w:sectPr>'
+      + (m.resumen ? resumenXml(m.resumen) + parrafoXml('', { despues: 60, linea: 240 }) : '') + cuerpo + firmas
+      + `<w:sectPr><w:headerReference w:type="default" r:id="rId4"/><w:footerReference w:type="default" r:id="rId2"/><w:pgSz w:w="12240" w:h="15840"/><w:pgMar w:top="${m.carta ? 1418 : 1330}" w:right="1134" w:bottom="1134" w:left="1134" w:header="510" w:footer="510" w:gutter="0"/></w:sectPr>`
       + '</w:body></w:document>';
   }
   // Encabezado: logo a la izquierda (si se pudo leer) y titulo a la derecha,
@@ -162,7 +313,10 @@
     const leer = i => ((bytes[i] << 24) | (bytes[i + 1] << 16) | (bytes[i + 2] << 8) | bytes[i + 3]) >>> 0;
     return { ancho: leer(16), alto: leer(20) };
   }
-  function headerXml(logo) {
+  // La renuncia es una carta del trabajador: va sin membrete (encabezado vacio).
+  function headerXml(logo, m) {
+    const NS = '<w:hdr xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing">';
+    if (m.carta) return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' + NS + '<w:p/></w:hdr>';
     const tam = pngTamano(logo);
     const EMU = 914400;
     const cy = Math.round(EMU * 0.42), cx = tam ? Math.round(cy * tam.ancho / tam.alto) : 0;
@@ -173,7 +327,8 @@
       + '<pic:blipFill><a:blip r:embed="rIdLogo"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill>'
       + `<pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic>`
       + '</a:graphicData></a:graphic></wp:inline></w:drawing></w:r>' : runXml('OXXO', { negrita: true, color: COLOR_ROJO, tam: 32 });
-    const titulo = parrafoXml(runXml('ACTA ADMINISTRATIVA', { negrita: true, color: '1A1A1A', tam: 30 }), { alinear: 'right', despues: 0, linea: 240 })
+    const titulo = parrafoXml(runXml(m.titulo, { negrita: true, color: '1A1A1A', tam: 30 }), { alinear: 'right', despues: 0, linea: 240 })
+      + (m.subtitulo ? parrafoXml(runXml(m.subtitulo, { negrita: true, color: COLOR_ROJO, tam: 18 }), { alinear: 'right', despues: 0, linea: 240 }) : '')
       + parrafoXml(runXml('Cadena Comercial OXXO, S.A. de C.V. · Relaciones laborales', { color: COLOR_GRIS, tam: 15 }), { alinear: 'right', despues: 0, linea: 240 });
     return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
       + '<w:hdr xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing">'
@@ -244,7 +399,7 @@
     return zip({
       ...ARCHIVOS_FIJOS,
       'word/document.xml': documentXml(d),
-      'word/header1.xml': headerXml(conLogo ? logo : null),
+      'word/header1.xml': headerXml(conLogo ? logo : null, modelo(d)),
       'word/_rels/header1.xml.rels': '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
         + (conLogo ? '<Relationship Id="rIdLogo" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/logo.png"/>' : '') + '</Relationships>',
       ...(conLogo ? { 'word/media/logo.png': logo } : {}),
@@ -252,7 +407,7 @@
   }
 
   function faltantes(d) {
-    return Object.entries(OBLIGATORIOS).filter(([k]) => !limpio(d[k])).map(([, etiqueta]) => etiqueta);
+    return TIPOS[tipoDe(d)].obligatorios.filter(k => !limpio(d[k])).map(k => ETIQUETAS[k] || k);
   }
   function aBase64(bytes) {
     let s = '';
@@ -300,13 +455,34 @@
         ? (r.t ? `<span class="acta-campo${r.largo ? ' acta-campo--largo' : ''}">${esc(r.t).replace(/\n/g, '<br>')}</span>` : `<span class="acta-hueco">${VACIO}</span>`)
         : esc(r.t);
       const firma = (rol, nombre) => `<div class="acta-firma"><span class="acta-linea"></span>${nombre ? `<span class="acta-campo">${esc(nombre)}</span>` : '<span>&nbsp;</span>'}<small>${esc(rol)}</small></div>`;
-      const resumen = m.resumen.flat().map(([etq, v]) => `<div><small>${esc(etq)}</small>${v ? `<span class="acta-campo">${esc(v)}</span>` : `<span class="acta-hueco">${VACIO}</span>`}</div>`).join('');
-      $('acta-vista').innerHTML = '<header class="acta-encabezado"><img src="../assets/oxxo-logo-original.png" alt="OXXO"><div><strong>ACTA ADMINISTRATIVA</strong><span>Cadena Comercial OXXO, S.A. de C.V. · Relaciones laborales</span></div></header>'
-        + `<div class="acta-resumen">${resumen}</div>`
-        + m.parrafos.map(p => p.titulo ? `<h3>${p.runs.map(r => esc(r.t)).join('')}</h3>` : `<p>${p.runs.map(run).join('')}</p>`).join('')
-        + '<h3>FIRMAS</h3>'
-        + `<div class="acta-firmas">${[...m.firmas, { rol: 'TESTIGO', nombre: m.testigos[0] }, { rol: 'TESTIGO', nombre: m.testigos[1] }].map(f => firma(f.rol, f.nombre)).join('')}</div>`
+      const resumen = m.resumen ? m.resumen.flat().map(([etq, v]) => `<div><small>${esc(etq)}</small>${v ? `<span class="acta-campo">${esc(v)}</span>` : `<span class="acta-hueco">${VACIO}</span>`}</div>`).join('') : '';
+      const vista = $('acta-vista');
+      vista.classList.toggle('acta-vista--carta', !!m.carta);
+      vista.innerHTML = (m.carta ? '' : `<header class="acta-encabezado"><img src="../assets/oxxo-logo-original.png" alt="OXXO"><div><strong>${esc(m.titulo)}</strong>${m.subtitulo ? `<em>${esc(m.subtitulo)}</em>` : ''}<span>Cadena Comercial OXXO, S.A. de C.V. · Relaciones laborales</span></div></header>`)
+        + (resumen ? `<div class="acta-resumen">${resumen}</div>` : '')
+        + m.parrafos.map(p => p.titulo ? `<h3>${p.runs.map(r => esc(r.t)).join('')}</h3>`
+          : `<p${p.alinear ? ` style="text-align:${p.alinear}"` : ''}${p.negrita ? ' class="acta-negrita"' : ''}>${p.runs.map(run).join('')}</p>`).join('')
+        + (m.carta ? '' : '<h3>FIRMAS</h3>')
+        + `<div class="acta-firmas${m.firmas.length === 1 ? ' acta-firmas--una' : ''}">${m.firmas.map(f => firma(f.rol, f.nombre)).join('')}</div>`
+        + (m.nota ? `<p class="acta-nota">${esc(m.nota)}</p>` : '')
         + '<footer><span>OXXO | Uso Interno</span><span>Página 1 de 1</span></footer>';
+    }
+    // Muestra solo los campos del tipo elegido; los ocultos no se validan
+    // ni salen en el documento (cada formato usa los suyos).
+    function aplicarTipo() {
+      const t = TIPOS[tipoDe(val())];
+      const visibles = new Set([...CAMPOS_COMUNES, ...t.campos]);
+      form.querySelectorAll('[data-campo]').forEach(el => { el.hidden = !visibles.has(el.dataset.campo); });
+      form.querySelectorAll('[data-grupo]').forEach(g => {
+        g.hidden = ![...g.querySelectorAll('[data-campo]')].some(el => !el.hidden);
+      });
+      const req = new Set(t.obligatorios);
+      form.querySelectorAll('[data-campo] > label').forEach(l => {
+        const campo = l.parentElement.dataset.campo;
+        l.textContent = l.textContent.replace(/\s*\*$/, '') + (req.has(campo) ? ' *' : '');
+      });
+      $('acta-tipo-ayuda').textContent = t.carta ? 'La renuncia sale como carta del trabajador, sin membrete.' : `Se genera el formato "${t.nombre}".`;
+      $('acta-enviar').textContent = 'Enviar por correo y descargar';
     }
     function tiendaElegida() {
       const v = limpio(form.elements.tienda.value).toLowerCase();
@@ -317,6 +493,9 @@
       if (t) {
         form.elements.tienda.value = t.tienda;
         autoLlenar('representante', t.asesor);
+        // En ultimatum, retroalimentacion y hechos el AT va como primer presente.
+        autoLlenar('participante1', t.asesor);
+        autoLlenar('funcionP1', 'Asesor de Tienda');
       }
       const lista = t ? empleados.filter(e => e.cr === t.cr) : [];
       $('acta-empleados').innerHTML = lista.map(e => `<option value="${xml(e.nombre)}">${xml(e.puesto)}</option>`).join('');
@@ -346,16 +525,18 @@
       const url = window.OXXO_CONFIG && window.OXXO_CONFIG.ADMIN_UPLOAD_URL;
       if (!url) { avisar('El envío por correo no está configurado. Descarga el Word y mándalo tú.', 'error'); return; }
       boton.disabled = true;
-      avisar('Enviando el acta por correo…', 'info');
+      avisar(`Enviando ${TIPOS[tipoDe(d)].nombre.toLowerCase()} por correo…`, 'info');
       try {
         const cuerpo = JSON.stringify({
           action: 'enviarActa', archivo: nombreArchivo(d), docx: aBase64(docx(d, { logo })), copia: limpio(d.copia),
-          tienda: limpio(d.tienda), trabajador: limpio(d.trabajador), representante: limpio(d.representante), fecha: limpio(d.fecha),
+          tipo: TIPOS[tipoDe(d)].nombre,
+          tienda: limpio(d.tienda), trabajador: limpio(d.trabajador), fecha: limpio(d.fecha),
+          representante: limpio(TIPOS[tipoDe(d)].campos.includes('representante') ? d.representante : d.participante1),
           // Para el registro de actas (libro privado del Apps Script).
           // El CR ya no va en el acta, pero se sigue mandando (del catalogo) para
           // que el registro distinga tiendas con nombres parecidos.
           crTienda: (tiendaElegida() || {}).cr || '', numEmpleado: limpio(d.numEmpleado), puesto: limpio(d.puesto),
-          fechaHechos: limpio(d.fechaHechos), falta: limpio(d.falta),
+          fechaHechos: limpio(TIPOS[tipoDe(d)].campos.includes('fechaHechos') ? d.fechaHechos : d.fecha), falta: limpio(d.falta),
         });
         // text/plain evita la consulta previa de CORS que Apps Script no contesta.
         const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: cuerpo });
@@ -366,10 +547,11 @@
           throw new Error(/no autorizado/i.test(motivo) ? 'el envío por correo aún no está activado en el Apps Script' : motivo);
         }
         const reg = datos.registro;
-        const conteo = reg && reg.ok
-          ? ` Quedó registrada: es el acta n.º ${reg.actasEnTienda} de ${limpio(d.trabajador)} en esta tienda` + (reg.actasTotal > reg.actasEnTienda ? ` (${reg.actasTotal} en total).` : '.')
+        const conteo = reg && reg.ok && !reg.actasEnTienda ? ' Quedó en el registro.' : reg && reg.ok
+          ? ` Quedó en el registro: ${limpio(d.trabajador) || 'este documento'} lleva ${reg.actasEnTienda} documento${reg.actasEnTienda === 1 ? '' : 's'} en esta tienda`
+            + (reg.mismoTipo ? ` (${reg.mismoTipo} de tipo "${TIPOS[tipoDe(d)].nombre}")` : '') + (reg.actasTotal > reg.actasEnTienda ? `, ${reg.actasTotal} en total.` : '.')
           : reg && reg.error ? ' Ojo: no se pudo guardar en el registro de actas; avisa a RH.' : '';
-        avisar(`Acta enviada a ${datos.enviadoA || 'RH'}.${conteo} También se descargó el Word para imprimirlo.`, reg && reg.error ? 'error' : 'ok');
+        avisar(`${TIPOS[tipoDe(d)].nombre} enviada a ${datos.enviadoA || 'RH'}.${conteo} También se descargó el Word para imprimirlo.`, reg && reg.error ? 'error' : 'ok');
         descargar(d);
       } catch (e) {
         avisar('No se pudo enviar: ' + e.message + '. Descarga el Word y mándalo por correo.', 'error');
@@ -384,7 +566,11 @@
     if (!form.elements.fecha.value) form.elements.fecha.value = iso(hoy);
     if (!form.elements.horaInicio.value) form.elements.horaInicio.value = `${String(hoy.getHours()).padStart(2, '0')}:${String(hoy.getMinutes()).padStart(2, '0')}`;
     if (!form.elements.funcion.value) form.elements.funcion.value = 'Asesor Tienda';
+    if (!form.elements.ciudad.value) form.elements.ciudad.value = 'Oaxaca de Juárez';
+    if (!form.elements.tipo.value) form.elements.tipo.value = 'administrativa';
+    aplicarTipo();
     pintarVista();
+    form.elements.tipo.addEventListener('change', () => { aplicarTipo(); pintarVista(); guardarBorrador(); });
 
     form.addEventListener('input', () => { pintarVista(); guardarBorrador(); });
     form.elements.tienda.addEventListener('change', () => { alCambiarTienda(); pintarVista(); guardarBorrador(); });
@@ -392,12 +578,15 @@
     $('acta-descargar').addEventListener('click', () => { const d = validar(); if (d) { descargar(d); avisar('Word descargado. Ábrelo para imprimirlo.', 'ok'); } });
     $('acta-enviar').addEventListener('click', e => { const d = validar(); if (d) enviar(d, e.currentTarget); });
     $('acta-limpiar').addEventListener('click', () => {
-      if (!window.confirm('¿Borrar todos los datos del acta?')) return;
+      if (!window.confirm('¿Borrar todos los datos del documento?')) return;
       form.reset();
       try { localStorage.removeItem(BORRADOR_KEY); } catch (e) { /* sin almacenamiento */ }
       form.elements.fecha.value = iso(new Date());
       form.elements.funcion.value = 'Asesor Tienda';
+      form.elements.ciudad.value = 'Oaxaca de Juárez';
+      form.elements.tipo.value = 'administrativa';
       auto = {};
+      aplicarTipo();
       alCambiarTienda(); pintarVista(); avisar('', 'info');
     });
 
@@ -425,5 +614,5 @@
     })();
   }
 
-  window.OXXO_ACTA = { modelo, docx, documentXml, nombreArchivo, faltantes, fechaPartes, crc32, montar };
+  window.OXXO_ACTA = { TIPOS, modelo, docx, documentXml, nombreArchivo, faltantes, fechaPartes, crc32, montar };
 })();

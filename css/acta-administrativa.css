@@ -7,6 +7,9 @@ body.acta-page .acta-grupo { display: grid; grid-template-columns: repeat(2, min
 body.acta-page .acta-grupo legend { padding: 0 6px; color: var(--du-red-dark); font-size: 12px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
 body.acta-page .acta-campo-grupo { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
 body.acta-page .acta-ancho { grid-column: 1 / -1; }
+/* Campos y secciones que no aplican al tipo de documento elegido. */
+body.acta-page .acta-form [hidden] { display: none !important; }
+body.acta-page .acta-campo-grupo select { width: 100%; min-height: 42px; padding: 8px 11px; border: 1px solid var(--du-border); border-radius: 10px; background: #fff; color: var(--du-text); font: inherit; font-size: 14px; font-weight: 700; }
 body.acta-page .acta-campo-grupo label { color: var(--du-text); font-size: 12px; font-weight: 700; }
 body.acta-page .acta-campo-grupo small, body.acta-page .acta-ayuda { color: var(--du-muted); font-size: 11px; }
 body.acta-page .acta-ayuda { margin-top: -6px; }
@@ -50,6 +53,13 @@ body.acta-page .acta-firma small { color: #6F625D; font-size: 9.5px; font-weight
 body.acta-page .acta-linea { display: block; width: 240px; max-width: 100%; height: 34px; border-bottom: 1px solid #595959; }
 body.acta-page .acta-vista footer { display: flex; justify-content: space-between; margin-top: 22px; padding-top: 6px; border-top: 1px solid #DED6CF; color: #6F625D; font-size: 9.5px; }
 
+body.acta-page .acta-encabezado em { color: #B5121B; font-size: 10.5px; font-style: normal; font-weight: 800; }
+body.acta-page .acta-negrita { font-weight: 800; }
+body.acta-page .acta-nota { margin-top: 12px; color: #6F625D; font-size: 10.5px; text-align: left; }
+body.acta-page .acta-firmas--una { grid-template-columns: 1fr; justify-items: center; }
+body.acta-page .acta-vista--carta { padding-top: 48px; }
+body.acta-page .acta-vista--carta p { margin-bottom: 12px; }
+
 /* Pestañas Nueva acta | Registro. */
 body.acta-page .acta-tabs { display: flex; gap: 6px; margin: 0 0 14px; padding: 4px; width: max-content; max-width: 100%; border: 1px solid var(--du-border); border-radius: 999px; background: #fff; }
 body.acta-page .acta-tab { min-height: 38px; padding: 0 18px; border: 0; border-radius: 999px; background: transparent; color: var(--du-muted); font: inherit; font-size: 13px; font-weight: 800; cursor: pointer; }
@@ -62,6 +72,7 @@ body.acta-page .reg-acceso .acta-estado { flex: 1 1 100%; }
 body.acta-page .reg-kpis { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 14px; }
 body.acta-page .reg-filtros { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; padding: 14px 18px; margin-bottom: 14px; }
 body.acta-page .reg-filtros .acta-campo-grupo { flex: 1 1 240px; }
+body.acta-page .reg-tipo { display: inline-block; margin: 1px 0; padding: 2px 8px; border-radius: 999px; background: #edf2fa; color: #1F3B70; font-size: 10.5px; font-weight: 800; white-space: nowrap; }
 body.acta-page .reg-filtros select { min-height: 40px; padding: 8px 11px; border: 1px solid var(--du-border); border-radius: 10px; background: #fff; font: inherit; font-size: 14px; }
 body.acta-page .reg-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 14px; margin-bottom: 14px; }
 body.acta-page #panel-registro .card { min-width: 0; }
