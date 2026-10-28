@@ -12,7 +12,7 @@
  * Despues de eso, admin.html publica directo sin pedir URL.
  */
 const SPREADSHEET_ID = '1EbUuyy-PRXiDwPmn9L14P93cGN6VXTyLfAHx-CE8M_A';
-const APP_VERSION = '55';
+const APP_VERSION = '56';
 const ADMIN_PASSWORD_PROPERTY = 'ADMIN_PASSWORD';
 const AUDIT_SHEET = '_Admin_Bitacora';
 const BACKUP_PREFIX = '_BK_';
@@ -336,6 +336,12 @@ function doPost(e) {
     // y, como copia, a correos de sus mismos dominios. No guarda nada.
     if (String(payload.action || '') === 'enviarActa') {
       return jsonResponse(enviarActa_(payload));
+    }
+
+    // Consulta del registro de actas: exige ACTAS_CONSULTA_PASSWORD y solo
+    // devuelve las columnas del registro (nunca el Word).
+    if (String(payload.action || '') === 'consultarActas') {
+      return jsonResponse(consultarActas_(payload));
     }
 
     // Esta ruta no usa la credencial de administración: valida una contraseña
@@ -2343,6 +2349,10 @@ const ACTAS_MAX_COPIAS = 3;
 const ACTAS_MAX_POR_10_MIN = 30;
 const ACTAS_DOCX_MIME = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 const ACTAS_REGISTRO_PROPERTY = 'ACTAS_REGISTRO_SPREADSHEET_ID';
+// Contraseña para ver el registro desde la pagina (distinta a la del panel
+// admin, para poder compartirla con RH sin dar acceso a publicar).
+const ACTAS_CONSULTA_PASSWORD_PROPERTY = 'ACTAS_CONSULTA_PASSWORD';
+const ACTAS_CONSULTA_MAX_FILAS = 5000;
 const ACTAS_REGISTRO_HOJA = 'Actas';
 const ACTAS_RESUMEN_HOJA = 'Resumen por empleado';
 const ACTAS_REGISTRO_HEADERS = ['Registrado', 'Fecha del acta', 'Fecha de los hechos', 'No. empleado', 'Trabajador', 'Puesto',
@@ -2469,4 +2479,41 @@ function registrarActa_(acta) {
   } finally {
     lock.releaseLock();
   }
+}
+
+function assertActasConsultaAuthorized_(payload) {
+  const configured = PropertiesService.getScriptProperties().getProperty(ACTAS_CONSULTA_PASSWORD_PROPERTY) || '';
+  if (!configured) throw new Error('La consulta del registro aún no está configurada (falta ACTAS_CONSULTA_PASSWORD)');
+  const received = String((payload && payload.password) || '');
+  if (!received || received !== configured) {
+    const total = registrarFalloAuth();
+    Utilities.sleep(Math.min(250 * Math.pow(2, Math.min(total - 1, 3)), AUTH_FAIL_MAX_DELAY_MS));
+    throw new Error('Contraseña incorrecta');
+  }
+}
+
+function textoFechaActa_(valor, tz) {
+  if (valor instanceof Date && !isNaN(valor.getTime())) return Utilities.formatDate(valor, tz, 'yyyy-MM-dd');
+  return String(valor == null ? '' : valor).trim();
+}
+
+function consultarActas_(payload) {
+  assertActasConsultaAuthorized_(payload);
+  const id = String(PropertiesService.getScriptProperties().getProperty(ACTAS_REGISTRO_PROPERTY) || '').trim();
+  if (!id) return { ok: true, actas: [] };
+  const ss = SpreadsheetApp.openById(id);
+  const hoja = ss.getSheetByName(ACTAS_REGISTRO_HOJA);
+  if (!hoja || hoja.getLastRow() < 2) return { ok: true, actas: [] };
+  const tz = ss.getSpreadsheetTimeZone ? ss.getSpreadsheetTimeZone() : 'America/Mexico_City';
+  const n = Math.min(hoja.getLastRow() - 1, ACTAS_CONSULTA_MAX_FILAS);
+  const filas = hoja.getRange(hoja.getLastRow() - n + 1, 1, n, ACTAS_REGISTRO_HEADERS.length).getValues();
+  const actas = filas.filter(function(f) { return String(f[4] || '').trim(); }).map(function(f) {
+    return {
+      registrado: textoFechaActa_(f[0], tz), fecha: textoFechaActa_(f[1], tz), fechaHechos: textoFechaActa_(f[2], tz),
+      numEmpleado: String(f[3] || '').trim(), trabajador: String(f[4] || '').trim(), puesto: String(f[5] || '').trim(),
+      tienda: String(f[6] || '').trim(), cr: String(f[7] || '').trim(), falta: String(f[8] || '').trim(),
+      representante: String(f[9] || '').trim(),
+    };
+  });
+  return { ok: true, actas: actas };
 }

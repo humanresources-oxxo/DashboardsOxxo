@@ -41,6 +41,12 @@
     <div class="hero-context"><span>Llena los datos, revisa la vista previa y genera el Word para imprimir y firmar.</span></div>
   </div>
 
+  <div class="acta-tabs" role="tablist" aria-label="Secciones de actas">
+    <button type="button" class="acta-tab is-active" role="tab" id="tab-nueva" aria-controls="panel-nueva" aria-selected="true">Nueva acta</button>
+    <button type="button" class="acta-tab" role="tab" id="tab-registro" aria-controls="panel-registro" aria-selected="false" tabindex="-1">Registro de actas</button>
+  </div>
+
+  <section id="panel-nueva" role="tabpanel" aria-labelledby="tab-nueva">
   <div class="acta-layout">
     <form id="acta-form" class="acta-form" autocomplete="off" novalidate>
       <fieldset class="card acta-grupo">
@@ -164,11 +170,53 @@
       <article class="acta-vista" id="acta-vista"></article>
     </aside>
   </div>
+  </section>
+
+  <section id="panel-registro" role="tabpanel" aria-labelledby="tab-registro" hidden>
+    <form class="card reg-acceso" id="reg-acceso" autocomplete="off">
+      <div class="acta-campo-grupo">
+        <label for="reg-password">Contraseña de consulta</label>
+        <input id="reg-password" name="password" type="password" autocomplete="current-password" placeholder="La comparte RH">
+      </div>
+      <button type="submit" class="filtro-btn acta-btn acta-btn--primario" id="reg-consultar">Ver registro</button>
+      <p class="acta-estado" id="reg-estado" role="status" aria-live="polite" hidden></p>
+    </form>
+
+    <div id="reg-contenido" hidden>
+      <div class="kpis kpi-grid reg-kpis" id="reg-kpis"></div>
+      <div class="card reg-filtros">
+        <div class="acta-campo-grupo">
+          <label for="reg-buscar">Buscar</label>
+          <input id="reg-buscar" type="search" placeholder="Nombre, No. de empleado, tienda, CR o falta">
+        </div>
+        <div class="acta-campo-grupo">
+          <label for="reg-tienda">Tienda</label>
+          <select id="reg-tienda"><option value="">Todas las tiendas</option></select>
+        </div>
+        <button type="button" class="filtro-btn acta-btn acta-btn--suave" id="reg-actualizar">Actualizar</button>
+      </div>
+      <div class="reg-grid">
+        <div class="card">
+          <div class="card-head"><div class="card-title">Actas por tienda</div><span class="card-badge" id="reg-badge-tiendas">—</span></div>
+          <div class="tbl-wrap"><table class="tbl" id="reg-tabla-tiendas"></table></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><div class="card-title">Actas por empleado</div><span class="card-badge" id="reg-badge-empleados">—</span></div>
+          <div class="tbl-wrap"><table class="tbl" id="reg-tabla-empleados"></table></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><div class="card-title">Detalle de actas</div><span class="card-badge" id="reg-badge-detalle">—</span></div>
+        <div class="tbl-wrap"><table class="tbl" id="reg-tabla-detalle"></table></div>
+      </div>
+    </div>
+  </section>
 </div>
 
 <script src="../js/config.js?v=f9d92d7c"></script>
 <script src="../js/core.js?v=f9d92d7c"></script>
+<script src="../js/acta-registro.js?v=f9d92d7c"></script>
 <script src="../js/acta-administrativa.js?v=f9d92d7c"></script>
-<script>document.addEventListener('DOMContentLoaded', () => OXXO_ACTA.montar());</script>
+<script>document.addEventListener('DOMContentLoaded', () => { OXXO_ACTA.montar(); OXXO_ACTA_REGISTRO.montar(); });</script>
 </body>
 </html>
