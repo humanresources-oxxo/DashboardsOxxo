@@ -12,7 +12,7 @@
  * Despues de eso, admin.html publica directo sin pedir URL.
  */
 const SPREADSHEET_ID = '1EbUuyy-PRXiDwPmn9L14P93cGN6VXTyLfAHx-CE8M_A';
-const APP_VERSION = '53';
+const APP_VERSION = '54';
 const ADMIN_PASSWORD_PROPERTY = 'ADMIN_PASSWORD';
 const AUDIT_SHEET = '_Admin_Bitacora';
 const BACKUP_PREFIX = '_BK_';
@@ -329,6 +329,13 @@ function doPost(e) {
     // panel), solo agrega una fila validada a Juego_Ranking.
     if (String(payload.action || '') === 'rankingGuardar') {
       return jsonResponse(guardarRanking_(payload));
+    }
+
+    // Acta Administrativa (dashboards/acta-administrativa.html): publica como
+    // el ranking, pero solo puede mandar correo a los destinatarios fijos de RH
+    // y, como copia, a correos de sus mismos dominios. No guarda nada.
+    if (String(payload.action || '') === 'enviarActa') {
+      return jsonResponse(enviarActa_(payload));
     }
 
     // Esta ruta no usa la credencial de administración: valida una contraseña
@@ -2316,4 +2323,76 @@ function guardarRanking_(payload) {
   } finally {
     lock.releaseLock();
   }
+}
+
+// ── Acta Administrativa ───────────────────────────────────────────────
+// Configurar en Propiedades del script:
+//   ACTAS_DESTINATARIOS = correos de RH que SIEMPRE reciben el acta (coma).
+//   ACTAS_DOMINIOS_PERMITIDOS = (opcional) dominios aceptados para la copia;
+//     si se omite, se aceptan los dominios de ACTAS_DESTINATARIOS.
+// Al volver a implementar el Web App, Google pide autorizar "enviar correo
+// en tu nombre" (MailApp): el correo sale de la cuenta dueña del script.
+const ACTAS_DESTINATARIOS_PROPERTY = 'ACTAS_DESTINATARIOS';
+const ACTAS_DOMINIOS_PROPERTY = 'ACTAS_DOMINIOS_PERMITIDOS';
+const ACTAS_MAX_BYTES = 2 * 1024 * 1024;
+const ACTAS_MAX_COPIAS = 3;
+const ACTAS_MAX_POR_10_MIN = 30;
+const ACTAS_DOCX_MIME = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+
+function listaCorreos_(texto) {
+  return String(texto || '').split(/[\s,;]+/).map(function(c) { return c.trim().toLowerCase(); }).filter(Boolean);
+}
+function correoValido_(correo) {
+  return /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/.test(correo);
+}
+function textoActa_(valor, max) {
+  return String(valor == null ? '' : valor).replace(/[\r\n\t]+/g, ' ').trim().slice(0, max || 120);
+}
+
+function enviarActa_(payload) {
+  const props = PropertiesService.getScriptProperties();
+  const fijos = listaCorreos_(props.getProperty(ACTAS_DESTINATARIOS_PROPERTY)).filter(correoValido_);
+  if (!fijos.length) throw new Error('El envío de actas aún no está configurado (falta ACTAS_DESTINATARIOS)');
+  const dominios = listaCorreos_(props.getProperty(ACTAS_DOMINIOS_PROPERTY)).map(function(d) { return d.replace(/^@/, ''); });
+  const permitidos = dominios.length ? dominios : fijos.map(function(c) { return c.split('@')[1]; });
+
+  const copias = listaCorreos_(payload.copia);
+  if (copias.length > ACTAS_MAX_COPIAS) throw new Error('Máximo ' + ACTAS_MAX_COPIAS + ' correos de copia');
+  copias.forEach(function(c) {
+    if (!correoValido_(c)) throw new Error('Correo de copia inválido: ' + c);
+    if (permitidos.indexOf(c.split('@')[1]) === -1) throw new Error('Solo se puede copiar a correos @' + permitidos.join(', @'));
+  });
+
+  const b64 = String(payload.docx || '');
+  if (!b64 || b64.length > Math.ceil(ACTAS_MAX_BYTES * 4 / 3)) throw new Error('El archivo del acta no es válido');
+  const bytes = Utilities.base64Decode(b64);
+  // Un .docx es un ZIP: debe empezar con "PK\x03\x04".
+  if (bytes.length < 4 || bytes[0] !== 0x50 || bytes[1] !== 0x4B || bytes[2] !== 0x03 || bytes[3] !== 0x04) throw new Error('El archivo del acta no es un Word válido');
+  const archivo = (textoActa_(payload.archivo, 120).replace(/[^A-Za-z0-9 ._-]/g, '') || 'Acta administrativa').replace(/\.docx$/i, '') + '.docx';
+
+  const cache = CacheService.getScriptCache();
+  const total = Number(cache.get('actas_total') || 0);
+  if (total >= ACTAS_MAX_POR_10_MIN) throw new Error('Se enviaron muchas actas seguidas; intenta en unos minutos');
+
+  const tienda = textoActa_(payload.tienda, 80);
+  const trabajador = textoActa_(payload.trabajador, 80);
+  const representante = textoActa_(payload.representante, 80);
+  const fecha = textoActa_(payload.fecha, 20);
+  const asunto = ['Acta administrativa', trabajador, tienda ? 'OXXO ' + tienda : '', fecha].filter(Boolean).join(' · ');
+  const cuerpo = 'Se adjunta el Acta Administrativa' + (trabajador ? ' de ' + trabajador : '')
+    + (tienda ? ' (tienda OXXO ' + tienda + ')' : '') + (representante ? ', levantada por ' + representante : '')
+    + (fecha ? ' el ' + fecha : '') + '.\n\nEl acta debe imprimirse y firmarse por el representante, el trabajador y los testigos.'
+    + '\n\nEnviado desde Dashboards Ats · Acta Administrativa.';
+
+  MailApp.sendEmail({
+    to: fijos.join(','),
+    cc: copias.join(','),
+    subject: asunto,
+    body: cuerpo,
+    name: 'Dashboards Ats · Actas',
+    attachments: [Utilities.newBlob(bytes, ACTAS_DOCX_MIME, archivo)],
+  });
+  cache.put('actas_total', String(total + 1), 600);
+  // No se devuelven los correos de RH: el endpoint es publico.
+  return { ok: true, enviadoA: copias.length ? 'RH y ' + copias.join(', ') : 'RH' };
 }
