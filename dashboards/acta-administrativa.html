@@ -45,12 +45,16 @@
     <form id="acta-form" class="acta-form" autocomplete="off" novalidate>
       <fieldset class="card acta-grupo">
         <legend>1 · Lugar y fecha</legend>
-        <div class="acta-campo-grupo acta-ancho">
+        <div class="acta-campo-grupo">
           <label for="acta-tienda">Tienda (OXXO) *</label>
           <input id="acta-tienda" name="tienda" list="acta-tiendas" placeholder="Escribe para buscar tu tienda">
           <datalist id="acta-tiendas"></datalist>
-          <small id="acta-tienda-ayuda">Escribe y elige tu tienda de la lista.</small>
         </div>
+        <div class="acta-campo-grupo">
+          <label for="acta-cr-tienda">CR de tienda</label>
+          <input id="acta-cr-tienda" name="crTienda" maxlength="10" placeholder="Se llena al elegir la tienda">
+        </div>
+        <small class="acta-ancho acta-ayuda" id="acta-tienda-ayuda">Escribe y elige tu tienda de la lista.</small>
         <div class="acta-campo-grupo acta-ancho">
           <label for="acta-domicilio">Domicilio de la tienda</label>
           <input id="acta-domicilio" name="domicilio" placeholder="Calle, número y colonia">
@@ -83,10 +87,14 @@
           <label for="acta-funcion">Función</label>
           <input id="acta-funcion" name="funcion">
         </div>
-        <div class="acta-campo-grupo">
+        <div class="acta-campo-grupo acta-ancho">
           <label for="acta-trabajador">Trabajador *</label>
           <input id="acta-trabajador" name="trabajador" list="acta-empleados" placeholder="Nombre completo">
           <datalist id="acta-empleados"></datalist>
+        </div>
+        <div class="acta-campo-grupo">
+          <label for="acta-num-empleado">Número de empleado</label>
+          <input id="acta-num-empleado" name="numEmpleado" inputmode="numeric" maxlength="12" placeholder="Se llena al elegir al trabajador">
         </div>
         <div class="acta-campo-grupo">
           <label for="acta-puesto">Puesto *</label>

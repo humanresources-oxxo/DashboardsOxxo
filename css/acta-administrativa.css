@@ -8,7 +8,8 @@ body.acta-page .acta-grupo legend { padding: 0 6px; color: var(--du-red-dark); f
 body.acta-page .acta-campo-grupo { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
 body.acta-page .acta-ancho { grid-column: 1 / -1; }
 body.acta-page .acta-campo-grupo label { color: var(--du-text); font-size: 12px; font-weight: 700; }
-body.acta-page .acta-campo-grupo small { color: var(--du-muted); font-size: 11px; }
+body.acta-page .acta-campo-grupo small, body.acta-page .acta-ayuda { color: var(--du-muted); font-size: 11px; }
+body.acta-page .acta-ayuda { margin-top: -6px; }
 body.acta-page .acta-campo-grupo input,
 body.acta-page .acta-campo-grupo textarea { width: 100%; min-height: 40px; padding: 8px 11px; border: 1px solid var(--du-border); border-radius: 10px; background: #fff; color: var(--du-text); font: inherit; font-size: 14px; box-sizing: border-box; }
 body.acta-page .acta-campo-grupo textarea { resize: vertical; line-height: 1.45; }
