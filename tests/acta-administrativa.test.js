@@ -104,7 +104,8 @@ function servidor(props) {
     },
     PropertiesService: { getScriptProperties: () => ({ getProperty: k => props[k] || null, setProperty: (k, v) => { props[k] = v; } }) },
     CacheService: { getScriptCache: () => ({ get: k => cache.get(k) ?? null, put: (k, v) => cache.set(k, v) }) },
-    Utilities: { base64Decode: b => [...Buffer.from(b, 'base64')], newBlob: (bytes, mime, nombre) => ({ bytes, mime, nombre }) },
+    Utilities: { base64Decode: b => [...Buffer.from(b, 'base64')], newBlob: (bytes, mime, nombre) => ({ bytes, mime, nombre }),
+      formatDate: d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` },
     MailApp: { sendEmail: o => enviados.push(o) },
   };
   vm.createContext(sandbox);
@@ -171,4 +172,44 @@ test('si el registro falla, el correo igual sale y se avisa', () => {
   assert.equal(r.ok, true);
   assert.equal(srv.enviados.length, 1);
   assert.ok(r.registro.error);
+});
+
+test('el registro agrupa actas por tienda y por empleado', () => {
+  const rctx = { window: {}, Map, Set, String, Array, Object };
+  vm.createContext(rctx);
+  vm.runInContext(fs.readFileSync(path.join(root, 'js', 'acta-registro.js'), 'utf8'), rctx);
+  const R = rctx.window.OXXO_ACTA_REGISTRO;
+  const g = R.agrupar([
+    { numEmpleado: '1', trabajador: 'Ana', tienda: 'Chihuahua OAX', cr: '504DV', fecha: '2026-07-01', falta: 'Pulsos' },
+    { numEmpleado: '1', trabajador: 'ANA', tienda: 'Chihuahua OAX', cr: '504dv', fecha: '2026-08-01', falta: 'Faltas' },
+    { numEmpleado: '2', trabajador: 'Beto', tienda: 'Chihuahua OAX', cr: '504DV', fecha: '2026-06-01', falta: 'Pulsos' },
+    { numEmpleado: '1', trabajador: 'Ana', tienda: 'Otra', cr: '50ABC', fecha: '2026-05-01', falta: 'Pulsos' },
+  ]);
+  assert.equal(g.tiendas.length, 2);
+  assert.equal(g.tiendas[0].cr, '504DV');
+  assert.equal(g.tiendas[0].actas, 3);
+  assert.equal(g.tiendas[0].personas, 2);
+  assert.equal(g.empleados[0].actas, 2, 'mismo No. de empleado en la misma tienda se cuenta junto');
+  assert.equal(g.empleados[0].ultima, '2026-08-01');
+  assert.deepEqual([...g.empleados[0].faltas], ['Pulsos', 'Faltas']);
+  assert.equal(g.empleados.length, 3, 'la misma persona en otra tienda va aparte');
+  assert.equal(R.fechaCorta('2026-07-31'), '31 jul 2026');
+});
+
+test('consultar el registro exige su propia contraseña y no expone el Word', () => {
+  const srv = servidor({ ACTAS_DESTINATARIOS: 'rh@empresa.com' });
+  srv.gs.registrarFalloAuth = () => 1;
+  srv.gs.Utilities.sleep = () => {};
+  assert.throws(() => srv.gs.consultarActas_({ password: 'x' }), /no está configurada/);
+  srv.props.ACTAS_CONSULTA_PASSWORD = 'secreta';
+  assert.throws(() => srv.gs.consultarActas_({ password: 'otra' }), /Contraseña incorrecta/);
+  assert.deepEqual([...srv.gs.consultarActas_({ password: 'secreta' }).actas], [], 'sin registro todavia');
+  srv.gs.enviarActa_(pedido({ numEmpleado: '3002700', crTienda: '504DV', falta: 'Pulsos', fecha: '2026-07-31' }));
+  const r = srv.gs.consultarActas_({ password: 'secreta' });
+  assert.equal(r.actas.length, 1);
+  assert.equal(r.actas[0].numEmpleado, '3002700');
+  assert.equal(r.actas[0].cr, '504DV');
+  assert.equal(r.actas[0].falta, 'Pulsos');
+  assert.equal(r.actas[0].fecha, '2026-07-31');
+  assert.ok(!('archivo' in r.actas[0]) && !('docx' in r.actas[0]));
 });
