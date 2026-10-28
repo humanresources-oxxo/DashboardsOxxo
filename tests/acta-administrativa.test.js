@@ -70,19 +70,46 @@ test('pide los datos obligatorios y arma un nombre de archivo limpio', () => {
   assert.equal(ACTA.fechaPartes('2026-07-31').mes, 'julio');
 });
 
+// Libro de Sheets minimo para el registro de actas.
+function libroFalso() {
+  const hojas = [];
+  const hoja = nombre => {
+    const h = { nombre, filas: [], formulas: {}, getName: () => h.nombre, setName: n => { h.nombre = n; }, setFrozenRows() {},
+      getLastRow: () => h.filas.length, appendRow: f => { h.filas.push([...f]); },
+      getRange(a, b, c, d) {
+        if (typeof a === 'string') return { setFormula: f => { h.formulas[a] = f; }, setNumberFormat() {} };
+        return {
+          setValues: v => { v.forEach((f, i) => { h.filas[a - 1 + i] = [...f]; }); return { setFontWeight() {} }; },
+          getValues: () => h.filas.slice(a - 1, a - 1 + c).map(f => f.slice(b - 1, b - 1 + d)),
+        };
+      } };
+    hojas.push(h);
+    return h;
+  };
+  hoja('Hoja 1');
+  return { id: 'libro-actas', hojas, getId: () => 'libro-actas', getSheets: () => hojas, insertSheet: n => hoja(n),
+    getSheetByName: n => hojas.find(h => h.nombre === n) || null };
+}
+
 function servidor(props) {
   const enviados = [];
   const cache = new Map();
+  const libros = [];
   const sandbox = {
     console, Set, Map, Date, JSON, Math, String, Number, Array, Object, RegExp,
-    PropertiesService: { getScriptProperties: () => ({ getProperty: k => props[k] || null }) },
+    LockService: { getScriptLock: () => ({ waitLock() {}, releaseLock() {} }) },
+    SpreadsheetApp: {
+      create: () => { const l = libroFalso(); libros.push(l); return l; },
+      openById: id => libros.find(l => l.id === id),
+    },
+    PropertiesService: { getScriptProperties: () => ({ getProperty: k => props[k] || null, setProperty: (k, v) => { props[k] = v; } }) },
     CacheService: { getScriptCache: () => ({ get: k => cache.get(k) ?? null, put: (k, v) => cache.set(k, v) }) },
     Utilities: { base64Decode: b => [...Buffer.from(b, 'base64')], newBlob: (bytes, mime, nombre) => ({ bytes, mime, nombre }) },
     MailApp: { sendEmail: o => enviados.push(o) },
   };
   vm.createContext(sandbox);
   vm.runInContext(fs.readFileSync(path.join(root, 'apps-script', 'admin-upload.gs'), 'utf8'), sandbox);
-  return { gs: sandbox, enviados };
+  return { gs: sandbox, enviados, libros, props };
 }
 const pedido = (extra = {}) => ({ action: 'enviarActa', archivo: 'Acta.docx', docx: Buffer.from(ACTA.docx(datos)).toString('base64'),
   tienda: 'Chihuahua OAX', trabajador: 'Lourdes', representante: 'Sofia', fecha: '2026-07-31', ...extra });
@@ -113,4 +140,35 @@ test('el Apps Script rechaza envios sin configurar, a otros dominios o con archi
 
 test('la pagina se enlaza desde el menu del inicio', () => {
   assert.match(fs.readFileSync(path.join(root, 'index.html'), 'utf8'), /href="dashboards\/acta-administrativa\.html"/);
+});
+
+test('cada acta enviada queda en un libro privado y se cuenta por empleado y tienda', () => {
+  const srv = servidor({ ACTAS_DESTINATARIOS: 'rh@empresa.com' });
+  const acta = (extra = {}) => pedido({ numEmpleado: '3002700', crTienda: '504dv', puesto: 'Líder', fechaHechos: '2026-07-30', falta: 'Pulsos', ...extra });
+  const r1 = srv.gs.enviarActa_(acta());
+  assert.equal(r1.registro.ok, true);
+  assert.equal(r1.registro.actasEnTienda, 1);
+  assert.equal(srv.libros.length, 1, 'crea el libro privado la primera vez');
+  assert.equal(srv.props.ACTAS_REGISTRO_SPREADSHEET_ID, 'libro-actas', 'guarda su ID para las siguientes');
+  const r2 = srv.gs.enviarActa_(acta());
+  assert.equal(r2.registro.actasEnTienda, 2);
+  const r3 = srv.gs.enviarActa_(acta({ crTienda: '50ABC', tienda: 'Otra' }));
+  assert.equal(r3.registro.actasEnTienda, 1, 'en otra tienda empieza de nuevo');
+  assert.equal(r3.registro.actasTotal, 3, 'pero el total del empleado suma todas');
+  assert.equal(srv.libros.length, 1, 'no crea otro libro');
+  const [libro] = srv.libros;
+  const actas = libro.getSheetByName('Actas');
+  assert.deepEqual([...actas.filas[0]].slice(3, 8), ['No. empleado', 'Trabajador', 'Puesto', 'Tienda', 'CR']);
+  assert.equal(actas.filas.length, 4);
+  assert.equal(actas.filas[1][3], '3002700');
+  assert.equal(actas.filas[1][7], '504DV');
+  assert.match(libro.getSheetByName('Resumen por empleado').formulas.A1, /group by D, E, G, H/);
+});
+
+test('si el registro falla, el correo igual sale y se avisa', () => {
+  const srv = servidor({ ACTAS_DESTINATARIOS: 'rh@empresa.com', ACTAS_REGISTRO_SPREADSHEET_ID: 'no-existe' });
+  const r = srv.gs.enviarActa_(pedido());
+  assert.equal(r.ok, true);
+  assert.equal(srv.enviados.length, 1);
+  assert.ok(r.registro.error);
 });

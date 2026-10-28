@@ -352,6 +352,9 @@
         const cuerpo = JSON.stringify({
           action: 'enviarActa', archivo: nombreArchivo(d), docx: aBase64(docx(d, { logo })), copia: limpio(d.copia),
           tienda: limpio(d.tienda), trabajador: limpio(d.trabajador), representante: limpio(d.representante), fecha: limpio(d.fecha),
+          // Para el registro de actas (libro privado del Apps Script).
+          crTienda: limpio(d.crTienda), numEmpleado: limpio(d.numEmpleado), puesto: limpio(d.puesto),
+          fechaHechos: limpio(d.fechaHechos), falta: limpio(d.falta),
         });
         // text/plain evita la consulta previa de CORS que Apps Script no contesta.
         const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: cuerpo });
@@ -361,7 +364,11 @@
           // Un Apps Script sin la accion "enviarActa" contesta "No autorizado".
           throw new Error(/no autorizado/i.test(motivo) ? 'el envío por correo aún no está activado en el Apps Script' : motivo);
         }
-        avisar(`Acta enviada a ${datos.enviadoA || 'RH'}. También se descargó el Word para imprimirlo.`, 'ok');
+        const reg = datos.registro;
+        const conteo = reg && reg.ok
+          ? ` Quedó registrada: es el acta n.º ${reg.actasEnTienda} de ${limpio(d.trabajador)} en esta tienda` + (reg.actasTotal > reg.actasEnTienda ? ` (${reg.actasTotal} en total).` : '.')
+          : reg && reg.error ? ' Ojo: no se pudo guardar en el registro de actas; avisa a RH.' : '';
+        avisar(`Acta enviada a ${datos.enviadoA || 'RH'}.${conteo} También se descargó el Word para imprimirlo.`, reg && reg.error ? 'error' : 'ok');
         descargar(d);
       } catch (e) {
         avisar('No se pudo enviar: ' + e.message + '. Descarga el Word y mándalo por correo.', 'error');

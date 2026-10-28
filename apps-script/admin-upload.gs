@@ -12,7 +12,7 @@
  * Despues de eso, admin.html publica directo sin pedir URL.
  */
 const SPREADSHEET_ID = '1EbUuyy-PRXiDwPmn9L14P93cGN6VXTyLfAHx-CE8M_A';
-const APP_VERSION = '54';
+const APP_VERSION = '55';
 const ADMIN_PASSWORD_PROPERTY = 'ADMIN_PASSWORD';
 const AUDIT_SHEET = '_Admin_Bitacora';
 const BACKUP_PREFIX = '_BK_';
@@ -2330,6 +2330,10 @@ function guardarRanking_(payload) {
 //   ACTAS_DESTINATARIOS = correos de RH que SIEMPRE reciben el acta (coma).
 //   ACTAS_DOMINIOS_PERMITIDOS = (opcional) dominios aceptados para la copia;
 //     si se omite, se aceptan los dominios de ACTAS_DESTINATARIOS.
+//   ACTAS_REGISTRO_SPREADSHEET_ID = archivo PRIVADO con el registro de actas.
+//     Si no existe, el script lo crea en el Drive de la cuenta dueña con el
+//     primer envio y guarda aqui su ID. Nunca va en el libro publicado de los
+//     dashboards: ese se lee por /gviz sin credenciales.
 // Al volver a implementar el Web App, Google pide autorizar "enviar correo
 // en tu nombre" (MailApp): el correo sale de la cuenta dueña del script.
 const ACTAS_DESTINATARIOS_PROPERTY = 'ACTAS_DESTINATARIOS';
@@ -2338,6 +2342,11 @@ const ACTAS_MAX_BYTES = 2 * 1024 * 1024;
 const ACTAS_MAX_COPIAS = 3;
 const ACTAS_MAX_POR_10_MIN = 30;
 const ACTAS_DOCX_MIME = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+const ACTAS_REGISTRO_PROPERTY = 'ACTAS_REGISTRO_SPREADSHEET_ID';
+const ACTAS_REGISTRO_HOJA = 'Actas';
+const ACTAS_RESUMEN_HOJA = 'Resumen por empleado';
+const ACTAS_REGISTRO_HEADERS = ['Registrado', 'Fecha del acta', 'Fecha de los hechos', 'No. empleado', 'Trabajador', 'Puesto',
+  'Tienda', 'CR', 'Falta (proceso)', 'Representante', 'Copia a', 'Archivo'];
 
 function listaCorreos_(texto) {
   return String(texto || '').split(/[\s,;]+/).map(function(c) { return c.trim().toLowerCase(); }).filter(Boolean);
@@ -2393,6 +2402,71 @@ function enviarActa_(payload) {
     attachments: [Utilities.newBlob(bytes, ACTAS_DOCX_MIME, archivo)],
   });
   cache.put('actas_total', String(total + 1), 600);
+
+  // El correo ya salio: si el registro falla, el acta no se pierde (RH la
+  // tiene) y se avisa para registrarla a mano.
+  let registro = null;
+  try {
+    registro = registrarActa_({
+      fecha: fecha, fechaHechos: textoActa_(payload.fechaHechos, 20), numEmpleado: textoActa_(payload.numEmpleado, 20),
+      trabajador: trabajador, puesto: textoActa_(payload.puesto, 60), tienda: tienda, cr: textoActa_(payload.crTienda, 12).toUpperCase(),
+      falta: textoActa_(payload.falta, 200), representante: representante, copia: copias.join(', '), archivo: archivo,
+    });
+  } catch (err) {
+    registro = { error: String(err && err.message || err) };
+  }
   // No se devuelven los correos de RH: el endpoint es publico.
-  return { ok: true, enviadoA: copias.length ? 'RH y ' + copias.join(', ') : 'RH' };
+  return { ok: true, enviadoA: copias.length ? 'RH y ' + copias.join(', ') : 'RH', registro: registro };
+}
+
+function fechaActa_(texto) {
+  const m = String(texto || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : '';
+}
+
+// Abre (o crea la primera vez) el libro privado del registro de actas.
+function libroActas_() {
+  const props = PropertiesService.getScriptProperties();
+  const id = String(props.getProperty(ACTAS_REGISTRO_PROPERTY) || '').trim();
+  if (id) return SpreadsheetApp.openById(id);
+  const ss = SpreadsheetApp.create('Registro de Actas Administrativas');
+  const hoja = ss.getSheets()[0];
+  hoja.setName(ACTAS_REGISTRO_HOJA);
+  hoja.getRange(1, 1, 1, ACTAS_REGISTRO_HEADERS.length).setValues([ACTAS_REGISTRO_HEADERS]).setFontWeight('bold');
+  hoja.setFrozenRows(1);
+  // No. empleado y CR como texto: el QUERY del resumen descarta valores si la
+  // columna mezcla numeros y texto.
+  hoja.getRange('D:D').setNumberFormat('@');
+  hoja.getRange('H:H').setNumberFormat('@');
+  // Conteo por empleado y tienda, siempre al dia (se recalcula solo).
+  const resumen = ss.insertSheet(ACTAS_RESUMEN_HOJA);
+  resumen.getRange('A1').setFormula("=QUERY(" + ACTAS_REGISTRO_HOJA + "!A:L,\"select D, E, G, H, count(A), max(B) where E is not null group by D, E, G, H order by count(A) desc, max(B) desc label D 'No. empleado', E 'Trabajador', G 'Tienda', H 'CR', count(A) 'Actas', max(B) 'Última acta'\",1)");
+  resumen.setFrozenRows(1);
+  props.setProperty(ACTAS_REGISTRO_PROPERTY, ss.getId());
+  return ss;
+}
+
+// Agrega el acta al registro y devuelve cuantas lleva ese empleado en esa
+// tienda (por No. de empleado; si no se capturo, por nombre).
+function registrarActa_(acta) {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(15000);
+  try {
+    const ss = libroActas_();
+    const hoja = ss.getSheetByName(ACTAS_REGISTRO_HOJA) || ss.insertSheet(ACTAS_REGISTRO_HOJA);
+    if (hoja.getLastRow() === 0) hoja.appendRow(ACTAS_REGISTRO_HEADERS);
+    hoja.appendRow([new Date(), fechaActa_(acta.fecha), fechaActa_(acta.fechaHechos), acta.numEmpleado, acta.trabajador, acta.puesto,
+      acta.tienda, acta.cr, acta.falta, acta.representante, acta.copia, acta.archivo]);
+    const filas = hoja.getRange(2, 1, hoja.getLastRow() - 1, ACTAS_REGISTRO_HEADERS.length).getValues();
+    const clave = function(v) { return normalizeHeader(String(v == null ? '' : v)); };
+    const mismaPersona = function(f) {
+      return acta.numEmpleado ? clave(f[3]) === clave(acta.numEmpleado) : clave(f[4]) === clave(acta.trabajador);
+    };
+    const enTienda = filas.filter(function(f) {
+      return mismaPersona(f) && (acta.cr ? clave(f[7]) === clave(acta.cr) : clave(f[6]) === clave(acta.tienda));
+    }).length;
+    return { ok: true, actasEnTienda: enTienda, actasTotal: filas.filter(mismaPersona).length };
+  } finally {
+    lock.releaseLock();
+  }
 }
