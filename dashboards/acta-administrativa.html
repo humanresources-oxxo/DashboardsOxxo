@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="es" data-oxxo-region-unavailable="1" data-oxxo-hide-scope-widget="1">
+<head>
+  <script>(function(){try{if(localStorage.getItem('oxxo_site_unlocked')!=='1')document.documentElement.classList.add('oxxo-locked');}catch(e){}})();</script>
+  <style>html.oxxo-locked{background:#2D0B0C}html.oxxo-locked body>*{visibility:hidden!important}#oxxo-lock-overlay{visibility:visible!important}</style>
+  <script defer src="../js/site-lock.js?v=75028e23"></script>
+  <meta charset="UTF-8"/>
+  <meta name="robots" content="noindex, nofollow"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Acta Administrativa · Dashboards Ats</title>
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+  <link rel="icon" type="image/png" href="../assets/favicon.png"/>
+  <link rel="apple-touch-icon" href="../assets/favicon.png"/>
+  <link rel="stylesheet" href="../css/global.css?v=75028e23"/>
+  <link rel="stylesheet" href="../css/dashboard-rh-unified.css?v=75028e23"/>
+  <link rel="stylesheet" href="../css/acta-administrativa.css?v=75028e23"/>
+</head>
+<body class="acta-page rh-unified">
+<nav class="topbar">
+  <div class="topbar__brand">
+    <div class="topbar__logo"><img src="../assets/oxxo-logo-original.png" alt="OXXO"></div>
+    <div>
+      <div class="topbar__title">Dashboards Ats</div>
+      <div class="topbar__subtitle">Plaza Oaxaca-ByPamsb</div>
+    </div>
+  </div>
+  <div class="topbar__meta">
+    <a href="../index.html" class="topbar__back">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>Inicio</a>
+    <!-- Un formulario no exporta PNG: este marcador evita que core.js agregue el boton. -->
+    <span class="png-export-trigger" hidden></span>
+  </div>
+</nav>
+
+<div class="page">
+  <div class="hero">
+    <div class="hero-top">
+      <div>
+        <span class="hero-eyebrow">Relaciones laborales · Formato</span><h1>Acta Administrativa</h1>
+      </div>
+    </div>
+    <div class="hero-context"><span>Llena los datos, revisa la vista previa y genera el Word para imprimir y firmar.</span></div>
+  </div>
+
+  <div class="acta-layout">
+    <form id="acta-form" class="acta-form" autocomplete="off" novalidate>
+      <fieldset class="card acta-grupo">
+        <legend>1 · Lugar y fecha</legend>
+        <div class="acta-campo-grupo acta-ancho">
+          <label for="acta-tienda">Tienda (OXXO) *</label>
+          <input id="acta-tienda" name="tienda" list="acta-tiendas" placeholder="Escribe para buscar tu tienda">
+          <datalist id="acta-tiendas"></datalist>
+          <small id="acta-tienda-ayuda">Escribe y elige tu tienda de la lista.</small>
+        </div>
+        <div class="acta-campo-grupo acta-ancho">
+          <label for="acta-domicilio">Domicilio de la tienda</label>
+          <input id="acta-domicilio" name="domicilio" placeholder="Calle, número y colonia">
+        </div>
+        <div class="acta-campo-grupo">
+          <label for="acta-cp">C.P.</label>
+          <input id="acta-cp" name="cp" inputmode="numeric" maxlength="5">
+        </div>
+        <div class="acta-campo-grupo">
+          <label for="acta-municipio">Municipio</label>
+          <input id="acta-municipio" name="municipio">
+        </div>
+        <div class="acta-campo-grupo">
+          <label for="acta-fecha">Fecha del acta *</label>
+          <input id="acta-fecha" name="fecha" type="date">
+        </div>
+        <div class="acta-campo-grupo">
+          <label for="acta-hora-inicio">Hora de inicio</label>
+          <input id="acta-hora-inicio" name="horaInicio" type="time">
+        </div>
+      </fieldset>
+
+      <fieldset class="card acta-grupo">
+        <legend>2 · Participantes</legend>
+        <div class="acta-campo-grupo">
+          <label for="acta-representante">Representante del patrón *</label>
+          <input id="acta-representante" name="representante">
+        </div>
+        <div class="acta-campo-grupo">
+          <label for="acta-funcion">Función</label>
+          <input id="acta-funcion" name="funcion">
+        </div>
+        <div class="acta-campo-grupo">
+          <label for="acta-trabajador">Trabajador *</label>
+          <input id="acta-trabajador" name="trabajador" list="acta-empleados" placeholder="Nombre completo">
+          <datalist id="acta-empleados"></datalist>
+        </div>
+        <div class="acta-campo-grupo">
+          <label for="acta-puesto">Puesto *</label>
+          <input id="acta-puesto" name="puesto">
+        </div>
+        <div class="acta-campo-grupo">
+          <label for="acta-hora-entrada">Horario: entrada</label>
+          <input id="acta-hora-entrada" name="horaEntrada" type="time">
+        </div>
+        <div class="acta-campo-grupo">
+          <label for="acta-hora-salida">Horario: salida</label>
+          <input id="acta-hora-salida" name="horaSalida" type="time">
+        </div>
+        <div class="acta-campo-grupo">
+          <label for="acta-testigo1">Testigo 1</label>
+          <input id="acta-testigo1" name="testigo1" list="acta-empleados">
+        </div>
+        <div class="acta-campo-grupo">
+          <label for="acta-testigo2">Testigo 2</label>
+          <input id="acta-testigo2" name="testigo2" list="acta-empleados">
+        </div>
+      </fieldset>
+
+      <fieldset class="card acta-grupo">
+        <legend>3 · Hechos</legend>
+        <div class="acta-campo-grupo">
+          <label for="acta-fecha-hechos">Fecha de los hechos *</label>
+          <input id="acta-fecha-hechos" name="fechaHechos" type="date">
+        </div>
+        <div class="acta-campo-grupo">
+          <label for="acta-hora-cierre">Hora de cierre del acta</label>
+          <input id="acta-hora-cierre" name="horaCierre" type="time">
+        </div>
+        <div class="acta-campo-grupo acta-ancho">
+          <label for="acta-falta">Falta al reglamento (proceso) *</label>
+          <input id="acta-falta" name="falta" placeholder="Ej. Resultados de pulsos">
+        </div>
+        <div class="acta-campo-grupo acta-ancho">
+          <label for="acta-hechos">Hechos y con qué se comprueban *</label>
+          <textarea id="acta-hechos" name="hechos" rows="6" placeholder="Describe qué pasó y las evidencias (evaluaciones, retroalimentaciones, visitas, resultados)."></textarea>
+        </div>
+        <div class="acta-campo-grupo acta-ancho">
+          <label for="acta-manifiesta">Lo que manifiesta el trabajador</label>
+          <textarea id="acta-manifiesta" name="manifiesta" rows="4" placeholder="Lo que dice el trabajador sobre los hechos."></textarea>
+        </div>
+      </fieldset>
+
+      <fieldset class="card acta-grupo">
+        <legend>4 · Generar y enviar</legend>
+        <div class="acta-campo-grupo acta-ancho">
+          <label for="acta-copia">Enviar copia a (opcional)</label>
+          <input id="acta-copia" name="copia" type="email" placeholder="tu.correo@empresa.com">
+          <small>El acta siempre se envía al correo de RH configurado. Aquí puedes agregar tu correo para recibir copia.</small>
+        </div>
+        <div class="acta-acciones">
+          <button type="button" class="filtro-btn acta-btn acta-btn--primario" id="acta-enviar">Enviar por correo y descargar</button>
+          <button type="button" class="filtro-btn acta-btn" id="acta-descargar">Solo descargar Word</button>
+          <button type="button" class="filtro-btn acta-btn acta-btn--suave" id="acta-limpiar">Limpiar</button>
+        </div>
+        <p class="acta-estado" id="acta-estado" role="status" aria-live="polite" hidden></p>
+      </fieldset>
+    </form>
+
+    <aside class="acta-vista-wrap" aria-label="Vista previa del acta">
+      <div class="acta-vista-titulo">Vista previa</div>
+      <article class="acta-vista" id="acta-vista"></article>
+    </aside>
+  </div>
+</div>
+
+<script src="../js/config.js?v=75028e23"></script>
+<script src="../js/core.js?v=75028e23"></script>
+<script src="../js/acta-administrativa.js?v=75028e23"></script>
+<script>document.addEventListener('DOMContentLoaded', () => OXXO_ACTA.montar());</script>
+</body>
+</html>

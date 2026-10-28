@@ -128,6 +128,12 @@ Galeria de campañas vigentes y proximas. La pestaña `Promociones` es de **solo
 
 Consultas consolidadas: Mi Dashboard por asesor (bajas, estructura, tiempo extra, vacaciones, ausentismos, capacidades); Mi Tienda por tienda (ademas Dashboard 9, 10 FLEX, 11 e Inventarios). Sus modales usan el controlador propio de `mi-ficha-ui.js`.
 
+## Acta Administrativa
+
+`dashboards/acta-administrativa.html` (`js/acta-administrativa.js`, `css/acta-administrativa.css`). Acceso desde el menú lateral del inicio.
+
+Formulario del formato de Acta Administrativa con vista previa. Sugiere tienda y AT desde `Catalogo_Asesores` y colaboradores/puesto desde `Dashboard_8_Diario`. Genera el `.docx` en el navegador (sin librerías) y lo envía por correo con la acción pública `enviarActa` del Apps Script, que solo manda a `ACTAS_DESTINATARIOS` (Propiedades del script) y copia a correos de los dominios permitidos (`ACTAS_DOMINIOS_PERMITIDOS` o los de RH). No guarda el acta en Sheets. El borrador queda solo en el navegador de quien lo llena.
+
 ## Torre de Cajas (juego)
 
 `dashboards/juego.html` (`js/juego-cajas.js`). Juego de apilado en canvas, sin
