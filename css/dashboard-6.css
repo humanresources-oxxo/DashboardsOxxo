@@ -38,7 +38,8 @@ body.dashboard-6-page .rank-sub { font-size: 10px; color: var(--du-muted); }
 body.dashboard-6-page .rank-bar-bg { height: 5px; background: var(--du-border); border-radius: 3px; overflow: hidden; margin-top: 4px; }
 body.dashboard-6-page .rank-bar-fill { height: 100%; border-radius: 3px; transition: width .8s cubic-bezier(.4, 0, .2, 1); }
 body.dashboard-6-page .rank-val { font-family: var(--font-display); font-size: 15px; font-weight: 800; text-align: right; white-space: nowrap; }
-body.dashboard-6-page #ranking-asesores { max-height: 360px; overflow: auto; padding-right: 6px; }
+/* Rankings completos, sin scroll interno: la gráfica de al lado crece a su alto. */
+body.dashboard-6-page #ranking-asesores { padding-right: 2px; }
 
 /* Pills por tipo de ausentismo (color por dato, se conserva). */
 body.dashboard-6-page .tipo-pill { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 999px; }
@@ -71,7 +72,16 @@ body.dashboard-6-page .tbl td.center { text-align: center; }
 }
 
 /* Justificados vs no justificados. */
-body.dashboard-6-page #ranking-justif { max-height: 260px; overflow: auto; padding-right: 6px; }
+body.dashboard-6-page #ranking-justif { padding-right: 2px; }
+/* Renglón compacto (nombre y detalle en una línea) para que los 14 asesores
+   quepan completos; la gráfica de al lado toma ese mismo alto. */
+body.dashboard-6-page .d6-fit > .card { display: flex; flex-direction: column; }
+body.dashboard-6-page .d6-fit > .card > .chart-wrap { flex: 1 1 auto; height: auto; min-height: 260px; }
+body.dashboard-6-page .d6-fit .rank-item { padding: 4px 0; gap: 8px; }
+body.dashboard-6-page .d6-fit .rank-name { display: inline; margin: 0; }
+body.dashboard-6-page .d6-fit .rank-sub { display: inline; margin-left: 6px; }
+body.dashboard-6-page .d6-fit .rank-bar-bg { margin-top: 3px; }
+body.dashboard-6-page .d6-fit .rank-val { font-size: 14px; }
 body.dashboard-6-page .justif-bar { display: flex; height: 7px; }
 body.dashboard-6-page .justif-bar__no { background: #D92B2B; height: 100%; }
 body.dashboard-6-page .justif-bar__si { background: #1DB954; height: 100%; }
