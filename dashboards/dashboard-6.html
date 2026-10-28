@@ -99,7 +99,7 @@
 
   <div class="rh-layer"><h2 class="rh-layer__title">Justificados y no justificados</h2><p class="rh-layer__purpose">No justificado = falta. Incapacidades, accidentes, permisos y vacaciones cuentan como justificados.</p></div>
 
-  <div class="row2 row2-wide">
+  <div class="row2 row2-wide d6-fit">
     <div class="card">
       <div class="card-head">
         <div class="card-title"><svg class="icon-inline" viewBox="0 0 24 24" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>Tendencia semanal<span class="info-tip" tabindex="0" data-tip="Registros por semana separados en no justificados (Denominación contiene 'falta') y justificados (todo lo demás). Respeta los filtros de asesor y función; muestra las últimas 8 semanas sin importar la semana seleccionada."></span></div>
@@ -118,7 +118,7 @@
   <div class="rh-layer"><h2 class="rh-layer__title">Foco y responsables</h2><p class="rh-layer__purpose">Tipos de ausencia y asesores con más registros.</p></div>
 
   <!-- Row 1: Dona distribución + Ranking asesores -->
-  <div class="row2 row2-wide">
+  <div class="row2 row2-wide d6-fit">
     <div class="card">
       <div class="card-head">
         <div class="card-title"><svg class="icon-inline" viewBox="0 0 24 24" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>Días Ausentes por Tipo<span class="info-tip" tabindex="0" data-tip="Suma de 'Días presenc./abs.' agrupada por la columna 'Denominación' (tipo de ausentismo)."></span></div>
@@ -384,7 +384,7 @@ function renderAll() {
     type: 'bar',
     data: {
       labels: tipos.map(t => OXXO.truncate(t,28)),
-      datasets: [{ data: tipos.map(t => Math.round(byTipo[t])), backgroundColor: tipos.map(t => tipoColor(t)), borderColor:'rgba(255,255,255,.68)', borderWidth:1, borderRadius: 999, borderSkipped:false, barPercentage:.76, categoryPercentage:.72 }]
+      datasets: [{ data: tipos.map(t => Math.round(byTipo[t])), backgroundColor: tipos.map(t => tipoColor(t)), borderColor:'rgba(255,255,255,.68)', borderWidth:1, borderRadius: 999, borderSkipped:false, barPercentage:.76, categoryPercentage:.72, maxBarThickness:30 }]
     },
     options: { responsive:true, maintainAspectRatio:false, indexAxis:'y',
       plugins:{ legend:{display:false}, tooltip:{backgroundColor:'#251313',titleColor:'#FFF8EE',bodyColor:'#FFF8EE',padding:12,cornerRadius:14,displayColors:false,callbacks:{label:c=>' '+Math.round(c.raw)+' dias'}} },
