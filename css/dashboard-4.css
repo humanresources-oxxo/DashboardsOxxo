@@ -40,8 +40,10 @@ body.dashboard-4-page .filter-banner__clear {
 body.dashboard-4-page .te-row1 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; align-items: stretch; }
 body.dashboard-4-page .te-row1 > .card { display: flex; flex-direction: column; }
 body.dashboard-4-page .te-row1 .donut-body { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 20px; padding: 16px 20px; }
-body.dashboard-4-page .te-row1 .donut-chart-wrap { width: min(100%, 280px); height: 280px; flex-shrink: 0; }
-body.dashboard-4-page .te-row1 .donut-legend { display: flex; flex-direction: row; flex-wrap: wrap; gap: 10px 24px; justify-content: center; }
+body.dashboard-4-page .te-row1 .donut-chart-wrap { width: min(100%, 340px); height: 340px; flex-shrink: 0; }
+/* La leyenda no se estira (flex:1 de la regla base la volvia un bloque alto
+   con hueco abajo); asi dona y leyenda quedan centradas en la tarjeta. */
+body.dashboard-4-page .te-row1 .donut-legend { flex: 0 0 auto; display: flex; flex-direction: row; flex-wrap: wrap; gap: 10px 32px; justify-content: center; }
 body.dashboard-4-page .te-row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
 body.dashboard-4-page .bar-chart-area { position: relative; height: 250px; }
 
