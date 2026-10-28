@@ -21,7 +21,7 @@
   const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
   const VACIO = '______________';
   const BORRADOR_KEY = 'oxxo_acta_borrador';
-  const CAMPOS = ['tienda', 'crTienda', 'domicilio', 'cp', 'municipio', 'fecha', 'horaInicio', 'representante', 'funcion',
+  const CAMPOS = ['tienda', 'domicilio', 'cp', 'municipio', 'fecha', 'horaInicio', 'representante', 'funcion',
     'trabajador', 'numEmpleado', 'puesto', 'horaEntrada', 'horaSalida', 'testigo1', 'testigo2', 'fechaHechos', 'falta',
     'hechos', 'manifiesta', 'horaCierre', 'copia'];
   const OBLIGATORIOS = { tienda: 'Tienda', fecha: 'Fecha del acta', representante: 'Representante', trabajador: 'Trabajador', puesto: 'Puesto', fechaHechos: 'Fecha de los hechos', falta: 'Falta al reglamento', hechos: 'Hechos y pruebas' };
@@ -45,7 +45,7 @@
     return {
       parrafos: [
         { runs: [T('Oaxaca de Juárez, Oaxaca, siendo las '), C(d.horaInicio), T(' horas del día '), C(f.dia), T(' de '), C(f.mes),
-          T(' del '), C(f.anio), T(', en la tienda denominada OXXO '), C(d.tienda), T(' con CR '), C(d.crTienda),
+          T(' del '), C(f.anio), T(', en la tienda denominada OXXO '), C(d.tienda),
           T(' propiedad de la empresa Cadena Comercial Oxxo SA de CV, sita en '), C(d.domicilio), T(' Cp '), C(d.cp),
           T(' Municipio '), C(d.municipio), T(' Oaxaca y ante la presencia de la C. '), C(d.representante),
           T(' quien desempeña la función de '), C(d.funcion), T(' como representante del patrón en el centro de trabajo, el trabajador de nombre '),
@@ -70,7 +70,7 @@
       testigos: [limpio(d.testigo1), limpio(d.testigo2)],
       // Recuadro de datos al inicio: lo que RH busca primero al archivar.
       resumen: [
-        [['Tienda', limpio(d.tienda) ? 'OXXO ' + limpio(d.tienda) : ''], ['CR', limpio(d.crTienda)], ['Fecha del acta', f.dia ? `${f.dia} de ${f.mes} de ${f.anio}` : '']],
+        [['Tienda', limpio(d.tienda) ? 'OXXO ' + limpio(d.tienda) : ''], ['Fecha del acta', f.dia ? `${f.dia} de ${f.mes} de ${f.anio}` : ''], ['Hora de inicio', limpio(d.horaInicio)]],
         [['Trabajador', limpio(d.trabajador)], ['No. de empleado', limpio(d.numEmpleado)], ['Puesto', limpio(d.puesto)]],
       ],
     };
@@ -317,11 +317,10 @@
       if (t) {
         form.elements.tienda.value = t.tienda;
         autoLlenar('representante', t.asesor);
-        autoLlenar('crTienda', t.cr);
       }
       const lista = t ? empleados.filter(e => e.cr === t.cr) : [];
       $('acta-empleados').innerHTML = lista.map(e => `<option value="${xml(e.nombre)}">${xml(e.puesto)}</option>`).join('');
-      $('acta-tienda-ayuda').textContent = t ? `CR ${t.cr} · AT ${t.asesor} · ${lista.length} colaboradores en la base` : 'Escribe y elige tu tienda de la lista.';
+      $('acta-tienda-ayuda').textContent = t ? `AT ${t.asesor} · ${lista.length} colaboradores en la base` : 'Escribe y elige tu tienda de la lista.';
     }
     function alCambiarTrabajador() {
       const t = tiendaElegida();
@@ -353,7 +352,9 @@
           action: 'enviarActa', archivo: nombreArchivo(d), docx: aBase64(docx(d, { logo })), copia: limpio(d.copia),
           tienda: limpio(d.tienda), trabajador: limpio(d.trabajador), representante: limpio(d.representante), fecha: limpio(d.fecha),
           // Para el registro de actas (libro privado del Apps Script).
-          crTienda: limpio(d.crTienda), numEmpleado: limpio(d.numEmpleado), puesto: limpio(d.puesto),
+          // El CR ya no va en el acta, pero se sigue mandando (del catalogo) para
+          // que el registro distinga tiendas con nombres parecidos.
+          crTienda: (tiendaElegida() || {}).cr || '', numEmpleado: limpio(d.numEmpleado), puesto: limpio(d.puesto),
           fechaHechos: limpio(d.fechaHechos), falta: limpio(d.falta),
         });
         // text/plain evita la consulta previa de CORS que Apps Script no contesta.

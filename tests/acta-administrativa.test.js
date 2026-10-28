@@ -14,7 +14,7 @@ vm.runInContext(fs.readFileSync(path.join(root, 'js', 'acta-administrativa.js'),
 const ACTA = ctx.window.OXXO_ACTA;
 
 const datos = {
-  tienda: 'Chihuahua OAX', crTienda: '504DV', numEmpleado: '5721936', domicilio: 'Av. Siempre Viva 1', cp: '68000', municipio: 'Oaxaca de Juárez',
+  tienda: 'Chihuahua OAX', numEmpleado: '5721936', domicilio: 'Av. Siempre Viva 1', cp: '68000', municipio: 'Oaxaca de Juárez',
   fecha: '2026-07-31', horaInicio: '10:30', representante: 'Sofia Caridad Jimenez Gomez', funcion: 'Asesor Tienda',
   trabajador: 'Lourdes Elisa Ortiz Lopez', puesto: 'Lider de Tienda', horaEntrada: '06:00', horaSalida: '14:00',
   testigo1: 'Ana Perez', testigo2: '', fechaHechos: '2026-07-30', falta: 'Resultados de pulsos',
@@ -47,11 +47,12 @@ test('genera un .docx valido con el texto del formato y los datos', () => {
     assert.ok(archivos[parte], `falta ${parte}`);
   }
   const doc = archivos['word/document.xml'];
-  for (const texto of ['con CR ', '504DV', 'con número de empleado ', '5721936', 'Oaxaca de Juárez, Oaxaca, siendo las', 'Cadena Comercial Oxxo SA de CV', 'HECHOS', 'Chihuahua OAX',
+  for (const texto of ['con número de empleado ', '5721936', 'Oaxaca de Juárez, Oaxaca, siendo las', 'Cadena Comercial Oxxo SA de CV', 'HECHOS', 'Chihuahua OAX',
     '31', 'julio', '30', 'Lourdes Elisa Ortiz Lopez', 'Resultados de pulsos', 'MEP = 74.19%', 'Me comprometo a mejorar.',
     'REPRESENTANTE DEL CENTRO DE TRABAJO', 'TRABAJADOR', 'TESTIGOS']) {
     assert.ok(doc.includes(texto), `el acta no incluye "${texto}"`);
   }
+  assert.ok(!doc.includes(' con CR '), 'el acta ya no lleva el CR de tienda');
   assert.ok(doc.includes('<w:br/>'), 'los saltos de linea del texto se respetan');
   assert.ok(/Evaluaciones con resultados bajos\.<\/w:t><w:br\/>/.test(doc));
   assert.ok(archivos['word/footer1.xml'].includes('OXXO | Uso Interno'));
