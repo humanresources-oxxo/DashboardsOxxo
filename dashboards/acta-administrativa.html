@@ -6,7 +6,7 @@
   <script defer src="../js/site-lock.js?v=f7b740d5"></script>
   <meta charset="UTF-8"/>
   <meta name="robots" content="noindex, nofollow"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Acta Administrativa · Dashboards Ats</title>
+  <title>Actas y Formatos · Dashboards Ats</title>
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
   <link rel="icon" type="image/png" href="../assets/favicon.png"/>
   <link rel="apple-touch-icon" href="../assets/favicon.png"/>
@@ -35,14 +35,14 @@
   <div class="hero">
     <div class="hero-top">
       <div>
-        <span class="hero-eyebrow">Relaciones laborales · Formato</span><h1>Acta Administrativa</h1>
+        <span class="hero-eyebrow">Relaciones laborales · Formatos</span><h1>Actas y Formatos</h1>
       </div>
     </div>
-    <div class="hero-context"><span>Llena los datos, revisa la vista previa y genera el Word para imprimir y firmar.</span></div>
+    <div class="hero-context"><span>Elige el tipo de documento, llena los datos, revisa la vista previa y genera el Word para imprimir y firmar.</span></div>
   </div>
 
   <div class="acta-tabs" role="tablist" aria-label="Secciones de actas">
-    <button type="button" class="acta-tab is-active" role="tab" id="tab-nueva" aria-controls="panel-nueva" aria-selected="true">Nueva acta</button>
+    <button type="button" class="acta-tab is-active" role="tab" id="tab-nueva" aria-controls="panel-nueva" aria-selected="true">Nuevo documento</button>
     <button type="button" class="acta-tab" role="tab" id="tab-registro" aria-controls="panel-registro" aria-selected="false" tabindex="-1">Registro de actas</button>
   </div>
 
@@ -50,113 +50,173 @@
   <div class="acta-layout">
     <form id="acta-form" class="acta-form" autocomplete="off" novalidate>
       <fieldset class="card acta-grupo">
+        <legend>Tipo de documento</legend>
+        <div class="acta-campo-grupo acta-ancho" data-campo="tipo">
+          <label for="acta-tipo">¿Qué vas a levantar?</label>
+          <select id="acta-tipo" name="tipo">
+            <option value="administrativa">Acta administrativa</option>
+            <option value="probidad">Acta por falta de probidad</option>
+            <option value="ultimatum">Acta ultimátum</option>
+            <option value="retroalimentacion">Retroalimentación</option>
+            <option value="hechos">Acta de hechos</option>
+            <option value="renuncia">Renuncia voluntaria</option>
+          </select>
+          <small id="acta-tipo-ayuda"></small>
+        </div>
+      </fieldset>
+
+      <fieldset class="card acta-grupo" data-grupo="lugar">
         <legend>1 · Lugar y fecha</legend>
-        <div class="acta-campo-grupo acta-ancho">
-          <label for="acta-tienda">Tienda (OXXO) *</label>
+        <div class="acta-campo-grupo acta-ancho" data-campo="tienda">
+          <label for="acta-tienda">Tienda (OXXO)</label>
           <input id="acta-tienda" name="tienda" list="acta-tiendas" placeholder="Escribe para buscar tu tienda">
           <datalist id="acta-tiendas"></datalist>
+          <small id="acta-tienda-ayuda">Escribe y elige tu tienda de la lista.</small>
         </div>
-        <small class="acta-ancho acta-ayuda" id="acta-tienda-ayuda">Escribe y elige tu tienda de la lista.</small>
-        <div class="acta-campo-grupo acta-ancho">
+        <div class="acta-campo-grupo" data-campo="ciudad">
+          <label for="acta-ciudad">Ciudad</label>
+          <input id="acta-ciudad" name="ciudad">
+        </div>
+        <div class="acta-campo-grupo acta-ancho" data-campo="domicilio">
           <label for="acta-domicilio">Domicilio de la tienda</label>
           <input id="acta-domicilio" name="domicilio" placeholder="Calle, número y colonia">
         </div>
-        <div class="acta-campo-grupo">
+        <div class="acta-campo-grupo" data-campo="cp">
           <label for="acta-cp">C.P.</label>
           <input id="acta-cp" name="cp" inputmode="numeric" maxlength="5">
         </div>
-        <div class="acta-campo-grupo">
+        <div class="acta-campo-grupo" data-campo="municipio">
           <label for="acta-municipio">Municipio</label>
           <input id="acta-municipio" name="municipio">
         </div>
-        <div class="acta-campo-grupo">
-          <label for="acta-fecha">Fecha del acta *</label>
+        <div class="acta-campo-grupo" data-campo="fecha">
+          <label for="acta-fecha">Fecha</label>
           <input id="acta-fecha" name="fecha" type="date">
         </div>
-        <div class="acta-campo-grupo">
-          <label for="acta-hora-inicio">Hora de inicio</label>
-          <input id="acta-hora-inicio" name="horaInicio" type="time">
+        <div class="acta-campo-grupo" data-campo="horaInicio">
+          <label for="acta-horaInicio">Hora de inicio</label>
+          <input id="acta-horaInicio" name="horaInicio" type="time">
         </div>
       </fieldset>
 
-      <fieldset class="card acta-grupo">
+      <fieldset class="card acta-grupo" data-grupo="personas">
         <legend>2 · Participantes</legend>
-        <div class="acta-campo-grupo">
-          <label for="acta-representante">Representante del patrón *</label>
+        <div class="acta-campo-grupo" data-campo="representante">
+          <label for="acta-representante">Representante del patrón</label>
           <input id="acta-representante" name="representante">
         </div>
-        <div class="acta-campo-grupo">
+        <div class="acta-campo-grupo" data-campo="funcion">
           <label for="acta-funcion">Función</label>
           <input id="acta-funcion" name="funcion">
         </div>
-        <div class="acta-campo-grupo acta-ancho">
-          <label for="acta-trabajador">Trabajador *</label>
+        <div class="acta-campo-grupo acta-ancho" data-campo="trabajador">
+          <label for="acta-trabajador">Trabajador</label>
           <input id="acta-trabajador" name="trabajador" list="acta-empleados" placeholder="Nombre completo">
           <datalist id="acta-empleados"></datalist>
         </div>
-        <div class="acta-campo-grupo">
-          <label for="acta-num-empleado">Número de empleado</label>
-          <input id="acta-num-empleado" name="numEmpleado" inputmode="numeric" maxlength="12" placeholder="Se llena al elegir al trabajador">
+        <div class="acta-campo-grupo" data-campo="numEmpleado">
+          <label for="acta-numEmpleado">Número de empleado</label>
+          <input id="acta-numEmpleado" name="numEmpleado" inputmode="numeric" maxlength="12" placeholder="Se llena al elegir al trabajador">
         </div>
-        <div class="acta-campo-grupo">
-          <label for="acta-puesto">Puesto *</label>
+        <div class="acta-campo-grupo" data-campo="puesto">
+          <label for="acta-puesto">Puesto</label>
           <input id="acta-puesto" name="puesto">
         </div>
-        <div class="acta-campo-grupo">
-          <label for="acta-hora-entrada">Horario: entrada</label>
-          <input id="acta-hora-entrada" name="horaEntrada" type="time">
+        <div class="acta-campo-grupo" data-campo="horaEntrada">
+          <label for="acta-horaEntrada">Horario: entrada</label>
+          <input id="acta-horaEntrada" name="horaEntrada" type="time">
         </div>
-        <div class="acta-campo-grupo">
-          <label for="acta-hora-salida">Horario: salida</label>
-          <input id="acta-hora-salida" name="horaSalida" type="time">
+        <div class="acta-campo-grupo" data-campo="horaSalida">
+          <label for="acta-horaSalida">Horario: salida</label>
+          <input id="acta-horaSalida" name="horaSalida" type="time">
         </div>
-        <div class="acta-campo-grupo">
+        <div class="acta-campo-grupo" data-campo="fechaIngreso">
+          <label for="acta-fechaIngreso">Fecha de ingreso</label>
+          <input id="acta-fechaIngreso" name="fechaIngreso" type="date">
+        </div>
+        <div class="acta-campo-grupo" data-campo="testigo1">
           <label for="acta-testigo1">Testigo 1</label>
           <input id="acta-testigo1" name="testigo1" list="acta-empleados">
         </div>
-        <div class="acta-campo-grupo">
+        <div class="acta-campo-grupo" data-campo="testigo2">
           <label for="acta-testigo2">Testigo 2</label>
           <input id="acta-testigo2" name="testigo2" list="acta-empleados">
         </div>
+        <div class="acta-campo-grupo" data-campo="participante1">
+          <label for="acta-participante1">Presente 1: nombre</label>
+          <input id="acta-participante1" name="participante1" list="acta-empleados">
+        </div>
+        <div class="acta-campo-grupo" data-campo="funcionP1">
+          <label for="acta-funcionP1">Presente 1: función</label>
+          <input id="acta-funcionP1" name="funcionP1" placeholder="Ej. Asesor de Tienda, Responsable de RH">
+        </div>
+        <div class="acta-campo-grupo" data-campo="participante2">
+          <label for="acta-participante2">Presente 2: nombre</label>
+          <input id="acta-participante2" name="participante2" list="acta-empleados">
+        </div>
+        <div class="acta-campo-grupo" data-campo="funcionP2">
+          <label for="acta-funcionP2">Presente 2: función</label>
+          <input id="acta-funcionP2" name="funcionP2" placeholder="Ej. Asesor de Tienda, Responsable de RH">
+        </div>
+        <div class="acta-campo-grupo" data-campo="participante3">
+          <label for="acta-participante3">Presente 3: nombre</label>
+          <input id="acta-participante3" name="participante3" list="acta-empleados">
+        </div>
+        <div class="acta-campo-grupo" data-campo="funcionP3">
+          <label for="acta-funcionP3">Presente 3: función</label>
+          <input id="acta-funcionP3" name="funcionP3" placeholder="Ej. Asesor de Tienda, Responsable de RH">
+        </div>
+        <div class="acta-campo-grupo" data-campo="participante4">
+          <label for="acta-participante4">Presente 4: nombre</label>
+          <input id="acta-participante4" name="participante4" list="acta-empleados">
+        </div>
+        <div class="acta-campo-grupo" data-campo="funcionP4">
+          <label for="acta-funcionP4">Presente 4: función</label>
+          <input id="acta-funcionP4" name="funcionP4" placeholder="Ej. Asesor de Tienda, Responsable de RH">
+        </div>
       </fieldset>
 
-      <fieldset class="card acta-grupo">
+      <fieldset class="card acta-grupo" data-grupo="hechos">
         <legend>3 · Hechos</legend>
-        <div class="acta-campo-grupo">
-          <label for="acta-fecha-hechos">Fecha de los hechos *</label>
-          <input id="acta-fecha-hechos" name="fechaHechos" type="date">
+        <div class="acta-campo-grupo" data-campo="fechaHechos">
+          <label for="acta-fechaHechos">Fecha de los hechos</label>
+          <input id="acta-fechaHechos" name="fechaHechos" type="date">
         </div>
-        <div class="acta-campo-grupo">
-          <label for="acta-hora-cierre">Hora de cierre del acta</label>
-          <input id="acta-hora-cierre" name="horaCierre" type="time">
+        <div class="acta-campo-grupo" data-campo="horaCierre">
+          <label for="acta-horaCierre">Hora de cierre</label>
+          <input id="acta-horaCierre" name="horaCierre" type="time">
         </div>
-        <div class="acta-campo-grupo acta-ancho">
-          <label for="acta-falta">Falta al reglamento (proceso) *</label>
+        <div class="acta-campo-grupo acta-ancho" data-campo="falta">
+          <label for="acta-falta">Falta al reglamento (proceso) / motivo</label>
           <input id="acta-falta" name="falta" placeholder="Ej. Resultados de pulsos">
         </div>
-        <div class="acta-campo-grupo acta-ancho">
-          <label for="acta-hechos">Hechos y con qué se comprueban *</label>
+        <div class="acta-campo-grupo acta-ancho" data-campo="hechos">
+          <label for="acta-hechos">Hechos</label>
           <textarea id="acta-hechos" name="hechos" rows="6" placeholder="Describe qué pasó y las evidencias (evaluaciones, retroalimentaciones, visitas, resultados)."></textarea>
         </div>
-        <div class="acta-campo-grupo acta-ancho">
+        <div class="acta-campo-grupo acta-ancho" data-campo="manifiesta">
           <label for="acta-manifiesta">Lo que manifiesta el trabajador</label>
           <textarea id="acta-manifiesta" name="manifiesta" rows="4" placeholder="Lo que dice el trabajador sobre los hechos."></textarea>
+        </div>
+        <div class="acta-campo-grupo acta-ancho" data-campo="compromisos">
+          <label for="acta-compromisos">Y se compromete a</label>
+          <textarea id="acta-compromisos" name="compromisos" rows="3" placeholder="Compromisos del trabajador."></textarea>
         </div>
       </fieldset>
 
       <fieldset class="card acta-grupo">
         <legend>4 · Generar y enviar</legend>
-        <div class="acta-campo-grupo acta-ancho">
+        <div class="acta-campo-grupo acta-ancho" data-campo="copia">
           <label for="acta-copia">Enviar copia a (opcional)</label>
           <input id="acta-copia" name="copia" type="email" placeholder="tu.correo@empresa.com">
-          <small>El acta siempre se envía al correo de RH configurado. Aquí puedes agregar tu correo para recibir copia.</small>
+          <small>El documento siempre se envía al correo de RH configurado. Aquí puedes agregar tu correo para recibir copia.</small>
         </div>
         <div class="acta-acciones">
           <button type="button" class="filtro-btn acta-btn acta-btn--primario" id="acta-enviar">Enviar por correo y descargar</button>
           <button type="button" class="filtro-btn acta-btn" id="acta-descargar">Solo descargar Word</button>
           <button type="button" class="filtro-btn acta-btn acta-btn--suave" id="acta-limpiar">Limpiar</button>
         </div>
-        <small class="acta-ancho acta-ayuda">Al enviarla por correo, el acta queda anotada en el registro de actas de RH (cuántas lleva el empleado en su tienda). "Solo descargar Word" no la registra.</small>
+        <small class="acta-ancho acta-ayuda">Al enviarlo por correo, el documento queda anotado en el registro de RH (cuántos lleva el empleado en su tienda). "Solo descargar Word" no lo registra.</small>
         <p class="acta-estado" id="acta-estado" role="status" aria-live="polite" hidden></p>
       </fieldset>
     </form>
@@ -188,6 +248,10 @@
         <div class="acta-campo-grupo">
           <label for="reg-tienda">Tienda</label>
           <select id="reg-tienda"><option value="">Todas las tiendas</option></select>
+        </div>
+        <div class="acta-campo-grupo">
+          <label for="reg-tipo">Tipo</label>
+          <select id="reg-tipo"><option value="">Todos los tipos</option></select>
         </div>
         <button type="button" class="filtro-btn acta-btn acta-btn--suave" id="reg-actualizar">Actualizar</button>
       </div>

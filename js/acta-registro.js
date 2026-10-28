@@ -33,12 +33,16 @@
       const kt = claveTienda(a);
       if (!tiendas.has(kt)) tiendas.set(kt, { tienda: a.tienda, cr: a.cr, actas: 0, personas: new Set(), ultima: '' });
       const t = tiendas.get(kt);
-      t.actas++; t.personas.add(clavePersona(a));
+      t.actas++; if (clavePersona(a)) t.personas.add(clavePersona(a));
       if (String(a.fecha) > t.ultima) t.ultima = a.fecha;
       const ke = clavePersona(a) + '|' + kt;
-      if (!empleados.has(ke)) empleados.set(ke, { numEmpleado: a.numEmpleado, trabajador: a.trabajador, puesto: a.puesto, tienda: a.tienda, cr: a.cr, actas: 0, ultima: '', faltas: [] });
+      // Un acta de hechos sin trabajador cuenta para la tienda, no para una persona.
+      if (!clavePersona(a)) return;
+      if (!empleados.has(ke)) empleados.set(ke, { numEmpleado: a.numEmpleado, trabajador: a.trabajador, puesto: a.puesto, tienda: a.tienda, cr: a.cr, actas: 0, ultima: '', faltas: [], tipos: {} });
       const e = empleados.get(ke);
       e.actas++;
+      const tipo = a.tipo || 'Acta administrativa';
+      e.tipos[tipo] = (e.tipos[tipo] || 0) + 1;
       if (String(a.fecha) >= e.ultima) { e.ultima = a.fecha; e.puesto = a.puesto || e.puesto; }
       if (a.falta && !e.faltas.includes(a.falta)) e.faltas.push(a.falta);
     });
@@ -97,6 +101,11 @@
         const previa = sel.value;
         sel.innerHTML = '<option value="">Todas las tiendas</option>' + tiendas.map(a => `<option value="${esc(claveTienda(a))}">${esc(a.tienda)}${a.cr ? ' · ' + esc(a.cr) : ''}</option>`).join('');
         sel.value = previa;
+        const selTipo = $('reg-tipo');
+        const tipoPrevio = selTipo.value;
+        const tipos = [...new Set(actas.map(a => a.tipo || 'Acta administrativa'))].sort((a, b) => a.localeCompare(b, 'es'));
+        selTipo.innerHTML = '<option value="">Todos los tipos</option>' + tipos.map(t => `<option value="${esc(t)}">${esc(t)}</option>`).join('');
+        selTipo.value = tipoPrevio;
         avisar(actas.length ? '' : 'Todavía no hay actas registradas. Se registran al enviarlas por correo.', 'info');
         $('reg-contenido').hidden = !actas.length;
         pintar();
@@ -111,7 +120,8 @@
     function filtradas() {
       const q = norm($('reg-buscar').value);
       const t = $('reg-tienda').value;
-      return actas.filter(a => (!t || claveTienda(a) === t)
+      const tipo = $('reg-tipo').value;
+      return actas.filter(a => (!t || claveTienda(a) === t) && (!tipo || (a.tipo || 'Acta administrativa') === tipo)
         && (!q || [a.trabajador, a.numEmpleado, a.tienda, a.cr, a.falta, a.representante, a.puesto].some(v => norm(v).includes(q))));
     }
 
@@ -120,7 +130,7 @@
       const g = agrupar(lista);
       const reincidentes = g.empleados.filter(e => e.actas > 1).length;
       const kpi = (titulo, valor, sub, color) => `<div class="kpi-card ${color}"><div class="kpi-card__label">${titulo}</div><div class="kpi-card__value">${valor}</div><div class="kpi-card__delta neu">${sub}</div></div>`;
-      $('reg-kpis').innerHTML = kpi('Actas registradas', lista.length, 'con los filtros activos', 'rojo')
+      $('reg-kpis').innerHTML = kpi('Documentos registrados', lista.length, 'con los filtros activos', 'rojo')
         + kpi('Empleados con acta', g.empleados.length, `${reincidentes} con más de una`, 'naranja')
         + kpi('Tiendas', g.tiendas.length, 'con al menos un acta', 'amarillo')
         + kpi('Última acta', lista.length ? fechaCorta([...lista].sort(masReciente)[0].fecha) : '—', 'fecha del acta', 'verde');
@@ -130,13 +140,14 @@
         + g.tiendas.map(t => `<tr><td>${esc(t.tienda)}</td><td>${esc(t.cr || '—')}</td><td class="center"><strong>${t.actas}</strong></td><td class="center">${t.personas}</td><td>${fechaCorta(t.ultima)}</td></tr>`).join('') + '</tbody>';
 
       $('reg-badge-empleados').textContent = `${g.empleados.length} empleados`;
-      $('reg-tabla-empleados').innerHTML = '<thead><tr><th>No. empleado</th><th>Trabajador</th><th>Tienda</th><th class="center">Actas</th><th>Última</th><th>Faltas</th></tr></thead><tbody>'
-        + g.empleados.map(e => `<tr${e.actas > 1 ? ' class="reg-reincide"' : ''}><td>${esc(e.numEmpleado || '—')}</td><td>${esc(e.trabajador)}<small>${esc(e.puesto)}</small></td><td>${esc(e.tienda)}</td><td class="center"><span class="reg-conteo">${e.actas}</span></td><td>${fechaCorta(e.ultima)}</td><td>${esc(e.faltas.join(' · '))}</td></tr>`).join('') + '</tbody>';
+      $('reg-tabla-empleados').innerHTML = '<thead><tr><th>No. empleado</th><th>Trabajador</th><th>Tienda</th><th class="center">Documentos</th><th>Tipos</th><th>Última</th><th>Faltas / motivos</th></tr></thead><tbody>'
+        + g.empleados.map(e => `<tr${e.actas > 1 ? ' class="reg-reincide"' : ''}><td>${esc(e.numEmpleado || '—')}</td><td>${esc(e.trabajador)}<small>${esc(e.puesto)}</small></td><td>${esc(e.tienda)}</td><td class="center"><span class="reg-conteo">${e.actas}</span></td>`
+          + `<td>${Object.entries(e.tipos).map(([t, n]) => `<span class="reg-tipo">${esc(t)}${n > 1 ? ' ×' + n : ''}</span>`).join(' ')}</td><td>${fechaCorta(e.ultima)}</td><td>${esc(e.faltas.join(' · '))}</td></tr>`).join('') + '</tbody>';
 
       const detalle = [...lista].sort(masReciente);
       $('reg-badge-detalle').textContent = `${detalle.length} actas`;
-      $('reg-tabla-detalle').innerHTML = '<thead><tr><th>Fecha del acta</th><th>Hechos</th><th>Trabajador</th><th>No. empleado</th><th>Tienda</th><th>Falta (proceso)</th><th>Levantó</th></tr></thead><tbody>'
-        + detalle.map(a => `<tr><td>${fechaCorta(a.fecha)}</td><td>${fechaCorta(a.fechaHechos)}</td><td>${esc(a.trabajador)}</td><td>${esc(a.numEmpleado || '—')}</td><td>${esc(a.tienda)}${a.cr ? `<small>${esc(a.cr)}</small>` : ''}</td><td>${esc(a.falta)}</td><td>${esc(a.representante)}</td></tr>`).join('') + '</tbody>';
+      $('reg-tabla-detalle').innerHTML = '<thead><tr><th>Fecha</th><th>Tipo</th><th>Hechos</th><th>Trabajador</th><th>No. empleado</th><th>Tienda</th><th>Falta (proceso)</th><th>Levantó</th></tr></thead><tbody>'
+        + detalle.map(a => `<tr><td>${fechaCorta(a.fecha)}</td><td><span class="reg-tipo">${esc(a.tipo || 'Acta administrativa')}</span></td><td>${fechaCorta(a.fechaHechos)}</td><td>${esc(a.trabajador || '—')}</td><td>${esc(a.numEmpleado || '—')}</td><td>${esc(a.tienda)}${a.cr ? `<small>${esc(a.cr)}</small>` : ''}</td><td>${esc(a.falta)}</td><td>${esc(a.representante)}</td></tr>`).join('') + '</tbody>';
     }
 
     $('reg-acceso').addEventListener('submit', e => {
@@ -152,6 +163,7 @@
     });
     $('reg-buscar').addEventListener('input', pintar);
     $('reg-tienda').addEventListener('change', pintar);
+    $('reg-tipo').addEventListener('change', pintar);
 
     // Si ya se consulto en esta pestaña, entra directo al abrir "Registro".
     $('tab-registro').addEventListener('click', () => {
