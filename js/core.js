@@ -508,7 +508,9 @@ function renderConnectionBanner() {
   if (!document.body) return;
   let banner = document.getElementById('oxxo-connection-banner');
   const issues = [...sheetConnectionIssues.values()];
-  if (!issues.length) {
+  // Paginas donde Sheets solo da sugerencias (p.ej. Actas y Formatos) piden no
+  // mostrar el aviso: la pagina funciona igual sin esos datos.
+  if (!issues.length || document.documentElement?.dataset?.oxxoHideConnectionBanner) {
     banner?.remove();
     return;
   }
