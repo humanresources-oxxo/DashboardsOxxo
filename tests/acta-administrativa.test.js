@@ -275,3 +275,33 @@ test('el registro guarda el tipo y cuenta por tipo', () => {
   const sinTrabajador = env({ tipo: 'Acta de hechos', numEmpleado: '', trabajador: '' });
   assert.equal(sinTrabajador.registro.actasEnTienda, 0);
 });
+
+test('las firmas en pantalla salen en el Word sobre la linea de cada persona', () => {
+  // PNG minimo: firma + IHDR de 900 x 300 (lo que mide el recuadro de firma).
+  const png = Uint8Array.from([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0, 0, 0, 13, 0x49, 0x48, 0x44, 0x52, 0, 0, 3, 0x84, 0, 0, 1, 0x2C, 8, 6, 0, 0, 0]);
+  const firmas = [{ png, cuando: '31/07/2026 11:05' }, { negada: true, cuando: '31/07/2026 11:06' }, null, { png: Uint8Array.from([1, 2, 3]), cuando: 'x' }];
+  const archivos = leerZip(Buffer.from(ACTA.docx(datos, { firmas })));
+  const doc = archivos['word/document.xml'];
+  assert.ok(archivos['word/media/firma1.png'], 'la firma del representante va en el paquete');
+  assert.ok(!archivos['word/media/firma4.png'], 'lo que no es PNG no se incrusta');
+  assert.match(archivos['word/_rels/document.xml.rels'], /Id="rIdFirma1"[^>]*Target="media\/firma1\.png"/);
+  assert.ok(!archivos['word/_rels/document.xml.rels'].includes('rIdFirma4'));
+  assert.equal((doc.match(/r:embed="rIdFirma/g) || []).length, 1);
+  assert.ok(doc.includes('xmlns:wp='), 'el documento declara el espacio de nombres de las imagenes');
+  assert.ok(doc.includes('Firmado en pantalla el 31/07/2026 11:05'));
+  assert.ok(doc.includes('SE NEGÓ A FIRMAR') && doc.includes('Negativa asentada el 31/07/2026 11:06'), 'la negativa queda asentada en el lugar del trabajador');
+  assert.equal((doc.match(/______________________________________/g) || []).length, 4, 'todas conservan la linea de firma');
+
+  // Sin firmas el Word queda igual que antes: lineas para firmar a mano.
+  const sin = leerZip(Buffer.from(ACTA.docx(datos)));
+  assert.ok(!Object.keys(sin).some(k => k.startsWith('word/media/firma')));
+  assert.ok(!sin['word/document.xml'].includes('Firmado en pantalla'));
+});
+
+test('la pagina tiene el apartado de firmas y bloquea los datos ya firmados', () => {
+  const html = fs.readFileSync(path.join(root, 'dashboards', 'acta-administrativa.html'), 'utf8');
+  assert.ok(html.includes('id="acta-pads"') && html.includes('id="acta-firmas-editar"'));
+  assert.equal((html.match(/data-bloqueable/g) || []).length, 4, 'tipo, lugar, participantes y hechos se bloquean con firmas');
+  const js = fs.readFileSync(path.join(root, 'js', 'acta-administrativa.js'), 'utf8');
+  assert.ok(!/BORRADOR_KEY[^\n]*firmas|setItem\([^)]*firmas/.test(js), 'las firmas no se guardan en el navegador');
+});

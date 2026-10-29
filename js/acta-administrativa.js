@@ -12,8 +12,15 @@
    manda siempre a los destinatarios fijos de RH (Propiedades del script)
    y, si se pide, copia a un correo del mismo dominio.
 
-   Uso: OXXO_ACTA.modelo(datos), OXXO_ACTA.docx(datos) -> Uint8Array,
-   OXXO_ACTA.montar() para la pagina.
+   Firma en pantalla: cada persona del documento puede firmar con el dedo
+   en el celular o tableta; la firma (PNG) se incrusta en el Word. Si alguien
+   se niega, se asienta "Se negó a firmar" en su lugar. Las firmas viven
+   solo en memoria (no en el borrador) y, mientras haya alguna, los datos
+   del documento quedan bloqueados para que nadie cambie lo ya firmado.
+
+   Uso: OXXO_ACTA.modelo(datos), OXXO_ACTA.docx(datos, { logo, firmas })
+   -> Uint8Array, OXXO_ACTA.montar() para la pagina. "firmas" va en el
+   mismo orden que modelo(datos).firmas: { png, cuando } | { negada, cuando } | null.
    ========================================================== */
 (function () {
   'use strict';
@@ -274,35 +281,62 @@
       + parrafoXml(runXml(val, { campo: true, subrayar: false }), { alinear: 'left', antes: 0, despues: 60, linea: 240 }), { fondo: 'FAF6F1' })).join('') + '</w:tr>');
     return tablaXml(anchos, filas, { bordes });
   }
+  // Imagen en linea (logo del encabezado, firmas): rid apunta a la relacion
+  // del archivo .rels de la parte donde va.
+  const EMU = 914400;
+  function imagenXml(rid, id, nombre, cx, cy) {
+    return '<w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0">'
+      + `<wp:extent cx="${cx}" cy="${cy}"/><wp:docPr id="${id}" name="${xml(nombre)}"/>`
+      + '<a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">'
+      + `<pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:nvPicPr><pic:cNvPr id="0" name="${xml(nombre)}.png"/><pic:cNvPicPr/></pic:nvPicPr>`
+      + `<pic:blipFill><a:blip r:embed="${rid}"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill>`
+      + `<pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic>`
+      + '</a:graphicData></a:graphic></wp:inline></w:drawing></w:r>';
+  }
+  // El lienzo de firma es 3:1; en el Word ocupa 2.4" x 0.8" sobre la linea.
+  const FIRMA_CX = Math.round(EMU * 2.4), FIRMA_CY = Math.round(EMU * 0.8);
+  const NEGADA = 'SE NEGÓ A FIRMAR';
   // Firmas en dos columnas (representante | trabajador, testigo | testigo):
   // cabe con el texto en una hoja y no se parte entre paginas.
-  function celdaFirmaXml(rol, nombre) {
-    return celdaXml(4985,
-      parrafoXml(runXml('______________________________________', { color: '595959' }), { alinear: 'center', antes: 480, despues: 0, linea: 240 })
-      + parrafoXml(runXml(nombre || '\u00a0', { campo: !!nombre, subrayar: false, tam: nombre ? 0 : 21 }), { alinear: 'center', antes: 20, despues: 0, linea: 240 })
-      + parrafoXml(runXml(rol, { negrita: true, color: COLOR_GRIS, tam: 16 }), { alinear: 'center', antes: 0, despues: 80, linea: 240 }));
+  // f.firma: la firma en pantalla de esa persona (o null: se firma a mano).
+  function celdaFirmaXml(f) {
+    const s = f.firma;
+    const arriba = s && s.png
+      ? parrafoXml(imagenXml(`rIdFirma${f.n}`, 100 + f.n, `Firma ${f.n}`, FIRMA_CX, FIRMA_CY), { alinear: 'center', antes: 60, despues: 0, linea: 240 })
+      : s && s.negada ? parrafoXml(runXml(NEGADA, { negrita: true, color: COLOR_ROJO, tam: 18 }), { alinear: 'center', antes: 300, despues: 40, linea: 240 }) : '';
+    const sello = s && (s.png || s.negada) && s.cuando
+      ? parrafoXml(runXml(`${s.negada ? 'Negativa asentada' : 'Firmado en pantalla'} el ${s.cuando}`, { color: COLOR_GRIS, tam: 13 }), { alinear: 'center', antes: 0, despues: 80, linea: 240 }) : '';
+    return celdaXml(4985, arriba
+      + parrafoXml(runXml('______________________________________', { color: '595959' }), { alinear: 'center', antes: arriba ? 0 : 480, despues: 0, linea: 240 })
+      + parrafoXml(runXml(f.nombre || '\u00a0', { campo: !!f.nombre, subrayar: false, tam: f.nombre ? 0 : 21 }), { alinear: 'center', antes: 20, despues: 0, linea: 240 })
+      + parrafoXml(runXml(f.rol, { negrita: true, color: COLOR_GRIS, tam: 16 }), { alinear: 'center', antes: 0, despues: sello ? 0 : 80, linea: 240 })
+      + sello);
   }
   function filaFirmasXml(a, b) {
-    return `<w:tr><w:trPr><w:cantSplit/></w:trPr>${celdaFirmaXml(a.rol, a.nombre)}${b ? celdaFirmaXml(b.rol, b.nombre) : celdaXml(4985, parrafoXml(''))}</w:tr>`;
+    return `<w:tr><w:trPr><w:cantSplit/></w:trPr>${celdaFirmaXml(a)}${b ? celdaFirmaXml(b) : celdaXml(4985, parrafoXml(''))}</w:tr>`;
   }
   // Firmas de dos en dos; una sola (renuncia) va centrada.
   function firmasXml(firmas) {
-    if (firmas.length === 1) return tablaXml([4985], [`<w:tr><w:trPr><w:cantSplit/></w:trPr>${celdaFirmaXml(firmas[0].rol, firmas[0].nombre)}</w:tr>`]);
+    if (firmas.length === 1) return tablaXml([4985], [`<w:tr><w:trPr><w:cantSplit/></w:trPr>${celdaFirmaXml(firmas[0])}</w:tr>`]);
     const filas = [];
     for (let i = 0; i < firmas.length; i += 2) filas.push(filaFirmasXml(firmas[i], firmas[i + 1]));
     return tablaXml([4985, 4985], filas);
   }
-  function documentXml(d) {
+  // Junta cada firmante del formato con su firma en pantalla (por posicion).
+  function firmantesCon(m, firmas) {
+    return m.firmas.map((f, i) => ({ ...f, n: i + 1, firma: (firmas && firmas[i]) || null }));
+  }
+  function documentXml(d, { firmas = null } = {}) {
     const m = modelo(d);
     const cuerpo = m.parrafos.map(p => p.titulo
       ? seccionXml(p.runs.map(r => r.t).join(''))
       : parrafoXml(p.runs.map(r => runXml(r.t, { campo: r.campo, largo: r.largo, negrita: p.negrita })).join(''),
         { alinear: p.alinear || 'both', ...(p.antes != null ? { antes: p.antes } : {}), ...(p.despues != null ? { despues: p.despues } : {}) })).join('');
-    const firmas = (m.carta ? parrafoXml('', { antes: 120, despues: 0 }) : seccionXml('FIRMAS')) + firmasXml(m.firmas)
+    const bloqueFirmas = (m.carta ? parrafoXml('', { antes: 120, despues: 0 }) : seccionXml('FIRMAS')) + firmasXml(firmantesCon(m, firmas))
       + (m.nota ? parrafoXml(runXml(m.nota, { color: COLOR_GRIS, tam: 16 }), { alinear: 'left', antes: 160, despues: 0, linea: 240 }) : '');
     return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
-      + '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><w:body>'
-      + (m.resumen ? resumenXml(m.resumen) + parrafoXml('', { despues: 60, linea: 240 }) : '') + cuerpo + firmas
+      + '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"><w:body>'
+      + (m.resumen ? resumenXml(m.resumen) + parrafoXml('', { despues: 60, linea: 240 }) : '') + cuerpo + bloqueFirmas
       + `<w:sectPr><w:headerReference w:type="default" r:id="rId4"/><w:footerReference w:type="default" r:id="rId2"/><w:pgSz w:w="12240" w:h="15840"/><w:pgMar w:top="${m.carta ? 1418 : 1330}" w:right="1134" w:bottom="1134" w:left="1134" w:header="510" w:footer="510" w:gutter="0"/></w:sectPr>`
       + '</w:body></w:document>';
   }
@@ -318,15 +352,8 @@
     const NS = '<w:hdr xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing">';
     if (m.carta) return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' + NS + '<w:p/></w:hdr>';
     const tam = pngTamano(logo);
-    const EMU = 914400;
     const cy = Math.round(EMU * 0.42), cx = tam ? Math.round(cy * tam.ancho / tam.alto) : 0;
-    const imagen = tam ? '<w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0">'
-      + `<wp:extent cx="${cx}" cy="${cy}"/><wp:docPr id="1" name="Logo OXXO"/>`
-      + '<a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">'
-      + '<pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:nvPicPr><pic:cNvPr id="0" name="logo.png"/><pic:cNvPicPr/></pic:nvPicPr>'
-      + '<pic:blipFill><a:blip r:embed="rIdLogo"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill>'
-      + `<pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic>`
-      + '</a:graphicData></a:graphic></wp:inline></w:drawing></w:r>' : runXml('OXXO', { negrita: true, color: COLOR_ROJO, tam: 32 });
+    const imagen = tam ? imagenXml('rIdLogo', 1, 'Logo OXXO', cx, cy) : runXml('OXXO', { negrita: true, color: COLOR_ROJO, tam: 32 });
     const titulo = parrafoXml(runXml(m.titulo, { negrita: true, color: '1A1A1A', tam: 30 }), { alinear: 'right', despues: 0, linea: 240 })
       + (m.subtitulo ? parrafoXml(runXml(m.subtitulo, { negrita: true, color: COLOR_ROJO, tam: 18 }), { alinear: 'right', despues: 0, linea: 240 }) : '')
       + parrafoXml(runXml('Cadena Comercial OXXO, S.A. de C.V. · Relaciones laborales', { color: COLOR_GRIS, tam: 15 }), { alinear: 'right', despues: 0, linea: 240 });
@@ -339,7 +366,6 @@
   const ARCHIVOS_FIJOS = {
     '[Content_Types].xml': '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="png" ContentType="image/png"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/><Override PartName="/word/footer1.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.footer+xml"/><Override PartName="/word/header1.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.header+xml"/><Override PartName="/word/settings.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml"/></Types>',
     '_rels/.rels': '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>',
-    'word/_rels/document.xml.rels': '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer" Target="footer1.xml"/><Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings" Target="settings.xml"/><Relationship Id="rId4" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/header" Target="header1.xml"/></Relationships>',
     'word/styles.xml': '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:cs="Arial" w:eastAsia="Arial"/><w:sz w:val="20"/><w:szCs w:val="20"/><w:lang w:val="es-MX"/></w:rPr></w:rPrDefault><w:pPrDefault/></w:docDefaults><w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/></w:style></w:styles>',
     // Texto justificado sin estirar la linea que termina en un salto (Enter
     // dentro de "Hechos"): Word la abriria de margen a margen.
@@ -393,16 +419,28 @@
     todo.forEach(p => { out.set(p, pos); pos += p.length; });
     return out;
   }
+  const REL_IMAGEN = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/image';
+  function documentRelsXml(conFirma) {
+    return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer" Target="footer1.xml"/><Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings" Target="settings.xml"/><Relationship Id="rId4" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/header" Target="header1.xml"/>'
+      + conFirma.map(f => `<Relationship Id="rIdFirma${f.n}" Type="${REL_IMAGEN}" Target="media/firma${f.n}.png"/>`).join('') + '</Relationships>';
+  }
   // logo: bytes del PNG del encabezado (opcional; sin logo se escribe "OXXO").
-  function docx(d, { logo = null } = {}) {
+  // firmas: firmas en pantalla, en el orden de modelo(d).firmas (opcional).
+  function docx(d, { logo = null, firmas = null } = {}) {
     const conLogo = pngTamano(logo);
+    // Una firma que no es un PNG legible se trata como "firma a mano".
+    const firmantes = firmantesCon(modelo(d), firmas);
+    const conFirma = firmantes.filter(f => f.firma && f.firma.png && pngTamano(f.firma.png));
+    const validas = firmantes.map(f => (f.firma && (f.firma.negada || conFirma.includes(f)) ? f.firma : null));
     return zip({
       ...ARCHIVOS_FIJOS,
-      'word/document.xml': documentXml(d),
+      'word/_rels/document.xml.rels': documentRelsXml(conFirma),
+      'word/document.xml': documentXml(d, { firmas: validas }),
       'word/header1.xml': headerXml(conLogo ? logo : null, modelo(d)),
       'word/_rels/header1.xml.rels': '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
         + (conLogo ? '<Relationship Id="rIdLogo" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/logo.png"/>' : '') + '</Relationships>',
       ...(conLogo ? { 'word/media/logo.png': logo } : {}),
+      ...Object.fromEntries(conFirma.map(f => [`word/media/firma${f.n}.png`, f.firma.png])),
     });
   }
 
@@ -431,6 +469,8 @@
     let auto = {};
     function autoLlenar(campo, valor) {
       const el = form.elements[campo];
+      // Con firmas, nada cambia los nombres (la firma quedaria con otro).
+      if (hayFirmas()) return;
       if (valor && (!limpio(el.value) || el.value === auto[campo])) { el.value = valor; auto[campo] = valor; }
     }
 
@@ -448,13 +488,121 @@
         if (d) CAMPOS.forEach(k => { if (form.elements[k] && d[k] != null) form.elements[k].value = d[k]; });
       } catch (e) { /* borrador ilegible */ }
     }
+    // ── Firmas en pantalla ──
+    // Una entrada por firmante de modelo().firmas; la clave (posicion, rol y
+    // nombre) evita que una firma quede bajo el nombre de otra persona.
+    let firmas = [];        // { clave, png, url, cuando } | { clave, negada, cuando } | null
+    let clavesFirmas = null;
+    const TINTA = '#14213D';
+    const claveFirma = (f, i) => `${i}|${f.rol}|${f.nombre}`;
+    const hayFirmas = () => firmas.some(Boolean);
+    const dos = n => String(n).padStart(2, '0');
+    function ahora() {
+      const x = new Date();
+      return `${dos(x.getDate())}/${dos(x.getMonth() + 1)}/${x.getFullYear()} ${dos(x.getHours())}:${dos(x.getMinutes())}`;
+    }
+    function bytesDeDataUrl(url) {
+      const b = atob(url.split(',')[1] || '');
+      const out = new Uint8Array(b.length);
+      for (let i = 0; i < b.length; i++) out[i] = b.charCodeAt(i);
+      return out;
+    }
+    // Con alguna firma, los datos no se pueden cambiar (se firmo ese texto).
+    function actualizarBloqueo() {
+      const b = hayFirmas();
+      form.querySelectorAll('fieldset[data-bloqueable]').forEach(f => { f.disabled = b; });
+      $('acta-firmas-bloqueo').hidden = !b;
+    }
+    function estadoPad(pad, s) {
+      pad.classList.toggle('is-firmada', !!(s && s.png));
+      pad.classList.toggle('is-negada', !!(s && s.negada));
+      pad.querySelector('.acta-pad-estado').textContent = s && s.png ? `Firmado · ${s.cuando}` : s && s.negada ? `Se negó a firmar · ${s.cuando}` : 'Sin firmar';
+      const negar = pad.querySelector('[data-accion="negar"]');
+      if (negar) negar.textContent = s && s.negada ? 'Quitar negativa' : 'Se negó a firmar';
+    }
+    function activarPad(pad, i) {
+      const lienzo = pad.querySelector('canvas');
+      const ctx = lienzo.getContext('2d');
+      let ultimo = null;
+      const punto = e => {
+        const r = lienzo.getBoundingClientRect();
+        return { x: (e.clientX - r.left) * lienzo.width / r.width, y: (e.clientY - r.top) * lienzo.height / r.height };
+      };
+      const limpiarLienzo = () => ctx.clearRect(0, 0, lienzo.width, lienzo.height);
+      lienzo.addEventListener('pointerdown', e => {
+        if (firmas[i] && firmas[i].negada) return;
+        e.preventDefault();
+        lienzo.setPointerCapture(e.pointerId);
+        ultimo = punto(e);
+        ctx.fillStyle = TINTA;
+        ctx.beginPath(); ctx.arc(ultimo.x, ultimo.y, 2.6, 0, Math.PI * 2); ctx.fill();
+      });
+      lienzo.addEventListener('pointermove', e => {
+        if (!ultimo) return;
+        const p = punto(e);
+        ctx.strokeStyle = TINTA; ctx.lineWidth = 5.2; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+        ctx.beginPath(); ctx.moveTo(ultimo.x, ultimo.y); ctx.lineTo(p.x, p.y); ctx.stroke();
+        ultimo = p;
+      });
+      const soltar = () => {
+        if (!ultimo) return;
+        ultimo = null;
+        const url = lienzo.toDataURL('image/png');
+        firmas[i] = { clave: pad.dataset.clave, png: bytesDeDataUrl(url), url, cuando: ahora() };
+        estadoPad(pad, firmas[i]); actualizarBloqueo(); pintarVista();
+      };
+      lienzo.addEventListener('pointerup', soltar);
+      lienzo.addEventListener('pointercancel', soltar);
+      pad.addEventListener('click', e => {
+        const accion = e.target.closest('[data-accion]');
+        if (!accion) return;
+        limpiarLienzo();
+        firmas[i] = accion.dataset.accion === 'negar' && !(firmas[i] && firmas[i].negada) ? { clave: pad.dataset.clave, negada: true, cuando: ahora() } : null;
+        estadoPad(pad, firmas[i]); actualizarBloqueo(); pintarVista();
+      });
+    }
+    // Rehace los recuadros solo si cambian los firmantes (un recuadro nuevo
+    // borraria el trazo).
+    function pintarFirmas() {
+      const m = modelo(val());
+      const claves = m.firmas.map(claveFirma);
+      if (clavesFirmas === claves.join('\n')) return;
+      clavesFirmas = claves.join('\n');
+      firmas = claves.map(c => firmas.find(f => f && f.clave === c) || null);
+      const pads = $('acta-pads');
+      pads.innerHTML = m.firmas.map((f, i) => `<div class="acta-pad" data-i="${i}" data-clave="${xml(claves[i])}">`
+        + `<div class="acta-pad-titulo"><strong>${xml(f.nombre || 'Sin nombre')}</strong><small>${xml(f.rol || 'Firma')}</small></div>`
+        + (f.nombre
+          ? `<canvas width="900" height="300" aria-label="Recuadro de firma de ${xml(f.nombre)}"></canvas>`
+            + `<div class="acta-pad-pie"><span class="acta-pad-estado"></span><button type="button" data-accion="borrar">Borrar</button>${m.carta ? '' : '<button type="button" data-accion="negar">Se negó a firmar</button>'}</div>`
+          : '<p class="acta-pad-sin-nombre">Escribe su nombre en los datos para que pueda firmar aquí.</p>')
+        + '</div>').join('');
+      pads.querySelectorAll('.acta-pad').forEach(pad => {
+        const i = +pad.dataset.i;
+        if (!pad.querySelector('canvas')) return;
+        activarPad(pad, i);
+        const s = firmas[i];
+        if (s && s.url) { const img = new Image(); img.onload = () => pad.querySelector('canvas').getContext('2d').drawImage(img, 0, 0); img.src = s.url; }
+        estadoPad(pad, s);
+      });
+      actualizarBloqueo();
+    }
+    function borrarFirmas() {
+      firmas = []; clavesFirmas = null;
+      pintarFirmas();
+    }
+    const firmasDoc = () => firmas.map(f => f && (f.png ? { png: f.png, cuando: f.cuando } : { negada: true, cuando: f.cuando }));
+
     function pintarVista() {
+      pintarFirmas();
       const m = modelo(val());
       const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
       const run = r => r.campo
         ? (r.t ? `<span class="acta-campo${r.largo ? ' acta-campo--largo' : ''}">${esc(r.t).replace(/\n/g, '<br>')}</span>` : `<span class="acta-hueco">${VACIO}</span>`)
         : esc(r.t);
-      const firma = (rol, nombre) => `<div class="acta-firma"><span class="acta-linea"></span>${nombre ? `<span class="acta-campo">${esc(nombre)}</span>` : '<span>&nbsp;</span>'}<small>${esc(rol)}</small></div>`;
+      const firma = (rol, nombre, s) => `<div class="acta-firma"><span class="acta-linea">${s && s.url ? `<img class="acta-firma-img" src="${s.url}" alt="Firma de ${esc(nombre)}">` : s && s.negada ? '<span class="acta-negada">SE NEGÓ A FIRMAR</span>' : ''}</span>`
+        + `${nombre ? `<span class="acta-campo">${esc(nombre)}</span>` : '<span>&nbsp;</span>'}<small>${esc(rol)}</small>`
+        + (s ? `<span class="acta-sello">${s.negada ? 'Negativa asentada' : 'Firmado en pantalla'} el ${esc(s.cuando)}</span>` : '') + '</div>';
       const resumen = m.resumen ? m.resumen.flat().map(([etq, v]) => `<div><small>${esc(etq)}</small>${v ? `<span class="acta-campo">${esc(v)}</span>` : `<span class="acta-hueco">${VACIO}</span>`}</div>`).join('') : '';
       const vista = $('acta-vista');
       vista.classList.toggle('acta-vista--carta', !!m.carta);
@@ -463,7 +611,7 @@
         + m.parrafos.map(p => p.titulo ? `<h3>${p.runs.map(r => esc(r.t)).join('')}</h3>`
           : `<p${p.alinear ? ` style="text-align:${p.alinear}"` : ''}${p.negrita ? ' class="acta-negrita"' : ''}>${p.runs.map(run).join('')}</p>`).join('')
         + (m.carta ? '' : '<h3>FIRMAS</h3>')
-        + `<div class="acta-firmas${m.firmas.length === 1 ? ' acta-firmas--una' : ''}">${m.firmas.map(f => firma(f.rol, f.nombre)).join('')}</div>`
+        + `<div class="acta-firmas${m.firmas.length === 1 ? ' acta-firmas--una' : ''}">${m.firmas.map((f, i) => firma(f.rol, f.nombre, firmas[i])).join('')}</div>`
         + (m.nota ? `<p class="acta-nota">${esc(m.nota)}</p>` : '')
         + '<footer><span>OXXO | Uso Interno</span><span>Página 1 de 1</span></footer>';
     }
@@ -513,8 +661,12 @@
       if (falta.length) { avisar('Faltan datos: ' + falta.join(', ') + '.', 'error'); return null; }
       return d;
     }
+    function textoFirmas() {
+      const n = firmas.filter(f => f && f.png).length, neg = firmas.filter(f => f && f.negada).length;
+      return (n ? ` con ${n} firma${n === 1 ? '' : 's'} en pantalla` : '') + (neg ? `${n ? ' y' : ' con'} ${neg} negativa${neg === 1 ? '' : 's'} a firmar` : '');
+    }
     function descargar(d) {
-      const blob = new Blob([docx(d, { logo })], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+      const blob = new Blob([docx(d, { logo, firmas: firmasDoc() })], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
       a.download = nombreArchivo(d);
@@ -528,7 +680,7 @@
       avisar(`Enviando ${TIPOS[tipoDe(d)].nombre.toLowerCase()} por correo…`, 'info');
       try {
         const cuerpo = JSON.stringify({
-          action: 'enviarActa', archivo: nombreArchivo(d), docx: aBase64(docx(d, { logo })), copia: limpio(d.copia),
+          action: 'enviarActa', archivo: nombreArchivo(d), docx: aBase64(docx(d, { logo, firmas: firmasDoc() })), copia: limpio(d.copia),
           tipo: TIPOS[tipoDe(d)].nombre,
           tienda: limpio(d.tienda), trabajador: limpio(d.trabajador), fecha: limpio(d.fecha),
           representante: limpio(TIPOS[tipoDe(d)].campos.includes('representante') ? d.representante : d.participante1),
@@ -551,7 +703,7 @@
           ? ` Quedó en el registro: ${limpio(d.trabajador) || 'este documento'} lleva ${reg.actasEnTienda} documento${reg.actasEnTienda === 1 ? '' : 's'} en esta tienda`
             + (reg.mismoTipo ? ` (${reg.mismoTipo} de tipo "${TIPOS[tipoDe(d)].nombre}")` : '') + (reg.actasTotal > reg.actasEnTienda ? `, ${reg.actasTotal} en total.` : '.')
           : reg && reg.error ? ' Ojo: no se pudo guardar en el registro de actas; avisa a RH.' : '';
-        avisar(`${TIPOS[tipoDe(d)].nombre} enviada a ${datos.enviadoA || 'RH'}.${conteo} También se descargó el Word para imprimirlo.`, reg && reg.error ? 'error' : 'ok');
+        avisar(`${TIPOS[tipoDe(d)].nombre} enviada a ${datos.enviadoA || 'RH'}${textoFirmas()}.${conteo} También se descargó el Word.`, reg && reg.error ? 'error' : 'ok');
         descargar(d);
       } catch (e) {
         avisar('No se pudo enviar: ' + e.message + '. Descarga el Word y mándalo por correo.', 'error');
@@ -575,10 +727,15 @@
     form.addEventListener('input', () => { pintarVista(); guardarBorrador(); });
     form.elements.tienda.addEventListener('change', () => { alCambiarTienda(); pintarVista(); guardarBorrador(); });
     form.elements.trabajador.addEventListener('change', () => { alCambiarTrabajador(); pintarVista(); guardarBorrador(); });
-    $('acta-descargar').addEventListener('click', () => { const d = validar(); if (d) { descargar(d); avisar('Word descargado. Ábrelo para imprimirlo.', 'ok'); } });
+    $('acta-descargar').addEventListener('click', () => { const d = validar(); if (d) { descargar(d); avisar(`Word descargado${textoFirmas()}. Ábrelo para imprimirlo.`, 'ok'); } });
+    $('acta-firmas-editar').addEventListener('click', () => {
+      if (!window.confirm('¿Borrar todas las firmas para poder corregir el documento? Tendrán que volver a firmar.')) return;
+      borrarFirmas(); pintarVista(); avisar('Se borraron las firmas. Ya puedes corregir el documento.', 'info');
+    });
     $('acta-enviar').addEventListener('click', e => { const d = validar(); if (d) enviar(d, e.currentTarget); });
     $('acta-limpiar').addEventListener('click', () => {
-      if (!window.confirm('¿Borrar todos los datos del documento?')) return;
+      if (!window.confirm(hayFirmas() ? '¿Borrar todos los datos y las firmas del documento?' : '¿Borrar todos los datos del documento?')) return;
+      firmas = []; clavesFirmas = null; actualizarBloqueo();
       form.reset();
       try { localStorage.removeItem(BORRADOR_KEY); } catch (e) { /* sin almacenamiento */ }
       form.elements.fecha.value = iso(new Date());
