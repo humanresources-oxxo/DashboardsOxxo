@@ -12,7 +12,7 @@
  * Despues de eso, admin.html publica directo sin pedir URL.
  */
 const SPREADSHEET_ID = '1EbUuyy-PRXiDwPmn9L14P93cGN6VXTyLfAHx-CE8M_A';
-const APP_VERSION = '58';
+const APP_VERSION = '59';
 const ADMIN_PASSWORD_PROPERTY = 'ADMIN_PASSWORD';
 const AUDIT_SHEET = '_Admin_Bitacora';
 const BACKUP_PREFIX = '_BK_';
@@ -342,6 +342,12 @@ function doPost(e) {
     // devuelve las columnas del registro (nunca el Word).
     if (String(payload.action || '') === 'consultarActas') {
       return jsonResponse(consultarActas_(payload));
+    }
+
+    // Anular un registro de acta: exige ACTAS_BORRADO_PASSWORD (otra, para que
+    // quien solo consulta no pueda anular). La fila no se borra: se marca.
+    if (String(payload.action || '') === 'anularActa') {
+      return jsonResponse(anularActa_(payload));
     }
 
     // Esta ruta no usa la credencial de administración: valida una contraseña
@@ -2353,10 +2359,18 @@ const ACTAS_REGISTRO_PROPERTY = 'ACTAS_REGISTRO_SPREADSHEET_ID';
 // admin, para poder compartirla con RH sin dar acceso a publicar).
 const ACTAS_CONSULTA_PASSWORD_PROPERTY = 'ACTAS_CONSULTA_PASSWORD';
 const ACTAS_CONSULTA_MAX_FILAS = 5000;
+// Contraseña para anular registros (aparte de la de consulta).
+const ACTAS_BORRADO_PASSWORD_PROPERTY = 'ACTAS_BORRADO_PASSWORD';
 const ACTAS_REGISTRO_HOJA = 'Actas';
 const ACTAS_RESUMEN_HOJA = 'Resumen por empleado';
 const ACTAS_REGISTRO_HEADERS = ['Registrado', 'Fecha del acta', 'Fecha de los hechos', 'No. empleado', 'Trabajador', 'Puesto',
-  'Tienda', 'CR', 'Falta (proceso)', 'Representante', 'Copia a', 'Archivo', 'Tipo', 'Firmas'];
+  'Tienda', 'CR', 'Falta (proceso)', 'Representante', 'Copia a', 'Archivo', 'Tipo', 'Firmas',
+  'Anulada', 'Motivo anulación', 'Anuló'];
+// Columna (base 0) con la fecha de anulacion: una fila con fecha ahi ya no
+// cuenta ni se muestra, pero se conserva en el libro.
+const ACTAS_COL_ANULADA = 14;
+// Conteo por empleado y tienda sin las actas anuladas (columna O).
+const ACTAS_RESUMEN_FORMULA = "=QUERY(" + ACTAS_REGISTRO_HOJA + "!A:Q,\"select D, E, G, H, count(A), max(B) where E is not null and O is null group by D, E, G, H order by count(A) desc, max(B) desc label D 'No. empleado', E 'Trabajador', G 'Tienda', H 'CR', count(A) 'Actas', max(B) 'Última acta'\",1)";
 // Tipo por omision de las filas anteriores a que el registro guardara el tipo.
 const ACTAS_TIPO_DEFAULT = 'Acta administrativa';
 
@@ -2470,10 +2484,32 @@ function libroActas_() {
   hoja.getRange('H:H').setNumberFormat('@');
   // Conteo por empleado y tienda, siempre al dia (se recalcula solo).
   const resumen = ss.insertSheet(ACTAS_RESUMEN_HOJA);
-  resumen.getRange('A1').setFormula("=QUERY(" + ACTAS_REGISTRO_HOJA + "!A:M,\"select D, E, G, H, count(A), max(B) where E is not null group by D, E, G, H order by count(A) desc, max(B) desc label D 'No. empleado', E 'Trabajador', G 'Tienda', H 'CR', count(A) 'Actas', max(B) 'Última acta'\",1)");
+  resumen.getRange('A1').setFormula(ACTAS_RESUMEN_FORMULA);
   resumen.setFrozenRows(1);
   props.setProperty(ACTAS_REGISTRO_PROPERTY, ss.getId());
   return ss;
+}
+
+// Libros creados antes de las columnas Tipo, Firmas o de anulacion: se les
+// pone el encabezado que les falte.
+function encabezadosActas_(hoja) {
+  if (hoja.getLastRow() === 0) { hoja.appendRow(ACTAS_REGISTRO_HEADERS); return; }
+  const actual = hoja.getRange(1, 1, 1, ACTAS_REGISTRO_HEADERS.length).getValues()[0];
+  ACTAS_REGISTRO_HEADERS.forEach(function(h, i) {
+    if (String(actual[i] || '') === '') hoja.getRange(1, i + 1, 1, 1).setValues([[h]]);
+  });
+}
+function actaAnulada_(fila) {
+  return String(fila[ACTAS_COL_ANULADA] == null ? '' : fila[ACTAS_COL_ANULADA]).trim() !== '';
+}
+// Identificador de una fila para anularla desde la pagina: numero de fila y
+// marca de tiempo del registro (si alguien movio filas a mano, se busca por
+// la marca). No expone el nombre del archivo ni los correos.
+function marcaActa_(fila) {
+  return String(fila[0] instanceof Date && !isNaN(fila[0].getTime()) ? fila[0].getTime() : fila[0] || '');
+}
+function idActa_(fila, numero) {
+  return numero + '-' + marcaActa_(fila);
 }
 
 // Agrega el acta al registro y devuelve cuantas lleva ese empleado en esa
@@ -2484,20 +2520,14 @@ function registrarActa_(acta) {
   try {
     const ss = libroActas_();
     const hoja = ss.getSheetByName(ACTAS_REGISTRO_HOJA) || ss.insertSheet(ACTAS_REGISTRO_HOJA);
-    if (hoja.getLastRow() === 0) hoja.appendRow(ACTAS_REGISTRO_HEADERS);
-    // Libros creados antes de las columnas Tipo o Firmas: se les pone su encabezado.
-    else {
-      const actual = hoja.getRange(1, 1, 1, ACTAS_REGISTRO_HEADERS.length).getValues()[0];
-      ACTAS_REGISTRO_HEADERS.forEach(function(h, i) {
-        if (String(actual[i] || '') === '') hoja.getRange(1, i + 1, 1, 1).setValues([[h]]);
-      });
-    }
+    encabezadosActas_(hoja);
     hoja.appendRow([new Date(), fechaActa_(acta.fecha), fechaActa_(acta.fechaHechos), acta.numEmpleado, acta.trabajador, acta.puesto,
       acta.tienda, acta.cr, acta.falta, acta.representante, acta.copia, acta.archivo, acta.tipo || ACTAS_TIPO_DEFAULT,
       acta.firmas || 'A mano']);
     // Un acta de hechos puede no tener trabajador: no hay a quien contarle.
     if (!acta.numEmpleado && !acta.trabajador) return { ok: true, actasEnTienda: 0, actasTotal: 0, mismoTipo: 0 };
-    const filas = hoja.getRange(2, 1, hoja.getLastRow() - 1, ACTAS_REGISTRO_HEADERS.length).getValues();
+    // Las anuladas no cuentan.
+    const filas = hoja.getRange(2, 1, hoja.getLastRow() - 1, ACTAS_REGISTRO_HEADERS.length).getValues().filter(function(f) { return !actaAnulada_(f); });
     const clave = function(v) { return normalizeHeader(String(v == null ? '' : v)); };
     const mismaPersona = function(f) {
       return acta.numEmpleado ? clave(f[3]) === clave(acta.numEmpleado) : clave(f[4]) === clave(acta.trabajador);
@@ -2516,8 +2546,11 @@ function registrarActa_(acta) {
 }
 
 function assertActasConsultaAuthorized_(payload) {
-  const configured = PropertiesService.getScriptProperties().getProperty(ACTAS_CONSULTA_PASSWORD_PROPERTY) || '';
-  if (!configured) throw new Error('La consulta del registro aún no está configurada (falta ACTAS_CONSULTA_PASSWORD)');
+  assertActasPassword_(payload, ACTAS_CONSULTA_PASSWORD_PROPERTY, 'La consulta del registro');
+}
+function assertActasPassword_(payload, propiedad, que) {
+  const configured = PropertiesService.getScriptProperties().getProperty(propiedad) || '';
+  if (!configured) throw new Error(que + ' aún no está configurada (falta ' + propiedad + ')');
   const received = String((payload && payload.password) || '');
   if (!received || received !== configured) {
     const total = registrarFalloAuth();
@@ -2540,10 +2573,16 @@ function consultarActas_(payload) {
   if (!hoja || hoja.getLastRow() < 2) return { ok: true, actas: [] };
   const tz = ss.getSpreadsheetTimeZone ? ss.getSpreadsheetTimeZone() : 'America/Mexico_City';
   const n = Math.min(hoja.getLastRow() - 1, ACTAS_CONSULTA_MAX_FILAS);
-  const filas = hoja.getRange(hoja.getLastRow() - n + 1, 1, n, ACTAS_REGISTRO_HEADERS.length).getValues();
+  const primera = hoja.getLastRow() - n + 1;
+  const filas = hoja.getRange(primera, 1, n, ACTAS_REGISTRO_HEADERS.length).getValues();
   // Las actas de hechos pueden venir sin trabajador: basta con que tengan tienda.
-  const actas = filas.filter(function(f) { return String(f[4] || '').trim() || String(f[6] || '').trim(); }).map(function(f) {
+  // Las anuladas ya no se muestran (siguen en el libro).
+  const actas = filas.map(function(f, i) { return { f: f, numero: primera + i }; }).filter(function(x) {
+    return !actaAnulada_(x.f) && (String(x.f[4] || '').trim() || String(x.f[6] || '').trim());
+  }).map(function(x) {
+    const f = x.f;
     return {
+      id: idActa_(f, x.numero),
       registrado: textoFechaActa_(f[0], tz), fecha: textoFechaActa_(f[1], tz), fechaHechos: textoFechaActa_(f[2], tz),
       numEmpleado: String(f[3] || '').trim(), trabajador: String(f[4] || '').trim(), puesto: String(f[5] || '').trim(),
       tienda: String(f[6] || '').trim(), cr: String(f[7] || '').trim(), falta: String(f[8] || '').trim(),
@@ -2553,4 +2592,41 @@ function consultarActas_(payload) {
     };
   });
   return { ok: true, actas: actas };
+}
+
+// Marca un registro como anulado (fecha, motivo y quien). No borra la fila ni
+// el correo que ya salio; deja de contar en el registro y en el resumen.
+function anularActa_(payload) {
+  assertActasPassword_(payload, ACTAS_BORRADO_PASSWORD_PROPERTY, 'La anulación de actas');
+  const motivo = textoActa_(payload.motivo, 200);
+  const quien = textoActa_(payload.quien, 80);
+  if (motivo.length < 5) throw new Error('Escribe el motivo de la anulación');
+  if (!quien) throw new Error('Escribe quién anula el registro');
+  const m = String(payload.id || '').match(/^(\d+)-(.+)$/);
+  if (!m) throw new Error('Registro no válido');
+  const id = String(PropertiesService.getScriptProperties().getProperty(ACTAS_REGISTRO_PROPERTY) || '').trim();
+  if (!id) throw new Error('No hay registro de actas');
+  const lock = LockService.getScriptLock();
+  lock.waitLock(15000);
+  try {
+    const ss = SpreadsheetApp.openById(id);
+    const hoja = ss.getSheetByName(ACTAS_REGISTRO_HOJA);
+    if (!hoja || hoja.getLastRow() < 2) throw new Error('No se encontró el registro');
+    encabezadosActas_(hoja);
+    const filas = hoja.getRange(2, 1, hoja.getLastRow() - 1, ACTAS_REGISTRO_HEADERS.length).getValues();
+    let i = Number(m[1]) - 2;
+    if (!filas[i] || idActa_(filas[i], i + 2) !== payload.id) {
+      // Alguien movio filas a mano: se busca por la marca de tiempo.
+      i = filas.findIndex(function(f) { return marcaActa_(f) === m[2] && !actaAnulada_(f); });
+    }
+    if (i < 0 || !filas[i]) throw new Error('No se encontró el registro; actualiza la consulta');
+    if (actaAnulada_(filas[i])) throw new Error('Ese registro ya estaba anulado');
+    hoja.getRange(i + 2, ACTAS_COL_ANULADA + 1, 1, 3).setValues([[new Date(), motivo, quien]]);
+    // Libros anteriores: el resumen se rehace para que ignore las anuladas.
+    const resumen = ss.getSheetByName(ACTAS_RESUMEN_HOJA);
+    if (resumen) resumen.getRange('A1').setFormula(ACTAS_RESUMEN_FORMULA);
+    return { ok: true };
+  } finally {
+    lock.releaseLock();
+  }
 }

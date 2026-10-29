@@ -80,7 +80,10 @@ function libroFalso() {
       getRange(a, b, c, d) {
         if (typeof a === 'string') return { setFormula: f => { h.formulas[a] = f; }, setNumberFormat() {} };
         return {
-          setValues: v => { v.forEach((f, i) => { h.filas[a - 1 + i] = [...f]; }); return { setFontWeight() {} }; },
+          setValues: v => {
+            v.forEach((f, i) => { const fila = h.filas[a - 1 + i] = h.filas[a - 1 + i] || []; f.forEach((x, j) => { fila[b - 1 + j] = x; }); });
+            return { setFontWeight() {} };
+          },
           getValues: () => h.filas.slice(a - 1, a - 1 + c).map(f => f.slice(b - 1, b - 1 + d)),
         };
       } };
@@ -320,4 +323,51 @@ test('el registro anota cuántas firmas se hicieron en pantalla y el correo lo d
   assert.equal(srv.gs.firmasActa_({ firmantes: 'x', firmasPantalla: -3 }).texto, 'A mano', 'datos raros cuentan como firma a mano');
   const consulta = srv.gs.consultarActas_({ password: 'clave' });
   assert.deepEqual(consulta.actas.map(a => a.firmas), ['A mano', '2 de 4 en pantalla · 1 se negó', '3 de 3 en pantalla']);
+});
+
+test('anular un registro exige su propia contraseña, lo marca y deja de contarlo', () => {
+  const srv = servidor({ ACTAS_DESTINATARIOS: 'rh@empresa.com', ACTAS_CONSULTA_PASSWORD: 'ver' });
+  srv.gs.registrarFalloAuth = () => 1;
+  srv.gs.Utilities.sleep = () => {};
+  srv.gs.enviarActa_(pedido({ numEmpleado: '1', crTienda: '504DV', falta: 'Primera' }));
+  srv.gs.enviarActa_(pedido({ numEmpleado: '1', crTienda: '504DV', falta: 'Segunda' }));
+  const [a1, a2] = srv.gs.consultarActas_({ password: 'ver' }).actas;
+  assert.match(a1.id, /^2-/);
+  const pedir = extra => srv.gs.anularActa_({ id: a1.id, motivo: 'Se levantó por error', quien: 'Cristian', password: 'borrar', ...extra });
+
+  assert.throws(() => pedir(), /no está configurada \(falta ACTAS_BORRADO_PASSWORD\)/);
+  srv.props.ACTAS_BORRADO_PASSWORD = 'borrar';
+  assert.throws(() => pedir({ password: 'ver' }), /Contraseña incorrecta/, 'la de consulta no sirve para anular');
+  assert.throws(() => pedir({ motivo: 'x' }), /motivo/);
+  assert.throws(() => pedir({ quien: ' ' }), /quién anula/);
+  assert.throws(() => pedir({ id: 'cualquiera' }), /no válido/);
+
+  assert.equal(pedir().ok, true);
+  const hoja = srv.libros[0].getSheetByName('Actas');
+  assert.deepEqual(hoja.filas[0].slice(14), ['Anulada', 'Motivo anulación', 'Anuló']);
+  assert.ok(hoja.filas[1][14] instanceof Date, 'la fila queda con la fecha de anulación');
+  assert.deepEqual(hoja.filas[1].slice(15), ['Se levantó por error', 'Cristian']);
+  assert.equal(hoja.filas[1][8], 'Primera', 'el resto de la fila no se toca');
+  assert.equal(hoja.filas.length, 3, 'no se borra ninguna fila');
+  assert.throws(() => pedir(), /ya estaba anulado/);
+
+  const visibles = srv.gs.consultarActas_({ password: 'ver' }).actas;
+  assert.deepEqual(visibles.map(a => a.falta), ['Segunda'], 'la anulada ya no se muestra');
+  assert.equal(visibles[0].id, a2.id);
+  assert.match(srv.libros[0].getSheetByName('Resumen por empleado').formulas.A1, /A:Q.*where E is not null and O is null/);
+  const r = srv.gs.enviarActa_(pedido({ numEmpleado: '1', crTienda: '504DV', falta: 'Tercera' }));
+  assert.equal(r.registro.actasEnTienda, 2, 'la anulada no cuenta para el empleado');
+
+  // Si alguien movio filas a mano, se encuentra por la marca de tiempo.
+  hoja.filas.splice(1, 0, ['fila insertada a mano']);
+  assert.equal(srv.gs.anularActa_({ id: a2.id, motivo: 'Duplicada', quien: 'Cristian', password: 'borrar' }).ok, true);
+  assert.equal(hoja.filas[3][15], 'Duplicada');
+});
+
+test('la pagina pide motivo, quien y contraseña para anular', () => {
+  const html = fs.readFileSync(path.join(root, 'dashboards', 'acta-administrativa.html'), 'utf8');
+  for (const id of ['reg-anular', 'reg-anular-motivo', 'reg-anular-quien', 'reg-anular-password']) assert.ok(html.includes(`id="${id}"`), id);
+  const js = fs.readFileSync(path.join(root, 'js', 'acta-registro.js'), 'utf8');
+  assert.ok(js.includes("action: 'anularActa'") && js.includes('sessionStorage.setItem(CLAVE_BORRADO'));
+  assert.ok(!/localStorage\.(set|get)Item/.test(js), 'ninguna contraseña va a localStorage');
 });
