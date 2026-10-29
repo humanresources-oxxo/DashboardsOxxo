@@ -387,3 +387,11 @@ test('al enviar con exito el formulario se limpia (y solo descargar no)', () => 
   const soloDescargar = js.slice(js.indexOf("$('acta-descargar')"), js.indexOf("$('acta-firmas-editar')"));
   assert.ok(!soloDescargar.includes('limpiarDocumento'), '"Solo descargar Word" conserva los datos');
 });
+
+test('Actas y Formatos no muestra el aviso de conexion con Sheets', () => {
+  const html = fs.readFileSync(path.join(root, 'dashboards', 'acta-administrativa.html'), 'utf8');
+  assert.match(html, /<html[^>]*data-oxxo-hide-connection-banner="1"/);
+  const core = fs.readFileSync(path.join(root, 'js', 'core.js'), 'utf8');
+  const render = core.slice(core.indexOf('function renderConnectionBanner()'), core.indexOf('banner.innerHTML'));
+  assert.match(render, /dataset\?\.oxxoHideConnectionBanner\)\s*\{\s*banner\?\.remove\(\);\s*return;/, 'con la marca no se crea (y se quita) el aviso');
+});
