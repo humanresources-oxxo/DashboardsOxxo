@@ -378,3 +378,12 @@ test('el registro de actas vive en el panel admin, con la sesion del admin', () 
   assert.ok(js.includes("action: 'anularActa'") && js.includes('sessionStorage.setItem(CLAVE_BORRADO'));
   assert.ok(!/localStorage\.(set|get)Item/.test(js), 'ninguna contraseña va a localStorage');
 });
+
+test('al enviar con exito el formulario se limpia (y solo descargar no)', () => {
+  const js = fs.readFileSync(path.join(root, 'js', 'acta-administrativa.js'), 'utf8');
+  const enviar = js.slice(js.indexOf('async function enviar('), js.indexOf('cargarBorrador();\n'));
+  assert.match(enviar, /descargar\(d\);\s*\/\/[^\n]*\n\s*limpiarDocumento\(\{ conservarCopia: true \}\);/, 'tras enviar y descargar se limpia, conservando la copia');
+  assert.ok(enviar.indexOf('limpiarDocumento(') < enviar.indexOf('} catch (e) {'), 'si el envio falla no se limpia');
+  const soloDescargar = js.slice(js.indexOf("$('acta-descargar')"), js.indexOf("$('acta-firmas-editar')"));
+  assert.ok(!soloDescargar.includes('limpiarDocumento'), '"Solo descargar Word" conserva los datos');
+});

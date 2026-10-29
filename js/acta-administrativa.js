@@ -661,6 +661,24 @@
       if (falta.length) { avisar('Faltan datos: ' + falta.join(', ') + '.', 'error'); return null; }
       return d;
     }
+    // Deja el formulario como recien abierto (datos, firmas y borrador).
+    // Tras un envio se conserva la copia: suele ser el correo de quien llena.
+    function limpiarDocumento({ conservarCopia = false } = {}) {
+      const copia = form.elements.copia.value;
+      firmas = []; clavesFirmas = null; actualizarBloqueo();
+      form.reset();
+      if (conservarCopia) form.elements.copia.value = copia;
+      const ahora = new Date();
+      form.elements.fecha.value = iso(ahora);
+      form.elements.horaInicio.value = `${String(ahora.getHours()).padStart(2, '0')}:${String(ahora.getMinutes()).padStart(2, '0')}`;
+      form.elements.funcion.value = 'Asesor Tienda';
+      form.elements.ciudad.value = 'Oaxaca de Juárez';
+      form.elements.tipo.value = 'administrativa';
+      auto = {};
+      aplicarTipo();
+      alCambiarTienda(); pintarVista(); avisar('', 'info');
+      try { localStorage.removeItem(BORRADOR_KEY); if (conservarCopia && copia) guardarBorrador(); } catch (e) { /* sin almacenamiento */ }
+    }
     function textoFirmas() {
       const n = firmas.filter(f => f && f.png).length, neg = firmas.filter(f => f && f.negada).length;
       return (n ? ` con ${n} firma${n === 1 ? '' : 's'} en pantalla` : '') + (neg ? `${n ? ' y' : ' con'} ${neg} negativa${neg === 1 ? '' : 's'} a firmar` : '');
@@ -705,8 +723,11 @@
           ? ` Quedó en el registro: ${limpio(d.trabajador) || 'este documento'} lleva ${reg.actasEnTienda} documento${reg.actasEnTienda === 1 ? '' : 's'} en esta tienda`
             + (reg.mismoTipo ? ` (${reg.mismoTipo} de tipo "${TIPOS[tipoDe(d)].nombre}")` : '') + (reg.actasTotal > reg.actasEnTienda ? `, ${reg.actasTotal} en total.` : '.')
           : reg && reg.error ? ' Ojo: no se pudo guardar en el registro de actas; avisa a RH.' : '';
-        avisar(`${TIPOS[tipoDe(d)].nombre} enviada a ${datos.enviadoA || 'RH'}${textoFirmas()}.${conteo} También se descargó el Word.`, reg && reg.error ? 'error' : 'ok');
+        const aviso = `${TIPOS[tipoDe(d)].nombre} enviada a ${datos.enviadoA || 'RH'}${textoFirmas()}.${conteo} También se descargó el Word.`;
         descargar(d);
+        // Ya salio y quedo registrada: el formulario queda listo para otro documento.
+        limpiarDocumento({ conservarCopia: true });
+        avisar(aviso + ' El formulario quedó limpio para el siguiente.', reg && reg.error ? 'error' : 'ok');
       } catch (e) {
         avisar('No se pudo enviar: ' + e.message + '. Descarga el Word y mándalo por correo.', 'error');
       } finally {
@@ -737,16 +758,7 @@
     $('acta-enviar').addEventListener('click', e => { const d = validar(); if (d) enviar(d, e.currentTarget); });
     $('acta-limpiar').addEventListener('click', () => {
       if (!window.confirm(hayFirmas() ? '¿Borrar todos los datos y las firmas del documento?' : '¿Borrar todos los datos del documento?')) return;
-      firmas = []; clavesFirmas = null; actualizarBloqueo();
-      form.reset();
-      try { localStorage.removeItem(BORRADOR_KEY); } catch (e) { /* sin almacenamiento */ }
-      form.elements.fecha.value = iso(new Date());
-      form.elements.funcion.value = 'Asesor Tienda';
-      form.elements.ciudad.value = 'Oaxaca de Juárez';
-      form.elements.tipo.value = 'administrativa';
-      auto = {};
-      aplicarTipo();
-      alCambiarTienda(); pintarVista(); avisar('', 'info');
+      limpiarDocumento();
     });
 
     // Catalogo de tiendas (AT vigente) y colaboradores de Capacidades para
