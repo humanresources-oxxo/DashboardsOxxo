@@ -12,7 +12,7 @@
  * Despues de eso, admin.html publica directo sin pedir URL.
  */
 const SPREADSHEET_ID = '1EbUuyy-PRXiDwPmn9L14P93cGN6VXTyLfAHx-CE8M_A';
-const APP_VERSION = '57';
+const APP_VERSION = '58';
 const ADMIN_PASSWORD_PROPERTY = 'ADMIN_PASSWORD';
 const AUDIT_SHEET = '_Admin_Bitacora';
 const BACKUP_PREFIX = '_BK_';
@@ -2356,7 +2356,7 @@ const ACTAS_CONSULTA_MAX_FILAS = 5000;
 const ACTAS_REGISTRO_HOJA = 'Actas';
 const ACTAS_RESUMEN_HOJA = 'Resumen por empleado';
 const ACTAS_REGISTRO_HEADERS = ['Registrado', 'Fecha del acta', 'Fecha de los hechos', 'No. empleado', 'Trabajador', 'Puesto',
-  'Tienda', 'CR', 'Falta (proceso)', 'Representante', 'Copia a', 'Archivo', 'Tipo'];
+  'Tienda', 'CR', 'Falta (proceso)', 'Representante', 'Copia a', 'Archivo', 'Tipo', 'Firmas'];
 // Tipo por omision de las filas anteriores a que el registro guardara el tipo.
 const ACTAS_TIPO_DEFAULT = 'Acta administrativa';
 
@@ -2368,6 +2368,18 @@ function correoValido_(correo) {
 }
 function textoActa_(valor, max) {
   return String(valor == null ? '' : valor).replace(/[\r\n\t]+/g, ' ').trim().slice(0, max || 120);
+}
+
+// Firmas del documento: cuantas personas firmaron en pantalla y cuantas se
+// negaron, de cuantas debian firmar. Sin dato (pagina anterior) o sin firmas
+// en pantalla: "A mano".
+function firmasActa_(payload) {
+  const num = function(v) { const n = Math.floor(Number(v)); return isFinite(n) && n > 0 ? Math.min(n, 20) : 0; };
+  const total = num(payload.firmantes), pantalla = Math.min(num(payload.firmasPantalla), total || 20), negadas = num(payload.firmasNegadas);
+  if (!pantalla && !negadas) return { pantalla: 0, negadas: 0, total: total, texto: 'A mano' };
+  const texto = (pantalla ? pantalla + (total ? ' de ' + total : '') + ' en pantalla' : 'Ninguna en pantalla')
+    + (negadas ? ' · ' + negadas + (negadas === 1 ? ' se negó' : ' se negaron') : '');
+  return { pantalla: pantalla, negadas: negadas, total: total, texto: texto };
 }
 
 function enviarActa_(payload) {
@@ -2401,9 +2413,13 @@ function enviarActa_(payload) {
   const fecha = textoActa_(payload.fecha, 20);
   const tipo = textoActa_(payload.tipo, 60) || ACTAS_TIPO_DEFAULT;
   const asunto = [tipo, trabajador, tienda ? 'OXXO ' + tienda : '', fecha].filter(Boolean).join(' · ');
+  const firmas = firmasActa_(payload);
+  const pendientes = firmas.total - firmas.pantalla - firmas.negadas;
+  const avisoFirmas = firmas.texto === 'A mano' ? 'Debe imprimirse y firmarse por todas las personas que participan.'
+    : 'Firmas: ' + firmas.texto + '.' + (pendientes > 0 ? ' Las firmas que faltan deben recabarse a mano.' : '');
   const cuerpo = 'Se adjunta el documento "' + tipo + '"' + (trabajador ? ' de ' + trabajador : '')
     + (tienda ? ' (tienda OXXO ' + tienda + ')' : '') + (representante ? ', levantado por ' + representante : '')
-    + (fecha ? ' el ' + fecha : '') + '.\n\nDebe imprimirse y firmarse por todas las personas que participan.'
+    + (fecha ? ' el ' + fecha : '') + '.\n\n' + avisoFirmas
     + '\n\nEnviado desde Dashboards Ats · Actas y Formatos.';
 
   MailApp.sendEmail({
@@ -2424,6 +2440,7 @@ function enviarActa_(payload) {
       fecha: fecha, fechaHechos: textoActa_(payload.fechaHechos, 20), numEmpleado: textoActa_(payload.numEmpleado, 20),
       trabajador: trabajador, puesto: textoActa_(payload.puesto, 60), tienda: tienda, cr: textoActa_(payload.crTienda, 12).toUpperCase(),
       falta: textoActa_(payload.falta, 200), representante: representante, copia: copias.join(', '), archivo: archivo, tipo: tipo,
+      firmas: firmas.texto,
     });
   } catch (err) {
     registro = { error: String(err && err.message || err) };
@@ -2468,12 +2485,16 @@ function registrarActa_(acta) {
     const ss = libroActas_();
     const hoja = ss.getSheetByName(ACTAS_REGISTRO_HOJA) || ss.insertSheet(ACTAS_REGISTRO_HOJA);
     if (hoja.getLastRow() === 0) hoja.appendRow(ACTAS_REGISTRO_HEADERS);
-    // Libros creados antes de la columna Tipo: se le pone su encabezado.
-    else if (String(hoja.getRange(1, ACTAS_REGISTRO_HEADERS.length, 1, 1).getValues()[0][0] || '') === '') {
-      hoja.getRange(1, ACTAS_REGISTRO_HEADERS.length, 1, 1).setValues([[ACTAS_REGISTRO_HEADERS[ACTAS_REGISTRO_HEADERS.length - 1]]]);
+    // Libros creados antes de las columnas Tipo o Firmas: se les pone su encabezado.
+    else {
+      const actual = hoja.getRange(1, 1, 1, ACTAS_REGISTRO_HEADERS.length).getValues()[0];
+      ACTAS_REGISTRO_HEADERS.forEach(function(h, i) {
+        if (String(actual[i] || '') === '') hoja.getRange(1, i + 1, 1, 1).setValues([[h]]);
+      });
     }
     hoja.appendRow([new Date(), fechaActa_(acta.fecha), fechaActa_(acta.fechaHechos), acta.numEmpleado, acta.trabajador, acta.puesto,
-      acta.tienda, acta.cr, acta.falta, acta.representante, acta.copia, acta.archivo, acta.tipo || ACTAS_TIPO_DEFAULT]);
+      acta.tienda, acta.cr, acta.falta, acta.representante, acta.copia, acta.archivo, acta.tipo || ACTAS_TIPO_DEFAULT,
+      acta.firmas || 'A mano']);
     // Un acta de hechos puede no tener trabajador: no hay a quien contarle.
     if (!acta.numEmpleado && !acta.trabajador) return { ok: true, actasEnTienda: 0, actasTotal: 0, mismoTipo: 0 };
     const filas = hoja.getRange(2, 1, hoja.getLastRow() - 1, ACTAS_REGISTRO_HEADERS.length).getValues();
@@ -2527,6 +2548,8 @@ function consultarActas_(payload) {
       numEmpleado: String(f[3] || '').trim(), trabajador: String(f[4] || '').trim(), puesto: String(f[5] || '').trim(),
       tienda: String(f[6] || '').trim(), cr: String(f[7] || '').trim(), falta: String(f[8] || '').trim(),
       representante: String(f[9] || '').trim(), tipo: String(f[12] || '').trim() || ACTAS_TIPO_DEFAULT,
+      // Filas anteriores a la columna Firmas: se firmaron a mano.
+      firmas: String(f[13] || '').trim() || 'A mano',
     };
   });
   return { ok: true, actas: actas };

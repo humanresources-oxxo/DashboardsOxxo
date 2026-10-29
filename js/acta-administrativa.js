@@ -689,6 +689,8 @@
           // que el registro distinga tiendas con nombres parecidos.
           crTienda: (tiendaElegida() || {}).cr || '', numEmpleado: limpio(d.numEmpleado), puesto: limpio(d.puesto),
           fechaHechos: limpio(TIPOS[tipoDe(d)].campos.includes('fechaHechos') ? d.fechaHechos : d.fecha), falta: limpio(d.falta),
+          // Para la columna Firmas del registro (el Word ya lleva las firmas).
+          firmantes: modelo(d).firmas.length, firmasPantalla: firmas.filter(f => f && f.png).length, firmasNegadas: firmas.filter(f => f && f.negada).length,
         });
         // text/plain evita la consulta previa de CORS que Apps Script no contesta.
         const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: cuerpo });

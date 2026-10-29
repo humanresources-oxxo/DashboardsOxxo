@@ -305,3 +305,19 @@ test('la pagina tiene el apartado de firmas y bloquea los datos ya firmados', ()
   const js = fs.readFileSync(path.join(root, 'js', 'acta-administrativa.js'), 'utf8');
   assert.ok(!/BORRADOR_KEY[^\n]*firmas|setItem\([^)]*firmas/.test(js), 'las firmas no se guardan en el navegador');
 });
+
+test('el registro anota cuántas firmas se hicieron en pantalla y el correo lo dice', () => {
+  const srv = servidor({ ACTAS_DESTINATARIOS: 'rh@empresa.com', ACTAS_CONSULTA_PASSWORD: 'clave' });
+  srv.gs.enviarActa_(pedido({ numEmpleado: '1' }));
+  srv.gs.enviarActa_(pedido({ numEmpleado: '1', firmantes: 4, firmasPantalla: 2, firmasNegadas: 1 }));
+  srv.gs.enviarActa_(pedido({ numEmpleado: '1', firmantes: 3, firmasPantalla: 3 }));
+  const actas = srv.libros[0].getSheetByName('Actas');
+  assert.equal(actas.filas[0][13], 'Firmas');
+  assert.deepEqual(actas.filas.slice(1).map(f => f[13]), ['A mano', '2 de 4 en pantalla · 1 se negó', '3 de 3 en pantalla']);
+  assert.match(srv.enviados[0].body, /Debe imprimirse y firmarse por todas las personas/);
+  assert.match(srv.enviados[1].body, /Firmas: 2 de 4 en pantalla · 1 se negó\. Las firmas que faltan deben recabarse a mano\./);
+  assert.ok(!/recabarse a mano/.test(srv.enviados[2].body), 'si firmaron todos no pide firmas a mano');
+  assert.equal(srv.gs.firmasActa_({ firmantes: 'x', firmasPantalla: -3 }).texto, 'A mano', 'datos raros cuentan como firma a mano');
+  const consulta = srv.gs.consultarActas_({ password: 'clave' });
+  assert.deepEqual(consulta.actas.map(a => a.firmas), ['A mano', '2 de 4 en pantalla · 1 se negó', '3 de 3 en pantalla']);
+});
