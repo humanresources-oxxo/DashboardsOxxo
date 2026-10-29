@@ -146,8 +146,8 @@
 
       const detalle = [...lista].sort(masReciente);
       $('reg-badge-detalle').textContent = `${detalle.length} actas`;
-      $('reg-tabla-detalle').innerHTML = '<thead><tr><th>Fecha</th><th>Tipo</th><th>Hechos</th><th>Trabajador</th><th>No. empleado</th><th>Tienda</th><th>Falta (proceso)</th><th>Levantó</th></tr></thead><tbody>'
-        + detalle.map(a => `<tr><td>${fechaCorta(a.fecha)}</td><td><span class="reg-tipo">${esc(a.tipo || 'Acta administrativa')}</span></td><td>${fechaCorta(a.fechaHechos)}</td><td>${esc(a.trabajador || '—')}</td><td>${esc(a.numEmpleado || '—')}</td><td>${esc(a.tienda)}${a.cr ? `<small>${esc(a.cr)}</small>` : ''}</td><td>${esc(a.falta)}</td><td>${esc(a.representante)}</td></tr>`).join('') + '</tbody>';
+      $('reg-tabla-detalle').innerHTML = '<thead><tr><th>Fecha</th><th>Tipo</th><th>Hechos</th><th>Trabajador</th><th>No. empleado</th><th>Tienda</th><th>Falta (proceso)</th><th>Levantó</th><th>Firmas</th></tr></thead><tbody>'
+        + detalle.map(a => `<tr><td>${fechaCorta(a.fecha)}</td><td><span class="reg-tipo">${esc(a.tipo || 'Acta administrativa')}</span></td><td>${fechaCorta(a.fechaHechos)}</td><td>${esc(a.trabajador || '—')}</td><td>${esc(a.numEmpleado || '—')}</td><td>${esc(a.tienda)}${a.cr ? `<small>${esc(a.cr)}</small>` : ''}</td><td>${esc(a.falta)}</td><td>${esc(a.representante)}</td><td>${esc(a.firmas || 'A mano')}</td></tr>`).join('') + '</tbody>';
     }
 
     $('reg-acceso').addEventListener('submit', e => {

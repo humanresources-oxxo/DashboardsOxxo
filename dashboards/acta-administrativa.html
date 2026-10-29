@@ -38,7 +38,7 @@
         <span class="hero-eyebrow">Relaciones laborales · Formatos</span><h1>Actas y Formatos</h1>
       </div>
     </div>
-    <div class="hero-context"><span>Elige el tipo de documento, llena los datos, revisa la vista previa y genera el Word para imprimir y firmar.</span></div>
+    <div class="hero-context"><span>Elige el tipo de documento, llena los datos, revisa la vista previa, firmen en pantalla (o a mano, ya impreso) y genera el Word.</span></div>
   </div>
 
   <div class="acta-tabs" role="tablist" aria-label="Secciones de actas">
@@ -49,7 +49,7 @@
   <section id="panel-nueva" role="tabpanel" aria-labelledby="tab-nueva">
   <div class="acta-layout">
     <form id="acta-form" class="acta-form" autocomplete="off" novalidate>
-      <fieldset class="card acta-grupo">
+      <fieldset class="card acta-grupo" data-bloqueable>
         <legend>Tipo de documento</legend>
         <div class="acta-campo-grupo acta-ancho" data-campo="tipo">
           <label for="acta-tipo">¿Qué vas a levantar?</label>
@@ -65,7 +65,7 @@
         </div>
       </fieldset>
 
-      <fieldset class="card acta-grupo" data-grupo="lugar">
+      <fieldset class="card acta-grupo" data-grupo="lugar" data-bloqueable>
         <legend>1 · Lugar y fecha</legend>
         <div class="acta-campo-grupo acta-ancho" data-campo="tienda">
           <label for="acta-tienda">Tienda (OXXO)</label>
@@ -99,7 +99,7 @@
         </div>
       </fieldset>
 
-      <fieldset class="card acta-grupo" data-grupo="personas">
+      <fieldset class="card acta-grupo" data-grupo="personas" data-bloqueable>
         <legend>2 · Participantes</legend>
         <div class="acta-campo-grupo" data-campo="representante">
           <label for="acta-representante">Representante del patrón</label>
@@ -176,7 +176,7 @@
         </div>
       </fieldset>
 
-      <fieldset class="card acta-grupo" data-grupo="hechos">
+      <fieldset class="card acta-grupo" data-grupo="hechos" data-bloqueable>
         <legend>3 · Hechos</legend>
         <div class="acta-campo-grupo" data-campo="fechaHechos">
           <label for="acta-fechaHechos">Fecha de los hechos</label>
@@ -204,8 +204,18 @@
         </div>
       </fieldset>
 
+      <fieldset class="card acta-grupo acta-firmas-grupo">
+        <legend>4 · Firmas</legend>
+        <p class="acta-ancho acta-ayuda acta-firmas-ayuda">Opcional. Cada persona firma con el dedo en su recuadro y su firma sale en el Word. Si prefieren firmar a mano, déjalo en blanco e imprime el documento.</p>
+        <div class="acta-ancho acta-firmas-bloqueo" id="acta-firmas-bloqueo" hidden>
+          <span>El documento ya tiene firmas: sus datos quedan bloqueados para que nadie cambie lo que se firmó.</span>
+          <button type="button" class="filtro-btn acta-btn acta-btn--suave" id="acta-firmas-editar">Borrar firmas y editar</button>
+        </div>
+        <div class="acta-ancho acta-pads" id="acta-pads"></div>
+      </fieldset>
+
       <fieldset class="card acta-grupo">
-        <legend>4 · Generar y enviar</legend>
+        <legend>5 · Generar y enviar</legend>
         <div class="acta-campo-grupo acta-ancho" data-campo="copia">
           <label for="acta-copia">Enviar copia a (opcional)</label>
           <input id="acta-copia" name="copia" type="email" placeholder="tu.correo@empresa.com">
