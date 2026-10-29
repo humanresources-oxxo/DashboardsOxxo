@@ -7,6 +7,10 @@
    la contraseña se recuerda en esta pestaña del navegador (sessionStorage),
    nunca en localStorage.
 
+   "Anular" (accion "anularActa", con ACTAS_BORRADO_PASSWORD, otra
+   contraseña) no borra la fila: la marca con fecha, motivo y quien, y deja
+   de mostrarse y de contar.
+
    Uso: OXXO_ACTA_REGISTRO.agrupar(actas) -> { tiendas, empleados },
    OXXO_ACTA_REGISTRO.montar() para la pagina.
    ========================================================== */
@@ -14,6 +18,7 @@
   'use strict';
 
   const CLAVE_SESION = 'oxxo_actas_consulta';
+  const CLAVE_BORRADO = 'oxxo_actas_borrado';
   const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
   const norm = v => String(v == null ? '' : v).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '');
   const esc = v => String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -146,9 +151,66 @@
 
       const detalle = [...lista].sort(masReciente);
       $('reg-badge-detalle').textContent = `${detalle.length} actas`;
-      $('reg-tabla-detalle').innerHTML = '<thead><tr><th>Fecha</th><th>Tipo</th><th>Hechos</th><th>Trabajador</th><th>No. empleado</th><th>Tienda</th><th>Falta (proceso)</th><th>Levantó</th><th>Firmas</th></tr></thead><tbody>'
-        + detalle.map(a => `<tr><td>${fechaCorta(a.fecha)}</td><td><span class="reg-tipo">${esc(a.tipo || 'Acta administrativa')}</span></td><td>${fechaCorta(a.fechaHechos)}</td><td>${esc(a.trabajador || '—')}</td><td>${esc(a.numEmpleado || '—')}</td><td>${esc(a.tienda)}${a.cr ? `<small>${esc(a.cr)}</small>` : ''}</td><td>${esc(a.falta)}</td><td>${esc(a.representante)}</td><td>${esc(a.firmas || 'A mano')}</td></tr>`).join('') + '</tbody>';
+      $('reg-tabla-detalle').innerHTML = '<thead><tr><th>Fecha</th><th>Tipo</th><th>Hechos</th><th>Trabajador</th><th>No. empleado</th><th>Tienda</th><th>Falta (proceso)</th><th>Levantó</th><th>Firmas</th><th><span class="sr-only">Acciones</span></th></tr></thead><tbody>'
+        + detalle.map(a => `<tr><td>${fechaCorta(a.fecha)}</td><td><span class="reg-tipo">${esc(a.tipo || 'Acta administrativa')}</span></td><td>${fechaCorta(a.fechaHechos)}</td><td>${esc(a.trabajador || '—')}</td><td>${esc(a.numEmpleado || '—')}</td><td>${esc(a.tienda)}${a.cr ? `<small>${esc(a.cr)}</small>` : ''}</td><td>${esc(a.falta)}</td><td>${esc(a.representante)}</td><td>${esc(a.firmas || 'A mano')}</td>`
+          + `<td>${a.id ? `<button type="button" class="reg-btn-anular" data-anular="${esc(a.id)}">Anular</button>` : ''}</td></tr>`).join('') + '</tbody>';
     }
+
+    // ── Anular un registro ──
+    const dialogo = $('reg-anular');
+    let anulando = null;
+    function avisarAnular(texto, tipo) {
+      const el = $('reg-anular-estado');
+      el.textContent = texto; el.dataset.tipo = tipo || 'info'; el.hidden = !texto;
+    }
+    function abrirAnular(id) {
+      anulando = actas.find(a => a.id === id) || null;
+      if (!anulando) return;
+      $('reg-anular-acta').innerHTML = `${esc(anulando.tipo || 'Acta administrativa')} · ${esc(anulando.trabajador || 'sin trabajador')}`
+        + `<small>${esc(anulando.tienda)} · ${fechaCorta(anulando.fecha)}${anulando.falta ? ' · ' + esc(anulando.falta) : ''}</small>`;
+      $('reg-anular-motivo').value = '';
+      let pw = '';
+      try { pw = sessionStorage.getItem(CLAVE_BORRADO) || ''; } catch (e) { /* nada */ }
+      $('reg-anular-password').value = pw;
+      avisarAnular('', 'info');
+      $('reg-anular-confirmar').disabled = false;
+      dialogo.showModal();
+      $('reg-anular-motivo').focus();
+    }
+    async function anular() {
+      const motivo = $('reg-anular-motivo').value.trim(), quien = $('reg-anular-quien').value.trim(), password = $('reg-anular-password').value;
+      const falta = [motivo.length < 5 && 'el motivo', !quien && 'quién anula', !password && 'la contraseña'].filter(Boolean);
+      if (falta.length) { avisarAnular('Falta ' + (falta.length > 1 ? falta.slice(0, -1).join(', ') + ' y ' + falta[falta.length - 1] : falta[0]) + '.', 'error'); return; }
+      const url = window.OXXO_CONFIG && window.OXXO_CONFIG.ADMIN_UPLOAD_URL;
+      $('reg-anular-confirmar').disabled = true;
+      avisarAnular('Anulando…', 'info');
+      try {
+        const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'anularActa', id: anulando.id, motivo, quien, password }) });
+        const datos = await r.json().catch(() => null);
+        if (!r.ok || !datos || datos.ok === false) {
+          const motivoError = (datos && datos.error) || 'el servidor no respondió';
+          // Un Apps Script sin la accion "anularActa" contesta "No autorizado".
+          throw new Error(/no autorizado/i.test(motivoError) ? 'la anulación aún no está activada en el Apps Script' : motivoError);
+        }
+        try { sessionStorage.setItem(CLAVE_BORRADO, password); } catch (e) { /* sin almacenamiento */ }
+        const quien1 = anulando.trabajador || 'el documento';
+        actas = actas.filter(a => a !== anulando);
+        dialogo.close();
+        $('reg-contenido').hidden = !actas.length;
+        pintar();
+        avisar(`Registro de ${quien1} anulado. Ya no cuenta; queda en el libro privado como anulado.`, 'ok');
+      } catch (e) {
+        if (/contraseña/i.test(e.message)) { try { sessionStorage.removeItem(CLAVE_BORRADO); } catch (x) { /* nada */ } }
+        avisarAnular('No se pudo anular: ' + e.message + '.', 'error');
+        $('reg-anular-confirmar').disabled = false;
+      }
+    }
+    $('reg-tabla-detalle').addEventListener('click', e => {
+      const b = e.target.closest('[data-anular]');
+      if (b) abrirAnular(b.dataset.anular);
+    });
+    $('reg-anular-form').addEventListener('submit', e => { e.preventDefault(); anular(); });
+    $('reg-anular-cancelar').addEventListener('click', () => dialogo.close());
 
     $('reg-acceso').addEventListener('submit', e => {
       e.preventDefault();

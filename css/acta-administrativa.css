@@ -105,6 +105,18 @@ body.acta-page #panel-registro .tbl td small { display: block; color: var(--du-m
 body.acta-page #panel-registro .tbl td.center, body.acta-page #panel-registro .tbl th.center { text-align: center; }
 body.acta-page .reg-conteo { display: inline-grid; place-items: center; min-width: 26px; height: 26px; padding: 0 6px; border-radius: 999px; background: #f1ece7; font-weight: 800; }
 body.acta-page .reg-reincide .reg-conteo { background: #fdeaea; color: #a91f26; }
+body.acta-page .reg-btn-anular { min-height: 30px; padding: 0 10px; border: 1px solid #e5c3c5; border-radius: 8px; background: #fff; color: #a91f26; font: inherit; font-size: 11.5px; font-weight: 800; cursor: pointer; white-space: nowrap; }
+body.acta-page .reg-btn-anular:hover { background: #fdeaea; }
+
+/* Dialogo de anulacion. */
+body.acta-page .reg-anular { width: min(480px, calc(100% - 24px)); max-height: 92dvh; overflow-y: auto; margin: auto; padding: 0; border: 1px solid var(--du-border); border-radius: 14px; background: #fff; color: var(--du-text); box-shadow: var(--du-shadow); }
+body.acta-page .reg-anular::backdrop { background: rgba(42, 25, 22, .55); }
+body.acta-page .reg-anular form { display: grid; gap: 12px; padding: 20px 22px 22px; }
+body.acta-page .reg-anular h2 { margin: 0; color: var(--du-red-dark); font-size: 18px; }
+body.acta-page .reg-anular-acta { margin: 0; padding: 10px 12px; border-radius: 10px; background: #FAF6F1; font-size: 13px; font-weight: 700; }
+body.acta-page .reg-anular-acta small { display: block; color: var(--du-muted); font-weight: 600; }
+body.acta-page .reg-anular-nota { margin: 0; color: var(--du-muted); font-size: 12px; line-height: 1.45; }
+body.acta-page .reg-anular-acciones { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
 
 @media (max-width: 1000px) {
   body.acta-page .acta-layout, body.acta-page .reg-grid { grid-template-columns: 1fr; }
