@@ -85,6 +85,6 @@ test('readSheet no expone las hojas de solo lectura (su lectura publica es por G
 test('APP_VERSION sigue igual a la version verificada en config.js', () => {
   const gs = fs.readFileSync(path.join(root, 'apps-script', 'admin-upload.gs'), 'utf8');
   const cfg = fs.readFileSync(path.join(root, 'js', 'config.js'), 'utf8');
-  assert.equal(gs.match(/const APP_VERSION = '(\d+)'/)[1], '59');
-  assert.equal(cfg.match(/VERIFIED_ADMIN_RUNTIME_VERSION:\s*(\d+)/)[1], '59');
+  assert.equal(gs.match(/const APP_VERSION = '(\d+)'/)[1], '60');
+  assert.equal(cfg.match(/VERIFIED_ADMIN_RUNTIME_VERSION:\s*(\d+)/)[1], '60');
 });

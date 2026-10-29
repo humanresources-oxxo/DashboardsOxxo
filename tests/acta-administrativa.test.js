@@ -204,16 +204,18 @@ test('el registro agrupa actas por tienda y por empleado', () => {
   assert.equal(conHechos.empleados.length, 0, 'un acta de hechos sin trabajador no crea una persona vacia');
 });
 
-test('consultar el registro exige su propia contraseña y no expone el Word', () => {
-  const srv = servidor({ ACTAS_DESTINATARIOS: 'rh@empresa.com' });
+test('consultar el registro exige la contraseña del admin y no expone el Word', () => {
+  const srv = servidor({ ACTAS_DESTINATARIOS: 'rh@empresa.com', ACTAS_CONSULTA_PASSWORD: 'vieja' });
   srv.gs.registrarFalloAuth = () => 1;
+  srv.gs.registrarIntentoFallido = () => {};
   srv.gs.Utilities.sleep = () => {};
-  assert.throws(() => srv.gs.consultarActas_({ password: 'x' }), /no está configurada/);
-  srv.props.ACTAS_CONSULTA_PASSWORD = 'secreta';
-  assert.throws(() => srv.gs.consultarActas_({ password: 'otra' }), /Contraseña incorrecta/);
-  assert.deepEqual([...srv.gs.consultarActas_({ password: 'secreta' }).actas], [], 'sin registro todavia');
+  assert.throws(() => srv.gs.consultarActas_({ adminPassword: 'x' }), /ADMIN_PASSWORD no configurado/);
+  srv.props.ADMIN_PASSWORD = 'secreta';
+  assert.throws(() => srv.gs.consultarActas_({ adminPassword: 'otra' }), /No autorizado/);
+  assert.throws(() => srv.gs.consultarActas_({ password: 'vieja' }), /No autorizado/, 'la antigua contraseña de consulta ya no sirve');
+  assert.deepEqual([...srv.gs.consultarActas_({ adminPassword: 'secreta' }).actas], [], 'sin registro todavia');
   srv.gs.enviarActa_(pedido({ numEmpleado: '3002700', crTienda: '504DV', falta: 'Pulsos', fecha: '2026-07-31' }));
-  const r = srv.gs.consultarActas_({ password: 'secreta' });
+  const r = srv.gs.consultarActas_({ adminPassword: 'secreta' });
   assert.equal(r.actas.length, 1);
   assert.equal(r.actas[0].numEmpleado, '3002700');
   assert.equal(r.actas[0].cr, '504DV');
@@ -310,7 +312,7 @@ test('la pagina tiene el apartado de firmas y bloquea los datos ya firmados', ()
 });
 
 test('el registro anota cuántas firmas se hicieron en pantalla y el correo lo dice', () => {
-  const srv = servidor({ ACTAS_DESTINATARIOS: 'rh@empresa.com', ACTAS_CONSULTA_PASSWORD: 'clave' });
+  const srv = servidor({ ACTAS_DESTINATARIOS: 'rh@empresa.com', ADMIN_PASSWORD: 'clave' });
   srv.gs.enviarActa_(pedido({ numEmpleado: '1' }));
   srv.gs.enviarActa_(pedido({ numEmpleado: '1', firmantes: 4, firmasPantalla: 2, firmasNegadas: 1 }));
   srv.gs.enviarActa_(pedido({ numEmpleado: '1', firmantes: 3, firmasPantalla: 3 }));
@@ -321,23 +323,23 @@ test('el registro anota cuántas firmas se hicieron en pantalla y el correo lo d
   assert.match(srv.enviados[1].body, /Firmas: 2 de 4 en pantalla · 1 se negó\. Las firmas que faltan deben recabarse a mano\./);
   assert.ok(!/recabarse a mano/.test(srv.enviados[2].body), 'si firmaron todos no pide firmas a mano');
   assert.equal(srv.gs.firmasActa_({ firmantes: 'x', firmasPantalla: -3 }).texto, 'A mano', 'datos raros cuentan como firma a mano');
-  const consulta = srv.gs.consultarActas_({ password: 'clave' });
+  const consulta = srv.gs.consultarActas_({ adminPassword: 'clave' });
   assert.deepEqual(consulta.actas.map(a => a.firmas), ['A mano', '2 de 4 en pantalla · 1 se negó', '3 de 3 en pantalla']);
 });
 
 test('anular un registro exige su propia contraseña, lo marca y deja de contarlo', () => {
-  const srv = servidor({ ACTAS_DESTINATARIOS: 'rh@empresa.com', ACTAS_CONSULTA_PASSWORD: 'ver' });
+  const srv = servidor({ ACTAS_DESTINATARIOS: 'rh@empresa.com', ADMIN_PASSWORD: 'ver' });
   srv.gs.registrarFalloAuth = () => 1;
   srv.gs.Utilities.sleep = () => {};
   srv.gs.enviarActa_(pedido({ numEmpleado: '1', crTienda: '504DV', falta: 'Primera' }));
   srv.gs.enviarActa_(pedido({ numEmpleado: '1', crTienda: '504DV', falta: 'Segunda' }));
-  const [a1, a2] = srv.gs.consultarActas_({ password: 'ver' }).actas;
+  const [a1, a2] = srv.gs.consultarActas_({ adminPassword: 'ver' }).actas;
   assert.match(a1.id, /^2-/);
   const pedir = extra => srv.gs.anularActa_({ id: a1.id, motivo: 'Se levantó por error', quien: 'Cristian', password: 'borrar', ...extra });
 
   assert.throws(() => pedir(), /no está configurada \(falta ACTAS_BORRADO_PASSWORD\)/);
   srv.props.ACTAS_BORRADO_PASSWORD = 'borrar';
-  assert.throws(() => pedir({ password: 'ver' }), /Contraseña incorrecta/, 'la de consulta no sirve para anular');
+  assert.throws(() => pedir({ password: 'ver' }), /Contraseña incorrecta/, 'la del admin no sirve para anular');
   assert.throws(() => pedir({ motivo: 'x' }), /motivo/);
   assert.throws(() => pedir({ quien: ' ' }), /quién anula/);
   assert.throws(() => pedir({ id: 'cualquiera' }), /no válido/);
@@ -351,7 +353,7 @@ test('anular un registro exige su propia contraseña, lo marca y deja de contarl
   assert.equal(hoja.filas.length, 3, 'no se borra ninguna fila');
   assert.throws(() => pedir(), /ya estaba anulado/);
 
-  const visibles = srv.gs.consultarActas_({ password: 'ver' }).actas;
+  const visibles = srv.gs.consultarActas_({ adminPassword: 'ver' }).actas;
   assert.deepEqual(visibles.map(a => a.falta), ['Segunda'], 'la anulada ya no se muestra');
   assert.equal(visibles[0].id, a2.id);
   assert.match(srv.libros[0].getSheetByName('Resumen por empleado').formulas.A1, /A:Q.*where E is not null and O is null/);
@@ -364,10 +366,15 @@ test('anular un registro exige su propia contraseña, lo marca y deja de contarl
   assert.equal(hoja.filas[3][15], 'Duplicada');
 });
 
-test('la pagina pide motivo, quien y contraseña para anular', () => {
-  const html = fs.readFileSync(path.join(root, 'dashboards', 'acta-administrativa.html'), 'utf8');
-  for (const id of ['reg-anular', 'reg-anular-motivo', 'reg-anular-quien', 'reg-anular-password']) assert.ok(html.includes(`id="${id}"`), id);
+test('el registro de actas vive en el panel admin, con la sesion del admin', () => {
+  const admin = fs.readFileSync(path.join(root, 'admin.html'), 'utf8');
+  assert.match(admin, /data-tab="actas"[^>]*>[\s\S]*?Registro de actas<\/button>/);
+  for (const id of ['tabpanel-actas', 'reg-tabla-detalle', 'reg-anular', 'reg-anular-motivo', 'reg-anular-quien', 'reg-anular-password']) assert.ok(admin.includes(`id="${id}"`), id);
+  assert.match(admin, /<script src="js\/acta-registro\.js\?v=[0-9a-f]+"><\/script>/);
+  const pagina = fs.readFileSync(path.join(root, 'dashboards', 'acta-administrativa.html'), 'utf8');
+  assert.ok(!pagina.includes('panel-registro') && !pagina.includes('acta-registro.js'), 'Actas y Formatos ya no trae el registro');
   const js = fs.readFileSync(path.join(root, 'js', 'acta-registro.js'), 'utf8');
+  assert.ok(js.includes("action: 'consultarActas', adminPassword") && js.includes('OXXO_ADMIN_CTX.getAdminPassword()'));
   assert.ok(js.includes("action: 'anularActa'") && js.includes('sessionStorage.setItem(CLAVE_BORRADO'));
   assert.ok(!/localStorage\.(set|get)Item/.test(js), 'ninguna contraseña va a localStorage');
 });

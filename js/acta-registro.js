@@ -1,15 +1,15 @@
 /* ==========================================================
-   REGISTRO DE ACTAS — consulta por tienda y empleado
-   Consumido por: dashboards/acta-administrativa.html (pestaña "Registro").
+   ADMIN · REGISTRO DE ACTAS — consulta por tienda y empleado
+   Consumido por: admin.html (pestaña "Registro de actas", area RH).
 
    El registro vive en un libro PRIVADO del Apps Script (ver enviarActa_).
-   La accion "consultarActas" lo entrega solo con ACTAS_CONSULTA_PASSWORD;
-   la contraseña se recuerda en esta pestaña del navegador (sessionStorage),
-   nunca en localStorage.
+   La accion "consultarActas" lo entrega con la contraseña del panel admin
+   (la de la sesion abierta: OXXO_ADMIN_CTX.getAdminPassword()).
 
    "Anular" (accion "anularActa", con ACTAS_BORRADO_PASSWORD, otra
    contraseña) no borra la fila: la marca con fecha, motivo y quien, y deja
-   de mostrarse y de contar.
+   de mostrarse y de contar. Esa contraseña se recuerda en esta pestaña del
+   navegador (sessionStorage), nunca en localStorage.
 
    Uso: OXXO_ACTA_REGISTRO.agrupar(actas) -> { tiendas, empleados },
    OXXO_ACTA_REGISTRO.montar() para la pagina.
@@ -17,7 +17,6 @@
 (function () {
   'use strict';
 
-  const CLAVE_SESION = 'oxxo_actas_consulta';
   const CLAVE_BORRADO = 'oxxo_actas_borrado';
   const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
   const norm = v => String(v == null ? '' : v).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -60,46 +59,36 @@
 
   function montar() {
     const $ = id => document.getElementById(id);
-    const tabs = [$('tab-nueva'), $('tab-registro')];
+    if (!$('tabpanel-actas')) return;
     let actas = [];
-
-    function mostrarTab(cual) {
-      tabs.forEach(t => {
-        const activa = t.id === cual;
-        t.classList.toggle('is-active', activa);
-        t.setAttribute('aria-selected', String(activa));
-        t.tabIndex = activa ? 0 : -1;
-        $(t.getAttribute('aria-controls')).hidden = !activa;
-      });
-    }
-    tabs.forEach((t, i) => {
-      t.addEventListener('click', () => mostrarTab(t.id));
-      t.addEventListener('keydown', e => {
-        if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
-        const otra = tabs[(i + 1) % tabs.length];
-        mostrarTab(otra.id); otra.focus();
-      });
-    });
+    let cargado = false;
 
     function avisar(texto, tipo) {
       const el = $('reg-estado');
       el.textContent = texto; el.dataset.tipo = tipo || 'info'; el.hidden = !texto;
     }
-
-    async function consultar(password) {
+    // text/plain evita la consulta previa de CORS que Apps Script no contesta.
+    async function pedir(cuerpo) {
       const url = window.OXXO_CONFIG && window.OXXO_CONFIG.ADMIN_UPLOAD_URL;
-      if (!url) { avisar('La consulta no está configurada.', 'error'); return; }
-      $('reg-consultar').disabled = true;
+      if (!url) throw new Error('el Apps Script no está configurado');
+      const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(cuerpo) });
+      const datos = await r.json().catch(() => null);
+      if (!r.ok || !datos || datos.ok === false) throw new Error((datos && datos.error) || 'el servidor no respondió');
+      return datos;
+    }
+
+    async function consultar() {
+      const adminPassword = window.OXXO_ADMIN_CTX ? window.OXXO_ADMIN_CTX.getAdminPassword() : '';
+      if (!adminPassword) { avisar('Entra al panel admin con su contraseña para ver el registro.', 'error'); return; }
+      $('reg-actualizar').disabled = true;
       avisar('Consultando el registro…', 'info');
       try {
-        // text/plain evita la consulta previa de CORS que Apps Script no contesta.
-        const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'consultarActas', password }) });
-        const datos = await r.json().catch(() => null);
-        if (!r.ok || !datos || datos.ok === false) {
-          const motivo = (datos && datos.error) || 'el servidor no respondió';
-          throw new Error(/no autorizado/i.test(motivo) ? 'la consulta aún no está activada en el Apps Script' : motivo);
+        let datos;
+        try { datos = await pedir({ action: 'consultarActas', adminPassword }); } catch (e) {
+          // Un Apps Script anterior a v60 pide la contraseña de consulta.
+          throw new Error(/no autorizado|contraseña/i.test(e.message) ? 'el Apps Script no aceptó la sesión del admin (¿ya está publicada la v60?)' : e.message);
         }
-        try { sessionStorage.setItem(CLAVE_SESION, password); } catch (e) { /* sin almacenamiento */ }
+        cargado = true;
         actas = Array.isArray(datos.actas) ? datos.actas : [];
         const tiendas = [...new Map(actas.map(a => [claveTienda(a), a])).values()].sort((a, b) => String(a.tienda).localeCompare(String(b.tienda), 'es'));
         const sel = $('reg-tienda');
@@ -111,14 +100,13 @@
         const tipos = [...new Set(actas.map(a => a.tipo || 'Acta administrativa'))].sort((a, b) => a.localeCompare(b, 'es'));
         selTipo.innerHTML = '<option value="">Todos los tipos</option>' + tipos.map(t => `<option value="${esc(t)}">${esc(t)}</option>`).join('');
         selTipo.value = tipoPrevio;
-        avisar(actas.length ? '' : 'Todavía no hay actas registradas. Se registran al enviarlas por correo.', 'info');
+        avisar(actas.length ? '' : 'Todavía no hay actas registradas. Se registran al enviarlas por correo desde Actas y Formatos.', 'info');
         $('reg-contenido').hidden = !actas.length;
         pintar();
       } catch (e) {
-        if (/contraseña/i.test(e.message)) { try { sessionStorage.removeItem(CLAVE_SESION); } catch (x) { /* nada */ } }
         avisar('No se pudo consultar: ' + e.message + '.', 'error');
       } finally {
-        $('reg-consultar').disabled = false;
+        $('reg-actualizar').disabled = false;
       }
     }
 
@@ -134,11 +122,11 @@
       const lista = filtradas();
       const g = agrupar(lista);
       const reincidentes = g.empleados.filter(e => e.actas > 1).length;
-      const kpi = (titulo, valor, sub, color) => `<div class="kpi-card ${color}"><div class="kpi-card__label">${titulo}</div><div class="kpi-card__value">${valor}</div><div class="kpi-card__delta neu">${sub}</div></div>`;
-      $('reg-kpis').innerHTML = kpi('Documentos registrados', lista.length, 'con los filtros activos', 'rojo')
-        + kpi('Empleados con acta', g.empleados.length, `${reincidentes} con más de una`, 'naranja')
-        + kpi('Tiendas', g.tiendas.length, 'con al menos un acta', 'amarillo')
-        + kpi('Última acta', lista.length ? fechaCorta([...lista].sort(masReciente)[0].fecha) : '—', 'fecha del acta', 'verde');
+      const kpi = (titulo, valor, sub) => `<div class="reg-kpi"><span>${titulo}</span><strong>${valor}</strong><small>${sub}</small></div>`;
+      $('reg-kpis').innerHTML = kpi('Documentos registrados', lista.length, 'con los filtros activos')
+        + kpi('Empleados con acta', g.empleados.length, `${reincidentes} con más de una`)
+        + kpi('Tiendas', g.tiendas.length, 'con al menos un acta')
+        + kpi('Última acta', lista.length ? fechaCorta([...lista].sort(masReciente)[0].fecha) : '—', 'fecha del acta');
 
       $('reg-badge-tiendas').textContent = `${g.tiendas.length} tiendas`;
       $('reg-tabla-tiendas').innerHTML = '<thead><tr><th>Tienda</th><th>CR</th><th class="center">Actas</th><th class="center">Empleados</th><th>Última</th></tr></thead><tbody>'
@@ -181,16 +169,12 @@
       const motivo = $('reg-anular-motivo').value.trim(), quien = $('reg-anular-quien').value.trim(), password = $('reg-anular-password').value;
       const falta = [motivo.length < 5 && 'el motivo', !quien && 'quién anula', !password && 'la contraseña'].filter(Boolean);
       if (falta.length) { avisarAnular('Falta ' + (falta.length > 1 ? falta.slice(0, -1).join(', ') + ' y ' + falta[falta.length - 1] : falta[0]) + '.', 'error'); return; }
-      const url = window.OXXO_CONFIG && window.OXXO_CONFIG.ADMIN_UPLOAD_URL;
       $('reg-anular-confirmar').disabled = true;
       avisarAnular('Anulando…', 'info');
       try {
-        const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'anularActa', id: anulando.id, motivo, quien, password }) });
-        const datos = await r.json().catch(() => null);
-        if (!r.ok || !datos || datos.ok === false) {
-          const motivoError = (datos && datos.error) || 'el servidor no respondió';
+        try { await pedir({ action: 'anularActa', id: anulando.id, motivo, quien, password }); } catch (e) {
           // Un Apps Script sin la accion "anularActa" contesta "No autorizado".
-          throw new Error(/no autorizado/i.test(motivoError) ? 'la anulación aún no está activada en el Apps Script' : motivoError);
+          throw new Error(/no autorizado/i.test(e.message) ? 'la anulación aún no está activada en el Apps Script' : e.message);
         }
         try { sessionStorage.setItem(CLAVE_BORRADO, password); } catch (e) { /* sin almacenamiento */ }
         const quien1 = anulando.trabajador || 'el documento';
@@ -212,27 +196,12 @@
     $('reg-anular-form').addEventListener('submit', e => { e.preventDefault(); anular(); });
     $('reg-anular-cancelar').addEventListener('click', () => dialogo.close());
 
-    $('reg-acceso').addEventListener('submit', e => {
-      e.preventDefault();
-      const pw = $('reg-password').value;
-      if (!pw) { avisar('Escribe la contraseña de consulta.', 'error'); return; }
-      consultar(pw);
-    });
-    $('reg-actualizar').addEventListener('click', () => {
-      let pw = '';
-      try { pw = sessionStorage.getItem(CLAVE_SESION) || ''; } catch (e) { /* nada */ }
-      if (pw) consultar(pw);
-    });
+    $('reg-actualizar').addEventListener('click', consultar);
     $('reg-buscar').addEventListener('input', pintar);
     $('reg-tienda').addEventListener('change', pintar);
     $('reg-tipo').addEventListener('change', pintar);
-
-    // Si ya se consulto en esta pestaña, entra directo al abrir "Registro".
-    $('tab-registro').addEventListener('click', () => {
-      let pw = '';
-      try { pw = sessionStorage.getItem(CLAVE_SESION) || ''; } catch (e) { /* nada */ }
-      if (pw && !actas.length) { $('reg-password').value = pw; consultar(pw); }
-    });
+    // Se consulta al abrir la pestaña por primera vez (ya con la sesion del admin).
+    document.querySelector('.admin-tab[data-tab="actas"]').addEventListener('click', () => { if (!cargado) consultar(); });
   }
 
   window.OXXO_ACTA_REGISTRO = { agrupar, fechaCorta, montar };

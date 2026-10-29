@@ -86,6 +86,7 @@
       <button class="admin-tab" type="button" role="tab" aria-selected="false" data-tab="presentaciones"><svg class="icon-inline" viewBox="0 0 24 24" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>Presentaciones</button>
       <button class="admin-tab" type="button" role="tab" aria-selected="false" data-tab="excels"><svg class="icon-inline" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>Excels</button>
       <button class="admin-tab" type="button" role="tab" aria-selected="false" data-tab="reasignaciones"><svg class="icon-inline" viewBox="0 0 24 24" aria-hidden="true"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>Reasignaciones</button>
+      <button class="admin-tab" type="button" role="tab" aria-selected="false" data-tab="actas"><svg class="icon-inline" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="14 3 14 9 20 9"></polyline><path d="M8 13h8M8 17h5"></path></svg>Registro de actas</button>
     </nav>
     <section class="admin-tabpanel" id="tabpanel-upload" role="tabpanel" data-admin-area="rh">
     <section class="admin-commercial-panel admin-card hidden" id="admin-commercial-panel">
@@ -375,6 +376,58 @@
       <div class="helper-box" id="reas-status" style="margin-top:12px">Cargando reasignaciones actuales…</div>
     </section>
     </section>
+
+    <section class="admin-tabpanel hidden" id="tabpanel-actas" role="tabpanel">
+    <section class="admin-card">
+      <span class="admin-eyebrow">Relaciones laborales · Libro privado</span>
+      <h2>Registro de actas</h2>
+      <p style="color:var(--ap-muted);font-size:13px;font-weight:600;margin:0 0 14px">Cada documento enviado por correo desde <a href="dashboards/acta-administrativa.html">Actas y Formatos</a> queda en un libro privado del Apps Script (nunca en el libro publicado). Aquí ves cuántos lleva cada empleado y tienda. <strong>Anular</strong> no borra la fila: la marca con fecha, motivo y quién, y deja de contar.</p>
+      <div class="reg-filtros">
+        <label class="reg-campo"><span>Buscar</span><input class="admin-input" id="reg-buscar" type="search" placeholder="Nombre, No. de empleado, tienda, CR o falta"></label>
+        <label class="reg-campo"><span>Tienda</span><select class="admin-input" id="reg-tienda"><option value="">Todas las tiendas</option></select></label>
+        <label class="reg-campo"><span>Tipo</span><select class="admin-input" id="reg-tipo"><option value="">Todos los tipos</option></select></label>
+        <button class="admin-btn secondary" type="button" id="reg-actualizar">Actualizar</button>
+      </div>
+      <p class="reg-estado" id="reg-estado" role="status" aria-live="polite" hidden></p>
+    </section>
+    <div id="reg-contenido" hidden>
+      <div class="reg-kpis" id="reg-kpis"></div>
+      <div class="reg-grid">
+        <section class="admin-card">
+          <div class="reg-card-head"><h2>Actas por tienda</h2><span class="reg-badge" id="reg-badge-tiendas">—</span></div>
+          <div class="table-wrap"><table class="preview-table reg-tabla" id="reg-tabla-tiendas"></table></div>
+        </section>
+        <section class="admin-card">
+          <div class="reg-card-head"><h2>Actas por empleado</h2><span class="reg-badge" id="reg-badge-empleados">—</span></div>
+          <div class="table-wrap"><table class="preview-table reg-tabla" id="reg-tabla-empleados"></table></div>
+        </section>
+      </div>
+      <section class="admin-card" style="margin-top:18px">
+        <div class="reg-card-head"><h2>Detalle de actas</h2><span class="reg-badge" id="reg-badge-detalle">—</span></div>
+        <div class="table-wrap"><table class="preview-table reg-tabla" id="reg-tabla-detalle"></table></div>
+      </section>
+    </div>
+
+    <!-- Anular un registro: no se borra, queda marcado en el libro privado. -->
+    <dialog class="reg-anular" id="reg-anular" aria-labelledby="reg-anular-titulo">
+      <form id="reg-anular-form" autocomplete="off" novalidate>
+        <h2 id="reg-anular-titulo">Anular registro</h2>
+        <p class="reg-anular-acta" id="reg-anular-acta"></p>
+        <p class="reg-anular-nota">El registro ya no se mostrará ni contará para el empleado o la tienda. Queda en el libro privado marcado como anulado, con el motivo y quién lo anuló. El correo que ya se envió a RH no cambia.</p>
+        <label class="reg-campo" for="reg-anular-motivo"><span>Motivo *</span></label>
+        <textarea class="admin-input" id="reg-anular-motivo" name="motivo" rows="3" maxlength="200" placeholder="Ej. Se levantó por error, datos equivocados, acta duplicada"></textarea>
+        <label class="reg-campo" for="reg-anular-quien"><span>¿Quién anula? *</span></label>
+        <input class="admin-input" id="reg-anular-quien" name="quien" maxlength="80" placeholder="Tu nombre">
+        <label class="reg-campo" for="reg-anular-password"><span>Contraseña para anular *</span></label>
+        <input class="admin-input" id="reg-anular-password" name="password" type="password" autocomplete="off" placeholder="No es la del panel admin">
+        <p class="reg-estado" id="reg-anular-estado" role="status" aria-live="polite" hidden></p>
+        <div class="reg-anular-acciones">
+          <button type="button" class="admin-btn secondary" id="reg-anular-cancelar">Cancelar</button>
+          <button type="submit" class="admin-btn primary" id="reg-anular-confirmar">Anular registro</button>
+        </div>
+      </form>
+    </dialog>
+    </section>
   </main>
   <dialog class="restore-dialog" id="restore-dialog" aria-labelledby="restore-dialog-title">
     <div class="restore-dialog__head"><div><div class="restore-dialog__eyebrow">Restauración protegida</div><h2 id="restore-dialog-title">Comparar respaldo</h2></div><button class="restore-dialog__close" type="button" id="restore-dialog-close" aria-label="Cerrar">×</button></div>
@@ -407,6 +460,7 @@
   <script src="js/admin-indicadores.js?v=5eff998f"></script>
   <script src="js/admin-pptx-asesor.js?v=5eff998f"></script>
   <script src="js/admin-reasignaciones.js?v=5eff998f"></script>
+  <script src="js/acta-registro.js?v=5eff998f"></script>
   <script>
     (function(){
       var tabs = document.querySelectorAll('.admin-tab');
@@ -419,6 +473,7 @@
           if(panel) panel.classList.remove('hidden');
         });
       });
+      document.addEventListener('DOMContentLoaded', function(){ OXXO_ACTA_REGISTRO.montar(); });
     })();
   </script>
 </body>

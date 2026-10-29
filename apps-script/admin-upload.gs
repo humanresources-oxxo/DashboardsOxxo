@@ -12,7 +12,7 @@
  * Despues de eso, admin.html publica directo sin pedir URL.
  */
 const SPREADSHEET_ID = '1EbUuyy-PRXiDwPmn9L14P93cGN6VXTyLfAHx-CE8M_A';
-const APP_VERSION = '59';
+const APP_VERSION = '60';
 const ADMIN_PASSWORD_PROPERTY = 'ADMIN_PASSWORD';
 const AUDIT_SHEET = '_Admin_Bitacora';
 const BACKUP_PREFIX = '_BK_';
@@ -338,8 +338,8 @@ function doPost(e) {
       return jsonResponse(enviarActa_(payload));
     }
 
-    // Consulta del registro de actas: exige ACTAS_CONSULTA_PASSWORD y solo
-    // devuelve las columnas del registro (nunca el Word).
+    // Consulta del registro de actas (pestaña del panel admin): exige la
+    // contraseña del admin y solo devuelve las columnas del registro (nunca el Word).
     if (String(payload.action || '') === 'consultarActas') {
       return jsonResponse(consultarActas_(payload));
     }
@@ -2355,9 +2355,6 @@ const ACTAS_MAX_COPIAS = 3;
 const ACTAS_MAX_POR_10_MIN = 30;
 const ACTAS_DOCX_MIME = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 const ACTAS_REGISTRO_PROPERTY = 'ACTAS_REGISTRO_SPREADSHEET_ID';
-// Contraseña para ver el registro desde la pagina (distinta a la del panel
-// admin, para poder compartirla con RH sin dar acceso a publicar).
-const ACTAS_CONSULTA_PASSWORD_PROPERTY = 'ACTAS_CONSULTA_PASSWORD';
 const ACTAS_CONSULTA_MAX_FILAS = 5000;
 // Contraseña para anular registros (aparte de la de consulta).
 const ACTAS_BORRADO_PASSWORD_PROPERTY = 'ACTAS_BORRADO_PASSWORD';
@@ -2545,9 +2542,6 @@ function registrarActa_(acta) {
   }
 }
 
-function assertActasConsultaAuthorized_(payload) {
-  assertActasPassword_(payload, ACTAS_CONSULTA_PASSWORD_PROPERTY, 'La consulta del registro');
-}
 function assertActasPassword_(payload, propiedad, que) {
   const configured = PropertiesService.getScriptProperties().getProperty(propiedad) || '';
   if (!configured) throw new Error(que + ' aún no está configurada (falta ' + propiedad + ')');
@@ -2564,8 +2558,9 @@ function textoFechaActa_(valor, tz) {
   return String(valor == null ? '' : valor).trim();
 }
 
+// El registro se consulta solo desde el panel admin, con su contraseña.
 function consultarActas_(payload) {
-  assertActasConsultaAuthorized_(payload);
+  assertAuthorized(payload);
   const id = String(PropertiesService.getScriptProperties().getProperty(ACTAS_REGISTRO_PROPERTY) || '').trim();
   if (!id) return { ok: true, actas: [] };
   const ss = SpreadsheetApp.openById(id);

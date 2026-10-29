@@ -190,3 +190,41 @@ body{background:var(--ap-bg);color:var(--ap-text)}
 }
 @media(prefers-reduced-motion:reduce){.admin-tabs{scroll-behavior:auto}}
 .workbook-meter{margin:0 0 18px;border:1px solid var(--ap-border);border-radius:var(--ap-radius);background:var(--ap-card);padding:14px 16px}.workbook-meter__head{display:flex;align-items:baseline;justify-content:space-between;gap:12px}.workbook-meter__head span{color:var(--ap-muted);font-size:10px;font-weight:800;letter-spacing:.09em;text-transform:uppercase}.workbook-meter__head strong{font-family:var(--font-display);font-size:1.5rem;color:var(--ap-green)}.workbook-meter__bar{height:10px;margin:8px 0 7px;border-radius:999px;background:var(--ap-soft);overflow:hidden}.workbook-meter__bar i{display:block;height:100%;border-radius:inherit;background:var(--ap-green)}.workbook-meter small{color:var(--ap-muted);font-size:11px;font-weight:600}.workbook-meter.warn strong{color:var(--ap-gold)}.workbook-meter.warn .workbook-meter__bar i{background:var(--ap-gold)}.workbook-meter.bad strong{color:var(--ap-red-dark)}.workbook-meter.bad .workbook-meter__bar i{background:var(--ap-red)}
+
+/* Registro de actas (js/acta-registro.js): filtros, indicadores, tablas y
+   dialogo de anulacion con el lenguaje visual del panel. */
+.reg-filtros{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px}
+.reg-campo{display:flex;flex-direction:column;gap:6px;flex:1 1 220px;min-width:0}
+.reg-campo span{color:var(--ap-text);font-size:12px;font-weight:800}
+.reg-estado{margin:14px 0 0;padding:10px 12px;border-radius:var(--ap-radius-sm);background:#edf7fc;color:var(--ap-focus);font-size:13px;font-weight:700}
+.reg-estado[data-tipo="ok"]{background:var(--ap-tint-green);color:var(--ap-green)}
+.reg-estado[data-tipo="error"]{background:var(--ap-tint-red);color:var(--ap-red-dark)}
+.reg-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:18px 0}
+.reg-kpi{display:flex;flex-direction:column;gap:4px;padding:16px 18px;border:1px solid var(--ap-border);border-left:4px solid var(--ap-red);border-radius:var(--ap-radius);background:var(--ap-card);box-shadow:var(--ap-shadow);min-width:0}
+.reg-kpi span{color:var(--ap-muted);font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+.reg-kpi strong{font-family:var(--font-display);font-size:1.9rem;line-height:1.1;overflow-wrap:anywhere}
+.reg-kpi small{color:var(--ap-muted);font-size:12px;font-weight:700}
+.reg-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);gap:18px}
+.reg-grid .admin-card,#tabpanel-actas .admin-card{min-width:0}
+.reg-card-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+.reg-card-head h2{margin:0}
+.reg-badge{padding:3px 10px;border-radius:999px;background:var(--ap-soft);color:var(--ap-muted);font-size:11px;font-weight:800;white-space:nowrap}
+.reg-tabla td small{display:block;color:var(--ap-muted);font-size:10.5px}
+.reg-tabla .center{text-align:center}
+.reg-tipo{display:inline-block;margin:1px 0;padding:2px 8px;border-radius:999px;background:#edf2fa;color:#1F3B70;font-size:10.5px;font-weight:800;white-space:nowrap}
+.reg-conteo{display:inline-grid;place-items:center;min-width:26px;height:26px;padding:0 6px;border-radius:999px;background:#f1ece7;font-weight:800}
+.reg-reincide .reg-conteo{background:var(--ap-tint-red);color:var(--ap-red-dark)}
+.reg-btn-anular{min-height:32px;padding:0 10px;border:1px solid #e5c3c5;border-radius:8px;background:#fff;color:var(--ap-red-dark);font:inherit;font-size:11.5px;font-weight:800;cursor:pointer;white-space:nowrap}
+.reg-btn-anular:hover{background:var(--ap-tint-red)}
+.reg-anular{width:min(480px,calc(100% - 24px));max-height:92dvh;overflow-y:auto;margin:auto;padding:0;border:1px solid var(--ap-border);border-radius:var(--ap-radius);background:var(--ap-card);color:var(--ap-text);box-shadow:var(--ap-shadow-float)}
+.reg-anular::backdrop{background:rgba(42,25,22,.58)}
+.reg-anular form{display:grid;gap:8px;padding:22px}
+.reg-anular h2{margin:0 0 4px;color:var(--ap-red-dark);font-size:1.4rem}
+.reg-anular-acta{margin:0;padding:10px 12px;border-radius:var(--ap-radius-sm);background:var(--ap-soft);font-size:13px;font-weight:700}
+.reg-anular-acta small{display:block;color:var(--ap-muted);font-weight:600}
+.reg-anular-nota{margin:0 0 4px;color:var(--ap-muted);font-size:12px;line-height:1.45}
+.reg-anular .reg-campo{flex:none;margin-top:4px}
+.reg-anular .reg-estado{margin:4px 0 0}
+.reg-anular-acciones{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px;margin-top:8px}
+@media(max-width:1000px){.reg-grid{grid-template-columns:1fr}.reg-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:620px){.reg-filtros .admin-btn{width:100%}.reg-anular-acciones .admin-btn{flex:1 1 100%}}

@@ -41,12 +41,6 @@
     <div class="hero-context"><span>Elige el tipo de documento, llena los datos, revisa la vista previa, firmen en pantalla (o a mano, ya impreso) y genera el Word.</span></div>
   </div>
 
-  <div class="acta-tabs" role="tablist" aria-label="Secciones de actas">
-    <button type="button" class="acta-tab is-active" role="tab" id="tab-nueva" aria-controls="panel-nueva" aria-selected="true">Nuevo documento</button>
-    <button type="button" class="acta-tab" role="tab" id="tab-registro" aria-controls="panel-registro" aria-selected="false" tabindex="-1">Registro de actas</button>
-  </div>
-
-  <section id="panel-nueva" role="tabpanel" aria-labelledby="tab-nueva">
   <div class="acta-layout">
     <form id="acta-form" class="acta-form" autocomplete="off" novalidate>
       <fieldset class="card acta-grupo" data-bloqueable>
@@ -236,83 +230,11 @@
       <article class="acta-vista" id="acta-vista"></article>
     </aside>
   </div>
-  </section>
-
-  <section id="panel-registro" role="tabpanel" aria-labelledby="tab-registro" hidden>
-    <form class="card reg-acceso" id="reg-acceso" autocomplete="off">
-      <div class="acta-campo-grupo">
-        <label for="reg-password">Contraseña de consulta</label>
-        <input id="reg-password" name="password" type="password" autocomplete="current-password" placeholder="La comparte RH">
-      </div>
-      <button type="submit" class="filtro-btn acta-btn acta-btn--primario" id="reg-consultar">Ver registro</button>
-      <p class="acta-estado" id="reg-estado" role="status" aria-live="polite" hidden></p>
-    </form>
-
-    <div id="reg-contenido" hidden>
-      <div class="kpis kpi-grid reg-kpis" id="reg-kpis"></div>
-      <div class="card reg-filtros">
-        <div class="acta-campo-grupo">
-          <label for="reg-buscar">Buscar</label>
-          <input id="reg-buscar" type="search" placeholder="Nombre, No. de empleado, tienda, CR o falta">
-        </div>
-        <div class="acta-campo-grupo">
-          <label for="reg-tienda">Tienda</label>
-          <select id="reg-tienda"><option value="">Todas las tiendas</option></select>
-        </div>
-        <div class="acta-campo-grupo">
-          <label for="reg-tipo">Tipo</label>
-          <select id="reg-tipo"><option value="">Todos los tipos</option></select>
-        </div>
-        <button type="button" class="filtro-btn acta-btn acta-btn--suave" id="reg-actualizar">Actualizar</button>
-      </div>
-      <div class="reg-grid">
-        <div class="card">
-          <div class="card-head"><div class="card-title">Actas por tienda</div><span class="card-badge" id="reg-badge-tiendas">—</span></div>
-          <div class="tbl-wrap"><table class="tbl" id="reg-tabla-tiendas"></table></div>
-        </div>
-        <div class="card">
-          <div class="card-head"><div class="card-title">Actas por empleado</div><span class="card-badge" id="reg-badge-empleados">—</span></div>
-          <div class="tbl-wrap"><table class="tbl" id="reg-tabla-empleados"></table></div>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-head"><div class="card-title">Detalle de actas</div><span class="card-badge" id="reg-badge-detalle">—</span></div>
-        <div class="tbl-wrap"><table class="tbl" id="reg-tabla-detalle"></table></div>
-      </div>
-    </div>
-
-    <!-- Anular un registro: no se borra, queda marcado en el libro privado. -->
-    <dialog class="reg-anular" id="reg-anular" aria-labelledby="reg-anular-titulo">
-      <form id="reg-anular-form" autocomplete="off" novalidate>
-        <h2 id="reg-anular-titulo">Anular registro</h2>
-        <p class="reg-anular-acta" id="reg-anular-acta"></p>
-        <p class="reg-anular-nota">El registro ya no se mostrará ni contará para el empleado o la tienda. Queda en el libro privado marcado como anulado, con el motivo y quién lo anuló. El correo que ya se envió a RH no cambia.</p>
-        <div class="acta-campo-grupo">
-          <label for="reg-anular-motivo">Motivo *</label>
-          <textarea id="reg-anular-motivo" name="motivo" rows="3" maxlength="200" placeholder="Ej. Se levantó por error, datos equivocados, acta duplicada"></textarea>
-        </div>
-        <div class="acta-campo-grupo">
-          <label for="reg-anular-quien">¿Quién anula? *</label>
-          <input id="reg-anular-quien" name="quien" maxlength="80" placeholder="Tu nombre">
-        </div>
-        <div class="acta-campo-grupo">
-          <label for="reg-anular-password">Contraseña para anular *</label>
-          <input id="reg-anular-password" name="password" type="password" autocomplete="off" placeholder="La da RH (no es la de consulta)">
-        </div>
-        <p class="acta-estado" id="reg-anular-estado" role="status" aria-live="polite" hidden></p>
-        <div class="reg-anular-acciones">
-          <button type="button" class="filtro-btn acta-btn acta-btn--suave" id="reg-anular-cancelar">Cancelar</button>
-          <button type="submit" class="filtro-btn acta-btn acta-btn--primario" id="reg-anular-confirmar">Anular registro</button>
-        </div>
-      </form>
-    </dialog>
-  </section>
 </div>
 
 <script src="../js/config.js?v=5eff998f"></script>
 <script src="../js/core.js?v=5eff998f"></script>
-<script src="../js/acta-registro.js?v=5eff998f"></script>
 <script src="../js/acta-administrativa.js?v=5eff998f"></script>
-<script>document.addEventListener('DOMContentLoaded', () => { OXXO_ACTA.montar(); OXXO_ACTA_REGISTRO.montar(); });</script>
+<script>document.addEventListener('DOMContentLoaded', () => { OXXO_ACTA.montar(); });</script>
 </body>
 </html>
