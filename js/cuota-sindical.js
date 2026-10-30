@@ -6,13 +6,17 @@
    dashboards sino en un libro privado propio del Apps Script
    (CUOTA_SINDICAL_SPREADSHEET_ID). Ningun otro dashboard lo lee.
 
-   La afiliacion sindical es un dato personal sensible: el Excel de nomina se
-   procesa aqui mismo, en el navegador, y solo se publican TOTALES por mes,
-   division, tienda y puesto (sin nombres ni numeros de empleado). Las
-   personas solo se cuentan.
+   La afiliacion sindical es un dato personal sensible. El Excel completo
+   (con nombres) solo va a la hoja "Base" del libro privado; el dashboard lee
+   unicamente TOTALES por mes, division, tienda y puesto, que se calculan
+   aqui mismo en el navegador (las personas solo se cuentan).
+
+   Se actualiza desde esta pagina o desde el panel admin (area
+   Administrativo); las dos usan subirExcel.
 
    Uso: OXXO_CUOTA.agregar(filasExcel) -> { detalle, resumen, meta },
-   OXXO_CUOTA.montar() para la pagina.
+   OXXO_CUOTA.subirExcel(archivo, adminPassword, alAvanzar),
+   OXXO_CUOTA.montar() para la pagina, OXXO_CUOTA.montarAdmin() para el panel.
    ========================================================== */
 (function () {
   'use strict';
@@ -129,6 +133,56 @@
     return { detalle: det, resumen: res, meta };
   }
 
+  // ── Apps Script ──
+  async function pedir(cuerpo) {
+    const url = window.OXXO_CONFIG && window.OXXO_CONFIG.ADMIN_UPLOAD_URL;
+    if (!url) throw new Error('el Apps Script no está configurado');
+    // text/plain evita la consulta previa de CORS que Apps Script no contesta.
+    const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(cuerpo) });
+    const datos = await r.json().catch(() => null);
+    if (!r.ok || !datos || datos.ok === false) {
+      const motivo = (datos && datos.error) || 'el servidor no respondió';
+      // Un Apps Script anterior a v62 no conoce la carga del Excel completo.
+      throw new Error(/no autorizado/i.test(motivo) && cuerpo.action !== 'publicarCuotaSindical' ? 'falta publicar la versión 62 del Apps Script' : motivo);
+    }
+    return datos;
+  }
+
+  // Excel -> encabezados y filas (fechas como AAAA-MM-DD), sin filas vacias.
+  function leerExcel(libro) {
+    const hoja = libro.Sheets[libro.SheetNames[0]];
+    const matriz = window.XLSX.utils.sheet_to_json(hoja, { header: 1, defval: '', raw: true });
+    const headers = (matriz.shift() || []).map(h => limpio(h));
+    while (headers.length && !headers[headers.length - 1]) headers.pop();
+    const filas = matriz.filter(f => f.some(v => limpio(v)))
+      .map(f => headers.map((_, i) => { const v = f[i]; return v instanceof Date ? iso(fecha(v)) : (v == null ? '' : v); }));
+    return { headers, filas };
+  }
+
+  // Carga completa: el Excel entero a la Base del libro privado (por partes,
+  // a una hoja temporal) y, al final, los totales del dashboard.
+  const POR_PARTE = 8000;
+  async function subirExcel(archivo, adminPassword, alAvanzar) {
+    const avisar = alAvanzar || (() => {});
+    avisar('Leyendo el Excel…');
+    await window.OXXO_ADMIN_ASSETS.ensure('xlsx');
+    const libro = window.XLSX.read(await archivo.arrayBuffer(), { type: 'array', cellDates: true });
+    const { headers, filas } = leerExcel(libro);
+    const datos = agregar(filas.map(f => Object.fromEntries(headers.map((h, i) => [h, f[i]]))));
+    const { cargaId } = await pedir({ action: 'publicarCuotaSindical', fase: 'inicio', adminPassword, headers, totalFilas: filas.length });
+    for (let desde = 0; desde < filas.length; desde += POR_PARTE) {
+      avisar(`Subiendo el Excel a la hoja… ${Math.round(desde / filas.length * 100)}% (${desde.toLocaleString('es-MX')} de ${filas.length.toLocaleString('es-MX')} filas)`);
+      await pedir({ action: 'publicarCuotaSindical', fase: 'filas', adminPassword, cargaId, desde, filas: filas.slice(desde, desde + POR_PARTE) });
+    }
+    avisar(`Publicando los totales de ${datos.meta.meses} meses (${fmtDinero(datos.meta.total)})…`);
+    const fin = await pedir({ action: 'publicarCuotaSindical', fase: 'fin', adminPassword, cargaId, archivo: archivo.name, detalle: datos.detalle, resumen: datos.resumen, meta: datos.meta });
+    return { meta: datos.meta, url: fin.url || '' };
+  }
+  function resumenCarga(meta) {
+    const extra = [meta.mesesOmitidos.length ? `se omitió ${meta.mesesOmitidos.map(m => fmtMes(m)).join(', ')} (neto $0)` : '', meta.otroConcepto ? `${fmtNum(meta.otroConcepto)} filas de otro concepto` : ''].filter(Boolean).join('; ');
+    return `${fmtNum(meta.filas)} filas del Excel en la hoja Base, ${meta.meses} meses (${fmtDinero(meta.total)}).${extra ? ' Nota: ' + extra + '.' : ''}`;
+  }
+
   // ── Pagina ──
   const fmtDinero = v => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 }).format(v || 0);
   const fmtCompacto = v => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', notation: 'compact', maximumFractionDigits: 1 }).format(v || 0);
@@ -149,19 +203,6 @@
     let pagina = 1, porPagina = 25;
     const orden = { key: 'importe', dir: 'desc' };
 
-    async function pedir(cuerpo) {
-      const url = window.OXXO_CONFIG && window.OXXO_CONFIG.ADMIN_UPLOAD_URL;
-      if (!url) throw new Error('el Apps Script no está configurado');
-      // text/plain evita la consulta previa de CORS que Apps Script no contesta.
-      const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(cuerpo) });
-      const datos = await r.json().catch(() => null);
-      if (!r.ok || !datos || datos.ok === false) {
-        const motivo = (datos && datos.error) || 'el servidor no respondió';
-        // Un Apps Script anterior a v61 no conoce estas acciones.
-        throw new Error(/no autorizado/i.test(motivo) && cuerpo.action === 'consultarCuotaSindical' ? 'falta publicar la versión 61 del Apps Script' : motivo);
-      }
-      return datos;
-    }
 
     function atDe(tienda) {
       if (OXXO.metricsIsTiendaEntrenamientoOperacionesD2 && OXXO.metricsIsTiendaEntrenamientoOperacionesD2(tienda)) return ENTRENAMIENTO;
@@ -344,18 +385,11 @@
       if (!archivo || !adminPassword) { avisarCarga('Elige el Excel y escribe la contraseña del panel admin.', 'error'); return; }
       $('carga-publicar').disabled = true;
       try {
-        avisarCarga('Leyendo el Excel en tu computadora…', 'info');
-        await window.OXXO_ADMIN_ASSETS.ensure('xlsx');
-        const libro = window.XLSX.read(await archivo.arrayBuffer(), { type: 'array', cellDates: true });
-        const filas = window.XLSX.utils.sheet_to_json(libro.Sheets[libro.SheetNames[0]], { defval: '', raw: true });
-        const datos = agregar(filas);
-        avisarCarga(`Publicando ${datos.meta.meses} meses (${fmtDinero(datos.meta.total)})…`, 'info');
-        await pedir({ action: 'publicarCuotaSindical', adminPassword, archivo: archivo.name, detalle: datos.detalle, resumen: datos.resumen, meta: datos.meta });
+        const r = await subirExcel(archivo, adminPassword, texto => avisarCarga(texto, 'info'));
         dialogo.close();
         $('carga-archivo').value = ''; $('carga-password').value = '';
         await cargar();
-        const extra = [datos.meta.mesesOmitidos.length ? `se omitió ${datos.meta.mesesOmitidos.map(m => fmtMes(m)).join(', ')} (neto $0)` : '', datos.meta.otroConcepto ? `${fmtNum(datos.meta.otroConcepto)} filas de otro concepto` : ''].filter(Boolean).join('; ');
-        $('linea-resultado').textContent = `Datos actualizados: ${fmtNum(datos.meta.filas)} filas del Excel, ${datos.meta.meses} meses.${extra ? ' Nota: ' + extra + '.' : ''}`;
+        $('linea-resultado').textContent = 'Datos actualizados: ' + resumenCarga(r.meta);
       } catch (e) {
         avisarCarga('No se pudo actualizar: ' + e.message + '.', 'error');
       } finally {
@@ -385,5 +419,46 @@
     cargar();
   }
 
-  window.OXXO_CUOTA = { agregar, montar, DETALLE_HEADERS, RESUMEN_HEADERS, TODAS };
+  // Panel admin (area Administrativo): misma carga, con la sesion del admin.
+  function montarAdmin() {
+    const $ = id => document.getElementById(id);
+    if (!$('admin-cuota-panel')) return;
+    const avisar = (texto, tipo) => { const el = $('cuota-admin-estado'); el.textContent = texto; el.dataset.tipo = tipo || 'info'; el.hidden = !texto; };
+    const password = () => (window.OXXO_ADMIN_CTX ? window.OXXO_ADMIN_CTX.getAdminPassword() : '');
+    const mostrarHoja = url => { const a = $('cuota-admin-hoja'); a.hidden = !url; if (url) a.href = url; };
+    let consultado = false;
+    async function info() {
+      if (consultado || !password()) return;
+      consultado = true;
+      try {
+        const r = await pedir({ action: 'infoCuotaSindical', adminPassword: password() });
+        mostrarHoja(r.url);
+        $('cuota-admin-ultima').textContent = r.carga && r.carga.fecha ? `Última carga: ${r.carga.fecha}${r.carga.archivo ? ' · ' + r.carga.archivo : ''}` : 'Todavía no hay cargas.';
+      } catch (e) {
+        consultado = false;
+        $('cuota-admin-ultima').textContent = 'No se pudo consultar la última carga: ' + e.message + '.';
+      }
+    }
+    // Se consulta al entrar al area Administrativo (ya con la sesion abierta).
+    document.querySelectorAll('.admin-area[data-admin-area="administrativo"]').forEach(b => b.addEventListener('click', info));
+    $('cuota-admin-publicar').addEventListener('click', async () => {
+      const archivo = $('cuota-admin-archivo').files[0];
+      if (!archivo) { avisar('Elige el Excel de cuota sindical.', 'error'); return; }
+      if (!password()) { avisar('Entra al panel admin con su contraseña.', 'error'); return; }
+      $('cuota-admin-publicar').disabled = true;
+      try {
+        const r = await subirExcel(archivo, password(), texto => avisar(texto, 'info'));
+        mostrarHoja(r.url);
+        $('cuota-admin-archivo').value = '';
+        consultado = false; info();
+        avisar('Listo: ' + resumenCarga(r.meta), 'ok');
+      } catch (e) {
+        avisar('No se pudo actualizar: ' + e.message + '.', 'error');
+      } finally {
+        $('cuota-admin-publicar').disabled = false;
+      }
+    });
+  }
+
+  window.OXXO_CUOTA = { agregar, subirExcel, leerExcel, montar, montarAdmin, DETALLE_HEADERS, RESUMEN_HEADERS, TODAS };
 })();
