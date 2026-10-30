@@ -183,3 +183,11 @@ test('lee bien los meses y la fecha de carga aunque Google Sheets los guarde com
   assert.match(CUOTA.fechaCarga('Fri Oct 30 2026 11:42:00 GMT-0600 (Central Standard Time)'), /30 oct 2026, 11:42/, 'a la hora del centro de México');
   assert.doesNotMatch(CUOTA.fechaCarga('Fri Oct 30 2026 11:42:00 GMT-0600 (Central Standard Time)'), /GMT|Fri/);
 });
+
+test('el dashboard es de solo lectura: la carga solo esta en el panel admin', () => {
+  const pagina = fs.readFileSync(path.join(root, 'dashboards', 'cuota-sindical.html'), 'utf8');
+  assert.ok(!/Actualizar datos|id="cuota-carga"|type="file"|type="password"|admin-assets\.js/.test(pagina), 'sin boton, dialogo ni campos de carga');
+  const js = fs.readFileSync(path.join(root, 'js', 'cuota-sindical.js'), 'utf8');
+  const montar = js.slice(js.indexOf('  function montar() {'), js.indexOf('  function montarAdmin() {'));
+  assert.ok(!/subirExcel|publicarCuotaSindical/.test(montar), 'la pagina no publica');
+});

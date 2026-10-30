@@ -59,7 +59,6 @@
       <div class="inv-actions">
         <button type="button" id="f-limpiar" class="inv-button inv-button--ghost">× Limpiar</button>
         <button type="button" id="f-descargar" class="inv-button inv-button--primary"><svg viewBox="0 0 24 24"><path d="M12 3v12m0 0 5-5m-5 5-5-5M4 19h16"></path></svg>Descargar CSV</button>
-        <button type="button" id="f-actualizar" class="inv-button">Actualizar datos</button>
       </div>
     </section>
 
@@ -109,29 +108,11 @@
         <div class="inv-pagination__buttons" id="p-botones"></div>
       </div>
     </section>
-
-    <!-- Carga del Excel: se procesa en el navegador y solo se publican totales. -->
-    <dialog class="cuota-carga" id="cuota-carga" aria-labelledby="carga-titulo">
-      <form id="carga-form" autocomplete="off" novalidate>
-        <h2 id="carga-titulo">Actualizar datos de cuota sindical</h2>
-        <p>Sube el Excel completo de nómina (concepto "Desc. Cuota Sindical"). Va entero a la hoja Base del libro privado de cuota sindical (nunca al libro de los dashboards) y reemplaza la carga anterior. Este dashboard solo muestra totales, sin nombres. También puedes cargarlo desde el panel admin, área Administrativo.</p>
-        <label for="carga-archivo">Excel de cuota sindical</label>
-        <input id="carga-archivo" type="file" accept=".xlsx,.xls">
-        <label for="carga-password">Contraseña del panel admin</label>
-        <input id="carga-password" type="password" autocomplete="off">
-        <p class="cuota-estado" id="carga-estado" role="status" aria-live="polite" hidden></p>
-        <div class="cuota-carga__acciones">
-          <button type="button" class="inv-button" id="carga-cancelar">Cancelar</button>
-          <button type="submit" class="inv-button inv-button--primary" id="carga-publicar">Procesar y publicar</button>
-        </div>
-      </form>
-    </dialog>
   </main>
 
   <footer class="dash-footer inv-footer"><div class="dash-footer__update"><div class="dash-footer__update-dot"></div>Última carga: <span id="pie-carga">—</span></div><div>Libro privado · Solo totales · Administrativo</div></footer>
   <script src="../js/config.js?v=0bbd4833"></script>
   <script src="../js/core.js?v=0bbd4833"></script>
-  <script src="../js/admin-assets.js?v=0bbd4833"></script>
   <script src="../js/cuota-sindical.js?v=0bbd4833"></script>
   <script>document.addEventListener('DOMContentLoaded', function () { OXXO_CUOTA.montar(); });</script>
 </body>

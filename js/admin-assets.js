@@ -1,6 +1,5 @@
 /* Carga diferida de librerias del panel admin (CDN jsDelivr, 20 s de tope).
-   La consumen admin.html y la carga de Excel de Cuota Sindical
-   (dashboards/cuota-sindical.html). Tras desbloquear el panel se precalienta UNICAMENTE
+   Solo admin.html la consume (incluida la carga de Cuota Sindical). Tras desbloquear el panel se precalienta UNICAMENTE
    XLSX (lo necesita cualquier carga de Excel); JSZip y PptxGenJS (~500 KB) se
    piden solo cuando alguien exporta, con ensure('pptx') / ensure('jszip'). */
 (function(){

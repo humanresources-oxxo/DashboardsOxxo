@@ -10,25 +10,10 @@ body.cuota-page .cuota-revisar li { padding: 10px 12px; border-radius: 10px; bac
 body.cuota-page .cuota-revisar strong { color: var(--du-red-dark); }
 body.cuota-page .cuota-revisar .cuota-nota { background: transparent; padding: 0 2px; color: var(--du-muted); font-size: 12px; }
 
-/* Dialogo de carga del Excel. */
-body.cuota-page .cuota-carga { width: min(520px, calc(100% - 24px)); max-height: 92dvh; overflow-y: auto; margin: auto; padding: 0; border: 1px solid var(--du-border); border-radius: 14px; background: #fff; color: var(--du-text); box-shadow: var(--du-shadow); }
-body.cuota-page .cuota-carga::backdrop { background: rgba(42, 25, 22, .55); }
-body.cuota-page .cuota-carga form { display: grid; gap: 8px; padding: 20px 22px 22px; }
-body.cuota-page .cuota-carga h2 { margin: 0 0 4px; color: var(--du-red-dark); font-size: 18px; }
-body.cuota-page .cuota-carga p { margin: 0 0 6px; color: var(--du-muted); font-size: 12.5px; line-height: 1.45; }
-body.cuota-page .cuota-carga label { margin-top: 6px; color: var(--du-text); font-size: 12px; font-weight: 800; }
-body.cuota-page .cuota-carga input { width: 100%; min-height: 42px; padding: 8px 11px; border: 1px solid var(--du-border); border-radius: 10px; background: #fff; font: inherit; font-size: 14px; box-sizing: border-box; }
-body.cuota-page .cuota-estado { margin: 6px 0 0; padding: 10px 12px; border-radius: 10px; background: #edf7fc; color: #12608f; font-size: 13px; font-weight: 700; }
-body.cuota-page .cuota-estado[data-tipo="error"] { background: #fdeaea; color: #a91f26; }
-body.cuota-page .cuota-carga__acciones { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-top: 10px; }
-
 @media (min-width: 1180px) {
   body.cuota-page .cuota-kpis { grid-template-columns: repeat(6, minmax(0, 1fr)); }
   body.cuota-page .cuota-filtros { grid-template-columns: repeat(4, minmax(130px, 1fr)) minmax(170px, 1.2fr) auto; }
 }
 @media (max-width: 900px) {
   body.cuota-page .cuota-grid { grid-template-columns: 1fr; }
-}
-@media (max-width: 620px) {
-  body.cuota-page .cuota-carga__acciones .inv-button { flex: 1 1 100%; }
 }
