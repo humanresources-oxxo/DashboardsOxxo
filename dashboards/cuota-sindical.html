@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="es" data-oxxo-region-unavailable="1" data-oxxo-hide-scope-widget="1">
+<head>
+  <script>(function(){try{if(localStorage.getItem('oxxo_site_unlocked')!=='1')document.documentElement.classList.add('oxxo-locked');}catch(e){}})();</script>
+  <style>html.oxxo-locked{background:#2D0B0C}html.oxxo-locked body>*{visibility:hidden!important}#oxxo-lock-overlay{visibility:visible!important}</style>
+  <script defer src="../js/site-lock.js?v=2b0cd949"></script>
+  <meta charset="UTF-8">
+  <meta name="robots" content="noindex, nofollow"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <title>Cuota Sindical · Dashboards Ats</title>
+  <link rel="icon" type="image/png" href="../assets/favicon.png">
+  <link rel="apple-touch-icon" href="../assets/favicon.png">
+  <link rel="stylesheet" href="../css/global.css?v=2b0cd949">
+  <link rel="stylesheet" href="../css/dashboard-rh-unified.css?v=2b0cd949">
+  <link rel="stylesheet" href="../css/inventarios-visual.css?v=2b0cd949">
+  <link rel="stylesheet" href="../css/cuota-sindical.css?v=2b0cd949">
+  <script defer src="../assets/vendor/chart.umd.min.js?v=2b0cd949"></script>
+</head>
+<body class="rh-unified rh-layered cuota-page rh-cabecera">
+  <nav class="topbar inv-topbar">
+    <div class="topbar__brand">
+      <div class="topbar__logo"><img src="../assets/oxxo-logo-original.png" alt="OXXO"></div>
+      <div><div class="topbar__title">Dashboards Ats</div><div class="topbar__subtitle">Plaza Oaxaca-ByPamsb</div></div>
+    </div>
+    <div class="topbar__meta">
+      <a href="../index.html" class="topbar__back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>Inicio</a>
+    </div>
+  </nav>
+
+  <main class="inv-page page">
+    <section class="inv-hero hero">
+      <div class="hero-top">
+        <div class="inv-hero__copy">
+          <span class="inv-hero__eyebrow">Administrativo · Plaza Oaxaca · Libro privado</span>
+          <h1>Cuota Sindical</h1>
+        </div>
+      </div>
+      <div class="hero-context" id="hero-corte"><span></span>Cargando información…</div>
+    </section>
+
+    <div class="rh-layer"><h2 class="rh-layer__title">Resumen ejecutivo</h2><p class="rh-layer__purpose">Lo descontado por cuota sindical con los filtros activos. Solo totales: sin nombres ni números de empleado.</p></div>
+
+    <section class="inv-kpis kpis cuota-kpis" aria-label="Indicadores de cuota sindical">
+      <article class="inv-kpi--primary"><span>Descontado en el mes</span><strong id="k-total">—</strong><small id="k-total-nota">—</small></article>
+      <article><span>Personas con descuento</span><strong id="k-personas">—</strong><small id="k-personas-nota">—</small></article>
+      <article><span>Promedio por persona</span><strong id="k-promedio">—</strong><small>Descontado / personas</small></article>
+      <article><span>Promedio por semana</span><strong id="k-semana">—</strong><small id="k-semana-nota">—</small></article>
+      <article><span>Ajustes</span><strong id="k-ajustes">—</strong><small id="k-ajustes-nota">—</small></article>
+      <article><span>Acumulado</span><strong id="k-acumulado">—</strong><small id="k-acumulado-nota">—</small></article>
+    </section>
+
+    <section class="inv-filters filter-panel cuota-filtros" aria-label="Filtros de cuota sindical">
+      <div class="inv-filter"><label for="f-mes">Mes</label><select id="f-mes"><option value="">Todos los meses</option></select></div>
+      <div class="inv-filter"><label for="f-division">División</label><select id="f-division"><option value="">Todas las divisiones</option></select></div>
+      <div class="inv-filter"><label for="f-at">Asesor (AT)</label><select id="f-at"><option value="">Todos los asesores</option></select></div>
+      <div class="inv-filter"><label for="f-funcion">Puesto</label><select id="f-funcion"><option value="">Todos los puestos</option></select></div>
+      <div class="inv-filter inv-filter--search"><label for="f-tienda">Buscar tienda</label><input id="f-tienda" type="search" placeholder="Ej. Huitzo" autocomplete="off"></div>
+      <div class="inv-actions">
+        <button type="button" id="f-limpiar" class="inv-button inv-button--ghost">× Limpiar</button>
+        <button type="button" id="f-descargar" class="inv-button inv-button--primary"><svg viewBox="0 0 24 24"><path d="M12 3v12m0 0 5-5m-5 5-5-5M4 19h16"></path></svg>Descargar CSV</button>
+        <button type="button" id="f-actualizar" class="inv-button">Actualizar datos</button>
+      </div>
+    </section>
+
+    <div class="inv-result-line"><span id="linea-resultado">Preparando análisis…</span><span id="linea-corte">Libro privado · Solo lectura</span></div>
+
+    <div class="rh-layer"><h2 class="rh-layer__title">Tendencia y composición</h2><p class="rh-layer__purpose">Cómo va el descuento mes a mes y de dónde sale.</p></div>
+
+    <section class="cuota-grid" aria-label="Análisis de cuota sindical">
+      <article class="inv-panel cuota-panel--ancho">
+        <div class="inv-panel__head"><div><span>Tendencia</span><h2>Descontado y personas por mes</h2></div><small>El mes elegido va resaltado</small></div>
+        <div class="inv-chart"><canvas id="c-tendencia" aria-label="Gráfica de descontado y personas por mes" role="img"></canvas></div>
+      </article>
+      <article class="inv-panel">
+        <div class="inv-panel__head"><div><span>Composición</span><h2>Por división</h2></div></div>
+        <div class="inv-chart cuota-chart--corta"><canvas id="c-division" aria-label="Gráfica de descontado por división" role="img"></canvas></div>
+      </article>
+      <article class="inv-panel">
+        <div class="inv-panel__head"><div><span>Composición</span><h2>Por puesto</h2></div></div>
+        <div class="inv-chart"><canvas id="c-funcion" aria-label="Gráfica de descontado por puesto" role="img"></canvas></div>
+      </article>
+      <article class="inv-panel">
+        <div class="inv-panel__head"><div><span>Responsables</span><h2>Por asesor (AT)</h2></div><small id="n-ats">— asesores</small></div>
+        <div class="inv-advisor-list" id="l-ats"><div class="inv-panel-empty">Esperando datos…</div></div>
+      </article>
+      <article class="inv-panel">
+        <div class="inv-panel__head"><div><span>Calidad</span><h2>Casos a revisar</h2></div></div>
+        <ul class="cuota-revisar" id="r-revisar"><li>Esperando datos…</li></ul>
+      </article>
+    </section>
+
+    <div class="rh-layer"><h2 class="rh-layer__title">Detalle por tienda</h2><p class="rh-layer__purpose">Entrenamiento y Operaciones aparecen como unidades aparte, no son tiendas.</p></div>
+
+    <section class="inv-panel inv-detail-panel">
+      <div class="inv-panel__head inv-detail-head">
+        <div><span>Base consultable</span><h2>Descontado por tienda</h2></div>
+        <small id="n-tiendas">— tiendas</small>
+      </div>
+      <div class="inv-table-wrap">
+        <table class="inv-table">
+          <thead><tr><th class="sortable" data-sort="tienda">Tienda</th><th class="sortable" data-sort="at">Asesor (AT)</th><th class="sortable" data-sort="division">División</th><th class="num sortable sort-desc" data-sort="importe" aria-sort="descending">Descontado</th><th class="num sortable" data-sort="personas">Personas</th><th class="num sortable" data-sort="promedio">Promedio</th><th class="num sortable" data-sort="reversos">Ajustes</th></tr></thead>
+          <tbody id="t-tiendas"><tr><td colspan="7" class="inv-table-message">Consultando…</td></tr></tbody>
+        </table>
+      </div>
+      <div class="inv-pagination" aria-label="Paginación de la tabla">
+        <label>Filas por página <select id="p-tamano"><option value="15">15</option><option value="25" selected>25</option><option value="50">50</option></select></label>
+        <div class="inv-pagination__summary" id="p-resumen">Página 1 de 1</div>
+        <div class="inv-pagination__buttons" id="p-botones"></div>
+      </div>
+    </section>
+
+    <!-- Carga del Excel: se procesa en el navegador y solo se publican totales. -->
+    <dialog class="cuota-carga" id="cuota-carga" aria-labelledby="carga-titulo">
+      <form id="carga-form" autocomplete="off" novalidate>
+        <h2 id="carga-titulo">Actualizar datos de cuota sindical</h2>
+        <p>Sube el Excel completo de nómina (concepto "Desc. Cuota Sindical"). Se lee en tu computadora y solo se publican totales por mes, división, tienda y puesto en el libro privado; los nombres y números de empleado no salen de tu equipo. Reemplaza los datos anteriores.</p>
+        <label for="carga-archivo">Excel de cuota sindical</label>
+        <input id="carga-archivo" type="file" accept=".xlsx,.xls">
+        <label for="carga-password">Contraseña del panel admin</label>
+        <input id="carga-password" type="password" autocomplete="off">
+        <p class="cuota-estado" id="carga-estado" role="status" aria-live="polite" hidden></p>
+        <div class="cuota-carga__acciones">
+          <button type="button" class="inv-button" id="carga-cancelar">Cancelar</button>
+          <button type="submit" class="inv-button inv-button--primary" id="carga-publicar">Procesar y publicar</button>
+        </div>
+      </form>
+    </dialog>
+  </main>
+
+  <footer class="dash-footer inv-footer"><div class="dash-footer__update"><div class="dash-footer__update-dot"></div>Última carga: <span id="pie-carga">—</span></div><div>Libro privado · Solo totales · Administrativo</div></footer>
+  <script src="../js/config.js?v=2b0cd949"></script>
+  <script src="../js/core.js?v=2b0cd949"></script>
+  <script src="../js/admin-assets.js?v=2b0cd949"></script>
+  <script src="../js/cuota-sindical.js?v=2b0cd949"></script>
+  <script>document.addEventListener('DOMContentLoaded', function () { OXXO_CUOTA.montar(); });</script>
+</body>
+</html>

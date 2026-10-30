@@ -31,7 +31,7 @@ for (const m of html.matchAll(/\[\s*'[^']*'\s*,\s*'[^']*'\s*,\s*'(dashboards\/[^
   rutasTarjetas.add(m[1]);
 }
 
-assert.equal(rutasTarjetas.size, 15, `La portada debe tener 15 tarjetas, se encontraron ${rutasTarjetas.size}`);
+assert.equal(rutasTarjetas.size, 16, `La portada debe tener 16 tarjetas, se encontraron ${rutasTarjetas.size}`);
 const estaticas = [...pagina.matchAll(/class="card__title" href="([^"]+\.html)"/g)].length;
 assert.equal(estaticas, 11, 'Recursos Humanos debe conservar 11 tarjetas');
 // El hero ya no lleva el resumen de conteos por area: la navegacion y las 15
@@ -59,11 +59,17 @@ const inexistentes = [...rutasMapeadas].filter(r => !fs.existsSync(path.join(rai
 assert.deepEqual(inexistentes, [],
   `rutasConfiguracion apunta a paginas que no existen: ${inexistentes.join(', ')}`);
 
-// Las claves deben ser ids reales de SHEETS_CONFIG.TABS.
+// Las claves deben ser ids reales de SHEETS_CONFIG.TABS, o de un dashboard que
+// el Apps Script registra en Configuracion sin pestaña en el libro (Cuota
+// Sindical vive en su libro privado aparte).
 const config = fs.readFileSync(path.join(raiz, 'js', 'config.js'), 'utf8');
 const tabs = config.match(/TABS:\s*\{([\s\S]*?)\}/);
 assert.ok(tabs, 'Debe existir TABS en js/config.js');
-const idsValidos = new Set([...tabs[1].matchAll(/([A-Za-z0-9_]+)\s*:/g)].map(m => m[1]));
+const gs = fs.readFileSync(path.join(raiz, 'apps-script', 'admin-upload.gs'), 'utf8');
+const registro = gs.match(/const CONFIG_DASHBOARD_REGISTRY = \{([\s\S]*?)\n\};/);
+assert.ok(registro, 'Debe existir CONFIG_DASHBOARD_REGISTRY en el Apps Script');
+const sinPestana = [...registro[1].matchAll(/^\s*([A-Za-z0-9_]+): \{[^}]*sheet: ''/gm)].map(m => m[1]);
+const idsValidos = new Set([...tabs[1].matchAll(/([A-Za-z0-9_]+)\s*:/g)].map(m => m[1]).concat(sinPestana));
 const desconocidas = claves.filter(k => !idsValidos.has(k)).sort();
 assert.deepEqual(desconocidas, [],
   `rutasConfiguracion usa claves que no son pestañas declaradas: ${desconocidas.join(', ')}`);

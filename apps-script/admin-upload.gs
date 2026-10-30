@@ -12,7 +12,7 @@
  * Despues de eso, admin.html publica directo sin pedir URL.
  */
 const SPREADSHEET_ID = '1EbUuyy-PRXiDwPmn9L14P93cGN6VXTyLfAHx-CE8M_A';
-const APP_VERSION = '60';
+const APP_VERSION = '61';
 const ADMIN_PASSWORD_PROPERTY = 'ADMIN_PASSWORD';
 const AUDIT_SHEET = '_Admin_Bitacora';
 const BACKUP_PREFIX = '_BK_';
@@ -144,7 +144,10 @@ const CONFIG_DASHBOARD_REGISTRY = {
   a13: { name: 'Control de Ausentismo', frequency: 'Mensual', sheet: 'Dashboard_13_Ausentismo' },
   c14: { name: 'Avance Comercial', frequency: 'Quincenal', sheet: 'Dashboard_14_Comercial' },
   inventories: { name: 'Resultados de Inventario', frequency: 'Mensual', sheet: 'Inventarios' },
-  promos: { name: 'Promociones', frequency: 'Quincenal', sheet: 'Promociones' }
+  promos: { name: 'Promociones', frequency: 'Quincenal', sheet: 'Promociones' },
+  // Cuota Sindical vive en su propio libro privado (ver publicarCuotaSindical_):
+  // aqui solo se registra la fecha de su ultima carga para la portada.
+  cuota: { name: 'Cuota Sindical', frequency: 'Mensual', sheet: '' }
 };
 
 // action=readSheet&sheet=NOMBRE: lee una hoja completa via SpreadsheetApp (sin
@@ -348,6 +351,16 @@ function doPost(e) {
     // quien solo consulta no pueda anular). La fila no se borra: se marca.
     if (String(payload.action || '') === 'anularActa') {
       return jsonResponse(anularActa_(payload));
+    }
+
+    // Cuota Sindical (dashboards/cuota-sindical.html): libro privado aparte.
+    // Publicar exige la contraseña del admin; consultar es publica porque
+    // solo hay totales (sin nombres ni numeros de empleado).
+    if (String(payload.action || '') === 'publicarCuotaSindical') {
+      return jsonResponse(publicarCuotaSindical_(payload));
+    }
+    if (String(payload.action || '') === 'consultarCuotaSindical') {
+      return jsonResponse(consultarCuotaSindical_());
     }
 
     // Esta ruta no usa la credencial de administración: valida una contraseña
@@ -1871,7 +1884,9 @@ function updateConfigDate(dashboardId, publishedAt) {
 function syncMissingConfigDatesFromAudit_(ss) {
   const latest = latestSuccessfulPublicationBySheet_(ss);
   Object.keys(CONFIG_DASHBOARD_REGISTRY).forEach(function(dashboardId) {
-    const eventDate = latest[CONFIG_DASHBOARD_REGISTRY[dashboardId].sheet];
+    // Cuota Sindical no tiene hoja en este libro: su fecha la pone su carga.
+    const sheet = CONFIG_DASHBOARD_REGISTRY[dashboardId].sheet;
+    const eventDate = sheet && latest[sheet];
     if (eventDate) updateConfigDate(dashboardId, eventDate);
   });
 }
@@ -2624,4 +2639,97 @@ function anularActa_(payload) {
   } finally {
     lock.releaseLock();
   }
+}
+
+/* ---------- Cuota Sindical ----------
+   Dashboard muy aparte: sus datos viven en un libro privado propio
+   (CUOTA_SINDICAL_SPREADSHEET_ID; se crea en el Drive de la cuenta dueña con
+   la primera carga), nunca en el libro de los dashboards. La pagina procesa
+   el Excel de nomina en el navegador y solo manda totales por mes, division,
+   tienda y puesto: aqui se validan y se reemplaza todo. */
+const CUOTA_PROPERTY = 'CUOTA_SINDICAL_SPREADSHEET_ID';
+const CUOTA_DETALLE_HEADERS = ['Mes', 'Division', 'Tienda', 'Funcion', 'Importe', 'Personas', 'Movimientos', 'Devoluciones', 'ImporteDevoluciones', 'Reversos'];
+const CUOTA_RESUMEN_HEADERS = ['Mes', 'Division', 'Personas', 'PersonasSinDescuento', 'SemanasPagadas', 'Importe', 'Movimientos', 'Devoluciones', 'ImporteDevoluciones', 'Reversos'];
+const CUOTA_HOJAS = { detalle: 'Detalle', resumen: 'Resumen', carga: 'Carga' };
+const CUOTA_MAX_FILAS = 60000;
+
+function libroCuota_() {
+  const props = PropertiesService.getScriptProperties();
+  const id = String(props.getProperty(CUOTA_PROPERTY) || '').trim();
+  if (id) return SpreadsheetApp.openById(id);
+  const ss = SpreadsheetApp.create('Cuota Sindical · Dashboards Ats');
+  ss.getSheets()[0].setName(CUOTA_HOJAS.detalle);
+  props.setProperty(CUOTA_PROPERTY, ss.getId());
+  return ss;
+}
+
+// Filas de arreglos con el orden de headers: textos cortos en las primeras
+// columnas de texto y numeros finitos en las demas. Nada de nombres: el
+// contrato no tiene columna para ellos.
+function filasCuota_(filas, headers, columnasTexto, nombre) {
+  if (!Array.isArray(filas) || !filas.length) throw new Error('La carga no trae ' + nombre);
+  if (filas.length > CUOTA_MAX_FILAS) throw new Error('Demasiadas filas en ' + nombre);
+  return filas.map(function(fila, i) {
+    if (!Array.isArray(fila) || fila.length !== headers.length) throw new Error('Fila ' + (i + 1) + ' de ' + nombre + ' no válida');
+    return fila.map(function(valor, j) {
+      if (j < columnasTexto) {
+        const texto = textoActa_(valor, 80);
+        if (j === 0 && !/^\d{4}-\d{2}$/.test(texto)) throw new Error('Mes no válido en ' + nombre + ': ' + texto);
+        return texto;
+      }
+      const numero = Number(valor);
+      if (!isFinite(numero)) throw new Error('Número no válido en ' + nombre + ', fila ' + (i + 1));
+      return numero;
+    });
+  });
+}
+
+function escribirHojaCuota_(ss, nombre, headers, filas) {
+  const hoja = ss.getSheetByName(nombre) || ss.insertSheet(nombre);
+  hoja.clearContents();
+  const valores = [headers].concat(filas);
+  hoja.getRange(1, 1, valores.length, headers.length).setValues(valores);
+  hoja.setFrozenRows(1);
+  ajustarTamanoHoja_(hoja, valores.length, headers.length);
+}
+
+function publicarCuotaSindical_(payload) {
+  assertAuthorized(payload);
+  const detalle = filasCuota_(payload.detalle, CUOTA_DETALLE_HEADERS, 4, 'el detalle');
+  const resumen = filasCuota_(payload.resumen, CUOTA_RESUMEN_HEADERS, 2, 'el resumen');
+  const meta = payload.meta || {};
+  const lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    const ss = libroCuota_();
+    escribirHojaCuota_(ss, CUOTA_HOJAS.detalle, CUOTA_DETALLE_HEADERS, detalle);
+    escribirHojaCuota_(ss, CUOTA_HOJAS.resumen, CUOTA_RESUMEN_HEADERS, resumen);
+    const fecha = Utilities.formatDate(new Date(), 'America/Mexico_City', 'dd/MM/yyyy HH:mm');
+    escribirHojaCuota_(ss, CUOTA_HOJAS.carga, ['Fecha', 'Archivo', 'FilasExcel', 'Meses', 'Desde', 'Hasta', 'Total'],
+      [[fecha, textoActa_(payload.archivo, 120), Number(meta.filas) || 0, Number(meta.meses) || 0, textoActa_(meta.desde, 7), textoActa_(meta.hasta, 7), Number(meta.total) || 0]]);
+  } finally {
+    lock.releaseLock();
+  }
+  // Fecha de la tarjeta en la portada (solo la fecha; los datos no se copian).
+  let portada = null;
+  try { portada = updateConfigDate('cuota'); } catch (err) { portada = { ok: false, error: String(err && err.message || err) }; }
+  return { ok: true, detalle: detalle.length, resumen: resumen.length, portada: portada };
+}
+
+function consultarCuotaSindical_() {
+  const id = String(PropertiesService.getScriptProperties().getProperty(CUOTA_PROPERTY) || '').trim();
+  if (!id) return { ok: true, detalle: [], resumen: [], carga: null };
+  const ss = SpreadsheetApp.openById(id);
+  const leer = function(nombre, columnas) {
+    const hoja = ss.getSheetByName(nombre);
+    if (!hoja || hoja.getLastRow() < 2) return [];
+    return hoja.getRange(2, 1, hoja.getLastRow() - 1, columnas).getValues();
+  };
+  const carga = leer(CUOTA_HOJAS.carga, 7)[0];
+  return {
+    ok: true,
+    detalle: leer(CUOTA_HOJAS.detalle, CUOTA_DETALLE_HEADERS.length),
+    resumen: leer(CUOTA_HOJAS.resumen, CUOTA_RESUMEN_HEADERS.length),
+    carga: carga ? { fecha: String(carga[0]), archivo: String(carga[1]), filas: carga[2], meses: carga[3], desde: String(carga[4]), hasta: String(carga[5]), total: carga[6] } : null,
+  };
 }

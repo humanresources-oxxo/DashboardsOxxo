@@ -3049,7 +3049,7 @@ function getSystemNoticeContext(pathname = location.pathname) {
   const file = String(pathname || '').replace(/\\/g, '/').split('/').pop().replace(/\.html$/i, '') || 'index';
   let area = '';
   if (['dashboard-14', 'promociones'].includes(file)) area = 'comercial';
-  else if (['dashboard-9', 'dashboard-9-analisis', 'inventarios'].includes(file)) area = 'administrativo';
+  else if (['dashboard-9', 'dashboard-9-analisis', 'inventarios', 'cuota-sindical'].includes(file)) area = 'administrativo';
   else if (/^dashboard-(?:[1-8]|1[0-3])(?:-analisis)?$/.test(file) || ['mi-tienda', 'mi-dashboard'].includes(file)) area = 'rh';
   return { page: file, area };
 }
