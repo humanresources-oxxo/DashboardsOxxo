@@ -11,8 +11,8 @@
    unicamente TOTALES por mes, division, tienda y puesto, que se calculan
    aqui mismo en el navegador (las personas solo se cuentan).
 
-   Se actualiza desde esta pagina o desde el panel admin (area
-   Administrativo); las dos usan subirExcel.
+   Se actualiza solo desde el panel admin (area Administrativo, con
+   subirExcel); la pagina del dashboard es de solo lectura.
 
    Uso: OXXO_CUOTA.agregar(filasExcel) -> { detalle, resumen, meta },
    OXXO_CUOTA.subirExcel(archivo, adminPassword, alAvanzar),
@@ -379,7 +379,7 @@
         [...ats.values()].forEach(n => { const k = norm(n), previo = nombres.get(k); if (!previo || (previo === previo.toLowerCase() && n !== n.toLowerCase())) nombres.set(k, n); });
         const propio = n => n === n.toLowerCase() ? n.replace(/(^|\s)(\S)/g, (m, e, l) => e + l.toUpperCase()) : n;
         detalle.forEach(x => { x.at = propio(nombres.get(norm(x.at))); });
-        if (!detalle.length) { sinDatos('Todavía no hay datos. Pulsa "Actualizar datos" y sube el Excel de cuota sindical.'); return; }
+        if (!detalle.length) { sinDatos('Todavía no hay datos. Se cargan desde el panel admin, área Administrativo.'); return; }
         const meses = unicos(detalle, 'mes').sort();
         llenar($('f-mes'), [...meses].reverse(), m => fmtMes(m));
         if (!$('f-mes').value) $('f-mes').value = meses[meses.length - 1];
@@ -394,34 +394,11 @@
       }
     }
 
-    // ── Actualizar datos (solo administradores) ──
-    const dialogo = $('cuota-carga');
-    function avisarCarga(texto, tipo) { const el = $('carga-estado'); el.textContent = texto; el.dataset.tipo = tipo || 'info'; el.hidden = !texto; }
-    async function publicar() {
-      const archivo = $('carga-archivo').files[0], adminPassword = $('carga-password').value;
-      if (!archivo || !adminPassword) { avisarCarga('Elige el Excel y escribe la contraseña del panel admin.', 'error'); return; }
-      $('carga-publicar').disabled = true;
-      try {
-        const r = await subirExcel(archivo, adminPassword, texto => avisarCarga(texto, 'info'));
-        dialogo.close();
-        $('carga-archivo').value = ''; $('carga-password').value = '';
-        await cargar();
-        $('linea-resultado').textContent = 'Datos actualizados: ' + resumenCarga(r.meta);
-      } catch (e) {
-        avisarCarga('No se pudo actualizar: ' + e.message + '.', 'error');
-      } finally {
-        $('carga-publicar').disabled = false;
-      }
-    }
-
     ['f-mes', 'f-division', 'f-at', 'f-funcion'].forEach(id => $(id).addEventListener('change', aplicar));
     let espera;
     $('f-tienda').addEventListener('input', () => { clearTimeout(espera); espera = setTimeout(aplicar, 150); });
     $('f-limpiar').addEventListener('click', () => { ['f-division', 'f-at', 'f-funcion', 'f-tienda'].forEach(id => { $(id).value = ''; }); aplicar(); });
     $('f-descargar').addEventListener('click', descargar);
-    $('f-actualizar').addEventListener('click', () => { avisarCarga('', 'info'); dialogo.showModal(); });
-    $('carga-cancelar').addEventListener('click', () => dialogo.close());
-    $('carga-form').addEventListener('submit', e => { e.preventDefault(); publicar(); });
     document.querySelector('.inv-table thead').addEventListener('click', e => {
       const th = e.target.closest('th[data-sort]');
       if (!th) return;
