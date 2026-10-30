@@ -13,7 +13,7 @@ Convenciones compartidas:
 
 Archivos: `index.html`, `css/home.css`, `js/home.js`, `js/home-dates.js`.
 
-- 15 tarjetas (RH 11, Comercial 2, Administrativo 2) con tres pestañas de area.
+- 16 tarjetas (RH 11, Comercial 2, Administrativo 3) con tres pestañas de area.
 - Cada tarjeta muestra solo el estado de su fuente segun la pestaña `Configuracion`: "Datos disponibles" + fecha de ultima actualizacion, "Sin fecha registrada", "Fuente no disponible" (con boton Reintentar) o "Consultando…". Resumen `aria-live` con el conteo de fuentes con fecha.
 - No calcula ni repite KPIs de los tableros.
 
@@ -127,6 +127,14 @@ Galeria de campañas vigentes y proximas. La pestaña `Promociones` es de **solo
 `dashboards/mi-dashboard.html` (`mi-dashboard.js`) y `dashboards/mi-tienda.html` (`mi-tienda.js`), ambos con `mi-ficha-ui.js` y `css/mi-ficha.css`.
 
 Consultas consolidadas: Mi Dashboard por asesor (bajas, estructura, tiempo extra, vacaciones, ausentismos, capacidades); Mi Tienda por tienda (ademas Dashboard 9, 10 FLEX, 11 e Inventarios). Sus modales usan el controlador propio de `mi-ficha-ui.js`.
+
+## Cuota Sindical
+
+`dashboards/cuota-sindical.html` (`js/cuota-sindical.js`, `css/cuota-sindical.css`, base visual de `css/inventarios-visual.css`). Tarjeta en el área Administrativo del inicio. Es un dashboard **aparte**: sus datos no viven en el libro de los dashboards sino en un libro **privado** propio del Apps Script (`CUOTA_SINDICAL_SPREADSHEET_ID`, se crea con la primera carga; hojas `Detalle`, `Resumen` y `Carga`), y ningún otro tablero lo lee.
+
+La afiliación sindical es un dato personal sensible: el botón **Actualizar datos** pide el Excel completo de nómina (concepto "Desc. Cuota Sindical") y la contraseña del panel admin, lee el Excel en el navegador (`OXXO_CUOTA.agregar`) y publica con la acción `publicarCuotaSindical` solo totales por mes, división, tienda y puesto (descontado neto, personas, movimientos, devoluciones y reversos), reemplazando lo anterior. Nombres y números de empleado nunca salen del equipo. Un mes cuyo neto es $0 (p. ej. solo reversos que se cancelan) no se publica. La consulta (`consultarCuotaSindical`) es pública porque solo hay totales; la carga también escribe la fecha en la fila `cuota` de `Configuracion` para la tarjeta del inicio.
+
+KPIs: descontado del mes (vs mes anterior), personas con descuento, promedio por persona, promedio por semana pagada (cada pago cuenta por el domingo de su semana), ajustes (devoluciones y reversos) y acumulado. Apartados: tendencia mensual, por división, por puesto, por AT (catálogo; Entrenamiento/Operaciones aparte; sin AT → "Sin Asesor Asignado"), casos a revisar y tabla por tienda. Filtros: mes, división, AT, puesto y tienda. Las personas son exactas por mes y división; con filtro de AT, tienda o puesto se suman por tienda y puesto.
 
 ## Acta Administrativa
 

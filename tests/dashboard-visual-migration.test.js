@@ -9,7 +9,7 @@ const migrated = [
   'dashboard-6', 'dashboard-7', 'dashboard-8', 'dashboard-9',
   'dashboard-11', 'dashboard-12', 'dashboard-13', 'dashboard-14',
   'dashboard-2-analisis', 'dashboard-9-analisis',
-  'inventarios', 'promociones', 'mi-tienda', 'mi-dashboard',
+  'inventarios', 'promociones', 'mi-tienda', 'mi-dashboard', 'cuota-sindical',
 ];
 
 const read = name => fs.readFileSync(path.join(root, name), 'utf8');

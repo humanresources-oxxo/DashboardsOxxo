@@ -4,7 +4,7 @@ Sistema estatico de dashboards operativos de Recursos Humanos, Comercial y Admin
 
 ## Que incluye
 
-- Portada (`index.html`) con acceso a las 15 tarjetas, tres areas (Recursos Humanos 11, Comercial 2, Administrativo 2) y el estado de cada fuente segun la pestana `Configuracion` (fecha de ultima actualizacion o "Sin fecha registrada"). No repite ni recalcula indicadores.
+- Portada (`index.html`) con acceso a las 16 tarjetas, tres areas (Recursos Humanos 11, Comercial 2, Administrativo 3) y el estado de cada fuente segun la pestana `Configuracion` (fecha de ultima actualizacion o "Sin fecha registrada"). No repite ni recalcula indicadores.
 - Panel admin (`admin.html`) para validar Excel, normalizar columnas y publicar en Google Sheets por Apps Script.
 - 14 dashboards numerados, mas las paginas de analisis, Inventarios, Promociones y los accesos personales:
   - Dashboard 1: Vacantes diarias.
@@ -22,6 +22,7 @@ Sistema estatico de dashboards operativos de Recursos Humanos, Comercial y Admin
   - Dashboard 13: Control de ausentismo (alcance fijo Plaza Oaxaca).
   - Dashboard 14: Avance comercial.
   - Inventarios (Resultados de Inventario) y Promociones (PromosD100).
+  - Cuota Sindical: dashboard aparte del area Administrativo, con libro privado propio (solo totales).
   - Mi Dashboard y Mi Tienda: consultas personales/por tienda.
 - Catalogos de asesores y de tiendas para corregir responsables y descartar tiendas dadas de baja.
 - Exportacion a PNG/CSV y generacion de presentaciones (PPTX) y XLSX desde el panel admin.

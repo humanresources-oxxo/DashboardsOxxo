@@ -28,7 +28,8 @@
       kicker: 'Control administrativo', titulo: 'Indicadores administrativos',
       tarjetas: [
         ['Resultados de Inventario', 'Merma, venta sin TAE, inventarios y focos principales por tienda y asesor comercial.', 'dashboards/inventarios.html', 'Mensual'],
-        ['Faltantes y Sobrantes', 'Faltantes y sobrantes de caja por asesor, tienda y semana.', 'dashboards/dashboard-9.html', 'Semanal']
+        ['Faltantes y Sobrantes', 'Faltantes y sobrantes de caja por asesor, tienda y semana.', 'dashboards/dashboard-9.html', 'Semanal'],
+        ['Cuota Sindical', 'Descuento de cuota sindical por mes, división, asesor, tienda y puesto. Libro privado aparte, solo totales.', 'dashboards/cuota-sindical.html', 'Mensual']
       ]
     }
   };
@@ -108,7 +109,10 @@
     // dinamicamente mas arriba: sin su clave se quedaban en "Sin fecha
     // registrada" aunque la pestaña Configuracion ya trajera la fila.
     promos: 'dashboards/promociones.html',
-    inventories: 'dashboards/inventarios.html'
+    inventories: 'dashboards/inventarios.html',
+    // Cuota Sindical: sus datos viven en un libro privado aparte; su carga
+    // solo registra aqui la fecha (fila "cuota" de Configuracion).
+    cuota: 'dashboards/cuota-sindical.html'
   };
   // El formato vive en js/home-dates.js (probado en tests/home-dates.test.js).
   // Antes se resolvia con un replace fijo que convertia cualquier mes en
