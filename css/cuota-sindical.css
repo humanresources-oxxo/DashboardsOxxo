@@ -8,11 +8,13 @@ body.cuota-page .cuota-chart--corta { height: 200px; }
 body.cuota-page .cuota-revisar { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; color: var(--du-text); font-size: 13px; line-height: 1.45; }
 body.cuota-page .cuota-revisar li { padding: 10px 12px; border-radius: 10px; background: var(--du-surface-soft, #faf6f1); }
 body.cuota-page .cuota-revisar strong { color: var(--du-red-dark); }
+body.cuota-page .cuota-etiqueta { display: inline-block; margin-left: 4px; padding: 1px 7px; border-radius: 999px; background: #fff3d6; color: #8a5a00; font-size: 10px; font-weight: 800; vertical-align: middle; }
+body.cuota-page .inv-table td small { display: block; color: var(--du-muted); font-size: 10.5px; }
 body.cuota-page .cuota-revisar .cuota-nota { background: transparent; padding: 0 2px; color: var(--du-muted); font-size: 12px; }
 
 @media (min-width: 1180px) {
   body.cuota-page .cuota-kpis { grid-template-columns: repeat(6, minmax(0, 1fr)); }
-  body.cuota-page .cuota-filtros { grid-template-columns: repeat(4, minmax(130px, 1fr)) minmax(170px, 1.2fr) auto; }
+  body.cuota-page .cuota-filtros { grid-template-columns: repeat(5, minmax(120px, 1fr)) minmax(150px, 1.1fr) auto; }
 }
 @media (max-width: 900px) {
   body.cuota-page .cuota-grid { grid-template-columns: 1fr; }

@@ -191,3 +191,14 @@ test('el dashboard es de solo lectura: la carga solo esta en el panel admin', ()
   const montar = js.slice(js.indexOf('  function montar() {'), js.indexOf('  function montarAdmin() {'));
   assert.ok(!/subirExcel|publicarCuotaSindical/.test(montar), 'la pagina no publica');
 });
+
+test('corrige tiendas como los demas: catalogo de asesores, estado de tienda y nombres cortados', () => {
+  const pagina = fs.readFileSync(path.join(root, 'dashboards', 'cuota-sindical.html'), 'utf8');
+  assert.match(pagina, /<html[^>]*data-oxxo-fixed-scope="plaza"[^>]*data-oxxo-fixed-plaza="Plaza Oaxaca"/, 'el AT se resuelve con el catalogo de Plaza Oaxaca');
+  assert.match(pagina, /<select id="f-estado"><option value="operativas">Operativas<\/option><option value="preapertura">Preapertura<\/option><option value="todas">Todas<\/option><\/select>/);
+  const js = fs.readFileSync(path.join(root, 'js', 'cuota-sindical.js'), 'utf8');
+  assert.match(js, /OXXO\.isTiendaValid\(catalogo, x\.tiendaCatalogo \|\| x\.tienda\)/, 'bajas y preaperturas con la misma regla de los demas tableros');
+  assert.match(js, /OXXO\.setActiveStoreStatus\(e\.target\.value/, 'el estado de tienda es la preferencia compartida');
+  assert.match(js, /hallados\.size === 1/, 'un nombre cortado solo cuenta si coincide con una sola tienda');
+  assert.match(fs.readFileSync(path.join(root, 'js', 'core.js'), 'utf8'), /\n  isPreopeningStore,\n/);
+});

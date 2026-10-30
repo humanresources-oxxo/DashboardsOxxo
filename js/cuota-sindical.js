@@ -225,6 +225,29 @@
       if (OXXO.metricsIsTiendaEntrenamientoOperacionesD2 && OXXO.metricsIsTiendaEntrenamientoOperacionesD2(tienda)) return ENTRENAMIENTO;
       return (catalogo && OXXO.resolveAsesorD1(catalogo, { tienda })) || 'Sin Asesor Asignado';
     }
+    // El Excel de nomina corta el nombre de la tienda a 25 letras ("OXXO
+    // MALPICA FERNANDEZ VS"). Los demas tableros cruzan por CR; esta base no
+    // lo trae, asi que un nombre cortado se busca como inicio de un nombre del
+    // catalogo (asesores o tiendas) y solo cuenta si coincide con UNA tienda.
+    const llaveCompleta = v => String(v || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase()
+      .replace(/^OXXO\s+/, '').replace(/^TIENDA\s+/, '').replace(/[^A-Z0-9]+/g, ' ').trim();
+    function tiendaDelCatalogo(tienda) {
+      if (!catalogo || limpio(tienda).length < 24) return '';
+      const corto = llaveCompleta(tienda);
+      const nombres = [...(catalogo.byTienda ? catalogo.byTienda.values() : []), ...((catalogo.storeCatalog && catalogo.storeCatalog.rows) || [])].map(item => item.tienda).filter(Boolean);
+      const hallados = new Map();
+      nombres.forEach(n => { if (llaveCompleta(n).startsWith(corto)) hallados.set(OXXO.normalizeCatalogTienda(n), n); });
+      return hallados.size === 1 ? [...hallados.values()][0] : '';
+    }
+    // Estado de tienda, igual que en los demas tableros (OXXO.isTiendaValid):
+    // Operativas (sin bajas ni preaperturas), Preapertura o Todas.
+    const validas = new Map();
+    function valida(x) {
+      const k = getEstado() + '|' + x.tienda;
+      if (!validas.has(k)) validas.set(k, OXXO.isTiendaValid(catalogo, x.tiendaCatalogo || x.tienda));
+      return validas.get(k);
+    }
+    const getEstado = () => (OXXO.getActiveStoreStatus ? OXXO.getActiveStoreStatus() : 'operativas');
     function llenar(select, valores, etiqueta) {
       const previo = select.value;
       const primero = select.options[0];
@@ -244,30 +267,45 @@
     // Filtros sin el mes (para la tendencia y la comparacion entre meses).
     function filtroBase() {
       const division = $('f-division').value, at = $('f-at').value, funcion = $('f-funcion').value, q = norm($('f-tienda').value);
-      return detalle.filter(x => (!division || x.division === division) && (!at || x.at === at) && (!funcion || x.funcion === funcion) && (!q || norm(`${x.tienda} ${x.at}`).includes(q)));
+      return detalle.filter(x => valida(x) && (!division || x.division === division) && (!at || x.at === at) && (!funcion || x.funcion === funcion) && (!q || norm(`${x.tienda} ${x.at}`).includes(q)));
     }
     // Personas exactas solo cuando no hay filtro por debajo de la division:
     // el detalle cuenta personas por tienda y puesto (una persona en dos
-    // tiendas del mismo mes sumaria dos).
+    // tiendas o puestos del mismo mes sumaria dos).
     function resumenDe(meses) {
       if ($('f-at').value || $('f-funcion').value || $('f-tienda').value) return null;
       const division = $('f-division').value || TODAS;
       const filas = resumen.filter(r => r.division === division && meses.includes(r.mes));
       return filas.length ? filas : null;
     }
+    // Personas con descuento de un mes. El resumen trae todas las tiendas: si
+    // el estado de tienda deja fuera unas pocas (preaperturas, bajas), se
+    // restan sus personas. Si deja fuera la mayoria (ver solo preaperturas),
+    // no hay conteo exacto: null y se suma por tienda y puesto.
+    function personasMes(res, mes) {
+      const r = res && res.find(x => x.mes === mes);
+      if (!r) return null;
+      const division = $('f-division').value;
+      const delMes = detalle.filter(x => x.mes === mes && (!division || x.division === division));
+      const fuera = suma(delMes.filter(x => !valida(x)), 'personas');
+      if (fuera && fuera >= suma(delMes, 'personas') - fuera) return null;
+      return r.personas - r.sinDescuento - fuera;
+    }
 
     function pintarKpis(base, mes, meses) {
       const delMes = mes ? base.filter(x => x.mes === mes) : base;
       const importe = suma(delMes, 'importe');
       const res = resumenDe(mes ? [mes] : meses);
-      const personas = res ? suma(res.map(r => ({ v: r.personas - r.sinDescuento })), 'v') : suma(delMes, 'personas');
+      const porMes = res ? (mes ? [mes] : meses).map(m => personasMes(res, m)) : [];
+      const exacto = porMes.length > 0 && porMes.every(v => v != null);
+      const personas = exacto ? porMes.reduce((t, v) => t + v, 0) : suma(delMes, 'personas');
       const semanas = res ? suma(res, 'semanas') : 0;
       $('k-total').textContent = fmtCompacto(importe);
       const iMes = meses.indexOf(mes);
       const previo = mes && iMes > 0 ? suma(base.filter(x => x.mes === meses[iMes - 1]), 'importe') : null;
       $('k-total-nota').textContent = previo ? `${importe >= previo ? '▲' : '▼'} ${Math.abs((importe - previo) / previo * 100).toFixed(1)}% vs ${fmtMes(meses[iMes - 1], true)}` : (mes ? 'Primer mes con datos' : 'Todos los meses');
       $('k-personas').textContent = fmtNum(personas);
-      $('k-personas-nota').textContent = res ? (mes ? 'Con descuento en el mes' : 'Suma de cada mes') : 'Suma por tienda y puesto';
+      $('k-personas-nota').textContent = exacto ? (mes ? 'Con descuento en el mes' : 'Suma de cada mes') : 'Suma por tienda y puesto';
       $('k-promedio').textContent = personas ? fmtDinero(importe / personas) : '—';
       $('k-semana').textContent = semanas ? fmtCompacto(importe / semanas) : '—';
       $('k-semana-nota').textContent = semanas ? `${semanas} ${semanas === 1 ? 'semana pagada' : 'semanas pagadas'}` : 'Disponible sin filtro de AT, tienda o puesto';
@@ -287,7 +325,7 @@
       const res = resumenDe(meses);
       grafica('tendencia', 'c-tendencia', { type: 'bar', data: { labels: meses.map(m => fmtMes(m, true)), datasets: [
         { label: 'Descontado', data: meses.map(m => suma(base.filter(x => x.mes === m), 'importe')), backgroundColor: meses.map(m => m === $('f-mes').value ? '#B5121B' : 'rgba(181,18,27,.45)'), borderRadius: 7, yAxisID: 'y' },
-        { type: 'line', label: res ? 'Personas con descuento' : 'Personas (suma por tienda)', data: meses.map(m => { const r = res && res.find(x => x.mes === m); return r ? r.personas - r.sinDescuento : suma(base.filter(x => x.mes === m), 'personas'); }), borderColor: '#1F3B70', backgroundColor: '#1F3B70', borderWidth: 2.5, pointRadius: 3, tension: .3, yAxisID: 'y1' },
+        { type: 'line', label: res && meses.every(m => personasMes(res, m) != null) ? 'Personas con descuento' : 'Personas (suma por tienda)', data: meses.map(m => { const v = personasMes(res, m); return v != null ? v : suma(base.filter(x => x.mes === m), 'personas'); }), borderColor: '#1F3B70', backgroundColor: '#1F3B70', borderWidth: 2.5, pointRadius: 3, tension: .3, yAxisID: 'y1' },
       ] }, options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, usePointStyle: true } }, tooltip: { callbacks: { label: c => c.datasetIndex ? `${c.dataset.label}: ${fmtNum(c.raw)}` : `Descontado: ${fmtDinero(c.raw)}` } } },
         scales: { x: { grid: { display: false } }, y: { beginAtZero: true, ticks: { callback: v => fmtCompacto(v) } }, y1: { beginAtZero: true, position: 'right', grid: { display: false } } } } });
     }
@@ -304,12 +342,14 @@
       $('l-ats').innerHTML = grupos.map(g => `<div class="inv-advisor-row"><div class="inv-advisor-name"><strong>${esc(g.nombre)}</strong><small>${unicos(g.items, 'tienda').length} tiendas · ${fmtNum(g.personas)} personas</small></div>`
         + `<div class="inv-advisor-bar"><i style="width:${Math.max(3, g.importe / max * 100).toFixed(1)}%"></i></div><div class="inv-advisor-value"><strong>${esc(fmtCompacto(g.importe))}</strong><small>${g.personas ? esc(fmtDinero(g.importe / g.personas)) + ' por persona' : ''}</small></div></div>`).join('');
     }
-    function pintarRevisar(mes, meses) {
+    // Devoluciones y reversos salen del detalle filtrado; las personas en $0
+    // solo existen en el resumen (por division, con todas sus tiendas).
+    function pintarRevisar(mes, meses, lista) {
       const res = resumen.filter(r => r.division === ($('f-division').value || TODAS) && (mes ? r.mes === mes : meses.includes(r.mes)));
       const sin = suma(res, 'sinDescuento');
-      $('r-revisar').innerHTML = `<li><strong>${fmtNum(sin)}</strong> ${sin === 1 ? 'persona quedó' : 'personas quedaron'} con descuento neto en $0 o a favor${mes ? ' en el mes' : ' (suma de los meses)'}.</li>`
-        + `<li><strong>${fmtNum(suma(res, 'devoluciones'))}</strong> devoluciones por <strong>${fmtDinero(suma(res, 'importeDevoluciones'))}</strong>.</li>`
-        + `<li><strong>${fmtNum(suma(res, 'reversos'))}</strong> reversos de semanas anteriores.</li>`
+      $('r-revisar').innerHTML = `<li><strong>${fmtNum(sin)}</strong> ${sin === 1 ? 'persona quedó' : 'personas quedaron'} con descuento neto en $0 o a favor${mes ? ' en el mes' : ' (suma de los meses)'}${$('f-division').value ? ' en la división' : ' en la plaza'}.</li>`
+        + `<li><strong>${fmtNum(suma(lista, 'devoluciones'))}</strong> devoluciones por <strong>${fmtDinero(suma(lista, 'importeDevoluciones'))}</strong>.</li>`
+        + `<li><strong>${fmtNum(suma(lista, 'reversos'))}</strong> reversos de semanas anteriores.</li>`
         + '<li class="cuota-nota">Por privacidad no se publican nombres: para saber quiénes son, revisa el reporte de nómina.</li>';
     }
 
@@ -328,7 +368,7 @@
       const total = Math.max(1, Math.ceil(grupos.length / porPagina));
       pagina = Math.min(pagina, total);
       const inicio = (pagina - 1) * porPagina, filas = grupos.slice(inicio, inicio + porPagina);
-      $('t-tiendas').innerHTML = filas.map(g => `<tr><td><strong>${esc(g.nombre)}</strong></td><td>${esc(g.at)}</td><td>${esc(g.division)}</td><td class="num"><strong>${esc(fmtDinero(g.importe))}</strong></td><td class="num">${fmtNum(g.personas)}</td><td class="num">${esc(fmtDinero(g.promedio))}</td><td class="num">${fmtNum(g.devoluciones + g.reversos)}</td></tr>`).join('');
+      $('t-tiendas').innerHTML = filas.map(g => `<tr><td><strong>${esc(g.nombre)}</strong>${g.items[0].preapertura ? ' <span class="cuota-etiqueta">Preapertura</span>' : ''}${g.items[0].tiendaCatalogo ? `<small>${esc(g.items[0].tiendaCatalogo)} (catálogo)</small>` : ''}</td><td>${esc(g.at)}</td><td>${esc(g.division)}</td><td class="num"><strong>${esc(fmtDinero(g.importe))}</strong></td><td class="num">${fmtNum(g.personas)}</td><td class="num">${esc(fmtDinero(g.promedio))}</td><td class="num">${fmtNum(g.devoluciones + g.reversos)}</td></tr>`).join('');
       $('p-resumen').textContent = `Mostrando ${inicio + 1}–${inicio + filas.length} de ${grupos.length} · Página ${pagina} de ${total}`;
       $('p-botones').innerHTML = `<button type="button" class="inv-page-button" data-page="${pagina - 1}" aria-label="Página anterior" ${pagina <= 1 ? 'disabled' : ''}>‹</button>`
         + `<button type="button" class="inv-page-button active" aria-current="page">${pagina}</button>`
@@ -348,7 +388,7 @@
       barras('division', 'c-division', agrupar(filtradas, 'division').sort((a, b) => b.importe - a.importe));
       barras('funcion', 'c-funcion', agrupar(filtradas, 'funcion').sort((a, b) => b.importe - a.importe));
       pintarAts(filtradas);
-      pintarRevisar(mes, meses);
+      pintarRevisar(mes, meses, filtradas);
       pintarTabla();
     }
 
@@ -371,8 +411,19 @@
         carga = datos.carga || null;
         resumen = aObjetos(RESUMEN_HEADERS, datos.resumen).map(r => ({ mes: mesTexto(r.Mes), division: r.Division, personas: +r.Personas || 0, sinDescuento: +r.PersonasSinDescuento || 0, semanas: +r.SemanasPagadas || 0, importe: +r.Importe || 0, devoluciones: +r.Devoluciones || 0, importeDevoluciones: +r.ImporteDevoluciones || 0, reversos: +r.Reversos || 0 }));
         detalle = aObjetos(DETALLE_HEADERS, datos.detalle).map(r => ({ mes: mesTexto(r.Mes), division: r.Division, tienda: r.Tienda, funcion: r.Funcion, importe: +r.Importe || 0, personas: +r.Personas || 0, movimientos: +r.Movimientos || 0, devoluciones: +r.Devoluciones || 0, importeDevoluciones: +r.ImporteDevoluciones || 0, reversos: +r.Reversos || 0 }));
-        const ats = new Map();
-        detalle.forEach(x => { if (!ats.has(x.tienda)) ats.set(x.tienda, atDe(x.tienda)); x.at = ats.get(x.tienda); });
+        const ats = new Map(), delCatalogo = new Map();
+        detalle.forEach(x => {
+          if (!ats.has(x.tienda)) {
+            let at = atDe(x.tienda);
+            const completo = at === 'Sin Asesor Asignado' ? tiendaDelCatalogo(x.tienda) : '';
+            if (completo) at = atDe(completo);
+            ats.set(x.tienda, at);
+            delCatalogo.set(x.tienda, completo);
+          }
+          x.at = ats.get(x.tienda);
+          x.tiendaCatalogo = delCatalogo.get(x.tienda);
+          x.preapertura = Boolean(OXXO.isPreopeningStore && OXXO.isPreopeningStore(x.tiendaCatalogo || x.tienda));
+        });
         // El catalogo de tiendas trae algunos nombres en minusculas ("jessica
         // yazmin verdi toala"): la misma persona no debe salir dos veces.
         const nombres = new Map();
@@ -395,6 +446,9 @@
     }
 
     ['f-mes', 'f-division', 'f-at', 'f-funcion'].forEach(id => $(id).addEventListener('change', aplicar));
+    // El estado de tienda es la misma preferencia que en los demas tableros.
+    $('f-estado').value = getEstado();
+    $('f-estado').addEventListener('change', e => { OXXO.setActiveStoreStatus(e.target.value, { updateUrl: true }); aplicar(); });
     let espera;
     $('f-tienda').addEventListener('input', () => { clearTimeout(espera); espera = setTimeout(aplicar, 150); });
     $('f-limpiar').addEventListener('click', () => { ['f-division', 'f-at', 'f-funcion', 'f-tienda'].forEach(id => { $(id).value = ''; }); aplicar(); });

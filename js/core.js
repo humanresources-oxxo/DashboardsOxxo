@@ -3343,6 +3343,7 @@ window.OXXO = {
   resolveAsesorD1,
   applyAsesorCatalog,
   isTiendaValid,
+  isPreopeningStore,
   filterValidTiendas,
   normalizeCatalogCr,
   normalizeCatalogTienda,
