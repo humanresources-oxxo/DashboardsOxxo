@@ -194,6 +194,23 @@
     return new Intl.DateTimeFormat('es-MX', corto ? { month: 'short', year: '2-digit' } : { month: 'long', year: 'numeric' }).format(new Date(+x[1], +x[2] - 1, 1));
   }
   const aObjetos = (headers, filas) => (filas || []).map(f => Object.fromEntries(headers.map((h, i) => [h, f[i]])));
+  // Google Sheets convierte el texto "2026-09" en fecha y la devuelve como
+  // "2026-09-01T06:00:00.000Z" (medianoche de la zona del libro): se vuelve a
+  // "AAAA-MM". Con 12 h de margen la medianoche de cualquier zona cae en su dia.
+  function mesTexto(v) {
+    const t = String(v == null ? '' : v).trim();
+    if (/^\d{4}-\d{2}$/.test(t)) return t;
+    const d = new Date(t);
+    if (isNaN(d.getTime())) return t;
+    return new Date(d.getTime() + 12 * 3600000).toISOString().slice(0, 7);
+  }
+  // La fecha de la carga tambien puede volver como fecha de JavaScript en texto.
+  function fechaCarga(v) {
+    const t = String(v == null ? '' : v).trim();
+    if (!t || /^\d{2}\/\d{2}\/\d{4}/.test(t)) return t;
+    const d = new Date(t);
+    return isNaN(d.getTime()) ? t : new Intl.DateTimeFormat('es-MX', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'America/Mexico_City' }).format(d);
+  }
 
   function montar() {
     const $ = id => document.getElementById(id);
@@ -352,8 +369,8 @@
         const [datos, cat] = await Promise.all([pedir({ action: 'consultarCuotaSindical' }), OXXO.loadAsesorCatalog().catch(() => null)]);
         catalogo = cat;
         carga = datos.carga || null;
-        resumen = aObjetos(RESUMEN_HEADERS, datos.resumen).map(r => ({ mes: r.Mes, division: r.Division, personas: +r.Personas || 0, sinDescuento: +r.PersonasSinDescuento || 0, semanas: +r.SemanasPagadas || 0, importe: +r.Importe || 0, devoluciones: +r.Devoluciones || 0, importeDevoluciones: +r.ImporteDevoluciones || 0, reversos: +r.Reversos || 0 }));
-        detalle = aObjetos(DETALLE_HEADERS, datos.detalle).map(r => ({ mes: r.Mes, division: r.Division, tienda: r.Tienda, funcion: r.Funcion, importe: +r.Importe || 0, personas: +r.Personas || 0, movimientos: +r.Movimientos || 0, devoluciones: +r.Devoluciones || 0, importeDevoluciones: +r.ImporteDevoluciones || 0, reversos: +r.Reversos || 0 }));
+        resumen = aObjetos(RESUMEN_HEADERS, datos.resumen).map(r => ({ mes: mesTexto(r.Mes), division: r.Division, personas: +r.Personas || 0, sinDescuento: +r.PersonasSinDescuento || 0, semanas: +r.SemanasPagadas || 0, importe: +r.Importe || 0, devoluciones: +r.Devoluciones || 0, importeDevoluciones: +r.ImporteDevoluciones || 0, reversos: +r.Reversos || 0 }));
+        detalle = aObjetos(DETALLE_HEADERS, datos.detalle).map(r => ({ mes: mesTexto(r.Mes), division: r.Division, tienda: r.Tienda, funcion: r.Funcion, importe: +r.Importe || 0, personas: +r.Personas || 0, movimientos: +r.Movimientos || 0, devoluciones: +r.Devoluciones || 0, importeDevoluciones: +r.ImporteDevoluciones || 0, reversos: +r.Reversos || 0 }));
         const ats = new Map();
         detalle.forEach(x => { if (!ats.has(x.tienda)) ats.set(x.tienda, atDe(x.tienda)); x.at = ats.get(x.tienda); });
         // El catalogo de tiendas trae algunos nombres en minusculas ("jessica
@@ -370,7 +387,7 @@
         llenar($('f-at'), unicos(detalle, 'at').sort((a, b) => a.localeCompare(b, 'es')));
         llenar($('f-funcion'), unicos(detalle, 'funcion').sort());
         $('hero-corte').innerHTML = `<span></span>${fmtMes(meses[0])} a ${fmtMes(meses[meses.length - 1])} · ${unicos(detalle, 'tienda').length} unidades`;
-        $('pie-carga').textContent = carga && carga.fecha ? `${carga.fecha}${carga.archivo ? ' · ' + carga.archivo : ''}` : '—';
+        $('pie-carga').textContent = carga && carga.fecha ? `${fechaCarga(carga.fecha)}${carga.archivo ? ' · ' + carga.archivo : ''}` : '—';
         aplicar();
       } catch (e) {
         sinDatos('No se pudo consultar: ' + e.message + '.');
@@ -433,7 +450,7 @@
       try {
         const r = await pedir({ action: 'infoCuotaSindical', adminPassword: password() });
         mostrarHoja(r.url);
-        $('cuota-admin-ultima').textContent = r.carga && r.carga.fecha ? `Última carga: ${r.carga.fecha}${r.carga.archivo ? ' · ' + r.carga.archivo : ''}` : 'Todavía no hay cargas.';
+        $('cuota-admin-ultima').textContent = r.carga && r.carga.fecha ? `Última carga: ${fechaCarga(r.carga.fecha)}${r.carga.archivo ? ' · ' + r.carga.archivo : ''}` : 'Todavía no hay cargas.';
       } catch (e) {
         consultado = false;
         $('cuota-admin-ultima').textContent = 'No se pudo consultar la última carga: ' + e.message + '.';
@@ -460,5 +477,5 @@
     });
   }
 
-  window.OXXO_CUOTA = { agregar, subirExcel, leerExcel, montar, montarAdmin, DETALLE_HEADERS, RESUMEN_HEADERS, TODAS };
+  window.OXXO_CUOTA = { agregar, subirExcel, leerExcel, mesTexto, fechaCarga, montar, montarAdmin, DETALLE_HEADERS, RESUMEN_HEADERS, TODAS };
 })();

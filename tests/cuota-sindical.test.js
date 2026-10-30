@@ -173,3 +173,13 @@ test('el panel admin tiene la carga de cuota sindical en el area Administrativo'
   assert.match(admin, /<script src="js\/cuota-sindical\.js\?v=[0-9a-f]+"><\/script>/);
   assert.match(fs.readFileSync(path.join(root, 'js', 'admin.js'), 'utf8'), /admin-cuota-panel'\)\?\.classList\.toggle\('hidden',area!=='administrativo'\)/);
 });
+
+test('lee bien los meses y la fecha de carga aunque Google Sheets los guarde como fecha', () => {
+  assert.equal(CUOTA.mesTexto('2026-09'), '2026-09');
+  assert.equal(CUOTA.mesTexto('2026-09-01T06:00:00.000Z'), '2026-09', 'medianoche de Ciudad de México');
+  assert.equal(CUOTA.mesTexto('2026-03-01T05:00:00.000Z'), '2026-03');
+  assert.equal(CUOTA.mesTexto('2026-08-31T19:00:00.000Z'), '2026-09', 'medianoche de una zona adelantada');
+  assert.equal(CUOTA.fechaCarga('30/10/2026 11:42'), '30/10/2026 11:42');
+  assert.match(CUOTA.fechaCarga('Fri Oct 30 2026 11:42:00 GMT-0600 (Central Standard Time)'), /30 oct 2026, 11:42/, 'a la hora del centro de México');
+  assert.doesNotMatch(CUOTA.fechaCarga('Fri Oct 30 2026 11:42:00 GMT-0600 (Central Standard Time)'), /GMT|Fri/);
+});
