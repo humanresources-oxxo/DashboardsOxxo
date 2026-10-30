@@ -76,17 +76,19 @@ function libroFalso(id) {
     return h;
   };
   hoja('Hoja 1');
-  return { id, hojas, getId: () => id, getSheets: () => hojas, insertSheet: n => hoja(n), getSheetByName: n => hojas.find(h => h.nombre === n) || null };
+  return { id, hojas, getId: () => id, getUrl: () => 'https://docs.google.com/spreadsheets/d/' + id, getSheets: () => hojas, insertSheet: n => hoja(n),
+    deleteSheet: h => { hojas.splice(hojas.indexOf(h), 1); }, getSheetByName: n => hojas.find(h => h.nombre === n) || null };
 }
 function servidor(props) {
   const libros = [], fechas = [];
+  let uuid = 0;
   const sandbox = {
     console, Set, Map, Date, JSON, Math, String, Number, Array, Object, RegExp, isFinite,
     LockService: { getScriptLock: () => ({ waitLock() {}, releaseLock() {} }) },
     SpreadsheetApp: { create: () => { const l = libroFalso('libro-cuota'); libros.push(l); return l; }, openById: id => libros.find(l => l.id === id) },
-    PropertiesService: { getScriptProperties: () => ({ getProperty: k => props[k] || null, setProperty: (k, v) => { props[k] = v; } }) },
+    PropertiesService: { getScriptProperties: () => ({ getProperty: k => props[k] || null, setProperty: (k, v) => { props[k] = v; }, deleteProperty: k => { delete props[k]; } }) },
     CacheService: { getScriptCache: () => ({ get: () => null, put() {} }) },
-    Utilities: { formatDate: () => '30/10/2026 10:00', sleep() {} },
+    Utilities: { formatDate: () => '30/10/2026 10:00', sleep() {}, getUuid: () => 'carga-' + (++uuid) },
   };
   vm.createContext(sandbox);
   vm.runInContext(fs.readFileSync(path.join(root, 'apps-script', 'admin-upload.gs'), 'utf8'), sandbox);
@@ -131,4 +133,43 @@ test('la pagina vive aparte: tarjeta en Administrativo y sin pestaña en el libr
   assert.ok(!/cuota/i.test(config.match(/TABS:\s*\{([\s\S]*?)\}/)[1]), 'no es una pestaña del libro de los dashboards');
   const otras = fs.readdirSync(path.join(root, 'js')).filter(n => n.endsWith('.js') && !['cuota-sindical.js', 'home.js', 'core.js', 'admin.js'].includes(n));
   for (const n of otras) assert.ok(!/consultarCuotaSindical|OXXO_CUOTA/.test(fs.readFileSync(path.join(root, 'js', n), 'utf8')), `${n} no debe leer la cuota sindical`);
+});
+
+test('el Excel completo llega por partes a la Base del libro privado y la consulta publica no la entrega', () => {
+  const srv = servidor({ ADMIN_PASSWORD: 'admin' });
+  const headers = ['Número de personal', 'Nombre del empleado o candidato', 'Texto breve de unidad organizativa', 'Importe', 'Año', 'Mes'];
+  const filas = Array.from({ length: 5 }, (_, i) => [1000 + i, 'Persona ' + i, 'OXXO CENTRO OAX', -23.1, 2026, '03. Marzo']);
+  const datos = CUOTA.agregar(filas.map(f => Object.fromEntries(headers.map((h, i) => [h, f[i]]))));
+  const base = { adminPassword: 'admin', action: 'publicarCuotaSindical' };
+  assert.throws(() => srv.gs.publicarCuotaSindical_({ ...base, adminPassword: 'x', fase: 'inicio', headers, totalFilas: 5 }), /No autorizado/);
+  const { cargaId } = srv.gs.publicarCuotaSindical_({ ...base, fase: 'inicio', headers, totalFilas: 5 });
+  const libro = srv.libros[0];
+  assert.ok(libro.getSheetByName('Base (cargando)'), 'se escribe en una hoja temporal');
+  assert.throws(() => srv.gs.publicarCuotaSindical_({ ...base, fase: 'filas', cargaId, desde: 3, filas: filas.slice(3) }), /fuera de orden/);
+  assert.throws(() => srv.gs.publicarCuotaSindical_({ ...base, fase: 'filas', cargaId: 'otra', desde: 0, filas }), /ya no está activa/);
+  assert.throws(() => srv.gs.publicarCuotaSindical_({ ...base, fase: 'filas', cargaId, desde: 0, filas: [[1, 2]] }), /no válida/);
+  srv.gs.publicarCuotaSindical_({ ...base, fase: 'filas', cargaId, desde: 0, filas: filas.slice(0, 3) });
+  const fin = { ...base, fase: 'fin', cargaId, archivo: 'Cuota.xlsx', detalle: datos.detalle, resumen: datos.resumen, meta: datos.meta };
+  assert.throws(() => srv.gs.publicarCuotaSindical_(fin), /incompleta: 3 de 5/, 'no publica una Base a medias');
+  assert.ok(!libro.getSheetByName('Base'), 'la Base anterior sigue intacta mientras tanto');
+  srv.gs.publicarCuotaSindical_({ ...base, fase: 'filas', cargaId, desde: 3, filas: filas.slice(3) });
+  const r = srv.gs.publicarCuotaSindical_(fin);
+  assert.equal(r.url, 'https://docs.google.com/spreadsheets/d/libro-cuota');
+  assert.ok(!libro.getSheetByName('Base (cargando)'));
+  assert.deepEqual(libro.getSheetByName('Base').filas[0], headers);
+  assert.equal(libro.getSheetByName('Base').filas.length, 6, 'encabezados y las 5 filas del Excel');
+  assert.equal(libro.getSheetByName('Base').filas[1][1], 'Persona 0');
+  assert.equal(srv.props.CUOTA_SINDICAL_CARGA, undefined, 'la carga termina');
+  assert.throws(() => srv.gs.publicarCuotaSindical_(fin), /ya no está activa/, 'una carga terminada no se repite');
+  // La consulta publica solo trae totales; la liga del libro solo con la contraseña.
+  assert.ok(!JSON.stringify(srv.gs.consultarCuotaSindical_()).includes('Persona'));
+  assert.throws(() => srv.gs.infoCuotaSindical_({ adminPassword: 'x' }), /No autorizado/);
+  assert.equal(srv.gs.infoCuotaSindical_({ adminPassword: 'admin' }).carga.archivo, 'Cuota.xlsx');
+});
+
+test('el panel admin tiene la carga de cuota sindical en el area Administrativo', () => {
+  const admin = fs.readFileSync(path.join(root, 'admin.html'), 'utf8');
+  for (const id of ['admin-cuota-panel', 'cuota-admin-archivo', 'cuota-admin-publicar', 'cuota-admin-hoja']) assert.ok(admin.includes(`id="${id}"`), id);
+  assert.match(admin, /<script src="js\/cuota-sindical\.js\?v=[0-9a-f]+"><\/script>/);
+  assert.match(fs.readFileSync(path.join(root, 'js', 'admin.js'), 'utf8'), /admin-cuota-panel'\)\?\.classList\.toggle\('hidden',area!=='administrativo'\)/);
 });

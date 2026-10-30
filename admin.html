@@ -95,6 +95,19 @@
         <div class="admin-commercial-panel__badge">D100</div>
       </div>
     </section>
+    <section class="admin-card hidden" id="admin-cuota-panel">
+      <span class="admin-eyebrow">Administrativo · Libro privado aparte</span>
+      <h2>Cuota Sindical</h2>
+      <p style="color:var(--ap-muted);font-size:13px;font-weight:600;margin:0 0 14px">Sube el Excel completo de nómina (concepto "Desc. Cuota Sindical"). Va entero a la hoja <strong>Base</strong> de su propio libro privado de Google Sheets, nunca al libro de los dashboards, y reemplaza la carga anterior. El <a href="dashboards/cuota-sindical.html">dashboard</a> solo muestra totales, sin nombres.</p>
+      <div class="admin-actions" style="align-items:center;gap:10px">
+        <label class="sr-only" for="cuota-admin-archivo">Excel de cuota sindical</label>
+        <input class="admin-input" id="cuota-admin-archivo" type="file" accept=".xlsx,.xls" style="max-width:420px">
+        <button class="admin-btn primary" type="button" id="cuota-admin-publicar">Subir y publicar</button>
+        <a class="admin-btn secondary" id="cuota-admin-hoja" href="#" target="_blank" rel="noopener" hidden>Abrir hoja</a>
+      </div>
+      <p class="helper-box" id="cuota-admin-ultima" style="margin-top:12px">Entra al área Administrativo para ver la última carga.</p>
+      <p class="reg-estado" id="cuota-admin-estado" role="status" aria-live="polite" hidden></p>
+    </section>
     <section class="admin-grid" id="admin-upload-workspace">
       <aside class="admin-card">
         <h2>1. Selecciona base</h2>
@@ -460,6 +473,7 @@
   <script src="js/admin-indicadores.js?v=5f35afb8"></script>
   <script src="js/admin-pptx-asesor.js?v=5f35afb8"></script>
   <script src="js/admin-reasignaciones.js?v=5f35afb8"></script>
+  <script src="js/cuota-sindical.js?v=5f35afb8"></script>
   <script src="js/acta-registro.js?v=5f35afb8"></script>
   <script>
     (function(){
@@ -473,7 +487,7 @@
           if(panel) panel.classList.remove('hidden');
         });
       });
-      document.addEventListener('DOMContentLoaded', function(){ OXXO_ACTA_REGISTRO.montar(); });
+      document.addEventListener('DOMContentLoaded', function(){ OXXO_ACTA_REGISTRO.montar(); OXXO_CUOTA.montarAdmin(); });
     })();
   </script>
 </body>

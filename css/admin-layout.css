@@ -228,3 +228,5 @@ body{background:var(--ap-bg);color:var(--ap-text)}
 .reg-anular-acciones{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px;margin-top:8px}
 @media(max-width:1000px){.reg-grid{grid-template-columns:1fr}.reg-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:620px){.reg-filtros .admin-btn{width:100%}.reg-anular-acciones .admin-btn{flex:1 1 100%}}
+/* Un boton del panel con el atributo hidden no se muestra (.admin-btn y .admin-actions a.admin-btn traen display propio). */
+.admin-btn[hidden],.admin-actions a.admin-btn[hidden]{display:none}

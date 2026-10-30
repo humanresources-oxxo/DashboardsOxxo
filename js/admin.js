@@ -196,7 +196,7 @@
   const ADMIN_AREAS={
     rh:{title:'Recursos Humanos',description:'Bases de talento, estructura y operación de tienda.',color:'#f71926',soft:'#fff0ef'},
     comercial:{title:'Comercial',description:'PromosD100 (edición directa en Sheets) y avance de indicadores comerciales.',color:'#12608f',soft:'#eaf5fb'},
-    administrativo:{title:'Administrativo',description:'Resultados de Inventario y Faltantes y Sobrantes. Cuota Sindical se actualiza desde su propia página.',color:'#65529a',soft:'#f1eef9'}
+    administrativo:{title:'Administrativo',description:'Resultados de Inventario, Faltantes y Sobrantes y Cuota Sindical (esta última va a su libro privado aparte).',color:'#65529a',soft:'#f1eef9'}
   };
   let currentAdminArea='rh';
   function dashboardArea(key){
@@ -242,6 +242,8 @@
     // desde la pestana Comercial).
     const hasUpload=available.length>0;
     $('admin-commercial-panel').classList.toggle('hidden',!isCommercial);
+    // Cuota Sindical se carga a su libro privado aparte (js/cuota-sindical.js).
+    $('admin-cuota-panel')?.classList.toggle('hidden',area!=='administrativo');
     $('admin-upload-workspace').classList.toggle('hidden',!hasUpload);
     $('admin-preview-section').classList.toggle('hidden',!hasUpload);
     if(!hasUpload)return;

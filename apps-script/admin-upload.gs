@@ -12,7 +12,7 @@
  * Despues de eso, admin.html publica directo sin pedir URL.
  */
 const SPREADSHEET_ID = '1EbUuyy-PRXiDwPmn9L14P93cGN6VXTyLfAHx-CE8M_A';
-const APP_VERSION = '61';
+const APP_VERSION = '62';
 const ADMIN_PASSWORD_PROPERTY = 'ADMIN_PASSWORD';
 const AUDIT_SHEET = '_Admin_Bitacora';
 const BACKUP_PREFIX = '_BK_';
@@ -361,6 +361,9 @@ function doPost(e) {
     }
     if (String(payload.action || '') === 'consultarCuotaSindical') {
       return jsonResponse(consultarCuotaSindical_());
+    }
+    if (String(payload.action || '') === 'infoCuotaSindical') {
+      return jsonResponse(infoCuotaSindical_(payload));
     }
 
     // Esta ruta no usa la credencial de administración: valida una contraseña
@@ -2644,14 +2647,23 @@ function anularActa_(payload) {
 /* ---------- Cuota Sindical ----------
    Dashboard muy aparte: sus datos viven en un libro privado propio
    (CUOTA_SINDICAL_SPREADSHEET_ID; se crea en el Drive de la cuenta dueña con
-   la primera carga), nunca en el libro de los dashboards. La pagina procesa
-   el Excel de nomina en el navegador y solo manda totales por mes, division,
-   tienda y puesto: aqui se validan y se reemplaza todo. */
+   la primera carga), nunca en el libro de los dashboards. Se carga desde su
+   pagina o desde el panel admin (area Administrativo).
+
+   El libro guarda el Excel completo en la hoja "Base" (con nombres: por eso
+   el libro es privado y la hoja nunca sale por consultarCuotaSindical) y los
+   totales que lee el dashboard en "Detalle" y "Resumen". El Excel completo
+   llega en partes (fase inicio / filas / fin) a una hoja temporal que solo
+   al final reemplaza a "Base": una carga que se corta no borra la anterior. */
 const CUOTA_PROPERTY = 'CUOTA_SINDICAL_SPREADSHEET_ID';
 const CUOTA_DETALLE_HEADERS = ['Mes', 'Division', 'Tienda', 'Funcion', 'Importe', 'Personas', 'Movimientos', 'Devoluciones', 'ImporteDevoluciones', 'Reversos'];
 const CUOTA_RESUMEN_HEADERS = ['Mes', 'Division', 'Personas', 'PersonasSinDescuento', 'SemanasPagadas', 'Importe', 'Movimientos', 'Devoluciones', 'ImporteDevoluciones', 'Reversos'];
-const CUOTA_HOJAS = { detalle: 'Detalle', resumen: 'Resumen', carga: 'Carga' };
+const CUOTA_HOJAS = { detalle: 'Detalle', resumen: 'Resumen', carga: 'Carga', base: 'Base', temporal: 'Base (cargando)' };
 const CUOTA_MAX_FILAS = 60000;
+const CUOTA_BASE_MAX_FILAS = 200000;
+const CUOTA_BASE_MAX_COLUMNAS = 60;
+const CUOTA_BASE_MAX_POR_PARTE = 10000;
+const CUOTA_CARGA_PROPERTY = 'CUOTA_SINDICAL_CARGA';
 
 function libroCuota_() {
   const props = PropertiesService.getScriptProperties();
@@ -2693,15 +2705,83 @@ function escribirHojaCuota_(ss, nombre, headers, filas) {
   ajustarTamanoHoja_(hoja, valores.length, headers.length);
 }
 
+// Carga del Excel completo por partes. inicio: hoja temporal con encabezados;
+// filas: agrega en orden (desde = filas ya escritas); fin: publicarCuotaSindical_
+// con fase "fin" valida el total y cambia la temporal por "Base".
+function cargaCuota_(cargaId) {
+  const guardada = JSON.parse(PropertiesService.getScriptProperties().getProperty(CUOTA_CARGA_PROPERTY) || 'null');
+  if (!guardada || !cargaId || guardada.id !== cargaId) throw new Error('La carga ya no está activa; vuelve a empezar');
+  return guardada;
+}
+function iniciarBaseCuota_(payload) {
+  const headers = Array.isArray(payload.headers) ? payload.headers.map(function(h) { return textoActa_(h, 80); }) : [];
+  const total = Number(payload.totalFilas);
+  if (!headers.length || headers.length > CUOTA_BASE_MAX_COLUMNAS || headers.some(function(h) { return !h; })) throw new Error('Encabezados del Excel no válidos');
+  if (!(total > 0) || total > CUOTA_BASE_MAX_FILAS) throw new Error('Número de filas no válido');
+  const lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    const ss = libroCuota_();
+    const previa = ss.getSheetByName(CUOTA_HOJAS.temporal);
+    if (previa) ss.deleteSheet(previa);
+    const hoja = ss.insertSheet(CUOTA_HOJAS.temporal);
+    hoja.getRange(1, 1, 1, headers.length).setValues([headers]);
+    hoja.setFrozenRows(1);
+    const carga = { id: Utilities.getUuid(), columnas: headers.length, total: total, escritas: 0 };
+    PropertiesService.getScriptProperties().setProperty(CUOTA_CARGA_PROPERTY, JSON.stringify(carga));
+    return { ok: true, cargaId: carga.id };
+  } finally {
+    lock.releaseLock();
+  }
+}
+function filasBaseCuota_(payload) {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    const carga = cargaCuota_(payload.cargaId);
+    const filas = payload.filas;
+    if (!Array.isArray(filas) || !filas.length || filas.length > CUOTA_BASE_MAX_POR_PARTE) throw new Error('Parte de filas no válida');
+    // Solo en orden: si una parte se reintenta o se salta, se rechaza.
+    if (Number(payload.desde) !== carga.escritas) throw new Error('Parte fuera de orden (se esperaba la fila ' + (carga.escritas + 1) + ')');
+    if (carga.escritas + filas.length > carga.total) throw new Error('Llegaron más filas de las anunciadas');
+    const valores = filas.map(function(fila, i) {
+      if (!Array.isArray(fila) || fila.length !== carga.columnas) throw new Error('Fila ' + (carga.escritas + i + 2) + ' no válida');
+      return fila.map(function(v) { return typeof v === 'number' ? (isFinite(v) ? v : '') : textoActa_(v, 200); });
+    });
+    const hoja = libroCuota_().getSheetByName(CUOTA_HOJAS.temporal);
+    if (!hoja) throw new Error('La carga ya no está activa; vuelve a empezar');
+    hoja.getRange(carga.escritas + 2, 1, valores.length, carga.columnas).setValues(valores);
+    carga.escritas += valores.length;
+    PropertiesService.getScriptProperties().setProperty(CUOTA_CARGA_PROPERTY, JSON.stringify(carga));
+    return { ok: true, escritas: carga.escritas, total: carga.total };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
 function publicarCuotaSindical_(payload) {
   assertAuthorized(payload);
+  if (payload.fase === 'inicio') return iniciarBaseCuota_(payload);
+  if (payload.fase === 'filas') return filasBaseCuota_(payload);
   const detalle = filasCuota_(payload.detalle, CUOTA_DETALLE_HEADERS, 4, 'el detalle');
   const resumen = filasCuota_(payload.resumen, CUOTA_RESUMEN_HEADERS, 2, 'el resumen');
   const meta = payload.meta || {};
   const lock = LockService.getScriptLock();
   lock.waitLock(30000);
+  let ss;
   try {
-    const ss = libroCuota_();
+    ss = libroCuota_();
+    // Con la carga completa ("fin"), la hoja temporal pasa a ser la Base.
+    if (payload.fase === 'fin') {
+      const carga = cargaCuota_(payload.cargaId);
+      if (carga.escritas !== carga.total) throw new Error('La Base quedó incompleta: ' + carga.escritas + ' de ' + carga.total + ' filas');
+      const temporal = ss.getSheetByName(CUOTA_HOJAS.temporal);
+      if (!temporal) throw new Error('La carga ya no está activa; vuelve a empezar');
+      const anterior = ss.getSheetByName(CUOTA_HOJAS.base);
+      if (anterior) ss.deleteSheet(anterior);
+      temporal.setName(CUOTA_HOJAS.base);
+      PropertiesService.getScriptProperties().deleteProperty(CUOTA_CARGA_PROPERTY);
+    }
     escribirHojaCuota_(ss, CUOTA_HOJAS.detalle, CUOTA_DETALLE_HEADERS, detalle);
     escribirHojaCuota_(ss, CUOTA_HOJAS.resumen, CUOTA_RESUMEN_HEADERS, resumen);
     const fecha = Utilities.formatDate(new Date(), 'America/Mexico_City', 'dd/MM/yyyy HH:mm');
@@ -2713,7 +2793,16 @@ function publicarCuotaSindical_(payload) {
   // Fecha de la tarjeta en la portada (solo la fecha; los datos no se copian).
   let portada = null;
   try { portada = updateConfigDate('cuota'); } catch (err) { portada = { ok: false, error: String(err && err.message || err) }; }
-  return { ok: true, detalle: detalle.length, resumen: resumen.length, portada: portada };
+  return { ok: true, detalle: detalle.length, resumen: resumen.length, portada: portada, url: ss.getUrl ? ss.getUrl() : '' };
+}
+
+// Para el panel admin: liga del libro privado y ultima carga (con contraseña).
+function infoCuotaSindical_(payload) {
+  assertAuthorized(payload);
+  const id = String(PropertiesService.getScriptProperties().getProperty(CUOTA_PROPERTY) || '').trim();
+  if (!id) return { ok: true, url: '', carga: null };
+  const ss = SpreadsheetApp.openById(id);
+  return { ok: true, url: ss.getUrl(), carga: consultarCuotaSindical_().carga };
 }
 
 function consultarCuotaSindical_() {
