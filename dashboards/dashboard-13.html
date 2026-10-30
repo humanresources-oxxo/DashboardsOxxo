@@ -302,7 +302,30 @@ function mesExpedicion(r){
   const iso=fechaIso(val(r,C.fIni));
   return iso?Number(iso.slice(5,7)):0;
 }
+// Algunos folios llegan con fechas pero con las 12 columnas D Ene..D Dic
+// vacias (la formula de la sabana no se lleno): sin esto sus dias no se
+// contaban en ningun mes. Solo en ese caso se reparten los dias del periodo
+// Fecha Inicio..Fecha Termino que caen en el anio del reporte; si alguna
+// columna mensual trae dato, manda la sabana.
+const REPARTO_FECHAS = new WeakMap();
+function repartoPorFechas(r){
+  if(REPARTO_FECHAS.has(r)) return REPARTO_FECHAS.get(r);
+  let reparto = null;
+  const vacias = MESES.every(m => String(r[C['m'+m]] ?? '').trim() === '');
+  const ini = fechaIso(val(r,C.fIni)), fin = fechaIso(val(r,C.fFin));
+  if(vacias && ini && fin && fin >= ini){
+    reparto = new Array(12).fill(0);
+    const d = new Date(`${ini}T12:00:00`), ultimo = new Date(`${fin}T12:00:00`);
+    for(let i = 0; d <= ultimo && i < 400; i++, d.setDate(d.getDate() + 1)){
+      if(d.getFullYear() === REPORT_YEAR) reparto[d.getMonth()]++;
+    }
+  }
+  REPARTO_FECHAS.set(r, reparto);
+  return reparto;
+}
 function diasMes(r,monthIndex){
+  const reparto = repartoPorFechas(r);
+  if(reparto) return reparto[monthIndex];
   const n=OXXO.metricsNum(r[C['m'+MESES[monthIndex]]]);
   return Number.isFinite(n)?n:0;
 }
