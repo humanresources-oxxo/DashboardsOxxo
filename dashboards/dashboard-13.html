@@ -161,7 +161,7 @@
 
   <div class="card d13-stack-card">
     <div class="card-head">
-      <div class="card-title"><svg class="icon-inline" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 2v4M16 2v4M3 10h18"></path><rect x="3" y="4" width="18" height="17" rx="3"></rect><path d="m9 15 2 2 4-4"></path></svg>Seguimiento de incapacidades<span class="info-tip" tabindex="0" data-tip="Una fila por colaborador, tomando su incapacidad con la fecha de término más reciente. Semáforo: rojo si ya terminó, amarillo si vence en 7 días o menos y verde si tiene más de 7 días vigentes."></span></div>
+      <div class="card-title"><svg class="icon-inline" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 2v4M16 2v4M3 10h18"></path><rect x="3" y="4" width="18" height="17" rx="3"></rect><path d="m9 15 2 2 4-4"></path></svg>Seguimiento de incapacidades<span class="info-tip" tabindex="0" data-tip="Una fila por colaborador, tomando su incapacidad con la fecha de término más reciente. Solo se listan las vigentes y las que terminan del mes en curso en adelante: las que terminaron en meses anteriores se depuran de esta tabla (siguen en los indicadores y en el Detalle por Folio). Semáforo: rojo si ya terminó, amarillo si vence en 7 días o menos y verde si tiene más de 7 días vigentes."></span></div>
       <div class="sem-resumen" id="seguimiento-resumen"></div>
     </div>
     <div class="tbl-wrap">
@@ -664,7 +664,15 @@ function renderSeguimiento(data){
     if(!actual||orden>actual.orden)porPersona.set(key,{r,orden});
   });
   const prioridad={pronto:0,ok:1,fuera:2,na:3};
-  SEGUIMIENTO_FILAS=[...porPersona.values()].map(x=>x.r).sort((a,b)=>{
+  // Seguimiento solo de lo vigente: se depuran las incapacidades que
+  // terminaron antes del mes en curso (RH lo pidio en nov-2026). Las que no
+  // traen fecha de termino se quedan para que se corrijan.
+  const hoy=new Date();
+  const inicioMes=`${hoy.getFullYear()}-${String(hoy.getMonth()+1).padStart(2,'0')}-01`;
+  SEGUIMIENTO_FILAS=[...porPersona.values()].map(x=>x.r).filter(r=>{
+    const fin=fechaIso(val(r,C.fFin));
+    return !fin||fin>=inicioMes;
+  }).sort((a,b)=>{
     const sa=semaforoTermino(val(a,C.fFin)),sb=semaforoTermino(val(b,C.fFin));
     return (prioridad[sa.grupo]-prioridad[sb.grupo]) || fechaIso(val(b,C.fFin)).localeCompare(fechaIso(val(a,C.fFin))) || val(a,C.nombre).localeCompare(val(b,C.nombre),'es-MX');
   });
@@ -689,7 +697,7 @@ function renderSeguimiento(data){
   document.getElementById('seguimiento-resumen').innerHTML=`
     <span class="sem-chip is-pronto"><b>${conteo.pronto}</b><span>Por vencer</span></span>
     <span class="sem-chip is-ok"><b>${conteo.ok}</b><span>Vigentes</span></span>
-    <span class="sem-chip is-fuera"><b>${conteo.fuera}</b><span>Terminadas</span></span>
+    <span class="sem-chip is-fuera"><b>${conteo.fuera}</b><span>Terminadas este mes</span></span>
     ${conteo.na?`<span class="sem-chip is-na"><b>${conteo.na}</b><span>Sin fecha</span></span>`:''}`;
 }
 

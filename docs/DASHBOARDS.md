@@ -102,7 +102,7 @@ Etapa de desarrollo de cada lider de tienda, su trayectoria mes a mes (historico
 
 `dashboards/dashboard-13.html` · scripts RH + `dashboard-dialogs.js`
 
-Incapacidades del IMSS, dias perdidos, seguimiento y riesgos de trabajo. **Uso exclusivo Plaza Oaxaca**: el selector de plaza no aplica. Modal: ficha del colaborador (desde el detalle por folio y desde el seguimiento).
+Incapacidades del IMSS, dias perdidos, seguimiento y riesgos de trabajo. **Uso exclusivo Plaza Oaxaca**: el selector de plaza no aplica. Modal: ficha del colaborador (desde el detalle por folio y desde el seguimiento). La tabla **Seguimiento de incapacidades** solo lista las vigentes y las que terminan del mes en curso en adelante (las que no traen fecha de término también); las que terminaron en meses anteriores se depuran de esa tabla, pero siguen en indicadores, gráficas y Detalle por Folio.
 
 ## Dashboard 14 - Avance comercial
 
