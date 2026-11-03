@@ -12,7 +12,7 @@
  * Despues de eso, admin.html publica directo sin pedir URL.
  */
 const SPREADSHEET_ID = '1EbUuyy-PRXiDwPmn9L14P93cGN6VXTyLfAHx-CE8M_A';
-const APP_VERSION = '63';
+const APP_VERSION = '64';
 const ADMIN_PASSWORD_PROPERTY = 'ADMIN_PASSWORD';
 const AUDIT_SHEET = '_Admin_Bitacora';
 const BACKUP_PREFIX = '_BK_';
@@ -374,6 +374,15 @@ function doPost(e) {
     }
     if (String(payload.action || '') === 'consultarCct') {
       return jsonResponse(consultarCct_());
+    }
+
+    // Casos DILOS para la app Conoxxo (como los CCT): publicar exige la
+    // contraseña del admin; consultar es publica porque no trae nombres.
+    if (String(payload.action || '') === 'publicarDilos') {
+      return jsonResponse(publicarDilos_(payload));
+    }
+    if (String(payload.action || '') === 'consultarDilos') {
+      return jsonResponse(consultarDilos_());
     }
 
     // Esta ruta no usa la credencial de administración: valida una contraseña
@@ -2886,6 +2895,79 @@ function consultarCct_() {
   // Sheets puede volver la fecha como Date: siempre sale como texto.
   const fecha = carga && carga[0] instanceof Date ? Utilities.formatDate(carga[0], 'America/Mexico_City', 'yyyy-MM-dd HH:mm') : String((carga && carga[0]) || '');
   return { ok: true, filas: filas, carga: carga ? { fecha: fecha, archivo: String(carga[1] || ''), filas: Number(carga[2]) || 0 } : null };
+}
+
+/* ---------- Casos DILOS para la app Conoxxo ----------
+   Reporte de casos abiertos de la Zona Centro Sur ("Reporte DILOS dd.mm.aaaa",
+   hoja ZCS) que RH sube desde el panel admin (area Administrativo,
+   js/dilos-conoxxo.js). Se guarda en un libro privado aparte
+   (DILOS_CONOXXO_SPREADSHEET_ID; se crea con la primera carga) y ningun
+   dashboard lo lee: solo la app Conoxxo, con la accion publica consultarDilos.
+   El nombre del facilitador nunca llega: solo caso, region, plaza, estatus,
+   area (RH / ADM) y dias abiertos. Cada carga reemplaza la anterior. */
+const DILOS_PROPERTY = 'DILOS_CONOXXO_SPREADSHEET_ID';
+const DILOS_HOJAS = { casos: 'Casos', carga: 'Carga' };
+const DILOS_HEADERS = ['Caso', 'Region', 'Plaza', 'Estatus', 'Area', 'Dias'];
+const DILOS_MAX_FILAS = 5000;
+
+function libroDilos_() {
+  const props = PropertiesService.getScriptProperties();
+  const id = String(props.getProperty(DILOS_PROPERTY) || '').trim();
+  if (id) return SpreadsheetApp.openById(id);
+  const ss = SpreadsheetApp.create('Casos DILOS · App Conoxxo');
+  ss.getSheets()[0].setName(DILOS_HOJAS.casos);
+  props.setProperty(DILOS_PROPERTY, ss.getId());
+  return ss;
+}
+
+function publicarDilos_(payload) {
+  assertAuthorized(payload);
+  const casos = Array.isArray(payload.casos) ? payload.casos : [];
+  if (!casos.length) throw new Error('El reporte no trae casos');
+  if (casos.length > DILOS_MAX_FILAS) throw new Error('Demasiados casos');
+  const valores = casos.map(function(c) {
+    const caso = textoActa_(c && c.caso, 40);
+    if (!caso) throw new Error('Caso sin número');
+    const area = String((c && c.area) || '');
+    if (['RH', 'ADM', 'Otra'].indexOf(area) < 0) throw new Error('Área no válida: ' + area);
+    const dias = Number(c.dias);
+    if (!isFinite(dias) || dias < 0 || dias > 10000) throw new Error('Días abiertos no válidos en ' + caso);
+    return [caso, textoActa_(c.region, 60), textoActa_(c.plaza, 80), textoActa_(c.estatus, 60), area, Math.round(dias)];
+  });
+  const corte = /^\d{4}-\d{2}-\d{2}$/.test(String(payload.corte || '')) ? String(payload.corte) : '';
+  const lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    const ss = libroDilos_();
+    escribirHojaCuota_(ss, DILOS_HOJAS.casos, DILOS_HEADERS, valores);
+    const fecha = Utilities.formatDate(new Date(), 'America/Mexico_City', 'yyyy-MM-dd HH:mm');
+    escribirHojaCuota_(ss, DILOS_HOJAS.carga, ['Fecha', 'Archivo', 'Casos', 'Corte'], [[fecha, textoActa_(payload.archivo, 120), valores.length, corte]]);
+  } finally {
+    lock.releaseLock();
+  }
+  return { ok: true, casos: valores.length };
+}
+
+function consultarDilos_() {
+  const id = String(PropertiesService.getScriptProperties().getProperty(DILOS_PROPERTY) || '').trim();
+  if (!id) return { ok: true, casos: [], carga: null };
+  const ss = SpreadsheetApp.openById(id);
+  const leer = function(nombre, columnas) {
+    const hoja = ss.getSheetByName(nombre);
+    if (!hoja || hoja.getLastRow() < 2) return [];
+    return hoja.getRange(2, 1, hoja.getLastRow() - 1, columnas).getValues();
+  };
+  // Sheets puede volver fechas como Date: siempre salen como texto.
+  const texto = function(v, formato) { return v instanceof Date ? Utilities.formatDate(v, 'America/Mexico_City', formato) : String(v == null ? '' : v); };
+  const casos = leer(DILOS_HOJAS.casos, DILOS_HEADERS.length).map(function(f) {
+    return { caso: String(f[0]), region: String(f[1]), plaza: String(f[2]), estatus: String(f[3]), area: String(f[4]), dias: Number(f[5]) || 0 };
+  });
+  const carga = leer(DILOS_HOJAS.carga, 4)[0];
+  return {
+    ok: true,
+    casos: casos,
+    carga: carga ? { fecha: texto(carga[0], 'yyyy-MM-dd HH:mm'), archivo: String(carga[1] || ''), casos: Number(carga[2]) || 0, corte: texto(carga[3], 'yyyy-MM-dd') } : null,
+  };
 }
 
 function consultarCuotaSindical_() {
