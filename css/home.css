@@ -96,8 +96,10 @@ a:hover{color:var(--red-dk)}
 /* ── Hero ───────────────────────────────────────────── */
 .hero{
   position:relative;overflow:hidden;display:flex;align-items:center;
-  width:var(--shell);margin:12px auto 0;padding:0;
-  border:1px solid rgba(255,255,255,.68);border-radius:32px;
+  /* Mismo ancho maximo que la barra de areas (860px): completo pero sin
+     ocupar media pantalla (a 1440px quedaba de 431px de alto). */
+  width:min(var(--shell),860px);margin:12px auto 0;padding:0;
+  border:1px solid rgba(255,255,255,.68);border-radius:28px;
   box-shadow:0 .5px 0 rgba(255,255,255,.9) inset,0 1px 2px rgba(112,45,28,.05),0 8px 20px rgba(112,45,28,.08);
   /* El banner (2000x736) ya trae el titulo "Torre de Control" y el letrero de
      Plaza Oaxaca: se muestra completo, con su misma proporcion, sin degradado
