@@ -89,7 +89,8 @@ window.OXXO_CONFIG = {
   // usan DEFAULT, por lo que nunca heredan nombres de otra plaza.
   // Meta por defecto cuando un asesor no tiene fila propia en la pestana
   // Compromisos_Bajas (ver COMMITMENTS_SHEET arriba) para la plaza activa.
-  BAJAS_COMMITMENTS_DEFAULT: 4,
+  // 8 desde noviembre 2026 (antes 4).
+  BAJAS_COMMITMENTS_DEFAULT: 8,
 
   // Web App de Apps Script usado por el panel admin para publicar bases y
   // para leer hojas directo (sin pasar por gviz, ver ADMIN_READ_ACTION mas
