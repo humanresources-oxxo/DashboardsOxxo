@@ -65,7 +65,7 @@ test('toda referencia local de html y css apunta a un archivo existente', () => 
 });
 
 test('assets retirados siguen ausentes y ningun archivo de assets/ queda huerfano', () => {
-  for (const eliminado of ['assets/orgulloxxos-hero.jpg', 'catalogo_asesores_2026-09-14.csv', 'assets/favicon-mascotas.png', 'assets/banner-septiembre-mexico.png']) {
+  for (const eliminado of ['assets/orgulloxxos-hero.jpg', 'catalogo_asesores_2026-09-14.csv', 'assets/favicon-mascotas.png', 'assets/banner-septiembre-mexico.png', 'assets/banner-septiembre-mexico.webp']) {
     assert.equal(fs.existsSync(path.join(raiz, eliminado)), false, `${eliminado} ya no debe existir`);
   }
   const consumidores = walk(raiz, ['.html', '.js', '.css', '.gs', '.mjs'])
@@ -80,7 +80,7 @@ test('assets retirados siguen ausentes y ningun archivo de assets/ queda huerfan
 
 test('la portada baja iconos y banner optimizados', () => {
   const peso = f => fs.statSync(path.join(raiz, f)).size;
-  assert.ok(peso('assets/banner-septiembre-mexico.webp') <= 350 * 1024, 'banner WebP <= 350 KB');
+  assert.ok(peso('assets/banner-navidad-oaxaca.webp') <= 350 * 1024, 'banner WebP <= 350 KB');
   assert.ok(peso('assets/favicon-mascotas-192.png') <= 60 * 1024);
   assert.ok(peso('assets/favicon-mascotas-512.png') <= 150 * 1024);
   const index = fs.readFileSync(path.join(raiz, 'index.html'), 'utf8');
