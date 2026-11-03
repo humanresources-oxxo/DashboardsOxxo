@@ -111,12 +111,10 @@
     <section class="admin-card hidden" id="admin-cct-panel">
       <span class="admin-eyebrow">Administrativo · Solo app Conoxxo</span>
       <h2>Contratos colectivos (CCT)</h2>
-      <p style="color:var(--ap-muted);font-size:13px;font-weight:600;margin:0 0 14px">Sube el Excel de contratos colectivos (hojas <strong>CCTs Tiendas</strong> y <strong>CCT ejercicio …</strong>). No se muestra en ningún dashboard de este sitio: va a la base de la app Conoxxo, a su pantalla "Contratos colectivos", y reemplaza la carga anterior. Solo viajan indicadores; los nombres de responsables y las ligas a SharePoint no se envían. Pide el passcode de RH de Conoxxo (el del panel admin de la app).</p>
+      <p style="color:var(--ap-muted);font-size:13px;font-weight:600;margin:0 0 14px">Sube el Excel de contratos colectivos (hojas <strong>CCTs Tiendas</strong> y <strong>CCT ejercicio …</strong>). No se muestra en ningún dashboard de este sitio: va a su propio libro privado y solo lo ve la app Conoxxo, en su pantalla "Contratos colectivos". Reemplaza la carga anterior. Solo viajan indicadores; los nombres de responsables y las ligas a SharePoint no se envían.</p>
       <div class="admin-actions" style="align-items:center;gap:10px;flex-wrap:wrap">
         <label class="sr-only" for="cct-admin-archivo">Excel de contratos colectivos</label>
         <input class="admin-input" id="cct-admin-archivo" type="file" accept=".xlsx,.xls,.xlsm" style="max-width:360px">
-        <label class="sr-only" for="cct-admin-passcode">Passcode de RH de Conoxxo</label>
-        <input class="admin-input" id="cct-admin-passcode" type="password" placeholder="Passcode de RH de Conoxxo" autocomplete="off" style="max-width:240px">
         <button class="admin-btn primary" type="button" id="cct-admin-publicar">Subir a Conoxxo</button>
       </div>
       <p class="helper-box" id="cct-admin-ultima" style="margin-top:12px">Entra al área Administrativo para ver la última carga.</p>

@@ -1,6 +1,7 @@
 // Contratos colectivos (CCT): el Excel se convierte en el navegador en
 // indicadores para la app Conoxxo; nombres de responsables y ligas a
-// SharePoint nunca salen, y no se publica en ningun dashboard.
+// SharePoint nunca salen. El Apps Script los guarda en un libro privado
+// aparte (publicarCct, con la sesion del panel) y ningun dashboard los lee.
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -70,4 +71,72 @@ test('el panel solo lo muestra en Administrativo y no lo publica en el sitio', (
   for (const pagina of fs.readdirSync(path.join(root, 'dashboards')).filter(n => n.endsWith('.html'))) {
     assert.doesNotMatch(fs.readFileSync(path.join(root, 'dashboards', pagina), 'utf8'), /cct-conoxxo/, `${pagina} no debe cargar los CCT`);
   }
+});
+
+// Apps Script con un libro de Sheets minimo (como en cuota-sindical.test.js).
+function libroFalso(id) {
+  const hojas = [];
+  const hoja = nombre => {
+    const h = { nombre, filas: [], setName(n) { h.nombre = n; }, setFrozenRows() {}, clearContents() { h.filas = []; }, getLastRow: () => h.filas.length,
+      getRange(r, c, nr, nc) {
+        return {
+          setValues: v => { v.forEach((f, i) => { h.filas[r - 1 + i] = [...f]; }); },
+          getValues: () => h.filas.slice(r - 1, r - 1 + nr).map(f => f.slice(c - 1, c - 1 + nc)),
+        };
+      } };
+    hojas.push(h);
+    return h;
+  };
+  hoja('Hoja 1');
+  return { id, hojas, getId: () => id, getSheets: () => hojas, insertSheet: n => hoja(n), getSheetByName: n => hojas.find(h => h.nombre === n) || null };
+}
+function servidor(props) {
+  const libros = [];
+  const sandbox = {
+    console, Set, Map, Date, JSON, Math, String, Number, Array, Object, RegExp, isFinite,
+    LockService: { getScriptLock: () => ({ waitLock() {}, releaseLock() {} }) },
+    SpreadsheetApp: { create: () => { const l = libroFalso('libro-cct'); libros.push(l); return l; }, openById: id => libros.find(l => l.id === id) },
+    PropertiesService: { getScriptProperties: () => ({ getProperty: k => props[k] || null, setProperty: (k, v) => { props[k] = v; }, deleteProperty: k => { delete props[k]; } }) },
+    CacheService: { getScriptCache: () => ({ get: () => null, put() {} }) },
+    Utilities: { formatDate: () => '2026-11-03 11:00', sleep() {} },
+  };
+  vm.createContext(sandbox);
+  vm.runInContext(fs.readFileSync(path.join(root, 'apps-script', 'admin-upload.gs'), 'utf8'), sandbox);
+  sandbox.ajustarTamanoHoja_ = () => {};
+  sandbox.registrarFalloAuth = () => 1;
+  sandbox.registrarIntentoFallido = () => {};
+  return { gs: sandbox, libros, props };
+}
+
+test('el Apps Script guarda los CCT en su libro privado con la sesion del panel y los entrega', () => {
+  const srv = servidor({ ADMIN_PASSWORD: 'admin' });
+  assert.deepEqual(JSON.parse(JSON.stringify(srv.gs.consultarCct_())), { ok: true, filas: [], carga: null }, 'sin carga todavia');
+  const { filas } = CCT.normalizar({ 'CCTs Tiendas': [historico()], 'CCT ejercicio 2026': [ejercicio()] });
+  const pedido = extra => ({ adminPassword: 'admin', archivo: 'CCT.xlsx', filas, ...extra });
+  assert.throws(() => srv.gs.publicarCct_(pedido({ adminPassword: 'otra' })), /No autorizado/);
+  assert.throws(() => srv.gs.publicarCct_(pedido({ filas: [] })), /no trae contratos/);
+  assert.throws(() => srv.gs.publicarCct_(pedido({ filas: [{ hoja: 'otra', datos: {} }] })), /no válida/);
+  assert.throws(() => srv.gs.publicarCct_(pedido({ filas: [{ hoja: 'historico', datos: { plaza: 'x', liga: 'https://femcom.sharepoint.com/z' } }] })), /no deben traer ligas/);
+
+  const r = srv.gs.publicarCct_(pedido());
+  assert.equal(r.filas, 2);
+  assert.equal(srv.props.CCT_CONOXXO_SPREADSHEET_ID, 'libro-cct', 'el libro privado queda registrado aparte');
+  assert.deepEqual(srv.libros[0].hojas.map(h => h.nombre), ['CCT', 'Carga']);
+  const c = JSON.parse(JSON.stringify(srv.gs.consultarCct_()));
+  assert.equal(c.filas.length, 2);
+  assert.equal(c.filas.find(f => f.hoja === 'ejercicio').datos.pctSalarioNominal, 0.047);
+  assert.deepEqual(c.carga, { fecha: '2026-11-03 11:00', archivo: 'CCT.xlsx', filas: 2 });
+  assert.doesNotMatch(JSON.stringify(c), /Persona|http/);
+  // Cada carga reemplaza la anterior.
+  srv.gs.publicarCct_(pedido({ filas: filas.slice(0, 1) }));
+  assert.equal(srv.gs.consultarCct_().filas.length, 1);
+});
+
+test('doPost: publicarCct exige la sesion y consultarCct es publica', () => {
+  const gs = fs.readFileSync(path.join(root, 'apps-script', 'admin-upload.gs'), 'utf8');
+  assert.match(gs, /action \|\| ''\) === 'publicarCct'\) \{\s*return jsonResponse\(publicarCct_\(payload\)\)/);
+  assert.match(gs, /action \|\| ''\) === 'consultarCct'\) \{\s*return jsonResponse\(consultarCct_\(\)\)/);
+  assert.match(gs, /function publicarCct_\(payload\) \{\s*assertAuthorized\(payload\)/);
+  const admin = fs.readFileSync(path.join(root, 'admin.html'), 'utf8');
+  assert.doesNotMatch(admin, /cct-admin-passcode/, 'la tarjeta ya no pide passcode');
 });
