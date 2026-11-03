@@ -120,6 +120,18 @@
       <p class="helper-box" id="cct-admin-ultima" style="margin-top:12px">Entra al área Administrativo para ver la última carga.</p>
       <p class="reg-estado" id="cct-admin-estado" role="status" aria-live="polite" hidden></p>
     </section>
+    <section class="admin-card hidden" id="admin-dilos-panel">
+      <span class="admin-eyebrow">Administrativo · Solo app Conoxxo</span>
+      <h2>Casos DILOS</h2>
+      <p style="color:var(--ap-muted);font-size:13px;font-weight:600;margin:0 0 14px">Sube el reporte DILOS de casos abiertos de la Zona Centro Sur (hoja <strong>ZCS</strong>). No se muestra en ningún dashboard de este sitio: va a su propio libro privado y solo lo ve la app Conoxxo, en su pantalla "Casos DILOS". Reemplaza la carga anterior. El nombre del facilitador no se envía; la fecha del corte se toma del nombre del archivo.</p>
+      <div class="admin-actions" style="align-items:center;gap:10px;flex-wrap:wrap">
+        <label class="sr-only" for="dilos-admin-archivo">Reporte DILOS</label>
+        <input class="admin-input" id="dilos-admin-archivo" type="file" accept=".xls,.xlsx,.xlsm" style="max-width:360px">
+        <button class="admin-btn primary" type="button" id="dilos-admin-publicar">Subir a Conoxxo</button>
+      </div>
+      <p class="helper-box" id="dilos-admin-ultima" style="margin-top:12px">Entra al área Administrativo para ver la última carga.</p>
+      <p class="reg-estado" id="dilos-admin-estado" role="status" aria-live="polite" hidden></p>
+    </section>
     <section class="admin-grid" id="admin-upload-workspace">
       <aside class="admin-card">
         <h2>1. Selecciona base</h2>
@@ -487,6 +499,7 @@
   <script src="js/admin-reasignaciones.js?v=0603fbbc"></script>
   <script src="js/cuota-sindical.js?v=0603fbbc"></script>
   <script src="js/cct-conoxxo.js?v=0603fbbc"></script>
+  <script src="js/dilos-conoxxo.js?v=0603fbbc"></script>
   <script src="js/acta-registro.js?v=0603fbbc"></script>
   <script>
     (function(){
@@ -500,7 +513,7 @@
           if(panel) panel.classList.remove('hidden');
         });
       });
-      document.addEventListener('DOMContentLoaded', function(){ OXXO_ACTA_REGISTRO.montar(); OXXO_CUOTA.montarAdmin(); OXXO_CCT.montarAdmin(); });
+      document.addEventListener('DOMContentLoaded', function(){ OXXO_ACTA_REGISTRO.montar(); OXXO_CUOTA.montarAdmin(); OXXO_CCT.montarAdmin(); OXXO_DILOS.montarAdmin(); });
     })();
   </script>
 </body>

@@ -246,6 +246,8 @@
     $('admin-cuota-panel')?.classList.toggle('hidden',area!=='administrativo');
     // Contratos colectivos van a la base de la app Conoxxo, no a un dashboard (js/cct-conoxxo.js).
     $('admin-cct-panel')?.classList.toggle('hidden',area!=='administrativo');
+    // Casos DILOS tambien van solo a la app Conoxxo (js/dilos-conoxxo.js).
+    $('admin-dilos-panel')?.classList.toggle('hidden',area!=='administrativo');
     $('admin-upload-workspace').classList.toggle('hidden',!hasUpload);
     $('admin-preview-section').classList.toggle('hidden',!hasUpload);
     if(!hasUpload)return;
