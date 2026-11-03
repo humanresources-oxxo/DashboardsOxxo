@@ -4,25 +4,21 @@
    Tarjeta del panel admin (area Administrativo) para subir el Excel de
    contratos colectivos ("Data colectiva Tiendas OXXO": hojas "CCTs Tiendas"
    y "CCT ejercicio <año>"). NO se muestra en ningun dashboard de este sitio:
-   los datos van a la base de la app Conoxxo (repo humanresources-oxxo/
-   oxxitoapp, Supabase, tabla cct_contratos de su migracion 32) y solo los ve
-   su pantalla "Contratos colectivos".
+   el Apps Script lo guarda en su propio libro privado (publicarCct, v63) y
+   solo lo lee la app Conoxxo (repo humanresources-oxxo/oxxitoapp, pantalla
+   "Contratos colectivos") con la accion publica consultarCct.
 
    El Excel se convierte en el navegador y solo viajan indicadores: los
    nombres de los responsables (laboral y sindical) y las ligas a SharePoint
    nunca salen. Porcentajes mezclados ("4.7%", 0.047, 65) quedan como
    fraccion, fechas como AAAA-MM-DD y "NA"/"N/A" como vacio.
 
-   La carga la valida Supabase con el passcode de RH de Conoxxo (el mismo
-   del panel admin de la app), que se pide en la tarjeta: es distinto de la
-   contrasena de este panel. Si cambian las columnas que lee la app
-   (oxxitoapp src/services/cct.ts), hay que actualizar CAMPOS aqui.
+   La carga usa la sesion abierta del panel (la misma contrasena de admin
+   que valida el Apps Script, como Cuota Sindical): no pide nada mas. Si
+   cambian las columnas que lee la app (oxxitoapp src/services/cct.ts), hay
+   que actualizar CAMPOS aqui.
    ========================================================== */
 (function (global) {
-  // Supabase de la app Conoxxo (URL y llave publicable: van en el sitio de la app).
-  const SUPABASE_URL = 'https://gceuazxrqdbfahtdieod.supabase.co';
-  const SUPABASE_KEY = 'sb_publishable_59I8XugqRxE-LUhMSqmiEQ_HNzD7CRK';
-
   const sinAcentos = v => String(v == null ? '' : v).normalize('NFD').replace(/[̀-ͯ]/g, '');
   const clave = v => sinAcentos(v).toLowerCase().replace(/[^a-z0-9%]/g, '');
   const vacio = v => v == null || /^\s*(n\/?a|na|-|)\s*$/i.test(String(v));
@@ -159,44 +155,45 @@
     return { filas, resumen };
   }
 
-  async function rpc(fn, cuerpo) {
-    const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` },
-      body: JSON.stringify(cuerpo),
-    });
+  async function pedir(cuerpo) {
+    const url = global.OXXO_CONFIG && global.OXXO_CONFIG.ADMIN_UPLOAD_URL;
+    if (!url) throw new Error('el Apps Script no está configurado');
+    // text/plain evita la consulta previa de CORS que Apps Script no contesta.
+    const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(cuerpo) });
     const datos = await r.json().catch(() => null);
-    if (!r.ok) {
-      const motivo = (datos && datos.message) || `HTTP ${r.status}`;
-      if (/invalid_passcode/.test(motivo)) throw new Error('el passcode de RH de Conoxxo no es correcto');
-      if (/admin_replace_cct|list_cct|schema cache/.test(motivo)) throw new Error('falta correr la migración 32 en el Supabase de Conoxxo');
+    if (!r.ok || !datos || datos.ok === false) {
+      const motivo = (datos && datos.error) || 'el servidor no respondió';
+      // Un Apps Script anterior a v63 no conoce publicarCct / consultarCct.
+      if (/no autorizado/i.test(motivo) && cuerpo.action === 'consultarCct') throw new Error('falta publicar la versión 63 del Apps Script');
+      // (v62 trata publicarCct como una publicacion normal sin pestaña: 'targetSheet requerido').
+      if (/targetSheet requerido|acci[oó]n|action|no soportad|desconocid/i.test(motivo)) throw new Error('falta publicar la versión 63 del Apps Script');
       throw new Error(motivo);
     }
     return datos;
   }
 
-  async function subir(archivo, passcode) {
+  async function subir(archivo, adminPassword) {
     if (global.OXXO_ADMIN_ASSETS) await global.OXXO_ADMIN_ASSETS.ensure('xlsx');
     if (!global.XLSX) throw new Error('no cargó el lector de Excel; revisa la conexión');
     const libro = global.XLSX.read(await archivo.arrayBuffer(), { type: 'array', cellDates: true });
     const hojas = Object.fromEntries(libro.SheetNames.map(n => [n, global.XLSX.utils.sheet_to_json(libro.Sheets[n], { defval: null, raw: true })]));
     const { filas, resumen } = normalizar(hojas);
-    const total = await rpc('admin_replace_cct', { p_passcode: passcode, p_filas: filas, p_archivo: archivo.name });
-    return { total, resumen };
+    const r = await pedir({ action: 'publicarCct', adminPassword, filas, archivo: archivo.name });
+    return { total: r.filas, resumen };
   }
 
   async function ultimaCarga() {
-    const filas = await rpc('list_cct', {});
-    if (!filas.length) return 'Todavía no hay contratos cargados.';
-    const n = h => filas.filter(f => f.hoja === h).length;
-    const cuando = new Date(filas[0].cargado_el).toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'America/Mexico_City' });
-    return `Última carga: ${cuando}${filas[0].archivo ? ' · ' + filas[0].archivo : ''} · ${n('historico')} filas históricas y ${n('ejercicio')} del ejercicio.`;
+    const r = await pedir({ action: 'consultarCct' });
+    if (!r.carga || !(r.filas || []).length) return 'Todavía no hay contratos cargados.';
+    const n = h => r.filas.filter(f => f.hoja === h).length;
+    return `Última carga: ${r.carga.fecha}${r.carga.archivo ? ' · ' + r.carga.archivo : ''} · ${n('historico')} filas históricas y ${n('ejercicio')} del ejercicio.`;
   }
 
   function montarAdmin() {
     const $ = id => document.getElementById(id);
     if (!$('admin-cct-panel')) return;
     const avisar = (texto, tipo) => { const el = $('cct-admin-estado'); el.textContent = texto; el.dataset.tipo = tipo || 'info'; el.hidden = !texto; };
+    const password = () => (global.OXXO_ADMIN_CTX ? global.OXXO_ADMIN_CTX.getAdminPassword() : '');
     let consultado = false;
     async function info() {
       if (consultado) return;
@@ -207,13 +204,12 @@
     document.querySelectorAll('.admin-area[data-admin-area="administrativo"]').forEach(b => b.addEventListener('click', info));
     $('cct-admin-publicar').addEventListener('click', async () => {
       const archivo = $('cct-admin-archivo').files[0];
-      const passcode = $('cct-admin-passcode').value;
       if (!archivo) { avisar('Elige el Excel de contratos colectivos.', 'error'); return; }
-      if (!passcode) { avisar('Escribe el passcode de RH de Conoxxo.', 'error'); return; }
+      if (!password()) { avisar('Entra al panel admin con su contraseña.', 'error'); return; }
       $('cct-admin-publicar').disabled = true;
       avisar('Leyendo el Excel…', 'info');
       try {
-        const r = await subir(archivo, passcode);
+        const r = await subir(archivo, password());
         $('cct-admin-archivo').value = '';
         consultado = false; info();
         avisar(`Listo: ${r.total} filas (${r.resumen.historico || 0} históricas y ${r.resumen.ejercicio || 0} del ejercicio). Ya se ven en la app Conoxxo.`, 'ok');

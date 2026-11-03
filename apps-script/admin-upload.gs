@@ -12,7 +12,7 @@
  * Despues de eso, admin.html publica directo sin pedir URL.
  */
 const SPREADSHEET_ID = '1EbUuyy-PRXiDwPmn9L14P93cGN6VXTyLfAHx-CE8M_A';
-const APP_VERSION = '62';
+const APP_VERSION = '63';
 const ADMIN_PASSWORD_PROPERTY = 'ADMIN_PASSWORD';
 const AUDIT_SHEET = '_Admin_Bitacora';
 const BACKUP_PREFIX = '_BK_';
@@ -364,6 +364,16 @@ function doPost(e) {
     }
     if (String(payload.action || '') === 'infoCuotaSindical') {
       return jsonResponse(infoCuotaSindical_(payload));
+    }
+
+    // Contratos colectivos (CCT) para la app Conoxxo: ningun dashboard los
+    // muestra. Publicar exige la contraseña del admin (la sesion del panel);
+    // consultar es publica porque solo hay indicadores (sin nombres ni ligas).
+    if (String(payload.action || '') === 'publicarCct') {
+      return jsonResponse(publicarCct_(payload));
+    }
+    if (String(payload.action || '') === 'consultarCct') {
+      return jsonResponse(consultarCct_());
     }
 
     // Esta ruta no usa la credencial de administración: valida una contraseña
@@ -2803,6 +2813,79 @@ function infoCuotaSindical_(payload) {
   if (!id) return { ok: true, url: '', carga: null };
   const ss = SpreadsheetApp.openById(id);
   return { ok: true, url: ss.getUrl(), carga: consultarCuotaSindical_().carga };
+}
+
+/* ---------- Contratos colectivos (CCT) para la app Conoxxo ----------
+   El Excel de contratos colectivos de RH se sube desde el panel admin
+   (area Administrativo, js/cct-conoxxo.js), que lo convierte en el navegador
+   en indicadores: una fila por plaza y año ('historico', hoja "CCTs Tiendas")
+   o por plaza del año en curso ('ejercicio', hoja "CCT ejercicio <año>").
+   Se guarda en un libro privado aparte (CCT_CONOXXO_SPREADSHEET_ID; se crea
+   con la primera carga) y ningun dashboard de este sitio lo lee: solo la app
+   Conoxxo, con la accion publica consultarCct. Nunca guarda nombres de
+   responsables ni ligas a SharePoint (se rechaza una carga que traiga ligas).
+   Cada carga reemplaza la anterior. */
+const CCT_PROPERTY = 'CCT_CONOXXO_SPREADSHEET_ID';
+const CCT_HOJAS = { datos: 'CCT', carga: 'Carga' };
+const CCT_MAX_FILAS = 3000;
+const CCT_MAX_DATOS = 4000;
+
+function libroCct_() {
+  const props = PropertiesService.getScriptProperties();
+  const id = String(props.getProperty(CCT_PROPERTY) || '').trim();
+  if (id) return SpreadsheetApp.openById(id);
+  const ss = SpreadsheetApp.create('Contratos colectivos · App Conoxxo');
+  ss.getSheets()[0].setName(CCT_HOJAS.datos);
+  props.setProperty(CCT_PROPERTY, ss.getId());
+  return ss;
+}
+
+function publicarCct_(payload) {
+  assertAuthorized(payload);
+  const filas = Array.isArray(payload.filas) ? payload.filas : [];
+  if (!filas.length) throw new Error('El Excel no trae contratos');
+  if (filas.length > CCT_MAX_FILAS) throw new Error('Demasiadas filas de contratos');
+  const valores = filas.map(function(f) {
+    const hoja = String((f && f.hoja) || '');
+    if (hoja !== 'historico' && hoja !== 'ejercicio') throw new Error('Hoja de contrato no válida: ' + hoja);
+    const datos = f.datos && typeof f.datos === 'object' && !Array.isArray(f.datos) ? f.datos : null;
+    if (!datos) throw new Error('Fila de contrato sin datos');
+    const json = JSON.stringify(datos);
+    if (json.length > CCT_MAX_DATOS) throw new Error('Fila de contrato demasiado grande');
+    if (/https?:\/\//i.test(json)) throw new Error('Los contratos no deben traer ligas');
+    return [hoja, json];
+  });
+  const lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    const ss = libroCct_();
+    escribirHojaCuota_(ss, CCT_HOJAS.datos, ['Hoja', 'Datos'], valores);
+    const fecha = Utilities.formatDate(new Date(), 'America/Mexico_City', 'yyyy-MM-dd HH:mm');
+    escribirHojaCuota_(ss, CCT_HOJAS.carga, ['Fecha', 'Archivo', 'Filas'], [[fecha, textoActa_(payload.archivo, 120), valores.length]]);
+  } finally {
+    lock.releaseLock();
+  }
+  return { ok: true, filas: valores.length };
+}
+
+function consultarCct_() {
+  const id = String(PropertiesService.getScriptProperties().getProperty(CCT_PROPERTY) || '').trim();
+  if (!id) return { ok: true, filas: [], carga: null };
+  const ss = SpreadsheetApp.openById(id);
+  const leer = function(nombre, columnas) {
+    const hoja = ss.getSheetByName(nombre);
+    if (!hoja || hoja.getLastRow() < 2) return [];
+    return hoja.getRange(2, 1, hoja.getLastRow() - 1, columnas).getValues();
+  };
+  const filas = leer(CCT_HOJAS.datos, 2).map(function(f) {
+    let datos = {};
+    try { datos = JSON.parse(String(f[1] || '{}')); } catch (e) { datos = {}; }
+    return { hoja: String(f[0]), datos: datos };
+  }).filter(function(f) { return f.hoja === 'historico' || f.hoja === 'ejercicio'; });
+  const carga = leer(CCT_HOJAS.carga, 3)[0];
+  // Sheets puede volver la fecha como Date: siempre sale como texto.
+  const fecha = carga && carga[0] instanceof Date ? Utilities.formatDate(carga[0], 'America/Mexico_City', 'yyyy-MM-dd HH:mm') : String((carga && carga[0]) || '');
+  return { ok: true, filas: filas, carga: carga ? { fecha: fecha, archivo: String(carga[1] || ''), filas: Number(carga[2]) || 0 } : null };
 }
 
 function consultarCuotaSindical_() {
