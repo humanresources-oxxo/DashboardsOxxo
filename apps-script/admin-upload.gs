@@ -12,7 +12,7 @@
  * Despues de eso, admin.html publica directo sin pedir URL.
  */
 const SPREADSHEET_ID = '1EbUuyy-PRXiDwPmn9L14P93cGN6VXTyLfAHx-CE8M_A';
-const APP_VERSION = '64';
+const APP_VERSION = '65';
 const ADMIN_PASSWORD_PROPERTY = 'ADMIN_PASSWORD';
 const AUDIT_SHEET = '_Admin_Bitacora';
 const BACKUP_PREFIX = '_BK_';
@@ -368,20 +368,23 @@ function doPost(e) {
 
     // Contratos colectivos (CCT) para la app Conoxxo: ningun dashboard los
     // muestra. Publicar exige la contraseña del admin (la sesion del panel);
-    // consultar es publica porque solo hay indicadores (sin nombres ni ligas).
+    // consultar exige la sesion de Conoxxo de un puesto con permisos (o la
+    // contraseña del admin, para la tarjeta del panel). v65.
     if (String(payload.action || '') === 'publicarCct') {
       return jsonResponse(publicarCct_(payload));
     }
     if (String(payload.action || '') === 'consultarCct') {
+      exigirConoxxoOAdmin_(payload);
       return jsonResponse(consultarCct_());
     }
 
     // Casos DILOS para la app Conoxxo (como los CCT): publicar exige la
-    // contraseña del admin; consultar es publica porque no trae nombres.
+    // contraseña del admin; consultar, la sesion de Conoxxo o el admin.
     if (String(payload.action || '') === 'publicarDilos') {
       return jsonResponse(publicarDilos_(payload));
     }
     if (String(payload.action || '') === 'consultarDilos') {
+      exigirConoxxoOAdmin_(payload);
       return jsonResponse(consultarDilos_());
     }
 
@@ -2451,9 +2454,15 @@ function enviarActa_(payload) {
   if (bytes.length < 4 || bytes[0] !== 0x50 || bytes[1] !== 0x4B || bytes[2] !== 0x03 || bytes[3] !== 0x04) throw new Error('El archivo del acta no es un Word válido');
   const archivo = (textoActa_(payload.archivo, 120).replace(/[^A-Za-z0-9 ._-]/g, '') || 'Acta administrativa').replace(/\.docx$/i, '') + '.docx';
 
+  // Desde la app Conoxxo llega la llave de sesion: el acta queda firmada por
+  // quien la envia y no la frena el limite global (pensado para el formulario
+  // web, que es publico), solo uno por persona. v65.
+  const remitente = payload.llave ? sesionConoxxo_(payload.llave) : null;
   const cache = CacheService.getScriptCache();
-  const total = Number(cache.get('actas_total') || 0);
-  if (total >= ACTAS_MAX_POR_10_MIN) throw new Error('Se enviaron muchas actas seguidas; intenta en unos minutos');
+  const claveLimite = remitente ? 'actas_app_' + remitente.numero : 'actas_total';
+  const limite = remitente ? ACTAS_MAX_POR_PERSONA_10_MIN : ACTAS_MAX_POR_10_MIN;
+  const total = Number(cache.get(claveLimite) || 0);
+  if (total >= limite) throw new Error('Se enviaron muchas actas seguidas; intenta en unos minutos');
 
   const tienda = textoActa_(payload.tienda, 80);
   const trabajador = textoActa_(payload.trabajador, 80);
@@ -2468,7 +2477,9 @@ function enviarActa_(payload) {
   const cuerpo = 'Se adjunta el documento "' + tipo + '"' + (trabajador ? ' de ' + trabajador : '')
     + (tienda ? ' (tienda OXXO ' + tienda + ')' : '') + (representante ? ', levantado por ' + representante : '')
     + (fecha ? ' el ' + fecha : '') + '.\n\n' + avisoFirmas
-    + '\n\nEnviado desde Dashboards Ats · Actas y Formatos.';
+    + (remitente
+      ? '\n\nEnviado desde la app Conoxxo por ' + remitente.nombre + ' (empleado ' + remitente.numero + ', ' + (remitente.puesto || 'sin puesto') + '), con sesión verificada.'
+      : '\n\nEnviado desde Dashboards Ats · Actas y Formatos (formulario web, sin sesión verificada).');
 
   MailApp.sendEmail({
     to: fijos.join(','),
@@ -2478,7 +2489,7 @@ function enviarActa_(payload) {
     name: 'Dashboards Ats · Actas',
     attachments: [Utilities.newBlob(bytes, ACTAS_DOCX_MIME, archivo)],
   });
-  cache.put('actas_total', String(total + 1), 600);
+  cache.put(claveLimite, String(total + 1), 600);
 
   // El correo ya salio: si el registro falla, el acta no se pierde (RH la
   // tiene) y se avisa para registrarla a mano.
@@ -2824,6 +2835,57 @@ function infoCuotaSindical_(payload) {
   return { ok: true, url: ss.getUrl(), carga: consultarCuotaSindical_().carga };
 }
 
+/* ---------- Sesion de la app Conoxxo (v65) ----------
+   La app manda su llave de sesion (64 caracteres hex, migracion 35 de
+   oxxitoapp); el script le pregunta a Supabase de quien es (sesion_validar,
+   migracion 41) con la llave publica de la app. La respuesta se guarda 5
+   minutos para no consultar en cada peticion. Si Supabase no responde, no se
+   guarda nada y la peticion se rechaza. */
+const CONOXXO_SUPABASE_URL = 'https://gceuazxrqdbfahtdieod.supabase.co';
+const CONOXXO_SUPABASE_KEY = 'sb_publishable_59I8XugqRxE-LUhMSqmiEQ_HNzD7CRK';
+const ACTAS_MAX_POR_PERSONA_10_MIN = 15;
+
+function sesionConoxxo_(llave) {
+  const t = String(llave || '').trim();
+  if (!/^[0-9a-f]{64}$/.test(t)) return null;
+  const cache = CacheService.getScriptCache();
+  const clave = 'cx_' + Utilities.base64EncodeWebSafe(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, t)).slice(0, 43);
+  const guardada = cache.get(clave);
+  if (guardada) return guardada === '-' ? null : JSON.parse(guardada);
+  let r;
+  try {
+    r = UrlFetchApp.fetch(CONOXXO_SUPABASE_URL + '/rest/v1/rpc/sesion_validar', {
+      method: 'post',
+      contentType: 'application/json',
+      headers: { apikey: CONOXXO_SUPABASE_KEY, Authorization: 'Bearer ' + CONOXXO_SUPABASE_KEY },
+      payload: JSON.stringify({ p_token: t }),
+      muteHttpExceptions: true,
+    });
+  } catch (err) {
+    return null;
+  }
+  if (r.getResponseCode() !== 200) return null;
+  let d = null;
+  try { d = JSON.parse(r.getContentText()); } catch (err) { d = null; }
+  const ok = d && d.estado === 'ok' ? { numero: String(d.numero || ''), nombre: String(d.nombre || ''), puesto: String(d.puesto || ''), permisos: d.permisos === true } : null;
+  cache.put(clave, ok ? JSON.stringify(ok) : '-', ok ? 300 : 60);
+  return ok;
+}
+
+// CCT y DILOS: sesion de Conoxxo de un puesto con permisos, o la contraseña
+// del admin (tarjetas del panel). El mensaje "sesion_conoxxo" lo reconoce la
+// app para pedir el PIN otra vez.
+function exigirConoxxoOAdmin_(payload) {
+  if (payload && payload.adminPassword) {
+    assertAuthorized(payload);
+    return { admin: true };
+  }
+  const s = sesionConoxxo_(payload && payload.llave);
+  if (!s) throw new Error('sesion_conoxxo: vuelve a entrar a la app');
+  if (!s.permisos) throw new Error('Tu puesto no tiene acceso a esta información');
+  return s;
+}
+
 /* ---------- Contratos colectivos (CCT) para la app Conoxxo ----------
    El Excel de contratos colectivos de RH se sube desde el panel admin
    (area Administrativo, js/cct-conoxxo.js), que lo convierte en el navegador
@@ -2831,7 +2893,7 @@ function infoCuotaSindical_(payload) {
    o por plaza del año en curso ('ejercicio', hoja "CCT ejercicio <año>").
    Se guarda en un libro privado aparte (CCT_CONOXXO_SPREADSHEET_ID; se crea
    con la primera carga) y ningun dashboard de este sitio lo lee: solo la app
-   Conoxxo, con la accion publica consultarCct. Nunca guarda nombres de
+   Conoxxo, con consultarCct (sesion de Conoxxo, v65). Nunca guarda nombres de
    responsables ni ligas a SharePoint (se rechaza una carga que traiga ligas).
    Cada carga reemplaza la anterior. */
 const CCT_PROPERTY = 'CCT_CONOXXO_SPREADSHEET_ID';
@@ -2902,7 +2964,7 @@ function consultarCct_() {
    hoja ZCS) que RH sube desde el panel admin (area Administrativo,
    js/dilos-conoxxo.js). Se guarda en un libro privado aparte
    (DILOS_CONOXXO_SPREADSHEET_ID; se crea con la primera carga) y ningun
-   dashboard lo lee: solo la app Conoxxo, con la accion publica consultarDilos.
+   dashboard lo lee: solo la app Conoxxo, con consultarDilos (sesion de Conoxxo, v65).
    El nombre del facilitador nunca llega: solo caso, region, plaza, estatus,
    area (RH / ADM) y dias abiertos. Cada carga reemplaza la anterior. */
 const DILOS_PROPERTY = 'DILOS_CONOXXO_SPREADSHEET_ID';
