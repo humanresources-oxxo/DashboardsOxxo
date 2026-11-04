@@ -76,8 +76,6 @@ body.temporada-home .card__icon{position:relative;overflow:visible}
 body.temporada-home .card__icon::after{content:"";position:absolute;top:-11px;right:-7px;width:22px;height:18px;pointer-events:none;
   background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 18'%3E%3Cpath d='M3 14 C5 6 10 2 17 4 L19 11 Z' fill='%23d6202a'/%3E%3Crect x='1' y='12' width='17' height='5' rx='2.5' fill='%23fff' stroke='%23e6e1dc' stroke-width='.6'/%3E%3Ccircle cx='18.5' cy='4' r='2.6' fill='%23fff' stroke='%23e6e1dc' stroke-width='.6'/%3E%3C/svg%3E") center/contain no-repeat;
   transform:rotate(14deg)}
-body.temporada-home .card__bar{background-image:linear-gradient(90deg,#d6202a 0 33%,#fff 33% 36%,#1f9d55 36% 66%,#fff 66% 69%,#d6202a 69%),linear-gradient(180deg,rgba(250,248,246,.92),rgba(241,238,235,.86));
-  background-size:100% 3px,100% 100%;background-repeat:no-repeat}
 body.temporada-home .card__bar .chip::before{content:"❄";margin-right:5px;color:#2f7fd8;font-weight:400}
 .temporada-tira{position:relative;z-index:30;height:26px;margin-bottom:-4px;pointer-events:none}
 .temporada-copo{display:inline-block;width:.72em;height:.72em;margin-left:.32em;vertical-align:.06em;color:#2f7fd8;opacity:.9}
