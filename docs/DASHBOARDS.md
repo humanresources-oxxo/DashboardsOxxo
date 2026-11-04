@@ -210,3 +210,16 @@ las fuentes de Google Fonts y, si no llegan, usa monospace. El mejor
 tiempo vive en `localStorage` (`oxxo-turno-nocturno-record`). El mapa esta en
 `MAP_SRC` y `tests/juego-turno-nocturno.test.js` verifica que siga siendo
 rectangular, cerrado y con la salida alcanzable desde el inicio.
+
+## Caja Navideña (juego)
+
+`dashboards/caja-navidena.html` (`js/juego-caja-navidena.js`). Juego de
+atención en caja de temporada: cada cliente pide de 1 a 3 productos (café,
+ponche, tamal, pan dulce, regalo, recarga) y se despacha tocándolos (o con las
+teclas 1 a 6) antes de que se le acabe la paciencia. Un producto equivocado le
+quita paciencia; con 3 clientes molestos termina la partida. Cada 6 clientes
+atendidos sube el turno: llegan más seguido, aguantan menos y piden más. La
+regla (`crearPartida`, `avanzar`, `servir`) es pura y la prueba
+`tests/juego-caja-navidena.test.js`. Se dibuja con SVG en línea, sin imágenes
+ni librerías, y no lee ni envía datos: el récord vive en `localStorage`
+(`oxxo-caja-navidena-record`).
