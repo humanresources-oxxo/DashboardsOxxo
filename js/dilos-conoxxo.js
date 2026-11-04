@@ -96,8 +96,9 @@
     return { total: r.casos, corte };
   }
 
-  async function ultimaCarga() {
-    const r = await pedir({ action: 'consultarDilos' });
+  // v65: consultar exige la sesion de Conoxxo o, aqui en el panel, su contraseña.
+  async function ultimaCarga(adminPassword) {
+    const r = await pedir({ action: 'consultarDilos', adminPassword });
     if (!r.carga || !(r.casos || []).length) return 'Todavía no hay casos cargados.';
     return `Última carga: ${r.carga.fecha}${r.carga.archivo ? ' · ' + r.carga.archivo : ''} · ${r.casos.length} casos${r.carga.corte ? ' (corte ' + r.carga.corte + ')' : ''}.`;
   }
@@ -111,7 +112,8 @@
     async function info() {
       if (consultado) return;
       consultado = true;
-      try { $('dilos-admin-ultima').textContent = await ultimaCarga(); }
+      if (!password()) { consultado = false; return; }
+      try { $('dilos-admin-ultima').textContent = await ultimaCarga(password()); }
       catch (e) { consultado = false; $('dilos-admin-ultima').textContent = 'No se pudo consultar la última carga: ' + e.message + '.'; }
     }
     document.querySelectorAll('.admin-area[data-admin-area="administrativo"]').forEach(b => b.addEventListener('click', info));

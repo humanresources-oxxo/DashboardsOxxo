@@ -132,10 +132,10 @@ test('el Apps Script guarda los CCT en su libro privado con la sesion del panel 
   assert.equal(srv.gs.consultarCct_().filas.length, 1);
 });
 
-test('doPost: publicarCct exige la sesion y consultarCct es publica', () => {
+test('doPost: publicarCct exige la sesion del panel y consultarCct la de Conoxxo o el admin', () => {
   const gs = fs.readFileSync(path.join(root, 'apps-script', 'admin-upload.gs'), 'utf8');
   assert.match(gs, /action \|\| ''\) === 'publicarCct'\) \{\s*return jsonResponse\(publicarCct_\(payload\)\)/);
-  assert.match(gs, /action \|\| ''\) === 'consultarCct'\) \{\s*return jsonResponse\(consultarCct_\(\)\)/);
+  assert.match(gs, /action \|\| ''\) === 'consultarCct'\) \{\s*exigirConoxxoOAdmin_\(payload\);\s*return jsonResponse\(consultarCct_\(\)\)/);
   assert.match(gs, /function publicarCct_\(payload\) \{\s*assertAuthorized\(payload\)/);
   const admin = fs.readFileSync(path.join(root, 'admin.html'), 'utf8');
   assert.doesNotMatch(admin, /cct-admin-passcode/, 'la tarjeta ya no pide passcode');

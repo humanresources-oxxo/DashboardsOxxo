@@ -101,4 +101,5 @@ test('la tarjeta vive en Administrativo y ninguna pagina lee los casos', () => {
   }
   const gs = fs.readFileSync(path.join(root, 'apps-script', 'admin-upload.gs'), 'utf8');
   assert.match(gs, /function publicarDilos_\(payload\) \{\s*assertAuthorized\(payload\)/);
+  assert.match(gs, /action \|\| ''\) === 'consultarDilos'\) \{\s*exigirConoxxoOAdmin_\(payload\);\s*return jsonResponse\(consultarDilos_\(\)\)/);
 });

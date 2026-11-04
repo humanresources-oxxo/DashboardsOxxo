@@ -95,8 +95,9 @@ function libroFalso() {
     getSheetByName: n => hojas.find(h => h.nombre === n) || null };
 }
 
-function servidor(props) {
+function servidor(props, fetchFalso) {
   const enviados = [];
+  const llamadas = [];
   const cache = new Map();
   const libros = [];
   const sandbox = {
@@ -108,13 +109,18 @@ function servidor(props) {
     },
     PropertiesService: { getScriptProperties: () => ({ getProperty: k => props[k] || null, setProperty: (k, v) => { props[k] = v; } }) },
     CacheService: { getScriptCache: () => ({ get: k => cache.get(k) ?? null, put: (k, v) => cache.set(k, v) }) },
+    UrlFetchApp: { fetch: (url, o) => { llamadas.push({ url, o }); return fetchFalso ? fetchFalso(url, o) : { getResponseCode: () => 500, getContentText: () => '' }; } },
     Utilities: { base64Decode: b => [...Buffer.from(b, 'base64')], newBlob: (bytes, mime, nombre) => ({ bytes, mime, nombre }),
+      DigestAlgorithm: { SHA_256: 'sha256' },
+      computeDigest: (alg, t) => [...require('node:crypto').createHash('sha256').update(t).digest()],
+      base64EncodeWebSafe: b => Buffer.from(b).toString('base64url'),
+      sleep() {},
       formatDate: d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` },
     MailApp: { sendEmail: o => enviados.push(o) },
   };
   vm.createContext(sandbox);
   vm.runInContext(fs.readFileSync(path.join(root, 'apps-script', 'admin-upload.gs'), 'utf8'), sandbox);
-  return { gs: sandbox, enviados, libros, props };
+  return { gs: sandbox, enviados, libros, props, llamadas };
 }
 const pedido = (extra = {}) => ({ action: 'enviarActa', archivo: 'Acta.docx', docx: Buffer.from(ACTA.docx(datos)).toString('base64'),
   tienda: 'Chihuahua OAX', trabajador: 'Lourdes', representante: 'Sofia', fecha: '2026-07-31', ...extra });
@@ -394,4 +400,44 @@ test('Actas y Formatos no muestra el aviso de conexion con Sheets', () => {
   const core = fs.readFileSync(path.join(root, 'js', 'core.js'), 'utf8');
   const render = core.slice(core.indexOf('function renderConnectionBanner()'), core.indexOf('banner.innerHTML'));
   assert.match(render, /dataset\?\.oxxoHideConnectionBanner\)\s*\{\s*banner\?\.remove\(\);\s*return;/, 'con la marca no se crea (y se quita) el aviso');
+});
+
+// v65: la app manda su llave de sesion y el script la valida con Supabase.
+const LLAVE = 'a'.repeat(64);
+const supabase = (respuesta, codigo = 200) => () => ({ getResponseCode: () => codigo, getContentText: () => JSON.stringify(respuesta) });
+
+test('sesion de Conoxxo: valida la llave con Supabase, la guarda 5 minutos y rechaza sin sesion', () => {
+  const { gs, llamadas } = servidor({}, supabase({ estado: 'ok', numero: '1599067', nombre: 'Prueba', puesto: 'ACCES TEST', permisos: true }));
+  assert.throws(() => gs.exigirConoxxoOAdmin_({}), /sesion_conoxxo/);
+  assert.throws(() => gs.exigirConoxxoOAdmin_({ llave: 'corta' }), /sesion_conoxxo/);
+  assert.equal(llamadas.length, 0, 'una llave mal formada ni se consulta');
+  assert.equal(gs.exigirConoxxoOAdmin_({ llave: LLAVE }).numero, '1599067');
+  assert.equal(gs.exigirConoxxoOAdmin_({ llave: LLAVE }).nombre, 'Prueba');
+  assert.equal(llamadas.length, 1, 'la segunda vez sale de la cache');
+  assert.match(llamadas[0].url, /\/rest\/v1\/rpc\/sesion_validar$/);
+  assert.equal(JSON.parse(llamadas[0].o.payload).p_token, LLAVE);
+
+  const sinPermiso = servidor({}, supabase({ estado: 'ok', numero: '2', nombre: 'Cajera', puesto: 'CAJERO', permisos: false }));
+  assert.throws(() => sinPermiso.gs.exigirConoxxoOAdmin_({ llave: LLAVE }), /no tiene acceso/);
+  const vencida = servidor({}, supabase({ estado: 'no_session' }));
+  assert.throws(() => vencida.gs.exigirConoxxoOAdmin_({ llave: LLAVE }), /sesion_conoxxo/);
+  // Supabase caido: se rechaza y no se guarda, para reintentar en la siguiente.
+  const caido = servidor({}, supabase({}, 503));
+  assert.throws(() => caido.gs.exigirConoxxoOAdmin_({ llave: LLAVE }), /sesion_conoxxo/);
+  assert.throws(() => caido.gs.exigirConoxxoOAdmin_({ llave: LLAVE }), /sesion_conoxxo/);
+  assert.equal(caido.llamadas.length, 2);
+});
+
+test('acta desde la app: dice quien la envia y no la frena el limite del formulario web', () => {
+  const props = { ACTAS_DESTINATARIOS: 'rh@empresa.com' };
+  const { gs, enviados } = servidor(props, supabase({ estado: 'ok', numero: '3000001', nombre: 'Asesora Prueba', puesto: 'ASESOR TIENDA', permisos: true }));
+  const web = gs.enviarActa_(pedido());
+  assert.equal(web.ok, true);
+  assert.match(enviados[0].body, /formulario web, sin sesión verificada/);
+  const limiteWeb = Number(fs.readFileSync(path.join(root, 'apps-script', 'admin-upload.gs'), 'utf8').match(/const ACTAS_MAX_POR_10_MIN = (\d+)/)[1]);
+  for (let i = 1; i < limiteWeb; i++) gs.enviarActa_(pedido());
+  assert.throws(() => gs.enviarActa_(pedido()), /muchas actas seguidas/, 'el formulario web llego a su limite');
+  const app = gs.enviarActa_(pedido({ llave: LLAVE }));
+  assert.equal(app.ok, true, 'la app sigue pudiendo enviar');
+  assert.match(enviados[enviados.length - 1].body, /Enviado desde la app Conoxxo por Asesora Prueba \(empleado 3000001, ASESOR TIENDA\), con sesión verificada/);
 });

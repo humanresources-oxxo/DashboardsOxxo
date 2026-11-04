@@ -182,8 +182,9 @@
     return { total: r.filas, resumen };
   }
 
-  async function ultimaCarga() {
-    const r = await pedir({ action: 'consultarCct' });
+  // v65: consultar exige la sesion de Conoxxo o, aqui en el panel, su contraseña.
+  async function ultimaCarga(adminPassword) {
+    const r = await pedir({ action: 'consultarCct', adminPassword });
     if (!r.carga || !(r.filas || []).length) return 'Todavía no hay contratos cargados.';
     const n = h => r.filas.filter(f => f.hoja === h).length;
     return `Última carga: ${r.carga.fecha}${r.carga.archivo ? ' · ' + r.carga.archivo : ''} · ${n('historico')} filas históricas y ${n('ejercicio')} del ejercicio.`;
@@ -198,7 +199,8 @@
     async function info() {
       if (consultado) return;
       consultado = true;
-      try { $('cct-admin-ultima').textContent = await ultimaCarga(); }
+      if (!password()) { consultado = false; return; }
+      try { $('cct-admin-ultima').textContent = await ultimaCarga(password()); }
       catch (e) { consultado = false; $('cct-admin-ultima').textContent = 'No se pudo consultar la última carga: ' + e.message + '.'; }
     }
     document.querySelectorAll('.admin-area[data-admin-area="administrativo"]').forEach(b => b.addEventListener('click', info));
