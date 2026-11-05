@@ -185,7 +185,7 @@
   <!-- PLANTILLA ACTUAL -->
   <div class="card tabla-card" id="plantilla-card">
     <div class="card-head">
-      <div class="card-title">Plantilla por Tienda<span class="info-tip" tabindex="0" data-tip="Posiciones ocupadas y vacantes de la estructura del mes, por asesor (o por tienda si filtras un solo asesor). Al buscar una tienda o filtrarla se muestra la lista con el nombre de quien ocupa cada posición. Los filtros de puesto y antigüedad no aplican aquí."></span></div>
+      <div class="card-title">Plantilla por Tienda<span class="info-tip" tabindex="0" data-tip="Cobertura general de la estructura del mes: posiciones ocupadas, no ocupadas y tiendas con su plantilla completa. Respeta los filtros de asesor y mes. Al buscar una tienda o filtrarla se muestra la lista con el nombre de quien ocupa cada posición. Los filtros de puesto y antigüedad no aplican aquí."></span></div>
       <div class="plantilla-acciones">
         <label class="plantilla-switch"><input type="checkbox" id="plantilla-solo-ocupadas"> Solo ocupadas</label>
         <span class="card-badge" id="plantilla-count">— posiciones</span>
@@ -1142,7 +1142,6 @@ function refreshDashboard(){
 // de las vacantes, asi que solo se aplica cuando alguien la cambio; si no, se
 // muestran todas las tiendas y se busca con el buscador de la tabla.
 const PLANTILLA_ORDEN_TIPO = { Lider:0, Encargado:1, Ayudante:2 };
-let PLANTILLA_DRILL=null;
 function plantillaFiltrada(){
   const f=getFiltros();
   const mes=f.mes || DEFAULT_MES;
@@ -1187,75 +1186,33 @@ function renderPlantilla(){
     return;
   }
 
+  // Vista general: una dona de cobertura con tres cifras. Los recuadros de
+  // resumen solo se ven con la lista (al buscar o filtrar una tienda).
+  document.getElementById('plantilla-resumen').hidden=!modoLista;
   if(!modoLista){
-    // Por asesor; con un solo asesor filtrado (o al dar clic en uno), por
-    // cada una de sus tiendas. Clic en una tienda = buscarla y ver la lista.
-    const asesores=new Set(todas.map(r=>normalizeSearchText(asesorCanon(r.asesor))));
-    if(PLANTILLA_DRILL && !asesores.has(PLANTILLA_DRILL.key)) PLANTILLA_DRILL=null;
-    const base=PLANTILLA_DRILL ? todas.filter(r=>normalizeSearchText(asesorCanon(r.asesor))===PLANTILLA_DRILL.key) : todas;
-    const porTienda=Boolean(PLANTILLA_DRILL) || asesores.size===1;
-    if(PLANTILLA_DRILL) pintarResumenPlantilla(base);
-    const grupos=new Map();
-    base.forEach(r=>{
-      // Misma persona escrita con otras mayusculas o acentos = un solo grupo;
-      // se muestra la version con mayusculas iniciales.
-      const nombre=porTienda ? r.tienda : r.asesor;
-      const k=normalizeSearchText(nombre);
-      const g=grupos.get(k) || { key:k, nombre, ocupadas:0, vacantes:0, tiendas:new Set() };
-      if(g.nombre===g.nombre.toLowerCase() && nombre!==nombre.toLowerCase()) g.nombre=nombre;
-      if(r.isVacante) g.vacantes++; else if(r.empleado) g.ocupadas++;
-      g.tiendas.add(r.tienda);
-      grupos.set(k,g);
-    });
-    const lista=[...grupos.values()].sort((a,b)=>b.vacantes-a.vacantes || (b.ocupadas+b.vacantes)-(a.ocupadas+a.vacantes) || a.nombre.localeCompare(b.nombre,'es'));
-    const bOcup=base.filter(ocupada).length, bVac=base.filter(r=>r.isVacante).length, bTot=bOcup+bVac;
-    const bPct=bTot ? bOcup/bTot*100 : 0;
-    const nivel=p=>Math.round(p)>=98 ? 'alto' : Math.round(p)>=95 ? 'medio' : 'bajo';
-    const iniciales=n=>String(n).replace(/^OXXO\s+/i,'').split(/\s+/).filter(Boolean).slice(0,2).map(w=>w[0]).join('').toUpperCase();
+    const vacantesPorTienda=new Map();
+    todas.forEach(r=>vacantesPorTienda.set(r.tienda,(vacantesPorTienda.get(r.tienda)||0)+(r.isVacante?1:0)));
+    const tiendasTotal=vacantesPorTienda.size;
+    const completas=[...vacantesPorTienda.values()].filter(v=>v===0).length;
+    const nVac=todas.filter(r=>r.isVacante).length;
+    const pct=todas.length ? ocupadas.length/todas.length*100 : 0;
+    const nivel=Math.round(pct)>=98 ? 'alto' : Math.round(pct)>=95 ? 'medio' : 'bajo';
     const R=52, C=2*Math.PI*R;
-    document.getElementById('plantilla-count').textContent=porTienda ? `${lista.length} tiendas` : `${lista.length} asesores`;
-    const titulo=PLANTILLA_DRILL
-      ? `<button type="button" class="pg-volver" data-pg-volver>← Todos los asesores</button><span class="pg-titulo">${OXXO.escHtml(PLANTILLA_DRILL.nombre)}</span>`
-      : `<span class="pg-titulo">${porTienda ? 'Tiendas del asesor' : 'Cobertura por asesor'}</span>`;
+    document.getElementById('plantilla-count').textContent=`${todas.length.toLocaleString('es-MX')} posiciones`;
     grafica.innerHTML=`
-      <aside class="pg-dona pg-dona--${nivel(bPct)}">
+      <div class="pg-dona pg-dona--${nivel}">
         <svg viewBox="0 0 132 132" aria-hidden="true">
           <circle cx="66" cy="66" r="${R}" class="pg-dona__pista"/>
-          <circle cx="66" cy="66" r="${R}" class="pg-dona__valor" stroke-dasharray="${(C*bPct/100).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 66 66)"/>
+          <circle cx="66" cy="66" r="${R}" class="pg-dona__valor" stroke-dasharray="${(C*pct/100).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 66 66)"/>
         </svg>
-        <div class="pg-dona__centro"><strong>${Math.round(bPct)}%</strong><span>cobertura</span></div>
-        <ul class="pg-dona__leyenda">
-          <li><i class="is-ocupada"></i>Ocupadas <b>${bOcup.toLocaleString('es-MX')}</b></li>
-          <li><i class="is-vacante"></i>No ocupadas <b>${bVac.toLocaleString('es-MX')}</b></li>
-        </ul>
-      </aside>
-      <section class="pg-lista">
-        <header class="pg-cabeza">${titulo}<span class="pg-pista">${porTienda ? 'Clic en una tienda para ver quién la ocupa' : 'Clic en un asesor para ver sus tiendas'}</span></header>
-        ${lista.map(g=>{
-          const total=g.ocupadas+g.vacantes;
-          const pct=total ? g.ocupadas/total*100 : 0;
-          const sub=porTienda ? `${total} posiciones` : `${g.tiendas.size} tiendas · ${total} posiciones`;
-          return`<button type="button" class="pg-fila" data-pg-key="${escapeAttr(g.key)}" data-pg-nombre="${escapeAttr(g.nombre)}" title="${escapeAttr(`${g.nombre}: ${g.ocupadas} ocupadas, ${g.vacantes} no ocupadas`)}">
-            <span class="pg-avatar pg-avatar--${nivel(pct)}">${OXXO.escHtml(iniciales(g.nombre))}</span>
-            <span class="pg-nombre"><strong>${OXXO.escHtml(OXXO.truncate(g.nombre,38))}</strong><small>${sub}</small></span>
-            <span class="pg-barra"><i style="width:${pct.toFixed(1)}%"></i></span>
-            <span class="pg-pct pg-pct--${nivel(pct)}">${Math.round(pct)}%</span>
-            <span class="pg-vac ${g.vacantes ? 'is-on' : ''}">${g.vacantes ? `${g.vacantes} ${g.vacantes===1?'vacante':'vacantes'}` : 'Completa'}</span>
-          </button>`;
-        }).join('')}
-      </section>`;
-    grafica.querySelector('[data-pg-volver]')?.addEventListener('click',()=>{ PLANTILLA_DRILL=null; renderPlantilla(); });
-    grafica.querySelectorAll('.pg-fila').forEach(btn=>btn.addEventListener('click',()=>{
-      if(porTienda){
-        const input=document.getElementById('plantilla-buscar');
-        input.value=btn.dataset.pgNombre.replace(/^OXXO\s+/i,'');
-        renderPlantilla();
-        input.focus();
-      } else {
-        PLANTILLA_DRILL={ key:btn.dataset.pgKey, nombre:btn.dataset.pgNombre };
-        renderPlantilla();
-      }
-    }));
+        <div class="pg-dona__centro"><strong>${Math.round(pct)}%</strong><span>cobertura</span></div>
+      </div>
+      <ul class="pg-cifras">
+        <li><i class="is-ocupada"></i><span>Ocupadas</span><b>${ocupadas.length.toLocaleString('es-MX')}</b></li>
+        <li><i class="is-vacante"></i><span>No ocupadas</span><b class="${nVac ? 'is-rojo' : ''}">${nVac.toLocaleString('es-MX')}</b></li>
+        <li><i class="is-completa">✓</i><span>Tiendas completas</span><b>${completas.toLocaleString('es-MX')}<small>/${tiendasTotal.toLocaleString('es-MX')}</small></b></li>
+      </ul>
+      <p class="pg-nota">Busca una tienda, CR o colaborador para ver quién ocupa cada posición.</p>`;
     return;
   }
 
