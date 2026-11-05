@@ -27,13 +27,15 @@ const SHEETS_CONFIG = window.OXXO_CONFIG;
 // ─────────────────────────────────────────────────
 const DATA_PROXY = (() => {
   try {
-    const host = String(location.hostname || '');
-    const hosts = Array.isArray(SHEETS_CONFIG.DATA_API_HOSTS) ? SHEETS_CONFIG.DATA_API_HOSTS : [];
-    if (/\.workers\.dev$/i.test(host) || hosts.includes(host)) return { modo: 'api' };
+    // Primero la Ficha dentro de la app: la app tambien vive en *.workers.dev
+    // (conoxxo...), y ahi no hay /api ni Cloudflare Access, solo la sesion.
     if (/[?&]embed=1\b/.test(location.search)) {
       const llave = JSON.parse(localStorage.getItem('oxxito:sessionKey') || 'null') || '';
       if (/^[0-9a-f]{64}$/.test(llave)) return { modo: 'llave', llave };
     }
+    const host = String(location.hostname || '');
+    const hosts = Array.isArray(SHEETS_CONFIG.DATA_API_HOSTS) ? SHEETS_CONFIG.DATA_API_HOSTS : [];
+    if (/\.workers\.dev$/i.test(host) || hosts.includes(host)) return { modo: 'api' };
   } catch (_) { /* sin localStorage: lectura normal */ }
   return null;
 })();
