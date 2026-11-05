@@ -85,16 +85,42 @@ test('readSheet no expone las hojas de solo lectura (su lectura publica es por G
 test('APP_VERSION sigue igual a la version verificada en config.js', () => {
   const gs = fs.readFileSync(path.join(root, 'apps-script', 'admin-upload.gs'), 'utf8');
   const cfg = fs.readFileSync(path.join(root, 'js', 'config.js'), 'utf8');
-  assert.equal(gs.match(/const APP_VERSION = '(\d+)'/)[1], '67');
-  assert.equal(cfg.match(/VERIFIED_ADMIN_RUNTIME_VERSION:\s*(\d+)/)[1], '67');
+  assert.equal(gs.match(/const APP_VERSION = '(\d+)'/)[1], '68');
+  assert.equal(cfg.match(/VERIFIED_ADMIN_RUNTIME_VERSION:\s*(\d+)/)[1], '68');
 });
 
-test('leerDatos (v66) exige sesion, llave de lectura o admin, y la app solo lee sus 4 hojas', () => {
+test('leerDatos (v66) exige sesion, llave de lectura o admin, y la app sin permisos solo lee sus 3 hojas', () => {
   const gs = fs.readFileSync(path.join(__dirname, '..', 'apps-script', 'admin-upload.gs'), 'utf8');
   assert.match(gs, /action \|\| ''\) === 'leerDatos'\) \{\s*return jsonResponse\(leerDatos_\(payload\)\);/);
-  assert.match(gs, /function leerDatos_\(payload\) \{\s*const quien = exigirLectura_\(payload, 'datos'\);/);
-  assert.match(gs, /const LECTURA_HOJAS_APP = \['Configuracion', 'Catalogo_Asesores', 'Dashboard_1_Diario', 'Dashboard_5_Semanal'\];/);
+  assert.match(gs, /function leerDatos_\(payload\) \{\s*const lector = lectorDe_\(payload, 'datos'\);/);
+  assert.match(gs, /const LECTURA_HOJAS_APP = \['Configuracion', 'Catalogo_Asesores', 'Dashboard_5_Semanal'\];/);
+  // Sin permisos, de las hojas con datos de cada empleado solo el renglon propio.
+  assert.match(gs, /if \(quien === 'app' && LECTURA_HOJAS_SOLO_PROPIO\.indexOf\(hoja\) !== -1\) return leerSoloPropio_\(ss, hoja, payload, lector\.sesion\.numero\);/);
   // Sin LECTURA_PRIVADA = SI, readSheet y la cuota siguen como antes.
   assert.match(gs, /if \(lecturaPrivada_\(\)\) return jsonResponse\(\{ ok: false, error: 'lectura_privada/);
-  assert.match(gs, /if \(recurso === 'cuota' && !lecturaPrivada_\(\)\) return 'publico';/);
+  assert.match(gs, /if \(recurso === 'cuota' && !lecturaPrivada_\(\)\) return \{ quien: 'publico', sesion: null \};/);
+});
+
+test('soloRenglonPropio_ (v68) deja solo el renglon del empleado y falla cerrado sin la columna', () => {
+  const vm = require('node:vm');
+  const gs = fs.readFileSync(path.join(__dirname, '..', 'apps-script', 'admin-upload.gs'), 'utf8');
+  const tomar = (nombre) => gs.slice(gs.indexOf(nombre), gs.indexOf('\n}\n', gs.indexOf(nombre)) + 2);
+  const ctx = {};
+  vm.createContext(ctx);
+  vm.runInContext([
+    "const COLUMNA_NUMERO_EMPLEADO = ['nodeempleado', 'numerodeempleado'];",
+    tomar('function sinCerosLectura_'), tomar('function claveColumna_'), tomar('function soloRenglonPropio_'), tomar('function aCsvLectura_'),
+    'this.f = soloRenglonPropio_; this.csv = aCsvLectura_;',
+  ].join('\n'), ctx);
+  // CSV de GViz con consulta: encabezado combinado con _buffer_.
+  const conConsulta = [['_buffer_ Plaza', '_buffer_ Nombre', '_buffer_ No. De Empleado'], ['Oaxaca', 'Ana', '05843652'], ['Oaxaca', 'Beto', '1111111']];
+  assert.deepEqual(ctx.f(conConsulta, '5843652').filas, [conConsulta[0], conConsulta[1]]);
+  // getValues: fila _buffer_ y luego el encabezado real; numeros como number.
+  const valores = [['_buffer_', '_buffer_', '_buffer_'], ['Plaza', 'Nombre', 'Número de Empleado'], ['Oaxaca', 'Ana', 5843652], ['Oaxaca', 'Beto', 1111111]];
+  assert.deepEqual(ctx.f(valores, '5843652').filas, valores.slice(0, 3));
+  // Sin la columna del numero (p. ej. una consulta que la quito): solo el primer renglon.
+  assert.deepEqual(ctx.f([['Plaza', 'Nombre'], ['Oaxaca', 'Ana']], '5843652').filas, [['Plaza', 'Nombre']]);
+  // Sin numero no pasa nadie.
+  assert.deepEqual(ctx.f(conConsulta, '').filas, [conConsulta[0]]);
+  assert.equal(ctx.csv([['a"b', 1], ['', null]]), '"a""b","1"\n"",""');
 });

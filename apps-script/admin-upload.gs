@@ -12,7 +12,7 @@
  * Despues de eso, admin.html publica directo sin pedir URL.
  */
 const SPREADSHEET_ID = '1EbUuyy-PRXiDwPmn9L14P93cGN6VXTyLfAHx-CE8M_A';
-const APP_VERSION = '67';
+const APP_VERSION = '68';
 const ADMIN_PASSWORD_PROPERTY = 'ADMIN_PASSWORD';
 const AUDIT_SHEET = '_Admin_Bitacora';
 const BACKUP_PREFIX = '_BK_';
@@ -3072,11 +3072,17 @@ function consultarCuotaSindical_() {
    depende de que la hoja sea publica. */
 const LECTURA_KEY_PROPERTY = 'LECTURA_KEY';
 const LECTURA_PRIVADA_PROPERTY = 'LECTURA_PRIVADA';
-// Lo unico que lee la app Conoxxo (pantallas Estructura, Vacaciones, Tiendas).
-const LECTURA_HOJAS_APP = ['Configuracion', 'Catalogo_Asesores', 'Dashboard_1_Diario', 'Dashboard_5_Semanal'];
-// Puestos con permisos (v67): ademas, lo que lee la Ficha de Plaza dentro de
-// la app (dashboards/ficha-plaza.html?embed=1, via js/core.js).
-const LECTURA_HOJAS_APP_PERMISOS = LECTURA_HOJAS_APP.concat(['Catalogo_Tiendas', 'Dashboard_2_Diario', 'Dashboard_3_Diario', 'Dashboard_3_Otras_Plazas', 'Compromisos_Bajas']);
+// Lo que lee cualquier empleado con sesion en la app Conoxxo (Mis vacaciones
+// y el catalogo de tiendas). De Dashboard_5_Semanal solo recibe SU renglon
+// (v68, ver soloRenglonPropio_).
+const LECTURA_HOJAS_APP = ['Configuracion', 'Catalogo_Asesores', 'Dashboard_5_Semanal'];
+// Puestos con permisos: ademas Estructura (Dashboard_1_Diario), Mi equipo
+// (Dashboard_5_Semanal completo) y lo que lee la Ficha de Plaza dentro de la
+// app (dashboards/ficha-plaza.html?embed=1, via js/core.js).
+const LECTURA_HOJAS_APP_PERMISOS = LECTURA_HOJAS_APP.concat(['Dashboard_1_Diario', 'Catalogo_Tiendas', 'Dashboard_7_Semanal', 'Reasignaciones', 'Dashboard_2_Diario', 'Dashboard_3_Diario', 'Dashboard_3_Otras_Plazas', 'Compromisos_Bajas']);
+// Hojas con datos de cada empleado: sin permisos solo se entrega el renglon
+// propio, buscado por la columna del numero de empleado.
+const LECTURA_HOJAS_SOLO_PROPIO = ['Dashboard_5_Semanal'];
 // Lo que puede leer el servidor del sitio: las de los dashboards y las de
 // soporte que hoy se leen por GViz.
 const LECTURA_HOJAS_SITIO_EXTRA = ['Configuracion', 'Compromisos_Bajas', 'Promociones', 'PromosD100'];
@@ -3094,32 +3100,43 @@ function llaveLecturaValida_(payload) {
 // Devuelve quien lee: 'servidor' | 'admin' | 'app' | 'app_permisos'. Con LECTURA_PRIVADA en NO,
 // lo que antes era publico ('cuota') sigue respondiendo sin sesion.
 function exigirLectura_(payload, recurso) {
-  if (llaveLecturaValida_(payload)) return 'servidor';
-  if (payload && payload.adminPassword) { assertAuthorized(payload); return 'admin'; }
+  return lectorDe_(payload, recurso).quien;
+}
+
+// { quien, sesion }: sesion es la de Conoxxo cuando lee la app.
+function lectorDe_(payload, recurso) {
+  if (llaveLecturaValida_(payload)) return { quien: 'servidor', sesion: null };
+  if (payload && payload.adminPassword) { assertAuthorized(payload); return { quien: 'admin', sesion: null }; }
   const sesion = payload && payload.llave ? sesionConoxxo_(payload.llave) : null;
-  if (sesion) return sesion.permisos ? 'app_permisos' : 'app';
-  if (recurso === 'cuota' && !lecturaPrivada_()) return 'publico';
+  if (sesion) return { quien: sesion.permisos ? 'app_permisos' : 'app', sesion: sesion };
+  if (recurso === 'cuota' && !lecturaPrivada_()) return { quien: 'publico', sesion: null };
   throw new Error('sesion_conoxxo: vuelve a entrar a la app');
 }
 
 function leerDatos_(payload) {
-  const quien = exigirLectura_(payload, 'datos');
+  const lector = lectorDe_(payload, 'datos');
+  const quien = lector.quien;
   const hoja = String((payload && payload.hoja) || '').trim();
   const permitidas = quien === 'app' ? LECTURA_HOJAS_APP
     : quien === 'app_permisos' ? LECTURA_HOJAS_APP_PERMISOS
     : ALLOWED_SHEETS.concat(LECTURA_HOJAS_SITIO_EXTRA);
   if (permitidas.indexOf(hoja) === -1) throw new Error('hoja no permitida: ' + hoja);
   const ss = SPREADSHEET_ID ? SpreadsheetApp.openById(SPREADSHEET_ID) : SpreadsheetApp.getActiveSpreadsheet();
+  if (quien === 'app' && LECTURA_HOJAS_SOLO_PROPIO.indexOf(hoja) !== -1) return leerSoloPropio_(ss, hoja, payload, lector.sesion.numero);
   if (String(payload.formato || 'csv') === 'valores') {
     const sheet = ss.getSheetByName(hoja);
     if (!sheet) throw new Error('hoja no encontrada: ' + hoja);
     return { ok: true, version: APP_VERSION, values: sheet.getDataRange().getValues() };
   }
-  const consulta = String(payload.consulta || '').trim();
+  return { ok: true, version: APP_VERSION, csv: gvizCsv_(ss, hoja, String(payload.consulta || '').trim(), payload.headers) };
+}
+
+// GViz CSV de una hoja, leido como el dueño del script.
+function gvizCsv_(ss, hoja, consulta, headers) {
   const params = ['tqx=out:csv', 'sheet=' + encodeURIComponent(hoja)];
   // Igual que js/core.js y la app: con consulta, GViz debe saber que la fila
   // _buffer_ va sobre los encabezados reales.
-  if (consulta) params.push('headers=' + encodeURIComponent(String(payload.headers || 2)), 'tq=' + encodeURIComponent(consulta));
+  if (consulta) params.push('headers=' + encodeURIComponent(String(headers || 2)), 'tq=' + encodeURIComponent(consulta));
   const r = UrlFetchApp.fetch('https://docs.google.com/spreadsheets/d/' + ss.getId() + '/gviz/tq?' + params.join('&'), {
     headers: { Authorization: 'Bearer ' + ScriptApp.getOAuthToken() },
     muteHttpExceptions: true,
@@ -3127,6 +3144,78 @@ function leerDatos_(payload) {
   const texto = r.getContentText();
   // Sin permiso Google responde 200 con la pagina de inicio de sesion (HTML).
   if (r.getResponseCode() !== 200 || /^\s*</.test(texto)) throw new Error('gviz no disponible (' + r.getResponseCode() + ')');
-  return { ok: true, version: APP_VERSION, csv: texto };
+  return texto;
 }
 
+/* Sin permisos, de una hoja con datos de cada empleado solo sale el renglon
+   del que pregunta (v68). La consulta del cliente se ignora: con una consulta
+   propia (select con label o columnas calculadas) se podria hacer pasar otra
+   columna por la del numero. El script arma la suya y vuelve a filtrar. */
+const COLUMNA_NUMERO_EMPLEADO = ['nodeempleado', 'numerodeempleado'];
+const COLUMNA_NUMERO_LETRA = 'H';
+
+function sinCerosLectura_(v) {
+  return String(v == null ? '' : v).replace(/\.0+$/, '').replace(/\D/g, '').replace(/^0+/, '');
+}
+function claveColumna_(v) {
+  return String(v == null ? '' : v).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+    .replace(/_buffer_/g, '').replace(/[^a-z0-9]/g, '');
+}
+
+// Encabezados (hasta encontrar la columna del numero) y solo los renglones
+// del numero dado. Sin esa columna, solo el primer renglon: nada personal.
+function soloRenglonPropio_(filas, numero) {
+  const propio = sinCerosLectura_(numero);
+  for (let h = 0; h < Math.min(3, filas.length); h++) {
+    const col = filas[h].findIndex((c) => COLUMNA_NUMERO_EMPLEADO.indexOf(claveColumna_(c)) !== -1);
+    if (col !== -1) return { filas: filas.slice(0, h + 1).concat(filas.slice(h + 1).filter((r) => propio !== '' && sinCerosLectura_(r[col]) === propio)), propios: true };
+  }
+  return { filas: filas.slice(0, 1), propios: false };
+}
+
+function aCsvLectura_(filas) {
+  return filas.map((r) => r.map((c) => '"' + String(c == null ? '' : c).replace(/"/g, '""') + '"').join(',')).join('\n');
+}
+
+function leerSoloPropio_(ss, hoja, payload, numero) {
+  const propio = sinCerosLectura_(numero);
+  if (!propio) throw new Error('sesion_conoxxo: vuelve a entrar a la app');
+  if (String(payload.formato || 'csv') === 'valores') {
+    const sheet = ss.getSheetByName(hoja);
+    if (!sheet) throw new Error('hoja no encontrada: ' + hoja);
+    return { ok: true, version: APP_VERSION, values: soloRenglonPropio_(sheet.getDataRange().getValues(), propio).filas };
+  }
+  // Primero solo su renglon (rapido); si la letra de la columna cambio y no
+  // sale nada, la hoja completa filtrada aqui.
+  let r = soloRenglonPropio_(Utilities.parseCsv(gvizCsv_(ss, hoja, 'select * where ' + COLUMNA_NUMERO_LETRA + ' = ' + propio, 2)), propio);
+  const conDatos = (x) => x.propios && x.filas.length > 1;
+  if (!conDatos(r)) {
+    const completa = soloRenglonPropio_(Utilities.parseCsv(gvizCsv_(ss, hoja, '', 0)), propio);
+    if (conDatos(completa) || completa.propios) r = completa;
+  }
+  return { ok: true, version: APP_VERSION, csv: aCsvLectura_(r.filas) };
+}
+
+// Para correr a mano en el editor (Ejecutar -> probarLectura) antes de poner
+// LECTURA_PRIVADA = SI. No muestra datos personales: solo si cada lectura
+// funciona y cuantos renglones trae. NUMERO_PRUEBA: tu numero de empleado.
+function probarLectura() {
+  const NUMERO_PRUEBA = '5843652';
+  const ss = SPREADSHEET_ID ? SpreadsheetApp.openById(SPREADSHEET_ID) : SpreadsheetApp.getActiveSpreadsheet();
+  const hojas = LECTURA_HOJAS_APP_PERMISOS;
+  hojas.forEach((hoja) => {
+    try {
+      const filas = Utilities.parseCsv(gvizCsv_(ss, hoja, '', 0));
+      Logger.log('OK   ' + hoja + ': ' + filas.length + ' renglones');
+    } catch (err) {
+      Logger.log('FALLA ' + hoja + ': ' + (err && err.message || err));
+    }
+  });
+  try {
+    const r = leerSoloPropio_(ss, 'Dashboard_5_Semanal', { formato: 'csv' }, NUMERO_PRUEBA);
+    const filas = Utilities.parseCsv(r.csv);
+    Logger.log('Solo propio (Dashboard_5_Semanal, ' + NUMERO_PRUEBA + '): ' + filas.length + ' renglones (1 = solo encabezado, no estas en la hoja; 2 = tu renglon)');
+  } catch (err) {
+    Logger.log('FALLA solo propio: ' + (err && err.message || err));
+  }
+}
