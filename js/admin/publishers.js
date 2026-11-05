@@ -123,7 +123,13 @@ window.OXXO_ADMIN_PUBLISHERS = function createAdminPublishers(deps){
   const AUDIT_SHEET='_Admin_Bitacora';
   const auditField=(row,name)=>row?.[Object.keys(row||{}).find(key=>keyOf(key)===keyOf(name))];
   const auditSignature=row=>row?['Fecha','Hoja','Filas publicadas','Estado','Respaldo'].map(name=>String(auditField(row,name)??'')).join('|'):'';
+  // La bitacora se pide al Apps Script con la contraseña del panel (getAudit):
+  // la hoja ya no es publica y _Admin_Bitacora no sale por /api. getAudit la
+  // regresa de la mas nueva a la mas vieja; aqui se usa en orden de escritura.
   async function readAudit(){
+    const result=await postAdminPayload({action:'getAudit',adminPassword:getAdminPassword(),limit:200});
+    if(Array.isArray(result?.rows))return result.rows.slice().reverse();
+    // Modo compatible (no-cors): no hay respuesta legible; la lectura de la hoja.
     OXXO.clearSheetDataCache(AUDIT_SHEET);
     return await OXXO.fetchSheetData(AUDIT_SHEET,{fresh:true,allowStale:false,scoped:false})||[];
   }
