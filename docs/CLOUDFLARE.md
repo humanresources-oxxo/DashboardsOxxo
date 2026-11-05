@@ -29,6 +29,10 @@ Persona -> Cloudflare Access -> sitio (dist/) y /api (worker/index.js)
   - `ACCESS_AUD` (opcional): el *Application Audience (AUD) tag* de la aplicacion de Access. Sin el, el Worker acepta cualquier token valido firmado y emitido por el equipo.
 - **Access:** una aplicacion que cubre todo el dominio del Worker, con una politica *Allow* para la lista de correos autorizados.
 
+## Direccion
+
+`https://dashboardsoxxo.plaza-oaxaca.workers.dev`. En GitHub Pages cada pagina (salvo la Ficha con `?embed=1`, que no carga `js/site-lock.js`) muestra "El sitio se mudo" y manda a la misma pagina en esa direccion (`SITIO_NUEVO` en `js/site-lock.js`).
+
 ## Cierre de la hoja (cuando todo lea por /api y leerDatos)
 
 1. Script Properties del Apps Script: `LECTURA_PRIVADA = SI` (readSheet por GET deja de responder y la cuota sindical exige sesion).
