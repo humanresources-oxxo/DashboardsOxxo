@@ -12,7 +12,7 @@
  * Despues de eso, admin.html publica directo sin pedir URL.
  */
 const SPREADSHEET_ID = '1EbUuyy-PRXiDwPmn9L14P93cGN6VXTyLfAHx-CE8M_A';
-const APP_VERSION = '66';
+const APP_VERSION = '67';
 const ADMIN_PASSWORD_PROPERTY = 'ADMIN_PASSWORD';
 const AUDIT_SHEET = '_Admin_Bitacora';
 const BACKUP_PREFIX = '_BK_';
@@ -3074,6 +3074,9 @@ const LECTURA_KEY_PROPERTY = 'LECTURA_KEY';
 const LECTURA_PRIVADA_PROPERTY = 'LECTURA_PRIVADA';
 // Lo unico que lee la app Conoxxo (pantallas Estructura, Vacaciones, Tiendas).
 const LECTURA_HOJAS_APP = ['Configuracion', 'Catalogo_Asesores', 'Dashboard_1_Diario', 'Dashboard_5_Semanal'];
+// Puestos con permisos (v67): ademas, lo que lee la Ficha de Plaza dentro de
+// la app (dashboards/ficha-plaza.html?embed=1, via js/core.js).
+const LECTURA_HOJAS_APP_PERMISOS = LECTURA_HOJAS_APP.concat(['Catalogo_Tiendas', 'Dashboard_2_Diario', 'Dashboard_3_Diario', 'Dashboard_3_Otras_Plazas', 'Compromisos_Bajas']);
 // Lo que puede leer el servidor del sitio: las de los dashboards y las de
 // soporte que hoy se leen por GViz.
 const LECTURA_HOJAS_SITIO_EXTRA = ['Configuracion', 'Compromisos_Bajas', 'Promociones', 'PromosD100'];
@@ -3088,12 +3091,13 @@ function llaveLecturaValida_(payload) {
   return configurada.length >= 32 && recibida === configurada;
 }
 
-// Devuelve quien lee: 'servidor' | 'admin' | 'app'. Con LECTURA_PRIVADA en NO,
+// Devuelve quien lee: 'servidor' | 'admin' | 'app' | 'app_permisos'. Con LECTURA_PRIVADA en NO,
 // lo que antes era publico ('cuota') sigue respondiendo sin sesion.
 function exigirLectura_(payload, recurso) {
   if (llaveLecturaValida_(payload)) return 'servidor';
   if (payload && payload.adminPassword) { assertAuthorized(payload); return 'admin'; }
-  if (payload && payload.llave && sesionConoxxo_(payload.llave)) return 'app';
+  const sesion = payload && payload.llave ? sesionConoxxo_(payload.llave) : null;
+  if (sesion) return sesion.permisos ? 'app_permisos' : 'app';
   if (recurso === 'cuota' && !lecturaPrivada_()) return 'publico';
   throw new Error('sesion_conoxxo: vuelve a entrar a la app');
 }
@@ -3101,7 +3105,9 @@ function exigirLectura_(payload, recurso) {
 function leerDatos_(payload) {
   const quien = exigirLectura_(payload, 'datos');
   const hoja = String((payload && payload.hoja) || '').trim();
-  const permitidas = quien === 'app' ? LECTURA_HOJAS_APP : ALLOWED_SHEETS.concat(LECTURA_HOJAS_SITIO_EXTRA);
+  const permitidas = quien === 'app' ? LECTURA_HOJAS_APP
+    : quien === 'app_permisos' ? LECTURA_HOJAS_APP_PERMISOS
+    : ALLOWED_SHEETS.concat(LECTURA_HOJAS_SITIO_EXTRA);
   if (permitidas.indexOf(hoja) === -1) throw new Error('hoja no permitida: ' + hoja);
   const ss = SPREADSHEET_ID ? SpreadsheetApp.openById(SPREADSHEET_ID) : SpreadsheetApp.getActiveSpreadsheet();
   if (String(payload.formato || 'csv') === 'valores') {
