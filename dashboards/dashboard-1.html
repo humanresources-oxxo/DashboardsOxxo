@@ -185,14 +185,16 @@
   <!-- PLANTILLA ACTUAL -->
   <div class="card tabla-card" id="plantilla-card">
     <div class="card-head">
-      <div class="card-title">Plantilla por Tienda<span class="info-tip" tabindex="0" data-tip="Todas las posiciones de la estructura del mes: ocupadas con el nombre de quien la ocupa y vacantes. Sale del mismo Excel que alimenta las vacantes. Los filtros de puesto y antigüedad no aplican aquí."></span></div>
+      <div class="card-title">Plantilla por Tienda<span class="info-tip" tabindex="0" data-tip="Posiciones ocupadas y vacantes de la estructura del mes, por asesor (o por tienda si filtras un solo asesor). Al buscar una tienda o filtrarla se muestra la lista con el nombre de quien ocupa cada posición. Los filtros de puesto y antigüedad no aplican aquí."></span></div>
       <div class="plantilla-acciones">
         <label class="plantilla-switch"><input type="checkbox" id="plantilla-solo-ocupadas"> Solo ocupadas</label>
         <span class="card-badge" id="plantilla-count">— posiciones</span>
       </div>
     </div>
     <div class="plantilla-resumen" id="plantilla-resumen"></div>
-    <div id="tabla-plantilla">
+    <label class="plantilla-buscar"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg><input type="search" id="plantilla-buscar" autocomplete="off" placeholder="Busca una tienda, CR o colaborador para ver su plantilla"></label>
+    <div id="plantilla-grafica" class="plantilla-grafica"></div>
+    <div id="tabla-plantilla" hidden>
       <div class="state-box"><div class="spinner"></div>
         <div class="loading-copy">Cargando plantilla…</div></div>
     </div>
@@ -1148,29 +1150,77 @@ function plantillaFiltrada(){
   if(!isDefaultTiendaSelection()) rows=rows.filter(r=>f.tiendas.includes(r.tienda));
   return rows;
 }
+function plantillaBusqueda(){
+  return normalizeSearchText(document.getElementById('plantilla-buscar')?.value || '');
+}
 function renderPlantilla(){
   const el=document.getElementById('tabla-plantilla');
-  if(!el) return;
-  const todas=plantillaFiltrada();
-  const ocupadas=todas.filter(r=>!r.isVacante && r.empleado);
+  const grafica=document.getElementById('plantilla-grafica');
+  if(!el || !grafica) return;
+  const q=plantillaBusqueda();
+  let todas=plantillaFiltrada();
+  if(q) todas=todas.filter(r=>normalizeSearchText(`${r.tienda} ${r.cr} ${r.empleado}`).includes(q));
+  // Lista solo cuando se busca o se filtra una tienda; si no, la grafica.
+  const modoLista=Boolean(q) || !isDefaultTiendaSelection();
+  const ocupada=r=>!r.isVacante && Boolean(r.empleado);
+  const ocupadas=todas.filter(ocupada);
+  const tiendas=new Set(todas.map(r=>r.tienda)).size;
+  const vacantes=todas.filter(r=>r.isVacante).length;
+  const cobertura=todas.length ? Math.round(ocupadas.length/todas.length*100) : 0;
+  document.getElementById('plantilla-resumen').innerHTML=[
+    ['Tiendas',tiendas],['Posiciones',todas.length],['Ocupadas',ocupadas.length],['Vacantes',vacantes],['Cobertura',`${cobertura}%`]
+  ].map(([k,v])=>`<div><small>${k}</small><strong>${OXXO.escHtml(typeof v==='number' ? v.toLocaleString('es-MX') : v)}</strong></div>`).join('');
+  const switchEl=document.querySelector('.plantilla-switch');
+  if(switchEl) switchEl.hidden=!modoLista;
+  grafica.hidden=modoLista;
+  el.hidden=!modoLista;
+
+  if(!todas.length){
+    const vacio=`<div class="state-box"><div style="font-weight:700;color:var(--color-dark-mid)">Sin posiciones</div>
+      <div style="font-size:12px">${q ? 'Ninguna tienda o colaborador coincide con la búsqueda.' : 'Ajusta los filtros de asesor, tienda o mes.'}</div></div>`;
+    document.getElementById('plantilla-count').textContent='0 posiciones';
+    (modoLista ? el : grafica).innerHTML=vacio;
+    return;
+  }
+
+  if(!modoLista){
+    // Por asesor; con un solo asesor filtrado, por cada una de sus tiendas.
+    const asesores=new Set(todas.map(r=>normalizeSearchText(asesorCanon(r.asesor))));
+    const porTienda=asesores.size===1;
+    const grupos=new Map();
+    todas.forEach(r=>{
+      // Misma persona escrita con otras mayusculas o acentos = un solo grupo;
+      // se muestra la version con mayusculas iniciales.
+      const nombre=porTienda ? r.tienda : r.asesor;
+      const k=normalizeSearchText(nombre);
+      const g=grupos.get(k) || { nombre, ocupadas:0, vacantes:0 };
+      if(g.nombre===g.nombre.toLowerCase() && nombre!==nombre.toLowerCase()) g.nombre=nombre;
+      if(r.isVacante) g.vacantes++; else if(r.empleado) g.ocupadas++;
+      grupos.set(k,g);
+    });
+    const lista=[...grupos.values()].sort((a,b)=>b.vacantes-a.vacantes || (b.ocupadas+b.vacantes)-(a.ocupadas+a.vacantes) || a.nombre.localeCompare(b.nombre,'es'));
+    const maximo=Math.max(...lista.map(g=>g.ocupadas+g.vacantes),1);
+    document.getElementById('plantilla-count').textContent=porTienda ? `${lista.length} tiendas` : `${lista.length} asesores`;
+    grafica.innerHTML=`<div class="plantilla-leyenda"><span><i class="is-ocupada"></i>Ocupadas</span><span><i class="is-vacante"></i>No ocupadas</span><span class="plantilla-leyenda__nota">${porTienda ? 'Por tienda del asesor filtrado' : 'Por asesor'} · busca una tienda para ver los nombres</span></div>`+
+      lista.map(g=>{
+        const total=g.ocupadas+g.vacantes;
+        const pct=total ? Math.round(g.ocupadas/total*100) : 0;
+        return`<div class="plantilla-barra" title="${escapeAttr(`${g.nombre}: ${g.ocupadas} ocupadas, ${g.vacantes} no ocupadas`)}">
+          <span class="plantilla-barra__nombre">${OXXO.escHtml(OXXO.truncate(g.nombre,34))}</span>
+          <span class="plantilla-barra__pista" style="--ancho:${(total/maximo*100).toFixed(1)}%"><i class="is-ocupada" style="flex:${g.ocupadas}"></i><i class="is-vacante" style="flex:${g.vacantes}"></i></span>
+          <span class="plantilla-barra__dato"><strong>${g.ocupadas}</strong> / ${total} · <b class="${g.vacantes ? 'tiene-vacantes' : ''}">${g.vacantes} vac.</b> · ${pct}%</span>
+        </div>`;
+      }).join('');
+    return;
+  }
+
   const soloOcupadas=document.getElementById('plantilla-solo-ocupadas')?.checked;
   const rows=(soloOcupadas ? ocupadas : todas).slice().sort((a,b)=>
     a.tienda.localeCompare(b.tienda,'es') ||
     (PLANTILLA_ORDEN_TIPO[a.tipo] ?? 9)-(PLANTILLA_ORDEN_TIPO[b.tipo] ?? 9) ||
     a.puesto.localeCompare(b.puesto,'es') ||
     a.empleado.localeCompare(b.empleado,'es'));
-  const tiendas=new Set(todas.map(r=>r.tienda)).size;
-  const vacantes=todas.filter(r=>r.isVacante).length;
-  const cobertura=todas.length ? Math.round(ocupadas.length/todas.length*100) : 0;
-  document.getElementById('plantilla-resumen').innerHTML=[
-    ['Tiendas',tiendas],['Posiciones',todas.length],['Ocupadas',ocupadas.length],['Vacantes',vacantes],['Cobertura',`${cobertura}%`]
-  ].map(([k,v])=>`<div><small>${k}</small><strong>${OXXO.escHtml(String(v.toLocaleString?.('es-MX') ?? v))}</strong></div>`).join('');
   document.getElementById('plantilla-count').textContent=`${rows.length} posiciones`;
-  if(!rows.length){
-    el.innerHTML=`<div class="state-box"><div style="font-weight:700;color:var(--color-dark-mid)">Sin posiciones</div>
-      <div style="font-size:12px">Ajusta los filtros de asesor, tienda o mes.</div></div>`;
-    return;
-  }
   const cuerpo=rows.map(r=>{
     const vacante=r.isVacante;
     const nombre=vacante ? '<span class="plantilla-vacante">Vacante</span>' : OXXO.escHtml(r.empleado || 'Sin nombre capturado');
@@ -1182,7 +1232,7 @@ function renderPlantilla(){
       <td class="text-center">${pillHTML(vacante?'Vacante':'Ocupada',vacante?'rojo':'verde')}</td>
     </tr>`;
   }).join('');
-  el.innerHTML=`<div class="tbl-wrap"><table class="tbl" data-rh-tools data-rh-page-size="25">
+  el.innerHTML=`<div class="tbl-wrap"><table class="tbl" data-rh-tools data-rh-search="false" data-rh-page-size="25">
     <thead><tr>
       <th>Tienda</th>
       <th>Asesor</th>
@@ -1193,6 +1243,7 @@ function renderPlantilla(){
     <tbody>${cuerpo}</tbody>
   </table></div>`;
 }
+
 
 // Poblar selectores de filtro
 function poblarFiltros(){
@@ -1419,6 +1470,8 @@ async function initDashboard(){
 
   poblarFiltros();
   document.getElementById('plantilla-solo-ocupadas')?.addEventListener('change', renderPlantilla);
+  let plantillaTimer;
+  document.getElementById('plantilla-buscar')?.addEventListener('input', ()=>{ clearTimeout(plantillaTimer); plantillaTimer=setTimeout(renderPlantilla,150); });
   refreshDashboard();
   loadPlazas();
   OXXO.updateFooterTime('load-time');
