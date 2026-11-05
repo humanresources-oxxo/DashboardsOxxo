@@ -1,0 +1,19 @@
+// Cloudflare Workers: sirve el sitio estatico (los mismos archivos que GitHub
+// Pages) y la puerta de datos /api, detras de Cloudflare Access. Ver
+// docs/CLOUDFLARE.md. Comando de compilacion en Cloudflare:
+// node scripts/build-cloudflare.mjs (arma dist/ solo con el sitio).
+{
+  "name": "dashboardsoxxo",
+  "main": "worker/index.js",
+  "compatibility_date": "2025-09-01",
+  "assets": {
+    "directory": "dist",
+    "binding": "ASSETS",
+    "run_worker_first": ["/api/*"]
+  },
+  "observability": { "enabled": true },
+  "vars": {
+    "APPS_SCRIPT_URL": "https://script.google.com/macros/s/AKfycbwe_RcnVRkZy9x1YcRuum4qdLucIWLTVsnTZcMvQDyobo6f3ot-YG0Lv00hYS-1XEg/exec",
+    "CACHE_SEGUNDOS": "120"
+  }
+}
