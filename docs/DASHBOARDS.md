@@ -110,6 +110,12 @@ Incapacidades del IMSS, dias perdidos, seguimiento y riesgos de trabajo. **Uso e
 
 SPIN, Premia, Cruzada Andatti, Venta Sugerida, Banner y MEP contra meta, por tienda y asesor. Publicacion quincenal.
 
+## Ficha de Plaza (alcance fijo Plaza Oaxaca)
+
+`dashboards/ficha-plaza.html` · `config.js`, `core.js`, `admin-pptx-rae.js`, `ficha-plaza.js`
+
+Lamina de una sola vista con Vacantes (Dashboard 1, mes vigente), Bajas (Dashboard 2, con el compromiso de `Compromisos_Bajas`) y Aprovechamiento de estructura (Dashboard 3) por asesor, mas el comparativo de las 5 plazas. Usa las mismas funciones de `core.js` y de la RAE (`OXXO_RAE_DATA.dataD3`), asi que sus numeros son los de los tableros. FOCO marca a los 3 asesores con menor aprovechamiento. **Descargar** / **Compartir imagen** genera un PNG de 2000 x 1130 para mandar por WhatsApp o correo. Abierta normal usa el candado del sitio; con `?embed=1` es la pestaña **Resumen** de la app Conoxxo (mismo dominio) y exige la sesion de Conoxxo de un puesto con permisos (`sesion_validar` en Supabase).
+
 ## Inventarios
 
 `dashboards/inventarios.html` · `css/inventarios-visual.css`, `js/inventarios.js`
