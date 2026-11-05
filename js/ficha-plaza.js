@@ -291,6 +291,174 @@
       <p class="fp-nota">Vacantes: Dashboard 1 (mes vigente). Bajas: Dashboard 2 (${esc(f.bajas.mes)}), compromiso de Compromisos_Bajas. Aprovechamiento: Dashboard 3, tienda completa = Equipo completo. FOCO: los ${FOCO_CUANTOS} asesores con menor aprovechamiento.</p>`;
   }
 
+  /* ---------- Vista para la app Conoxxo (pestaña Resumen, celular) ----------
+     Orden por importancia: estado de la plaza, lo que hay que atender (FOCO),
+     todos los asesores (ordenables, cada uno se abre para ver el detalle) y el
+     comparativo de plazas con selector de indicador. */
+  const iniciales = n => String(n || '').split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase();
+  const tonoAprov = v => (v === null || v === undefined ? 'gris' : v >= 95 ? 'verde' : v >= 92.5 ? 'oro' : 'rojo');
+  const vacTxt = n => (n === 1 ? '1 vacante' : `${n} vacantes`);
+  const bajTxt = n => (n === 1 ? '1 baja' : `${n} bajas`);
+
+  function anilloApp(valor, tam, grosor, colorFondo, colorArco, texto, clase) {
+    const r = (tam - grosor) / 2;
+    const c = 2 * Math.PI * r;
+    const largo = Math.max(0, Math.min(100, valor || 0)) / 100 * c;
+    return `<svg class="${clase || ''}" viewBox="0 0 ${tam} ${tam}" width="${tam}" height="${tam}" aria-hidden="true">
+      <circle cx="${tam / 2}" cy="${tam / 2}" r="${r}" fill="none" stroke="${colorFondo}" stroke-width="${grosor}"/>
+      <circle cx="${tam / 2}" cy="${tam / 2}" r="${r}" fill="none" stroke="${colorArco}" stroke-width="${grosor}" stroke-linecap="round" stroke-dasharray="${largo} ${c - largo}" transform="rotate(-90 ${tam / 2} ${tam / 2})"/>
+      <text x="50%" y="52%" text-anchor="middle" dominant-baseline="middle">${esc(texto)}</text></svg>`;
+  }
+
+  function filaAsesor(a, abierto) {
+    const tono = tonoAprov(a.aprov);
+    return `<li class="ap-as ${abierto ? 'abierto' : ''}">
+      <button type="button" class="ap-as-cab" data-asesor="${esc(a.nombre)}" aria-expanded="${abierto}">
+        <span class="ap-ini ${tono}">${esc(iniciales(a.nombre))}</span>
+        <span class="ap-as-txt"><b>${esc(a.nombre)}</b>
+          <small>${a.foco ? '<i class="ap-foco">FOCO</i>' : ''}${a.vacantes ? vacTxt(a.vacantes) : 'Sin vacantes'} · ${bajTxt(a.bajas)}</small></span>
+        <span class="ap-pct ${tono}">${pct(a.aprov, 1)}</span>
+        <svg class="ap-chev" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      ${abierto ? `<div class="ap-as-det">
+        <div class="ap-barra"><span class="${tono}" style="width:${Math.min(100, a.aprov || 0)}%"></span><em title="Meta 92.5%"></em></div>
+        <div class="ap-det-grid">
+          <span><small>Vacantes</small><b>${a.vacantes || 0}</b></span>
+          <span><small>Días prom.</small><b class="${a.diasProm > 6 ? 'rojo' : ''}">${a.vacantes ? uno(a.diasProm) : '—'}</b></span>
+          <span><small>Antigüedad</small><b class="ap-rangos"><i class="v">${a.d3}</i><i class="a">${a.d6}</i><i class="r">${a.dMas6}</i></b></span>
+          <span><small>Bajas</small><b>${a.bajas}</b></span>
+          <span><small>Compromiso</small><b>${a.comp}</b></span>
+          <span><small>Desfase</small><b class="${a.desfase <= 0 ? 'verde' : 'rojo'}">${signo(a.desfase)}</b></span>
+        </div>
+        <p class="ap-leyenda"><i class="v"></i>≤3 días <i class="a"></i>4–6 días <i class="r"></i>más de 6 días</p>
+      </div>` : ''}
+    </li>`;
+  }
+
+  const ORDENES = {
+    aprov: { etiqueta: 'Aprovechamiento', fn: (a, b) => (a.aprov ?? 999) - (b.aprov ?? 999) },
+    vacantes: { etiqueta: 'Vacantes', fn: (a, b) => b.vacantes - a.vacantes || (b.diasProm || 0) - (a.diasProm || 0) },
+    bajas: { etiqueta: 'Bajas', fn: (a, b) => b.bajas - a.bajas || b.desfase - a.desfase },
+  };
+  const INDICADORES = {
+    aprov: { etiqueta: 'Aprov.', valor: p => p.aprov, texto: p => pct(p.aprov, 1), mayorEsMejor: true, escala: v => Math.max(0, Math.min(1, ((v || 0) - 85) / 15)) },
+    vacantes: { etiqueta: 'Vacantes', valor: p => p.vacantes, texto: p => (p.vacantes ?? '—'), mayorEsMejor: false },
+    bajas: { etiqueta: 'Bajas', valor: p => p.bajas, texto: p => (p.bajas ?? '—'), mayorEsMejor: false },
+  };
+
+  function renderApp(el, f) {
+    const estado = { orden: 'aprov', indicador: 'aprov', abiertos: new Set(), todos: false };
+    const foco = f.asesores.filter(a => a.foco);
+    const vt = Math.max(1, f.vacantes.total);
+    const bajasPct = f.bajas.comp ? Math.min(100, (f.bajas.total / f.bajas.comp) * 100) : 0;
+    const propia = f.plazas.find(p => p.propia);
+    const lugarAprov = [...f.plazas].sort((a, b) => (b.aprov ?? -1) - (a.aprov ?? -1)).findIndex(p => p.propia) + 1;
+
+    function seccionAsesores() {
+      const lista = [...f.asesores].sort(ORDENES[estado.orden].fn);
+      const visibles = estado.todos ? lista : lista.slice(0, 6);
+      return `<div class="ap-seg" role="tablist" aria-label="Ordenar asesores">
+          ${Object.entries(ORDENES).map(([k, o]) => `<button type="button" role="tab" aria-selected="${estado.orden === k}" data-orden="${k}">${o.etiqueta}</button>`).join('')}
+        </div>
+        <ul class="ap-lista">${visibles.map(a => filaAsesor(a, estado.abiertos.has(a.nombre))).join('')}</ul>
+        ${lista.length > 6 ? `<button type="button" class="ap-mas" data-todos="1">${estado.todos ? 'Ver menos' : `Ver los ${lista.length} asesores`}</button>` : ''}`;
+    }
+
+    function seccionPlazas() {
+      const ind = INDICADORES[estado.indicador];
+      const lista = [...f.plazas].sort((a, b) => ind.mayorEsMejor ? (ind.valor(b) ?? -1) - (ind.valor(a) ?? -1) : (ind.valor(a) ?? 1e9) - (ind.valor(b) ?? 1e9));
+      const max = Math.max(1, ...lista.map(p => ind.valor(p) || 0));
+      return `<div class="ap-seg" role="tablist" aria-label="Indicador de plazas">
+          ${Object.entries(INDICADORES).map(([k, o]) => `<button type="button" role="tab" aria-selected="${estado.indicador === k}" data-indicador="${k}">${o.etiqueta}</button>`).join('')}
+        </div>
+        <ol class="ap-plazas">${lista.map((p, i) => `<li class="${p.propia ? 'propia' : ''}">
+          <span class="ap-rank">${i + 1}</span>
+          <span class="ap-pl-nom">${esc(p.nombre)}</span>
+          <span class="ap-pl-barra"><span style="width:${(ind.escala ? ind.escala(ind.valor(p)) : (ind.valor(p) || 0) / max) * 100}%"></span></span>
+          <b>${ind.texto(p)}</b>
+        </li>`).join('')}</ol>
+        <p class="ap-nota-chica">${ind.mayorEsMejor ? 'De mayor a menor.' : 'De menos a más: arriba, la plaza mejor parada.'}</p>`;
+    }
+
+    el.innerHTML = `<div class="ap">
+      <section class="ap-hero">
+        <div class="ap-hero-top"><span>Plaza ${esc(f.plaza)}</span><span>${esc(f.corte ? 'Corte ' + f.corte : '')}</span></div>
+        <div class="ap-hero-main">
+          ${anilloApp(f.aprov.pct, 112, 12, 'rgba(255,255,255,.28)', '#ffffff', pct(f.aprov.pct, 1), 'ap-hero-anillo')}
+          <div>
+            <p class="ap-hero-kicker">Aprovechamiento de estructura</p>
+            <p class="ap-hero-txt"><b>${f.aprov.completas}</b> de ${f.aprov.tiendas} tiendas con equipo completo</p>
+            <p class="ap-hero-chips"><span>${f.aprov.incompletas} incompletas</span><span>${f.aprov.criticas} ${f.aprov.criticas === 1 ? 'crítica' : 'críticas'}</span>${lugarAprov ? `<span>${lugarAprov}.º de ${f.plazas.length} plazas</span>` : ''}</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="ap-tiles">
+        <div class="ap-tile">
+          <small>Vacantes</small><b>${f.vacantes.total}</b>
+          <div class="ap-stack"><span class="l" style="width:${f.vacantes.lider / vt * 100}%"></span><span class="e" style="width:${f.vacantes.encargado / vt * 100}%"></span><span class="y" style="width:${f.vacantes.ayudante / vt * 100}%"></span></div>
+          <p><i class="l"></i>${f.vacantes.lider} Líder <i class="e"></i>${f.vacantes.encargado} Enc. <i class="y"></i>${f.vacantes.ayudante} Ayud.</p>
+        </div>
+        <div class="ap-tile">
+          <small>Más antigua</small><b>${f.vacantes.masAntigua ? f.vacantes.masAntigua.dias : '—'}<em> días</em></b>
+          <p class="ap-tienda">${esc(f.vacantes.masAntigua ? f.vacantes.masAntigua.tienda : 'Sin antigüedad registrada')}</p>
+        </div>
+        <div class="ap-tile ap-tile-ancho">
+          <div class="ap-tile-fila"><span><small>Bajas de ${esc(f.bajas.mes)}</small><b class="rojo">${f.bajas.total}<em> de ${f.bajas.comp} de compromiso</em></b></span>
+            <span class="ap-desfase ${f.bajas.desfase <= 0 ? 'verde' : 'rojo'}">${signo(f.bajas.desfase)}</span></div>
+          <div class="ap-prog"><span style="width:${bajasPct}%"></span></div>
+          <p>${f.bajas.sinAsesor ? `${bajTxt(f.bajas.sinAsesor)} sin asesor confirmado` : 'Todas las bajas tienen asesor'}${propia && f.bajasRegion ? ` · ${Math.round(((propia.bajas || 0) / f.bajasRegion) * 100)}% de las bajas de la región` : ''}</p>
+        </div>
+      </section>
+
+      ${foco.length ? `<section class="ap-card ap-atencion">
+        <h2>Requieren atención</h2>
+        <p class="ap-sub">Los ${foco.length} asesores con menor aprovechamiento.</p>
+        <div class="ap-foco-lista">${foco.map(a => `<button type="button" class="ap-foco-item" data-ir="${esc(a.nombre)}">
+          <span class="ap-ini rojo">${esc(iniciales(a.nombre))}</span>
+          <span class="ap-foco-txt"><b>${esc(a.nombre)}</b><small>${a.vacantes ? vacTxt(a.vacantes) : 'Sin vacantes'}${a.vacantes && a.diasProm !== null ? ` · ${uno(a.diasProm)} días prom.` : ''}</small></span>
+          <span class="ap-pct ${tonoAprov(a.aprov)}">${pct(a.aprov, 1)}</span>
+        </button>`).join('')}</div>
+      </section>` : ''}
+
+      <section class="ap-card" id="ap-asesores">
+        <h2>Asesores</h2>
+        <div data-sec="asesores">${seccionAsesores()}</div>
+      </section>
+
+      <section class="ap-card">
+        <h2>Comparativo de plazas</h2>
+        <div data-sec="plazas">${seccionPlazas()}</div>
+      </section>
+
+      <p class="ap-pie">Generada ${esc(f.generada.toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' }))} con los datos de los dashboards. Aprovechamiento: tiendas con equipo completo. FOCO: los ${FOCO_CUANTOS} asesores con menor aprovechamiento.</p>
+    </div>`;
+
+    const pintar = sec => {
+      const caja = el.querySelector(`[data-sec="${sec}"]`);
+      if (caja) caja.innerHTML = sec === 'asesores' ? seccionAsesores() : seccionPlazas();
+    };
+    el.onclick = ev => {
+      const b = ev.target.closest('button');
+      if (!b || !el.contains(b)) return;
+      if (b.dataset.orden) { estado.orden = b.dataset.orden; pintar('asesores'); }
+      else if (b.dataset.indicador) { estado.indicador = b.dataset.indicador; pintar('plazas'); }
+      else if (b.dataset.todos) { estado.todos = !estado.todos; pintar('asesores'); }
+      else if (b.dataset.asesor) {
+        const n = b.dataset.asesor;
+        estado.abiertos.has(n) ? estado.abiertos.delete(n) : estado.abiertos.add(n);
+        pintar('asesores');
+      } else if (b.dataset.ir) {
+        // Desde "Requieren atencion": abre a ese asesor en la lista y baja hasta el.
+        estado.abiertos.add(b.dataset.ir);
+        estado.orden = 'aprov';
+        pintar('asesores');
+        const fila = [...el.querySelectorAll('.ap-as-cab')].find(x => x.dataset.asesor === b.dataset.ir);
+        if (fila) fila.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    };
+  }
+
   /* ---------- Imagen para compartir (2000 x 1130, como la ficha impresa) ---------- */
   function rr(g, x, y, w, h, r) {
     g.beginPath();
@@ -592,5 +760,5 @@
     setTimeout(() => URL.revokeObjectURL(url), 4000);
   }
 
-  global.OXXO_FICHA = { calcular, render, dibujar, imagen, compartir, descargar, nombreArchivo };
+  global.OXXO_FICHA = { calcular, render, renderApp, dibujar, imagen, compartir, descargar, nombreArchivo };
 })(window);
