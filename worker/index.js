@@ -7,6 +7,9 @@
    si no hay Access configurado o el token no es valido, /api no entrega
    nada (falla cerrado).
 
+   /api/accion (POST) reenvia al Apps Script, con la misma llave, solo las
+   acciones de lectura de ACCIONES (hoy la cuota sindical).
+
    /api/leer (POST, JSON { hoja, consulta?, formato?, headers? }) pide los
    datos al Apps Script (accion leerDatos, v66) con la llave de lectura del
    servidor (secreto LECTURA_KEY, igual a la de Script Properties). Asi la
@@ -34,7 +37,10 @@ export default {
     try {
       const usuario = await verificarAccess(request, env);
       if (!usuario) return json({ ok: false, error: 'acceso_requerido' }, 401);
-      if (url.pathname === '/api/leer' && request.method === 'POST') return await leer(request, env, ctx);
+      if (url.pathname === '/api/leer' && request.method === 'POST') return await leer(await request.json().catch(() => null), env, ctx);
+      // GET con los mismos campos en la URL: para probar desde el navegador.
+      if (url.pathname === '/api/leer' && request.method === 'GET') return await leer(Object.fromEntries(url.searchParams), env, ctx);
+      if (url.pathname === '/api/accion' && request.method === 'POST') return await accion(request, env);
       if (url.pathname === '/api/yo') return json({ ok: true, correo: usuario.email || '' });
       return json({ ok: false, error: 'ruta no encontrada' }, 404);
     } catch (err) {
@@ -95,9 +101,8 @@ async function verificarAccess(request, env) {
 }
 
 // ── /api/leer ─────────────────────────────────────────────
-async function leer(request, env, ctx) {
+async function leer(pedido, env, ctx) {
   if (!env.LECTURA_KEY) return json({ ok: false, error: 'LECTURA_KEY no configurada' }, 503);
-  const pedido = await request.json().catch(() => null);
   const hoja = String((pedido && pedido.hoja) || '').trim();
   if (!hoja) return json({ ok: false, error: 'hoja requerida' }, 400);
   const cuerpo = {
@@ -133,3 +138,21 @@ async function leer(request, env, ctx) {
   }
   return respuesta;
 }
+
+// ── /api/accion ───────────────────────────────────────────
+const ACCIONES = ['consultarCuotaSindical'];
+
+async function accion(request, env) {
+  if (!env.LECTURA_KEY) return json({ ok: false, error: 'LECTURA_KEY no configurada' }, 503);
+  const cuerpo = await request.json().catch(() => null);
+  if (!cuerpo || !ACCIONES.includes(cuerpo.action)) return json({ ok: false, error: 'accion no permitida' }, 400);
+  const r = await fetch(env.APPS_SCRIPT_URL, {
+    method: 'POST',
+    headers: { 'content-type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ action: cuerpo.action, lecturaKey: env.LECTURA_KEY }),
+  });
+  const datos = await r.json().catch(() => null);
+  if (!datos) return json({ ok: false, error: 'el Apps Script no respondio' }, 502);
+  return json(datos, datos.ok === false ? 502 : 200);
+}
+

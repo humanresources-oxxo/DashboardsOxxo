@@ -15,6 +15,90 @@ if (!window.OXXO_CONFIG) {
 }
 const SHEETS_CONFIG = window.OXXO_CONFIG;
 
+// ─────────────────────────────────────────────────
+// LECTURA PRIVADA DE DATOS
+// La hoja de Google va a dejar de ser publica. Sin tocar cada dashboard,
+// aqui se desvian las lecturas de datos (GViz y readSheet del Apps Script):
+// - En Cloudflare (*.workers.dev o DATA_API_HOSTS): a /api/leer del Worker,
+//   detras de Cloudflare Access (docs/CLOUDFLARE.md).
+// - En la Ficha dentro de la app Conoxxo (?embed=1): al Apps Script
+//   (leerDatos) con la llave de sesion de la app.
+// En cualquier otro lado (GitHub Pages, pruebas) no cambia nada.
+// ─────────────────────────────────────────────────
+const DATA_PROXY = (() => {
+  try {
+    const host = String(location.hostname || '');
+    const hosts = Array.isArray(SHEETS_CONFIG.DATA_API_HOSTS) ? SHEETS_CONFIG.DATA_API_HOSTS : [];
+    if (/\.workers\.dev$/i.test(host) || hosts.includes(host)) return { modo: 'api' };
+    if (/[?&]embed=1\b/.test(location.search)) {
+      const llave = JSON.parse(localStorage.getItem('oxxito:sessionKey') || 'null') || '';
+      if (/^[0-9a-f]{64}$/.test(llave)) return { modo: 'llave', llave };
+    }
+  } catch (_) { /* sin localStorage: lectura normal */ }
+  return null;
+})();
+
+// Acciones del Apps Script que solo leen y que el Worker reenvia con su llave.
+const DATA_PROXY_ACCIONES = ['consultarCuotaSindical'];
+
+if (DATA_PROXY && typeof window.fetch === 'function') {
+  const fetchOriginal = window.fetch.bind(window);
+  const gvizBase = `https://docs.google.com/spreadsheets/d/${SHEETS_CONFIG.SPREADSHEET_ID}/gviz/tq`;
+  const scriptBase = String(SHEETS_CONFIG.ADMIN_UPLOAD_URL || '').split('?')[0];
+
+  const pedirDatos = async (pedido, signal) => {
+    if (DATA_PROXY.modo === 'api') {
+      const r = await fetchOriginal('/api/leer', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(pedido), credentials: 'same-origin', signal });
+      const datos = await r.json().catch(() => null);
+      if (!r.ok || !datos || datos.ok === false) throw new Error((datos && datos.error) || `HTTP ${r.status}`);
+      return datos;
+    }
+    const r = await fetchOriginal(scriptBase, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'leerDatos', ...pedido, llave: DATA_PROXY.llave }), signal });
+    const datos = await r.json().catch(() => null);
+    if (!datos || datos.ok === false) throw new Error((datos && datos.error) || 'el Apps Script no respondio');
+    return datos;
+  };
+
+  window.fetch = async function fetchConLecturaPrivada(input, init = {}) {
+    const url = typeof input === 'string' ? input : (input && input.url) || '';
+    const metodo = String(init.method || (input && input.method) || 'GET').toUpperCase();
+    try {
+      if (metodo === 'GET' && url.startsWith(gvizBase)) {
+        const q = new URL(url).searchParams;
+        // range solo lo usa el ultimo respaldo del catalogo; leerDatos no lo
+        // aplica, asi que esa lectura sigue su camino normal.
+        if (!q.get('range')) {
+          const datos = await pedirDatos({ hoja: q.get('sheet') || '', consulta: q.get('tq') || '', headers: Number(q.get('headers')) || 2, formato: 'csv' }, init.signal);
+          return new Response(String(datos.csv || ''), { status: 200, headers: { 'content-type': 'text/csv; charset=utf-8' } });
+        }
+      }
+      if (metodo === 'GET' && scriptBase && url.startsWith(scriptBase)) {
+        const q = new URL(url).searchParams;
+        if (q.get('action') === 'readSheet') {
+          const datos = await pedirDatos({ hoja: q.get('sheet') || '', formato: 'valores' }, init.signal);
+          return new Response(JSON.stringify({ ok: true, values: datos.values || [] }), { status: 200, headers: { 'content-type': 'application/json' } });
+        }
+      }
+      if (metodo === 'POST' && scriptBase && url.startsWith(scriptBase) && typeof init.body === 'string') {
+        let cuerpo = null;
+        try { cuerpo = JSON.parse(init.body); } catch (_) { cuerpo = null; }
+        if (cuerpo && DATA_PROXY_ACCIONES.includes(cuerpo.action)) {
+          if (DATA_PROXY.modo === 'api') {
+            return fetchOriginal('/api/accion', { method: 'POST', headers: { 'content-type': 'application/json' }, body: init.body, credentials: 'same-origin', signal: init.signal });
+          }
+          return fetchOriginal(input, { ...init, body: JSON.stringify({ ...cuerpo, llave: DATA_PROXY.llave }) });
+        }
+      }
+    } catch (error) {
+      if (error && error.name === 'AbortError') throw error;
+      // Mientras la hoja siga publica (o el Apps Script no tenga aun la hoja
+      // permitida) la lectura directa de siempre sigue funcionando.
+      console.warn('[OXXO] lectura privada fallo, se intenta la directa:', error && error.message || error);
+    }
+    return fetchOriginal(input, init);
+  };
+}
+
 // Contexto geografico/operativo normalizado para Región TABASCO.
 function getDataContext() {
   const source = SHEETS_CONFIG.DATA_CONTEXT || {};
