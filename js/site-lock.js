@@ -36,6 +36,19 @@
   // Pages, que no tiene ese candado, se sigue pidiendo.
   const PROTEGIDO_POR_ACCESS = /\.workers\.dev$/i.test(String(location.hostname || ''));
 
+  // El sitio se mudo a Cloudflare. En GitHub Pages ya no se entra: cada pagina
+  // muestra el aviso y manda a la misma pagina en la direccion nueva. Lo que
+  // sigue sirviendo GitHub Pages para la app Conoxxo (la Ficha con ?embed=1,
+  // que no carga este archivo, y el CSV del catalogo) no pasa por aqui.
+  const SITIO_NUEVO = 'https://dashboardsoxxo.plaza-oaxaca.workers.dev';
+  const EN_GITHUB_PAGES = /\.github\.io$/i.test(String(location.hostname || ''));
+
+  function direccionNueva() {
+    // /DashboardsOxxo/dashboards/dashboard-1.html -> /dashboards/dashboard-1.html
+    const ruta = String(location.pathname || '/').replace(/^\/DashboardsOxxo(?=\/|$)/i, '') || '/';
+    return SITIO_NUEVO + ruta + String(location.search || '') + String(location.hash || '');
+  }
+
   // SHA-256 de la contrasena compartida (no se guarda en texto plano
   // aqui). Cambiar la contrasena = recalcular este hash y reemplazarlo;
   // no hace falta tocar ninguna otra pagina, todas cargan este mismo
@@ -59,8 +72,10 @@
     try { return localStorage.getItem(FLAG_KEY) === '1'; } catch (_) { return false; }
   }
 
-  function buildOverlay() {
+  function ponerEstilos() {
+    if (document.getElementById('oxxo-lock-styles')) return;
     const style = document.createElement('style');
+    style.id = 'oxxo-lock-styles';
     style.textContent = `
       #oxxo-lock-overlay{position:fixed;inset:0;z-index:99999;display:grid;place-items:center;padding:24px;background:linear-gradient(135deg,#2D0B0C,#4A1416);}
       #oxxo-lock-overlay .oxxo-lock__card{width:min(420px,100%);border:1px solid rgba(255,255,255,.14);border-radius:24px;background:rgba(255,255,255,.97);box-shadow:0 28px 80px rgba(0,0,0,.4);padding:28px}
@@ -80,7 +95,46 @@
       #oxxo-lock-overlay .oxxo-lock__button:active{transform:translateY(1px)}
     `;
     document.head.appendChild(style);
+  }
 
+  function mostrarMudanza() {
+    ponerEstilos();
+    const destino = direccionNueva();
+    const overlay = document.createElement('div');
+    overlay.id = 'oxxo-lock-overlay';
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-modal', 'true');
+    overlay.setAttribute('aria-labelledby', 'oxxo-lock-title');
+    overlay.innerHTML = `
+      <div class="oxxo-lock__card">
+        <div class="oxxo-lock__brand">
+          <div class="oxxo-lock__logo"><img src="${assetPath('assets/oxxo-logo-original.png')}" alt="OXXO"></div>
+          <div>
+            <div class="oxxo-lock__eyebrow">Nueva dirección</div>
+            <h1 class="oxxo-lock__title" id="oxxo-lock-title">El sitio se mudó</h1>
+          </div>
+        </div>
+        <p class="oxxo-lock__text">Los dashboards ahora están en una dirección más segura. Entra con tu correo de OXXO y el código que te llega. Guárdala en favoritos:</p>
+        <p class="oxxo-lock__text" style="word-break:break-all;color:#211312">${SITIO_NUEVO.replace('https://', '')}</p>
+        <a class="oxxo-lock__button" id="oxxo-mudanza-ir" href="${destino}" style="display:block;text-align:center;text-decoration:none">Ir al sitio nuevo</a>
+        <p class="oxxo-lock__error" id="oxxo-mudanza-cuenta" aria-live="polite" style="margin:10px 0 0;color:#7a4a42;font-weight:700"></p>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    let segundos = 5;
+    const cuenta = document.getElementById('oxxo-mudanza-cuenta');
+    const tic = () => {
+      if (segundos <= 0) { location.replace(destino); return; }
+      cuenta.textContent = `Te llevamos en ${segundos} s…`;
+      segundos -= 1;
+      setTimeout(tic, 1000);
+    };
+    tic();
+    setTimeout(() => document.getElementById('oxxo-mudanza-ir').focus(), 80);
+  }
+
+  function buildOverlay() {
+    ponerEstilos();
     const overlay = document.createElement('div');
     overlay.id = 'oxxo-lock-overlay';
     overlay.setAttribute('role', 'dialog');
@@ -149,6 +203,10 @@
   }
 
   function init() {
+    if (EN_GITHUB_PAGES) {
+      mostrarMudanza();
+      return;
+    }
     if (!LOCK_ENABLED || PROTEGIDO_POR_ACCESS || isUnlocked()) {
       document.documentElement.classList.remove('oxxo-locked');
       return;
