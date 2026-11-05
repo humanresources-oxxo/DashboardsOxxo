@@ -24,6 +24,9 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <title>Ficha de Plaza · Dashboards Ats</title>
   <link rel="icon" type="image/png" href="../assets/favicon.png" />
+  <!-- Tipografia de la app Conoxxo, para la vista embebida (pestaña Resumen). -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet" />
   <style>
     :root { --rojo: #e30613; --oro: #c9a227; --amarillo: #f6c400; --verde: #1f7a4a; --tinta: #241a17; --tinta2: #6e605b; --linea: #e7e1db; --card: #f4f0ec; }
     * { box-sizing: border-box; }
@@ -134,7 +137,99 @@
       .fp-sub { font-size: 12px; }
       .fp-listón { display: none; }
     }
-    html.fp-embed .fp-barra-acciones { padding: 8px 12px; }
+
+    /* ===== Vista para la app Conoxxo (?embed=1): mismo lenguaje visual que la app ===== */
+    html.fp-embed body { background: #FBF6F2; font-family: 'Plus Jakarta Sans', Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
+    html.fp-embed .fp-barra-acciones { display: none; }
+    html.fp-embed #ficha { max-width: 720px; padding: 4px 14px 104px; }
+    .ap { --ap-rojo: #E30613; --ap-oro: #F6B800; --ap-oro-t: #8a6100; --ap-verde: #2E9E6B; --ap-tinta: #241A17; --ap-tinta2: #6E605B; --ap-tinta3: #A2948D; --ap-linea: #EFE5DE; --ap-campo: #F5EEE8; display: flex; flex-direction: column; gap: 12px; }
+    .ap .verde { color: var(--ap-verde); } .ap .rojo { color: var(--ap-rojo); } .ap .oro { color: var(--ap-oro-t); }
+    .ap-hero { border-radius: 24px; padding: 16px 18px 18px; color: #fff; background: linear-gradient(135deg, #C8000F, #E30613 55%, #F2412A); box-shadow: 0 14px 28px rgba(227,6,19,.24); }
+    .ap-hero-top { display: flex; justify-content: space-between; font-size: 12px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; opacity: .88; }
+    .ap-hero-main { display: flex; align-items: center; gap: 16px; margin-top: 10px; }
+    .ap-hero-anillo { flex: none; }
+    .ap-hero-anillo text { fill: #fff; font-weight: 800; font-size: 22px; }
+    .ap-hero-kicker { margin: 0; font-size: 12.5px; font-weight: 700; opacity: .9; }
+    .ap-hero-txt { margin: 4px 0 8px; font-size: 15px; line-height: 1.35; font-weight: 600; }
+    .ap-hero-txt b { font-size: 22px; font-weight: 800; }
+    .ap-hero-chips { margin: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+    .ap-hero-chips span { background: rgba(255,255,255,.2); border-radius: 999px; padding: 4px 10px; font-size: 11.5px; font-weight: 700; }
+    .ap-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .ap-tile { background: #fff; border: 1px solid var(--ap-linea); border-radius: 20px; padding: 13px 14px; box-shadow: 0 8px 18px rgba(70,40,30,.06); min-width: 0; }
+    .ap-tile-ancho { grid-column: 1 / -1; }
+    .ap-tile small, .ap-det-grid small { display: block; font-size: 11px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: var(--ap-tinta2); }
+    .ap-tile b { display: block; font-size: 30px; font-weight: 800; line-height: 1.15; margin-top: 4px; color: var(--ap-tinta); }
+    .ap-tile b.rojo { color: var(--ap-rojo); }
+    .ap-tile b em { font-style: normal; font-size: 13px; font-weight: 700; color: var(--ap-tinta2); }
+    .ap-tile p { margin: 8px 0 0; font-size: 12px; font-weight: 600; color: var(--ap-tinta2); line-height: 1.4; }
+    .ap-tile p i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin: 0 4px 0 6px; vertical-align: 0; }
+    .ap-tile p i:first-child { margin-left: 0; }
+    .ap-tienda { font-weight: 700 !important; color: var(--ap-tinta) !important; }
+    .ap-stack { display: flex; height: 8px; border-radius: 6px; overflow: hidden; background: var(--ap-campo); margin-top: 8px; }
+    .ap-stack .l, .ap-tile i.l { background: var(--ap-rojo); } .ap-stack .e, .ap-tile i.e { background: #F28C18; } .ap-stack .y, .ap-tile i.y { background: var(--ap-oro); }
+    .ap-tile-fila { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+    .ap-desfase { font-size: 13px; font-weight: 800; border-radius: 999px; padding: 6px 10px; background: #E6F4EC; }
+    .ap-desfase.rojo { background: #FFE6E3; }
+    .ap-prog { height: 8px; border-radius: 6px; background: var(--ap-campo); margin-top: 10px; overflow: hidden; }
+    .ap-prog span { display: block; height: 100%; background: var(--ap-rojo); border-radius: 6px; }
+    .ap-card { background: #fff; border: 1px solid var(--ap-linea); border-radius: 22px; padding: 16px; box-shadow: 0 8px 18px rgba(70,40,30,.06); }
+    .ap-card h2 { margin: 0; font-size: 17px; font-weight: 800; }
+    .ap-sub { margin: 3px 0 10px; font-size: 12.5px; color: var(--ap-tinta2); font-weight: 600; }
+    .ap-atencion { border-color: #F7C7C0; background: linear-gradient(180deg, #FFF6F4, #fff 60%); }
+    .ap-foco-lista { display: flex; flex-direction: column; gap: 8px; }
+    .ap-foco-item, .ap-as-cab { all: unset; box-sizing: border-box; cursor: pointer; display: flex; align-items: center; gap: 12px; width: 100%; }
+    .ap-foco-item { background: #fff; border: 1px solid #F7D6D0; border-radius: 16px; padding: 10px 12px; }
+    .ap-foco-txt, .ap-as-txt { flex: 1; min-width: 0; }
+    .ap-foco-txt b, .ap-as-txt b { display: block; font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ap-foco-txt small, .ap-as-txt small { display: block; font-size: 12px; color: var(--ap-tinta2); font-weight: 600; margin-top: 2px; }
+    .ap-ini { flex: none; width: 38px; height: 38px; border-radius: 13px; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; background: var(--ap-campo); color: var(--ap-tinta2); }
+    .ap-ini.verde { background: #E6F4EC; color: var(--ap-verde); } .ap-ini.oro { background: #FFF3C8; color: var(--ap-oro-t); } .ap-ini.rojo { background: #FFE6E3; color: var(--ap-rojo); }
+    .ap-pct { flex: none; font-size: 13px; font-weight: 800; border-radius: 999px; padding: 5px 9px; background: var(--ap-campo); }
+    .ap-pct.verde { background: #E6F4EC; } .ap-pct.oro { background: #FFF3C8; } .ap-pct.rojo { background: #FFE6E3; }
+    .ap-foco { font-style: normal; display: inline-block; margin-right: 6px; font-size: 9.5px; font-weight: 800; color: #fff; background: var(--ap-rojo); border-radius: 5px; padding: 2px 5px; vertical-align: 2px; }
+    .ap-seg { display: flex; gap: 4px; background: var(--ap-campo); border-radius: 14px; padding: 4px; margin: 12px 0 6px; }
+    .ap-seg button { all: unset; box-sizing: border-box; cursor: pointer; flex: 1; text-align: center; font-size: 12.5px; font-weight: 700; color: var(--ap-tinta2); padding: 8px 4px; border-radius: 10px; }
+    .ap-seg button[aria-selected="true"] { background: #fff; color: var(--ap-tinta); box-shadow: 0 2px 8px rgba(70,40,30,.10); }
+    .ap-lista { list-style: none; margin: 0; padding: 0; }
+    .ap-as { border-bottom: 1px solid var(--ap-linea); }
+    .ap-as:last-child { border-bottom: 0; }
+    .ap-as-cab { padding: 11px 0; }
+    .ap-chev { flex: none; color: var(--ap-tinta3); transition: transform .2s; }
+    .ap-as.abierto .ap-chev { transform: rotate(90deg); }
+    .ap-as-det { padding: 2px 0 14px 50px; }
+    .ap-barra { position: relative; height: 8px; border-radius: 6px; background: var(--ap-campo); }
+    .ap-barra span { position: absolute; inset: 0 auto 0 0; border-radius: 6px; background: var(--ap-tinta3); }
+    .ap-barra span.verde { background: var(--ap-verde); } .ap-barra span.oro { background: var(--ap-oro); } .ap-barra span.rojo { background: var(--ap-rojo); }
+    .ap-barra em { position: absolute; left: 92.5%; top: -4px; width: 2px; height: 16px; background: var(--ap-tinta); border-radius: 1px; }
+    .ap-det-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px 8px; margin-top: 12px; }
+    .ap-det-grid b { display: block; font-size: 16px; font-weight: 800; margin-top: 2px; }
+    .ap-rangos { display: flex !important; gap: 4px; }
+    .ap-rangos i, .ap-leyenda i { font-style: normal; display: inline-flex; align-items: center; justify-content: center; min-width: 22px; height: 22px; border-radius: 7px; font-size: 12px; }
+    .ap-rangos i.v, .ap-leyenda i.v { background: #DFF2E6; color: var(--ap-verde); } .ap-rangos i.a, .ap-leyenda i.a { background: #FFF3C8; color: var(--ap-oro-t); } .ap-rangos i.r, .ap-leyenda i.r { background: #FFE6E3; color: var(--ap-rojo); }
+    .ap-leyenda { margin: 10px 0 0; font-size: 11px; color: var(--ap-tinta3); font-weight: 600; }
+    .ap-leyenda i { min-width: 10px; width: 10px; height: 10px; border-radius: 3px; margin: 0 3px 0 8px; vertical-align: -1px; }
+    .ap-leyenda i:first-child { margin-left: 0; }
+    .ap-mas { all: unset; box-sizing: border-box; cursor: pointer; display: block; width: 100%; text-align: center; margin-top: 8px; padding: 11px; border-radius: 14px; background: var(--ap-campo); font-size: 13px; font-weight: 800; color: var(--ap-rojo); }
+    .ap-plazas { list-style: none; margin: 4px 0 0; padding: 0; }
+    .ap-plazas li { display: grid; grid-template-columns: 26px 96px 1fr 62px; align-items: center; gap: 8px; padding: 9px 6px; border-radius: 12px; }
+    .ap-plazas li.propia { background: #FFF1EE; }
+    .ap-plazas li b { text-align: right; font-size: 14px; font-weight: 800; }
+    .ap-plazas li.propia b, .ap-plazas li.propia .ap-pl-nom { color: var(--ap-rojo); }
+    .ap-rank { width: 24px; height: 24px; border-radius: 50%; background: var(--ap-campo); display: inline-flex; align-items: center; justify-content: center; font-size: 11.5px; font-weight: 800; color: var(--ap-tinta2); }
+    .ap-plazas li.propia .ap-rank { background: var(--ap-rojo); color: #fff; }
+    .ap-pl-nom { font-size: 13.5px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ap-pl-barra { height: 8px; border-radius: 6px; background: var(--ap-campo); overflow: hidden; }
+    .ap-pl-barra span { display: block; height: 100%; border-radius: 6px; background: #CFC4BB; }
+    .ap-plazas li.propia .ap-pl-barra span { background: var(--ap-rojo); }
+    .ap-nota-chica { margin: 8px 6px 0; font-size: 11.5px; color: var(--ap-tinta3); font-weight: 600; }
+    .ap-pie { margin: 2px 6px 0; font-size: 11.5px; line-height: 1.5; color: var(--ap-tinta3); font-weight: 600; }
+    .ap-fab { position: fixed; left: 50%; bottom: calc(16px + env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 10; display: none; align-items: center; gap: 8px; border: 0; border-radius: 999px; padding: 14px 22px; background: var(--rojo); color: #fff; font: 800 14.5px 'Plus Jakarta Sans', Arial, sans-serif; box-shadow: 0 12px 26px rgba(227,6,19,.35); cursor: pointer; }
+    html.fp-embed .ap-fab.listo { display: inline-flex; }
+    .ap-fab:disabled { opacity: .6; }
+    .ap-esq { display: flex; flex-direction: column; gap: 12px; }
+    .ap-esq div { border-radius: 22px; background: linear-gradient(90deg, #F1E8E1 25%, #F8F2ED 50%, #F1E8E1 75%); background-size: 200% 100%; animation: ap-brillo 1.2s infinite linear; }
+    @keyframes ap-brillo { from { background-position: 200% 0; } to { background-position: 0 0; } }
+    html.fp-embed .fp-estado { background: #fff; border: 1px solid #EFE5DE; border-radius: 22px; margin-top: 12px; padding: 40px 22px; font-family: 'Plus Jakarta Sans', Arial, sans-serif; }
   </style>
 </head>
 <body>
@@ -144,11 +239,15 @@
     <button type="button" class="fp-btn" id="fp-compartir" disabled>Compartir imagen</button>
   </div>
   <main id="ficha"><div class="fp-estado"><b>Armando la ficha…</b>Leyendo vacantes, bajas y aprovechamiento.</div></main>
+  <button type="button" class="ap-fab" id="ap-compartir" aria-label="Compartir la ficha como imagen">
+    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 3v12M7 8l5-5 5 5M5 14v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    Compartir ficha
+  </button>
 
-  <script src="../js/config.js?v=d10b2d9c"></script>
-  <script src="../js/core.js?v=d10b2d9c"></script>
-  <script src="../js/admin-pptx-rae.js?v=d10b2d9c"></script>
-  <script src="../js/ficha-plaza.js?v=d10b2d9c"></script>
+  <script src="../js/config.js?v=06e0fff4"></script>
+  <script src="../js/core.js?v=06e0fff4"></script>
+  <script src="../js/admin-pptx-rae.js?v=06e0fff4"></script>
+  <script src="../js/ficha-plaza.js?v=06e0fff4"></script>
   <script>
     (function () {
       var EMBED = document.documentElement.classList.contains('fp-embed');
@@ -176,6 +275,8 @@
       }
 
       async function iniciar() {
+        // En la app: esqueleto con la forma de la vista mientras se calcula.
+        if (EMBED) $('ficha').innerHTML = '<div class="ap-esq" aria-label="Cargando la ficha"><div style="height:164px"></div><div style="height:118px"></div><div style="height:104px"></div><div style="height:230px"></div><div style="height:420px"></div></div>';
         if (EMBED) {
           var s = await sesionConoxxo().catch(function () { return 'error'; });
           if (s === 'sin') return estado('Confirma tu sesión', 'Cierra esta pestaña de la app y vuelve a abrirla; si sigue, confirma tu PIN en Contratos colectivos.');
@@ -187,12 +288,20 @@
         } catch (e) {
           return estado('No se pudo armar la ficha', String(e && e.message || e));
         }
-        window.OXXO_FICHA.render($('ficha'), ficha);
+        if (EMBED) {
+          window.OXXO_FICHA.renderApp($('ficha'), ficha);
+          $('ap-compartir').classList.add('listo');
+        } else window.OXXO_FICHA.render($('ficha'), ficha);
         $('fp-actualizada').textContent = 'Generada ' + ficha.generada.toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' });
         $('fp-descargar').disabled = false;
         $('fp-compartir').disabled = false;
       }
 
+      $('ap-compartir').addEventListener('click', async function () {
+        if (!ficha) return;
+        this.disabled = true;
+        try { await window.OXXO_FICHA.compartir(ficha); } finally { this.disabled = false; }
+      });
       $('fp-descargar').addEventListener('click', function () { if (ficha) window.OXXO_FICHA.descargar(ficha); });
       $('fp-compartir').addEventListener('click', async function () {
         if (!ficha) return;
