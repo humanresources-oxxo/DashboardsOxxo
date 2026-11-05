@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 
 const raiz = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const destino = path.join(raiz, 'dist');
-const SITIO = ['index.html', 'admin.html', 'robots.txt', 'assets', 'css', 'js', 'dashboards'];
+const SITIO = ['index.html', 'admin.html', 'conoxxo.html', 'robots.txt', 'assets', 'css', 'js', 'dashboards'];
 
 fs.rmSync(destino, { recursive: true, force: true });
 fs.mkdirSync(destino);

@@ -40,3 +40,7 @@ Persona -> Cloudflare Access -> sitio (dist/) y /api (worker/index.js)
 3. **Todavia no** apagar GitHub Pages: la pestaña **Resumen** de la app Conoxxo abre la Ficha desde `humanresources-oxxo.github.io/DashboardsOxxo` (mismo dominio que la app, por eso lee su llave de sesion), y la app usa el CSV del catalogo de tiendas de ahi como respaldo de las actas. Antes de apagarlo hay que mover esas dos cosas. La Ficha ya no depende de que la hoja sea publica: con `?embed=1` lee por `leerDatos` con la llave de la app.
 
 Desde v68 un empleado sin permisos solo lee `Configuracion`, `Catalogo_Asesores` y **su propio renglon** de `Dashboard_5_Semanal` (el script ignora la consulta del cliente y filtra por la columna del numero de empleado). Los puestos con permisos leen ademas Estructura, Mi equipo y lo que usa la Ficha. Para revisar que la lectura como dueño funciona antes del cierre: en el editor del Apps Script, correr `probarLectura` (no muestra datos personales, solo conteos).
+
+## Panel Conoxxo
+
+`conoxxo.html` (el panel de la app Conoxxo: empleados, PINs, altas, avisos, directorio) se publica aqui, junto a `admin.html` y detras de Access. La direccion vieja de la app (`conoxxo.plaza-oaxaca.workers.dev/admin/`) redirige a esta pagina. Quien lo use necesita su correo en la lista de Access **y** su numero y PIN de Conoxxo.

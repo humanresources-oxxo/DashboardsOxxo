@@ -87,7 +87,7 @@ test('no quedan filas de tabla accionables solo con el raton', () => {
 
 test('todo <button> de los tableros y del panel declara type', () => {
   const sinTipo = [];
-  for (const archivo of [...dashboards, 'index.html', 'admin.html']) {
+  for (const archivo of [...dashboards, 'index.html', 'admin.html', 'conoxxo.html']) {
     for (const m of leer(archivo).matchAll(/<button\b[^>]*>/g)) {
       if (!/\btype=/.test(m[0])) sinTipo.push(`${archivo}: ${m[0].slice(0, 70)}`);
     }

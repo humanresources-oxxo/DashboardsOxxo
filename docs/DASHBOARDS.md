@@ -24,6 +24,16 @@ Archivos: `admin.html`, `css/admin-layout.css`, `js/admin.js`, `js/admin/*.js`, 
 - Areas: Recursos Humanos, Comercial y Administrativo, con las bases de cada una.
 - Cargar Excel, validar columnas, detectar plaza(s), periodo y filas, y publicar con `replaceAll`, `replaceScope` o `replacePeriod`.
 - Herramientas: calidad de datos, bitacora y restauracion de respaldos, avisos del sistema, directorio de contactos, reasignaciones, mapa del sistema, PPTX/XLSX.
+- Boton **Panel Conoxxo** (arriba, junto a Inicio) abre `conoxxo.html`.
+
+## Panel Conoxxo
+
+Archivo: `conoxxo.html` (una sola pagina, sin dependencias del sitio).
+
+- Panel de la app Conoxxo: empleados y PINs temporales, altas por aprobar, fechas de nacimiento, avisos y directorio. Antes se publicaba con la app en `/admin/`; esa direccion ahora redirige aqui.
+- Vive junto al Panel admin, detras de Cloudflare Access, y ademas pide numero de empleado y PIN de Conoxxo: lo que ve cada quien lo decide Supabase por su puesto (RH y Gerente de plaza: avisos y directorio; RH y accesos especiales: empleados, PINs y altas).
+- Solo habla con el Supabase de Conoxxo; no lee ni escribe nada de los dashboards. Todo lo que viene de la base se pinta como texto.
+- En GitHub Pages manda a la direccion de Cloudflare. Boton **Panel de dashboards →** para volver a `admin.html`.
 - XLSX se precalienta al desbloquear; JSZip y PptxGenJS se cargan solo al exportar.
 
 ## Dashboard 1 - Vacantes diarias
