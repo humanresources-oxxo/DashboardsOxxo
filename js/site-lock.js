@@ -30,6 +30,12 @@
   // que ya conocia el equipo antes de haberse apagado el 12.08.2026.
   const LOCK_ENABLED = true;
 
+  // En Cloudflare (*.workers.dev, docs/CLOUDFLARE.md) el sitio ya esta detras
+  // de Cloudflare Access: solo entra quien recibe el codigo en un correo de la
+  // lista autorizada, asi que esta contraseña compartida sobra. En GitHub
+  // Pages, que no tiene ese candado, se sigue pidiendo.
+  const PROTEGIDO_POR_ACCESS = /\.workers\.dev$/i.test(String(location.hostname || ''));
+
   // SHA-256 de la contrasena compartida (no se guarda en texto plano
   // aqui). Cambiar la contrasena = recalcular este hash y reemplazarlo;
   // no hace falta tocar ninguna otra pagina, todas cargan este mismo
@@ -143,7 +149,7 @@
   }
 
   function init() {
-    if (!LOCK_ENABLED || isUnlocked()) {
+    if (!LOCK_ENABLED || PROTEGIDO_POR_ACCESS || isUnlocked()) {
       document.documentElement.classList.remove('oxxo-locked');
       return;
     }
