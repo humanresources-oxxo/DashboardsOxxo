@@ -53,3 +53,31 @@ test('render escapa nombres y muestra FOCO, sin asesor y totales', () => {
   assert.match(el.innerHTML, /266 tiendas/);
   assert.equal(F.nombreArchivo(ficha), 'Ficha Plaza Oaxaca 2026-11-04.png');
 });
+
+test('vista de la app: escapa nombres, prioriza FOCO y ordena asesores', () => {
+  const ctx = { window: {}, Math, Number, String, Array, Object, Date, Map, Set, Intl };
+  vm.createContext(ctx);
+  vm.runInContext(js, ctx);
+  const F = ctx.window.OXXO_FICHA;
+  const a = (nombre, aprov, extra = {}) => ({ nombre, aprov, vacantes: 1, diasProm: 2, d3: 1, d6: 0, dMas6: 0, bajas: 0, comp: 8, desfase: -8, foco: false, ...extra });
+  const ficha = {
+    plaza: 'Oaxaca', corte: '04 nov 2026', generada: new Date(2026, 10, 4),
+    vacantes: { total: 5, lider: 1, encargado: 1, ayudante: 3, masAntigua: { dias: 13, tienda: 'OXXO Avila Camacho' }, diasProm: 2 },
+    bajas: { mes: 'Noviembre 2026', total: 2, comp: 16, desfase: -14, sinAsesor: 1 },
+    aprov: { pct: 92.48, completas: 246, incompletas: 19, criticas: 1, tiendas: 266 },
+    asesores: [a('<b>Uno</b>', 87.5, { foco: true }), a('Dos Mucho', 100, { vacantes: 4, bajas: 1, desfase: -7 })],
+    totales: { d3: 2, d6: 0, dMas6: 0 },
+    plazas: [{ nombre: 'Tuxtla', bajas: 3, vacantes: 21, aprov: 96.57 }, { nombre: 'Oaxaca', propia: true, bajas: 2, vacantes: 5, aprov: 92.48 }],
+    bajasRegion: 5,
+  };
+  let handler = null;
+  const el = { innerHTML: '', querySelector: () => ({ set innerHTML(v) { el.parcial = v; } }), querySelectorAll: () => [], contains: () => true, set onclick(f) { handler = f; } };
+  F.renderApp(el, ficha);
+  assert.doesNotMatch(el.innerHTML, /<b>Uno<\/b>/);
+  assert.match(el.innerHTML, /&lt;b&gt;Uno&lt;\/b&gt;/);
+  assert.match(el.innerHTML, /Requieren atención/);
+  assert.match(el.innerHTML, /2\.º de 2 plazas/);
+  assert.ok(el.innerHTML.indexOf('&lt;b&gt;Uno') < el.innerHTML.indexOf('Dos Mucho'), 'por aprovechamiento, el menor primero');
+  handler({ target: { closest: () => ({ dataset: { orden: 'vacantes' } }) } });
+  assert.ok(el.parcial.indexOf('Dos Mucho') < el.parcial.indexOf('&lt;b&gt;Uno'), 'por vacantes, el de mas vacantes primero');
+});
