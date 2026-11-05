@@ -16,7 +16,9 @@
 
    Variables: APPS_SCRIPT_URL, CACHE_SEGUNDOS (wrangler.jsonc).
    Secretos (panel de Cloudflare): LECTURA_KEY, ACCESS_TEAM (ej. "oxxo-rh"
-   de oxxo-rh.cloudflareaccess.com) y ACCESS_AUD (Application Audience tag).
+   de oxxo-rh.cloudflareaccess.com) y, si el panel lo muestra, ACCESS_AUD
+   (Application Audience tag). Sin ACCESS_AUD se acepta un token firmado por
+   el equipo y emitido por el, que es lo unico que este equipo protege.
    ========================================================== */
 
 const json = (cuerpo, status = 200, extra = {}) =>
@@ -75,7 +77,7 @@ function tokenDe(request) {
 async function verificarAccess(request, env) {
   const equipo = String(env.ACCESS_TEAM || '').trim();
   const aud = String(env.ACCESS_AUD || '').trim();
-  if (!equipo || !aud) return null;
+  if (!equipo) return null;
   const token = tokenDe(request);
   const partes = token.split('.');
   if (partes.length !== 3) return null;
@@ -86,9 +88,9 @@ async function verificarAccess(request, env) {
   const valida = await crypto.subtle.verify('RSASSA-PKCS1-v1_5', llave, b64url(partes[2]), new TextEncoder().encode(`${partes[0]}.${partes[1]}`));
   if (!valida) return null;
   const audiencias = Array.isArray(datos.aud) ? datos.aud : [datos.aud];
-  if (!audiencias.includes(aud)) return null;
+  if (aud && !audiencias.includes(aud)) return null;
   if (!datos.exp || datos.exp * 1000 < Date.now()) return null;
-  if (datos.iss && datos.iss !== `https://${equipo}.cloudflareaccess.com`) return null;
+  if (datos.iss !== `https://${equipo}.cloudflareaccess.com`) return null;
   return datos;
 }
 

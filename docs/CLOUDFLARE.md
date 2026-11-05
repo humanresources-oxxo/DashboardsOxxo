@@ -17,7 +17,7 @@ Persona -> Cloudflare Access -> sitio (dist/) y /api (worker/index.js)
 |---|---|
 | `wrangler.jsonc` | Configuracion del Worker: `dist/` como sitio, `/api/*` pasa por el Worker. |
 | `scripts/build-cloudflare.mjs` | Arma `dist/` solo con el sitio (index, admin, robots, assets, css, js, dashboards). Pruebas, scripts, docs y el Apps Script nunca se publican. |
-| `worker/index.js` | `/api/leer` (POST `{ hoja, consulta?, formato?, headers? }`) y `/api/yo`. Valida el token de Access en cada peticion y falla cerrado si Access no esta configurado. Guarda las respuestas `CACHE_SEGUNDOS` (120) en la cache de Cloudflare. |
+| `worker/index.js` | `/api/leer` (POST `{ hoja, consulta?, formato?, headers? }`) y `/api/yo`. Valida el token de Access en cada peticion (firma del equipo, emisor, vigencia y, si esta configurado, la audiencia) y falla cerrado si `ACCESS_TEAM` no esta configurado. Guarda las respuestas `CACHE_SEGUNDOS` (120) en la cache de Cloudflare. |
 
 ## Configuracion en el panel de Cloudflare
 
@@ -26,7 +26,7 @@ Persona -> Cloudflare Access -> sitio (dist/) y /api (worker/index.js)
 - **Secretos** (Settings -> Variables and Secrets, tipo *Secret*):
   - `LECTURA_KEY`: la misma cadena que `LECTURA_KEY` en Script Properties del Apps Script (32+ caracteres al azar).
   - `ACCESS_TEAM`: el nombre del equipo de Zero Trust (`<equipo>.cloudflareaccess.com`).
-  - `ACCESS_AUD`: el *Application Audience (AUD) tag* de la aplicacion de Access.
+  - `ACCESS_AUD` (opcional): el *Application Audience (AUD) tag* de la aplicacion de Access. Sin el, el Worker acepta cualquier token valido firmado y emitido por el equipo.
 - **Access:** una aplicacion que cubre todo el dominio del Worker, con una politica *Allow* para la lista de correos autorizados.
 
 ## Cierre de la hoja (cuando todo lea por /api y leerDatos)
