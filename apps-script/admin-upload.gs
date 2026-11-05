@@ -12,7 +12,7 @@
  * Despues de eso, admin.html publica directo sin pedir URL.
  */
 const SPREADSHEET_ID = '1EbUuyy-PRXiDwPmn9L14P93cGN6VXTyLfAHx-CE8M_A';
-const APP_VERSION = '65';
+const APP_VERSION = '66';
 const ADMIN_PASSWORD_PROPERTY = 'ADMIN_PASSWORD';
 const AUDIT_SHEET = '_Admin_Bitacora';
 const BACKUP_PREFIX = '_BK_';
@@ -174,6 +174,7 @@ function doGet(e) {
     }
   }
   if (action === 'readSheet') {
+    if (lecturaPrivada_()) return jsonResponse({ ok: false, error: 'lectura_privada: usa leerDatos con sesion' });
     const sheetName = String((e && e.parameter && e.parameter.sheet) || '').trim();
     if (!sheetName) return jsonResponse({ ok: false, error: 'sheet requerido' });
     if (ALLOWED_SHEETS.indexOf(sheetName) === -1) return jsonResponse({ ok: false, error: 'sheet no permitido: ' + sheetName });
@@ -360,7 +361,16 @@ function doPost(e) {
       return jsonResponse(publicarCuotaSindical_(payload));
     }
     if (String(payload.action || '') === 'consultarCuotaSindical') {
+      exigirLectura_(payload, 'cuota');
       return jsonResponse(consultarCuotaSindical_());
+    }
+
+    // Lectura de datos con sesion (v66): la app Conoxxo manda su llave y el
+    // sitio, desde Cloudflare, la llave de lectura del servidor. Lee la hoja
+    // como el dueño del script, asi que sigue funcionando cuando la hoja deje
+    // de ser publica. Ver "Lectura privada" al final del archivo.
+    if (String(payload.action || '') === 'leerDatos') {
+      return jsonResponse(leerDatos_(payload));
     }
     if (String(payload.action || '') === 'infoCuotaSindical') {
       return jsonResponse(infoCuotaSindical_(payload));
@@ -3049,3 +3059,68 @@ function consultarCuotaSindical_() {
     carga: carga ? { fecha: String(carga[0]), archivo: String(carga[1]), filas: carga[2], meses: carga[3], desde: String(carga[4]), hasta: String(carga[5]), total: carga[6] } : null,
   };
 }
+
+/* ---------- Lectura privada (v66) ----------
+   Hoy la hoja es publica y readSheet/consultarCuotaSindical responden a
+   cualquiera. Para cerrarla sin tumbar nada:
+   1. La app Conoxxo y el sitio leen con leerDatos (llave de sesion de Conoxxo,
+      o LECTURA_KEY del servidor de Cloudflare, o la contraseña del admin).
+   2. Cuando todo lea asi, se pone LECTURA_PRIVADA = SI en Script Properties:
+      readSheet por GET deja de responder y consultarCuotaSindical exige sesion.
+   3. Se quita "cualquier persona con el enlace" de la hoja.
+   leerDatos lee como el dueño del script (token de ScriptApp), por eso no
+   depende de que la hoja sea publica. */
+const LECTURA_KEY_PROPERTY = 'LECTURA_KEY';
+const LECTURA_PRIVADA_PROPERTY = 'LECTURA_PRIVADA';
+// Lo unico que lee la app Conoxxo (pantallas Estructura, Vacaciones, Tiendas).
+const LECTURA_HOJAS_APP = ['Configuracion', 'Catalogo_Asesores', 'Dashboard_1_Diario', 'Dashboard_5_Semanal'];
+// Lo que puede leer el servidor del sitio: las de los dashboards y las de
+// soporte que hoy se leen por GViz.
+const LECTURA_HOJAS_SITIO_EXTRA = ['Configuracion', 'Compromisos_Bajas', 'Promociones', 'PromosD100'];
+
+function lecturaPrivada_() {
+  return String(PropertiesService.getScriptProperties().getProperty(LECTURA_PRIVADA_PROPERTY) || '').trim().toUpperCase() === 'SI';
+}
+
+function llaveLecturaValida_(payload) {
+  const configurada = String(PropertiesService.getScriptProperties().getProperty(LECTURA_KEY_PROPERTY) || '');
+  const recibida = String((payload && payload.lecturaKey) || '');
+  return configurada.length >= 32 && recibida === configurada;
+}
+
+// Devuelve quien lee: 'servidor' | 'admin' | 'app'. Con LECTURA_PRIVADA en NO,
+// lo que antes era publico ('cuota') sigue respondiendo sin sesion.
+function exigirLectura_(payload, recurso) {
+  if (llaveLecturaValida_(payload)) return 'servidor';
+  if (payload && payload.adminPassword) { assertAuthorized(payload); return 'admin'; }
+  if (payload && payload.llave && sesionConoxxo_(payload.llave)) return 'app';
+  if (recurso === 'cuota' && !lecturaPrivada_()) return 'publico';
+  throw new Error('sesion_conoxxo: vuelve a entrar a la app');
+}
+
+function leerDatos_(payload) {
+  const quien = exigirLectura_(payload, 'datos');
+  const hoja = String((payload && payload.hoja) || '').trim();
+  const permitidas = quien === 'app' ? LECTURA_HOJAS_APP : ALLOWED_SHEETS.concat(LECTURA_HOJAS_SITIO_EXTRA);
+  if (permitidas.indexOf(hoja) === -1) throw new Error('hoja no permitida: ' + hoja);
+  const ss = SPREADSHEET_ID ? SpreadsheetApp.openById(SPREADSHEET_ID) : SpreadsheetApp.getActiveSpreadsheet();
+  if (String(payload.formato || 'csv') === 'valores') {
+    const sheet = ss.getSheetByName(hoja);
+    if (!sheet) throw new Error('hoja no encontrada: ' + hoja);
+    return { ok: true, version: APP_VERSION, values: sheet.getDataRange().getValues() };
+  }
+  const consulta = String(payload.consulta || '').trim();
+  const params = ['tqx=out:csv', 'sheet=' + encodeURIComponent(hoja)];
+  // Igual que js/core.js y la app: con consulta, GViz debe saber que la fila
+  // _buffer_ va sobre los encabezados reales.
+  if (consulta) params.push('headers=' + encodeURIComponent(String(payload.headers || 2)), 'tq=' + encodeURIComponent(consulta));
+  const r = UrlFetchApp.fetch('https://docs.google.com/spreadsheets/d/' + ss.getId() + '/gviz/tq?' + params.join('&'), {
+    headers: { Authorization: 'Bearer ' + ScriptApp.getOAuthToken() },
+    muteHttpExceptions: true,
+  });
+  const texto = r.getContentText();
+  // Sin permiso Google responde 200 con la pagina de inicio de sesion (HTML).
+  if (r.getResponseCode() !== 200 || /^\s*</.test(texto)) throw new Error('gviz no disponible (' + r.getResponseCode() + ')');
+  return { ok: true, version: APP_VERSION, csv: texto };
+}
+

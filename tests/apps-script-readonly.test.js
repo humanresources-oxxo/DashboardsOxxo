@@ -85,6 +85,16 @@ test('readSheet no expone las hojas de solo lectura (su lectura publica es por G
 test('APP_VERSION sigue igual a la version verificada en config.js', () => {
   const gs = fs.readFileSync(path.join(root, 'apps-script', 'admin-upload.gs'), 'utf8');
   const cfg = fs.readFileSync(path.join(root, 'js', 'config.js'), 'utf8');
-  assert.equal(gs.match(/const APP_VERSION = '(\d+)'/)[1], '65');
-  assert.equal(cfg.match(/VERIFIED_ADMIN_RUNTIME_VERSION:\s*(\d+)/)[1], '65');
+  assert.equal(gs.match(/const APP_VERSION = '(\d+)'/)[1], '66');
+  assert.equal(cfg.match(/VERIFIED_ADMIN_RUNTIME_VERSION:\s*(\d+)/)[1], '66');
+});
+
+test('leerDatos (v66) exige sesion, llave de lectura o admin, y la app solo lee sus 4 hojas', () => {
+  const gs = fs.readFileSync(path.join(__dirname, '..', 'apps-script', 'admin-upload.gs'), 'utf8');
+  assert.match(gs, /action \|\| ''\) === 'leerDatos'\) \{\s*return jsonResponse\(leerDatos_\(payload\)\);/);
+  assert.match(gs, /function leerDatos_\(payload\) \{\s*const quien = exigirLectura_\(payload, 'datos'\);/);
+  assert.match(gs, /const LECTURA_HOJAS_APP = \['Configuracion', 'Catalogo_Asesores', 'Dashboard_1_Diario', 'Dashboard_5_Semanal'\];/);
+  // Sin LECTURA_PRIVADA = SI, readSheet y la cuota siguen como antes.
+  assert.match(gs, /if \(lecturaPrivada_\(\)\) return jsonResponse\(\{ ok: false, error: 'lectura_privada/);
+  assert.match(gs, /if \(recurso === 'cuota' && !lecturaPrivada_\(\)\) return 'publico';/);
 });
