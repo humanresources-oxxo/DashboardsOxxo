@@ -265,6 +265,7 @@
   async function handleFile(file){
     if(!file)return;
     state.fileName=file.name||'';
+    state.file=file;
     $('file-meta').textContent='Preparando lector de Excel...';
     try{
       await window.OXXO_ADMIN_ASSETS.ensure('xlsx');

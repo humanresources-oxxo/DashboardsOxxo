@@ -325,6 +325,8 @@ window.OXXO_ADMIN_PUBLISHERS = function createAdminPublishers(deps){
         OXXO.clearSheetDataCache(OXXO.SHEETS_CONFIG.STORE_CATALOG_SHEET);
       }
       notifyConfigDate(dash.key);
+      // js/admin-correos.js adjunta este Excel al correo del dia.
+      window.dispatchEvent(new CustomEvent('oxxo:base-publicada',{detail:{key:dash.key,file:state.file||null}}));
       $('publish-btn').textContent='Verificando...';
       // Modo compatible: solo la bitacora dice si termino. Sin entrada
       // "Correcta" no se afirma que se publico.

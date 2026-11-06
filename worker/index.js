@@ -116,7 +116,9 @@ async function leer(pedido, env, ctx) {
   // armada con el pedido (nunca con la llave de lectura).
   const clave = new Request(`https://cache.dashboardsoxxo.interno/leer?${new URLSearchParams(cuerpo)}`);
   const cache = caches.default;
-  const guardada = await cache.match(clave);
+  // fresco (?fresco=1 en la pagina, ver core.js): siempre al Apps Script; la
+  // respuesta nueva si se guarda para los demas.
+  const guardada = pedido.fresco ? null : await cache.match(clave);
   if (guardada) return guardada;
 
   // text/plain: el Apps Script no contesta el preflight de CORS y asi lo
