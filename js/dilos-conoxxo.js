@@ -21,11 +21,13 @@
 
   // [llave, encabezados posibles]; el facilitador no esta: no se lee.
   const COLUMNAS = {
-    caso: ['Número de caso', 'Numero de caso', 'Caso', 'Folio'],
+    caso: ['Número de caso', 'Numero de caso', 'Número caso', 'Numero caso', 'Caso', 'Folio'],
     region: ['Región', 'Region'],
     plaza: ['Plaza'],
     estatus: ['Estatus', 'Status'],
-    dias: ['Días abiertos', 'Dias abiertos', 'Días', 'Dias'],
+    // "Días abierto (En portal)": el libro de seguimiento de RH (Línea Ética),
+    // que trae ademas "Dias reales transcurridos" (esa no cuenta).
+    dias: ['Días abiertos', 'Dias abiertos', 'Días abierto (En portal)', 'Días abierto', 'Días', 'Dias'],
   };
 
   // "En atención de ADM" y "En atención ADM" son lo mismo.
@@ -49,7 +51,10 @@
 
   // hojas: { [nombre]: matriz de filas (XLSX.utils.sheet_to_json con header: 1) }
   function normalizar(hojas, nombreArchivo) {
-    for (const filas of Object.values(hojas || {})) {
+    // En el libro de seguimiento de RH la hoja ZCS trae todos los casos; las
+    // de cada facilitador (mismos encabezados) son solo una parte: va primero.
+    const ordenadas = Object.entries(hojas || {}).sort(([a], [b]) => (clave(b) === 'zcs') - (clave(a) === 'zcs'));
+    for (const [, filas] of ordenadas) {
       const iEnc = (filas || []).slice(0, 15).findIndex(f => (f || []).some(c => COLUMNAS.caso.some(a => clave(a) === clave(c))));
       if (iEnc < 0) continue;
       const enc = filas[iEnc].map(clave);

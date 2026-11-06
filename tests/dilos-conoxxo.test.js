@@ -31,6 +31,22 @@ test('convierte el reporte en casos sin facilitador y toma el corte del archivo'
   assert.doesNotMatch(JSON.stringify(r.casos), /Persona|Facilitador/);
 });
 
+test('lee el libro de seguimiento de RH: hoja ZCS primero y los días del portal', () => {
+  const enc = ['Numero caso', 'Región', 'Plaza', 'Facilitador', 'Estatus', 'Días abierto \n(En portal)', 'Fecha apertura', 'Fecha asignación Facilitador', 'Dias reales transcurridos'];
+  const fila = (caso, dias, reales) => [caso, 'CDMX', 'POLANCO', 'Persona', 'En atención RH', dias, '', '', reales];
+  const r = DILOS.normalizar(
+    {
+      'Dashboard ZCS': [['Dashboard de folios'], ['Total folios']],
+      'Fer Mayen': [['Las fechas tienen el formato MM/DD/AAAA'], enc, fila('OXMX-2026-1', 24, 6)],
+      ZCS: [['Las fechas tienen el formato MM/DD/AAAA'], enc, fila('OXMX-2026-1', 24, 6), fila('OXMX-2026-2', 17, 3)],
+    },
+    'Seguimiento_folios_2026.xlsx'
+  );
+  assert.equal(r.casos.length, 2);
+  assert.deepEqual(r.casos.map((c) => c.dias), [24, 17]);
+  assert.doesNotMatch(JSON.stringify(r.casos), /Persona/);
+});
+
 test('avisa si el archivo no es el reporte', () => {
   assert.throws(() => DILOS.normalizar({ Hoja1: [['Tienda', 'Importe']] }, 'x.xls'), /hoja de casos/);
   assert.equal(DILOS.corteDe('Reporte DILOS.xls'), '');
