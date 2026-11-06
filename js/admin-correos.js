@@ -583,7 +583,10 @@
     if (firma) fuentes.firma = firma;
     imagenes.forEach((im, i) => { fuentes[`captura${i + 1}`] = im.blob; });
     for (const k of Object.keys(fuentes)) fuentes[k] = `data:image/png;base64,${await aBase64(fuentes[k])}`;
-    const adjuntos = archivo ? [{ Name: archivo.name, ContentBytes: await aBase64(archivo) }] : [];
+    // ContentBytes como contenido binario de Power Automate ($content-type +
+    // $content): con el base64 como texto plano, el V2 lo volvia a codificar y
+    // el Excel llegaba danado.
+    const adjuntos = archivo ? [{ Name: archivo.name, ContentBytes: { '$content-type': archivo.type || 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', '$content': await aBase64(archivo) } }] : [];
     return {
       formato: 'conoxxo-correo-1',
       correo: correo.id,
