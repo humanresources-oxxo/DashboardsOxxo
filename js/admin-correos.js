@@ -714,8 +714,11 @@
     const fuentes = {};
     if (banner) fuentes.banner = banner;
     if (firma) fuentes.firma = firma;
-    imagenes.forEach((im, i) => { fuentes[`captura${i + 1}`] = im.blob; });
     for (const k of Object.keys(fuentes)) fuentes[k] = `data:image/png;base64,${await aBase64(fuentes[k])}`;
+    for (let i = 0; i < imagenes.length; i++) {
+      const ligera = await aligerar(imagenes[i].blob);
+      fuentes[`captura${i + 1}`] = `data:${ligera.type};base64,${await aBase64(ligera)}`;
+    }
     // ContentBytes como contenido binario de Power Automate ($content-type +
     // $content): con el base64 como texto plano, el V2 lo volvia a codificar y
     // el Excel llegaba danado.
@@ -730,6 +733,31 @@
       resumen: `${correo.nombre} · ${fechaTexto(fecha)} · ${archivo ? `Excel: ${archivo.name}` : 'sin Excel adjunto'}`,
       adjuntos,
     };
+  }
+
+  // Exchange quita del correo las imagenes data: grandes: la lamina de
+  // Aprovechamiento (PNG de ~1.2 MB) llego sin imagen y la de Bajas (~700 KB)
+  // si llego. Para Power Automate la lamina va en JPEG y, si hace falta, mas
+  // chica, hasta quedar en LIMITE_IMAGEN o menos. Se muestra a 900 px, asi que
+  // 2448 px de ancho sigue viendose nitida.
+  const LIMITE_IMAGEN = 600 * 1024;
+  async function aligerar(blob) {
+    if (blob.size <= LIMITE_IMAGEN) return blob;
+    const img = await createImageBitmap(blob);
+    let mejor = blob;
+    for (const [escala, calidad] of [[0.75, 0.9], [0.75, 0.82], [0.5, 0.9], [0.5, 0.8]]) {
+      const c = document.createElement('canvas');
+      c.width = Math.round(img.width * escala); c.height = Math.round(img.height * escala);
+      const g = c.getContext('2d');
+      g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height);
+      g.imageSmoothingQuality = 'high';
+      g.drawImage(img, 0, 0, c.width, c.height);
+      const jpg = await new Promise((r) => c.toBlob(r, 'image/jpeg', calidad));
+      if (jpg && jpg.size < mejor.size) mejor = jpg;
+      if (mejor.size <= LIMITE_IMAGEN) break;
+    }
+    img.close?.();
+    return mejor;
   }
 
   const PUEDE_CARPETA = typeof window.showDirectoryPicker === 'function';
