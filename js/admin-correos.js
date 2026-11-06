@@ -71,6 +71,8 @@
         // tabla que sale al tocar el KPI de incompletas.
         { selector: '#detalle-card', listo: '#tabla-detalle table', preparar: (win) => win.setKpiEstatus && win.setKpiEstatus('incompleto'), todasLasFilas: true },
       ],
+      listoLamina: ['#tabla-ec-at .ecat-row', '#tabla-plazas .plaza-legend__item', '#tbl-at tbody tr'],
+      lamina: (doc, fecha, win) => laminaAprovechamiento(leerAprovechamiento(doc, win), fecha),
     },
   ];
 
@@ -208,7 +210,7 @@
   // Mismo lenguaje visual que la Ficha de Plaza (dashboards/ficha-plaza.html):
   // pildora roja, liston rojo/amarillo, tarjetas con anillo y tabla con
   // columnas agrupadas. En diciembre lleva adornos navideños (navidad=true).
-  const anillo = (partes, centro, tam = 104, grosor = 13) => {
+  const anillo = (partes, centro, tam = 104, grosor = 13, fuente = 30) => {
     const r = (tam - grosor) / 2, c = 2 * Math.PI * r;
     const total = partes.reduce((x, p) => x + p.valor, 0) || 1;
     let off = 0;
@@ -218,7 +220,7 @@
       off += largo;
       return arco;
     }).join('');
-    return `<svg viewBox="0 0 ${tam} ${tam}" width="${tam}" height="${tam}"><circle cx="${tam / 2}" cy="${tam / 2}" r="${r}" fill="none" stroke="#efe7df" stroke-width="${grosor}"/>${arcos}<text x="50%" y="50%" dy=".35em" text-anchor="middle" font-size="30" font-weight="800" fill="#241a17" font-family="Plus Jakarta Sans, Arial">${esc(centro)}</text></svg>`;
+    return `<svg viewBox="0 0 ${tam} ${tam}" width="${tam}" height="${tam}"><circle cx="${tam / 2}" cy="${tam / 2}" r="${r}" fill="none" stroke="#efe7df" stroke-width="${grosor}"/>${arcos}<text x="50%" y="50%" dy=".35em" text-anchor="middle" font-size="${fuente}" font-weight="800" fill="#241a17" font-family="Plus Jakarta Sans, Arial">${esc(centro)}</text></svg>`;
   };
   const num = (v) => Number(String(v).replace(/[^\d.]/g, '')) || 0;
   // Nombres como vienen; solo los que llegan todo en mayusculas o minusculas
@@ -416,6 +418,125 @@
       </div>`;
   }
 
+  // Aprovechamiento: datos del Dashboard 3 ya pintado. Los totales por AT y el
+  // detalle por tienda son variables del dashboard (AT_DATA, DETALLE_DATA, con
+  // let: no cuelgan de window), por eso se leen con eval en su ventana. El
+  // dashboard se deja sin filtros: AT_DATA sale de los datos filtrados.
+  const META_PLAZA = 92.5, META_AT = 95;
+  // En línea (no por clase): la barra de Oaxaca conserva su semáforo; el rojo
+  // de .propia la hacía ver fuera de meta.
+  const SEMAFORO = { verde: '#1f7a4a', ambar: '#f6c400', rojo: '#e30613' };
+  function leerAprovechamiento(doc, win) {
+    const kpis = {};
+    doc.querySelectorAll('#kpi-section .kpi-card').forEach((k) => {
+      kpis[txt(k.querySelector('.kpi-card__label')).toLowerCase()] = { valor: txt(k.querySelector('.kpi-card__value')), nota: txt(k.querySelector('.kpi-card__delta')) };
+    });
+    const leer = (expr, def) => { try { return win.eval(expr) ?? def; } catch (_) { return def; } };
+    const ats = (leer('AT_DATA', []) || []).map((a) => ({
+      asesor: a.asesor, total: a.total, completas: a.completas, incompletas: a.incompletas, criticas: a.criticas,
+      ec: a.ecPorAt != null ? a.ecPorAt : a.ec * 100,
+    })).sort((a, b) => b.ec - a.ec);
+    const plazas = Array.from(doc.querySelectorAll('#tabla-plazas .plaza-legend__item')).map((li) => ({
+      plaza: txt(li.querySelector('.plaza-legend__name')), ec: parseFloat(txt(li.querySelector('.plaza-legend__val'))) || 0,
+    }));
+    const estatus = (e) => { const t = String(e || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); return t.includes('crit') ? 'critica' : t.includes('incompleto') ? 'incompleta' : ''; };
+    const tiendas = (leer('DETALLE_DATA', []) || []).map((r) => ({
+      tienda: r.tienda, asesor: r.asesor, estatus: estatus(r.estatus), ausent: r.ausent || 0, vacante: r.vacante || 0,
+      suma: r.sumaVacAus, rescate: String(r.fechaRescEC || '').trim(),
+    })).filter((r) => r.estatus)
+      .sort((a, b) => (a.estatus === b.estatus ? 0 : a.estatus === 'critica' ? -1 : 1) || (b.suma ?? -1) - (a.suma ?? -1) || b.ausent - a.ausent);
+    return { kpis, ats, plazas, tiendas, semana: txt(doc.getElementById('hero-date')) };
+  }
+
+  function laminaAprovechamiento(d, fecha, navidad = enTemporadaNavidad(fecha)) {
+    const k = (n) => d.kpis[n] || { valor: '—', nota: '' };
+    const general = parseFloat(k('aprovechamiento general').valor) || 0;
+    const total = num(k('tiendas totales').valor), comp = num(k('equipo completo').valor), inc = num(k('equipo incompleto').valor), crit = num(k('tienda crítica').valor);
+    const propia = d.plazas.findIndex((p) => /oaxaca/i.test(p.plaza));
+    const brecha = general - META_PLAZA;
+    const enMeta = d.plazas.filter((p) => p.ec >= META_PLAZA).length;
+    const corte = `${dd(fecha)} ${MESES[fecha.getMonth()].slice(0, 3)} ${fecha.getFullYear()}`;
+    const colorEc = (v, meta) => (v >= meta ? 'verde' : v >= meta - 10 ? 'ambar' : 'rojo');
+    const pct = (v) => `${Number(v).toFixed(1)}%`;
+    const fechaCorta = (raw) => {
+      const m = String(raw).match(/^(\d{4})-(\d{1,2})-(\d{1,2})/) || String(raw).match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})/);
+      if (!m) return raw || '—';
+      const [dia, mes] = m[1].length === 4 ? [m[3], m[2]] : [m[1], m[2]];
+      return `${String(dia).padStart(2, '0')} ${MESES[Number(mes) - 1]?.slice(0, 3) || ''}`;
+    };
+    const filaAt = (a) => {
+      const c = colorEc(a.ec, META_AT);
+      return `<tr>
+        <td class="lm-asesor">${esc(nombrePropio(a.asesor))}</td>
+        <td>${a.total}</td>
+        <td>${a.completas}</td>
+        <td>${a.incompletas || '<span class="lm-nada">—</span>'}</td>
+        <td>${a.criticas ? `<span class="lm-chip lm-chip--rojo">${a.criticas}</span>` : '<span class="lm-nada">—</span>'}</td>
+        <td class="lm-vac"><span class="lm-track lm-track--meta"><span class="lm-bar lm-bar--${c}" style="width:${Math.max(3, Math.min(100, a.ec)).toFixed(1)}%"></span><i style="left:${META_AT}%"></i></span><span class="lm-chip lm-chip--${c}">${pct(a.ec)}</span></td>
+      </tr>`;
+    };
+    const filaTienda = (t) => `<tr>
+        <td class="lm-asesor"><b>${esc(t.tienda)}</b></td>
+        <td class="lm-asesor">${esc(nombreCorto(t.asesor))}</td>
+        <td><span class="lm-chip lm-chip--${t.estatus === 'critica' ? 'rojo' : 'ambar'}">${t.estatus === 'critica' ? 'Crít.' : 'Inc.'}</span></td>
+        <td>${t.ausent || '<span class="lm-nada">0</span>'}</td>
+        <td>${t.vacante || '<span class="lm-nada">0</span>'}</td>
+        <td>${t.suma == null ? '<span class="lm-nada">—</span>' : `<b class="${t.suma > 13 ? 'lm-rojo' : ''}">${t.suma}</b>`}</td>
+        <td>${esc(fechaCorta(t.rescate))}</td>
+      </tr>`;
+    return `
+      <div class="lm${navidad ? ' lm--navidad' : ''}">
+        ${navidad ? FOQUITOS : ''}
+        <header class="lm-cab">
+          <span class="lm-pill">Plaza Oaxaca</span>
+          <span class="lm-sub">Aprovechamiento de estructura · Corte ${esc(corte)}</span>
+          <span class="lm-liston"><svg viewBox="0 0 700 90" width="600" height="90" preserveAspectRatio="none"><path d="M10 52 C120 10 230 10 350 46 S580 86 690 30" fill="none" stroke="#e30613" stroke-width="30" stroke-linecap="round"/><path d="M10 66 C120 26 230 26 350 62 S580 100 690 46" fill="none" stroke="#f6c400" stroke-width="12" stroke-linecap="round"/></svg>${navidad ? ACEBO : ''}</span>
+        </header>
+        <section class="lm-kpis">
+          <div class="lm-kpi">${anillo([{ valor: comp, color: '#1f7a4a' }, { valor: inc, color: '#f6c400' }, { valor: crit, color: '#e30613' }], `${general.toFixed(1)}%`, 104, 13, 22)}
+            <div><b>APROVECHAMIENTO</b><small>${esc(k('aprovechamiento general').valor)} · meta ${META_PLAZA}%</small></div></div>
+          <div class="lm-kpi"><span class="lm-num lm-num--largo ${brecha >= 0 ? 'lm-verde' : 'lm-rojo'}">${brecha >= 0 ? '+' : ''}${brecha.toFixed(1)}</span>
+            <div><b>PUNTOS VS META</b><small>${brecha >= 0 ? 'por arriba de la meta' : 'por debajo de la meta'}</small></div></div>
+          <div class="lm-kpi"><span class="lm-num">${total}</span>
+            <div><b>TIENDAS</b><small><i style="background:#1f7a4a"></i>${comp} comp.<i style="background:#f6c400"></i>${inc} inc.<i style="background:#e30613"></i>${crit} crít.</small></div></div>
+          <div class="lm-kpi"><span class="lm-num">${propia >= 0 ? `${propia + 1}°` : '—'}</span>
+            <div><b>LUGAR EN LA REGIÓN</b><small>de ${d.plazas.length} plazas · ${enMeta} en meta</small></div></div>
+        </section>
+        <div class="lm-cuerpo">
+          <section class="lm-card">
+            <h2>Aprovechamiento por asesor</h2>
+            <table class="lm-tabla">
+              <thead>
+                <tr class="lm-grupos"><th></th><th colspan="4"><span>TIENDAS</span></th><th><span class="lm-grupo-verde">EQUIPO COMPLETO</span></th></tr>
+                <tr><th>ASESOR</th><th>TOTAL</th><th>COMPLETO</th><th>INCOMP.</th><th>CRÍTICA</th><th>EC % · META ${META_AT}%</th></tr>
+              </thead>
+              <tbody>${d.ats.map(filaAt).join('')}</tbody>
+              <tfoot><tr><td>Total plaza</td><td>${total}</td><td>${comp}</td><td>${inc}</td><td>${crit}</td><td class="lm-vac"><span class="lm-chip lm-chip--${colorEc(general, META_PLAZA)}">${pct(general)}</span></td></tr></tfoot>
+            </table>
+            <p class="lm-leyenda">EC % = tiendas con equipo completo ÷ tiendas del asesor. <span class="lm-chip lm-chip--verde">en meta</span> <span class="lm-chip lm-chip--ambar">a 10 pts o menos</span> <span class="lm-chip lm-chip--rojo">más de 10 pts abajo</span></p>
+          </section>
+          <section class="lm-card">
+            <h2>Comparativo por plaza</h2>
+            ${d.plazas.map((p, i) => `<div class="lm-plaza${i === propia ? ' propia' : ''}">
+              <div class="lm-plaza-cab"><span class="lm-rank">${i + 1}</span><b>${esc(nombrePropio(p.plaza))}</b>${i === propia ? '<small>TU PLAZA</small>' : ''}</div>
+              <div class="lm-fila"><span>EC %</span><span class="lm-track lm-track--meta"><span class="lm-bar" style="width:${Math.max(3, Math.min(100, p.ec)).toFixed(1)}%;background:${SEMAFORO[colorEc(p.ec, META_PLAZA)]}"></span><i style="left:${META_PLAZA}%"></i></span><b>${p.ec.toFixed(1)}</b></div>
+            </div>`).join('')}
+            <p class="lm-nota">Línea = meta ${META_PLAZA}%. ${enMeta} de ${d.plazas.length} plazas en meta.</p>
+          </section>
+        </div>
+        ${d.tiendas.length ? `<section class="lm-card lm-card--ancha">
+          <h2>Tiendas sin equipo completo <small class="lm-cuenta">${d.tiendas.length} tienda${d.tiendas.length === 1 ? '' : 's'} · cuentan 0% en el aprovechamiento</small></h2>
+          <div class="lm-dos">${[d.tiendas.slice(0, Math.ceil(d.tiendas.length / 2)), d.tiendas.slice(Math.ceil(d.tiendas.length / 2))].filter((m) => m.length).map((mitad) => `
+          <table class="lm-tabla lm-tabla--tiendas">
+            <thead><tr><th>TIENDA</th><th>ASESOR</th><th>EST.</th><th>AUS.</th><th>VAC.</th><th>SUMA</th><th>RESC. EC</th></tr></thead>
+            <tbody>${mitad.map(filaTienda).join('')}</tbody>
+          </table>`).join('')}</div>
+          <p class="lm-leyenda">AUS. = ausentismos · VAC. = vacantes · SUMA = vacantes + ausentismos (en <b class="lm-rojo">rojo</b> si pasa de 13) · RESC. EC = fecha máxima para recuperar el equipo completo.</p>
+        </section>` : ''}
+        <footer class="lm-pie">${navidad ? '❄ ' : ''}Conoxxo · Plaza Oaxaca · generada ${fecha.toLocaleDateString('es-MX')}, ${fecha.toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit' })}${navidad ? ' · ¡Felices fiestas! ❄' : ''}</footer>
+      </div>`;
+  }
+
   const ESTILOS_LAMINA = `
     .lm{position:relative;width:1632px;padding:30px 36px 22px;background:#fff;color:#241a17;font-family:'Plus Jakarta Sans','Barlow',Arial,sans-serif;box-sizing:border-box;overflow:hidden}
     .lm *{box-sizing:border-box}
@@ -485,6 +606,18 @@
     .lm-grupo-rojo{border-color:#e30613!important;color:#e30613!important}
     .lm-sep td{padding-top:14px;border-bottom:2px solid #241a17;color:#6e605b;font-size:13px;font-weight:800;letter-spacing:.04em;text-align:left}
     .lm-pend td{color:#3a302b}
+    .lm-grupo-verde{border-color:#1f7a4a!important;color:#1f7a4a!important}
+    .lm-track--meta{position:relative;overflow:visible}
+    .lm-track--meta i{position:absolute;top:-5px;bottom:-5px;width:3px;margin-left:-1px;border-radius:2px;background:#241a17;opacity:.55}
+    .lm-chip--ambar.lm-chip{color:#7a5400}
+    .lm-card--ancha{margin-top:22px}
+    .lm-dos{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px;align-items:start}
+    .lm-tabla--tiendas{font-size:15px}
+    .lm-tabla--tiendas th{padding:8px 6px;font-size:12px}
+    .lm-tabla--tiendas td{padding:7px 6px}
+    .lm-tabla--tiendas td .lm-chip{min-width:52px;padding:3px 8px;font-size:13px}
+    .lm-cuenta{margin-left:10px;color:#6e605b;font-size:16px;font-weight:700}
+    .lm-tabla td .lm-chip{min-width:74px}
     .lm-leyenda{margin:14px 6px 0;color:#6e605b;font-size:15px;font-weight:600}
     .lm-leyenda .lm-foco{margin:0 6px 0 0}
   `;
@@ -779,5 +912,5 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', iniciar);
   else iniciar();
 
-  window.OXXO_CORREOS = { CORREOS, armarEml, armarPaquete, capturar, leerEstructura, laminaEstructura, leerBajas, laminaBajas, dibujarLamina };
+  window.OXXO_CORREOS = { CORREOS, armarEml, armarPaquete, capturar, leerEstructura, laminaEstructura, leerBajas, laminaBajas, leerAprovechamiento, laminaAprovechamiento, dibujarLamina };
 })();
