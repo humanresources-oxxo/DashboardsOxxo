@@ -59,7 +59,7 @@ publicar para renovar el permiso de la carpeta.
           "type": "object",
           "properties": {
             "Name": { "type": "string" },
-            "ContentBytes": { "type": "string" }
+            "ContentBytes": { "type": "object" }
           }
         }
       }
@@ -95,6 +95,9 @@ publicar para renovar el permiso de la carpeta.
 
 La lámina y la firma van dentro del HTML (como `data:` URI); en `adjuntos`
 solo viaja el Excel. (Con `cid:` + adjuntos, el V2 las dejaba rotas.)
+El Excel viaja como `{"$content-type", "$content"}` (contenido binario de
+Power Automate); como texto base64 plano, el V2 lo volvía a codificar y
+llegaba dañado.
 
 ### Opcional: limpiar la carpeta
 
