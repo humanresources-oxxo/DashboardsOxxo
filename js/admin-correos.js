@@ -658,7 +658,7 @@
   function cuerpoCorreo(correo, imagenes, fecha, banner, src, firma = false) {
     const img = (id, ancho) => `<p style="margin:12px 0"><img src="${src(id)}" width="${ancho}" style="display:block;width:${ancho}px;max-width:100%;height:auto;border:0" alt=""></p>`;
     const cuerpo = [
-      banner ? `<p style="margin:0 0 8px"><img src="${src('banner')}" width="420" style="display:block;width:420px;height:auto;border:0" alt=""></p>` : '',
+      banner ? `<p style="margin:0 0 8px"><img src="${src('banner')}" width="620" style="display:block;width:620px;max-width:100%;height:auto;border:0" alt=""></p>` : '',
       correo.saludo(fecha),
       ...imagenes.map((im, i) => img(`captura${i + 1}`, Math.min(900, im.ancho))),
       firma ? `<p style="font-family:'Courier New',monospace"><b><i>!!Saludos Cordiales!!</i></b></p><p style="margin:8px 0 0"><img src="${src('firma')}" width="620" style="display:block;width:620px;max-width:100%;height:auto;border:0" alt=""></p>` : '',
