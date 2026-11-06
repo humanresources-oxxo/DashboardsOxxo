@@ -48,8 +48,12 @@ if (DATA_PROXY && typeof window.fetch === 'function') {
   const gvizBase = `https://docs.google.com/spreadsheets/d/${SHEETS_CONFIG.SPREADSHEET_ID}/gviz/tq`;
   const scriptBase = String(SHEETS_CONFIG.ADMIN_UPLOAD_URL || '').split('?')[0];
 
+  // ?fresco=1 (lo usa el armado de correos del panel justo despues de
+  // publicar): el Worker no responde con su cache de 2 minutos.
+  const fresco = /[?&]fresco=1\b/.test(location.search);
   const pedirDatos = async (pedido, signal) => {
     if (DATA_PROXY.modo === 'api') {
+      if (fresco) pedido = { ...pedido, fresco: 1 };
       const r = await fetchOriginal('/api/leer', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(pedido), credentials: 'same-origin', signal });
       const datos = await r.json().catch(() => null);
       if (!r.ok || !datos || datos.ok === false) throw new Error((datos && datos.error) || `HTTP ${r.status}`);

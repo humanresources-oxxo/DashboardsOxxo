@@ -230,3 +230,15 @@ body{background:var(--ap-bg);color:var(--ap-text)}
 @media(max-width:620px){.reg-filtros .admin-btn{width:100%}.reg-anular-acciones .admin-btn{flex:1 1 100%}}
 /* Un boton del panel con el atributo hidden no se muestra (.admin-btn y .admin-actions a.admin-btn traen display propio). */
 .admin-btn[hidden],.admin-actions a.admin-btn[hidden]{display:none}
+
+/* Correos del dia (js/admin-correos.js) */
+.correos-dia{display:grid;gap:10px}
+.correos-dia__fila{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:8px 12px;padding:12px 14px;border:1px solid var(--ap-border);border-radius:var(--ap-radius-sm);background:#fff}
+.correos-dia__fila strong{display:block;font-size:15px}
+.correos-dia__fila small{display:block;color:var(--ap-muted);font-size:12px;font-weight:600;overflow-wrap:anywhere}
+.correos-dia__elegir{cursor:pointer}
+.correos-dia__estado{grid-column:1/-1;margin:0;font-size:12.5px;font-weight:700;color:var(--ap-muted)}
+.correos-dia__estado:empty{display:none}
+.correos-dia__estado[data-tipo="ok"]{color:#157a49}
+.correos-dia__estado[data-tipo="error"]{color:#a91f26}
+@media (max-width:640px){.correos-dia__fila{grid-template-columns:1fr}}
