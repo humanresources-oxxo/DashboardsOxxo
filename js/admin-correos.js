@@ -518,14 +518,15 @@
   async function armarEml(correo, imagenes, archivo, fecha) {
     const limite = 'oxxo_mixed_' + Date.now().toString(36), rel = 'oxxo_rel_' + Date.now().toString(36);
     const partes = [];
-    const [banner, firma] = await Promise.all([imagenDelSitio('assets/correo/banner.png'), imagenDelSitio('assets/correo/firma.png')]);
+    // Sin firma propia: el Outlook clasico agrega la firma automatica de la
+    // cuenta ("!!Saludos Cordiales!!" + tarjeta) al abrir el borrador, y con
+    // la del archivo salia dos veces.
+    const banner = await imagenDelSitio('assets/correo/banner.png');
     const img = (cid, ancho) => `<p style="margin:12px 0"><img src="cid:${cid}" width="${ancho}" style="display:block;width:${ancho}px;max-width:100%;height:auto;border:0" alt=""></p>`;
     const cuerpo = [
       banner ? `<p style="margin:0 0 8px"><img src="cid:banner" width="420" style="display:block;width:420px;height:auto;border:0" alt=""></p>` : '',
       correo.saludo(fecha),
       ...imagenes.map((im, i) => img(`captura${i + 1}`, Math.min(900, im.ancho))),
-      `<p style="font-family:'Courier New',monospace"><b><i>!!Saludos Cordiales!!</i></b></p>`,
-      firma ? `<p style="margin:8px 0 0"><img src="cid:firma" width="620" style="display:block;width:620px;height:auto;border:0" alt=""></p>` : '',
     ].join('\n');
     const html = `<html><head><meta charset="utf-8"></head><body style="font-family:Aptos,Calibri,Arial,sans-serif;font-size:11pt;color:#111">${cuerpo}</body></html>`;
 
@@ -533,7 +534,6 @@
     const inline = async (cid, blob) => partes.push(`--${rel}\r\nContent-Type: image/png; name="${cid}.png"\r\nContent-Transfer-Encoding: base64\r\nContent-ID: <${cid}>\r\nContent-Disposition: inline; filename="${cid}.png"\r\n\r\n${enLineas(await aBase64(blob))}`);
     if (banner) await inline('banner', banner);
     for (let i = 0; i < imagenes.length; i++) await inline(`captura${i + 1}`, imagenes[i].blob);
-    if (firma) await inline('firma', firma);
 
     const lineas = [
       'X-Unsent: 1',
