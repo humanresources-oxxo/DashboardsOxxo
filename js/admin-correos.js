@@ -356,6 +356,7 @@
     const maxB = Math.max(1, ...d.filas.map((f) => f.bajas));
     const maxP = Math.max(1, ...d.plazas.map((p) => p.bajas));
     const propia = d.plazas.findIndex((p) => p.propia);
+    const empate = propia >= 0 ? d.plazas.filter((p, i) => i !== propia && p.bajas === d.plazas[propia].bajas).map((p) => p.plaza) : [];
     const rotT = k('rotTemp');
     const corte = `${dd(fecha)} ${MESES[fecha.getMonth()].slice(0, 3)} ${fecha.getFullYear()}`;
     const mes = (k('todos').nota || '').replace(/^Con filtros activos$/, '');
@@ -385,7 +386,7 @@
           <div class="lm-kpi"><span class="lm-num lm-oro">${esc(rotT.valor)}</span>
             <div><b>ROTACIÓN TEMPRANA</b><small>${esc(rotT.nota)}</small></div></div>
           <div class="lm-kpi"><span class="lm-num">${propia >= 0 ? `${propia + 1}°` : '—'}</span>
-            <div><b>LUGAR EN LA REGIÓN</b><small>de ${d.plazas.length} plazas · ${propia >= 0 ? esc(d.plazas[propia].pct) : ''}</small></div></div>
+            <div><b>LUGAR EN LA REGIÓN</b><small>${empate.length ? `de ${d.plazas.length} · empate con ${esc(empate.join(", "))}` : `de ${d.plazas.length} plazas · ${propia >= 0 ? esc(d.plazas[propia].pct) : ""}`}</small></div></div>
         </section>
         <div class="lm-cuerpo">
           <section class="lm-card">
