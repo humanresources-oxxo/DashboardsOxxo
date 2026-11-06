@@ -197,3 +197,43 @@ body{
 /* Que el encabezado fijo no tape la tarjeta al bajar a un paso. */
 .ap-main [data-paso-card],.ap-main #correos-dia,.ap-main #admin-preview-section{scroll-margin-top:120px}
 @media(max-width:620px){.ap-main [data-paso-card],.ap-main #correos-dia,.ap-main #admin-preview-section{scroll-margin-top:84px}}
+
+/* ── Etapa 3: pulido de cada herramienta ──────────────── */
+/* Todas las secciones apilan sus tarjetas con el mismo espacio. */
+.ap-main .admin-tabpanel:not(.hidden){display:grid;grid-template-columns:minmax(0,1fr);gap:18px}
+.ap-main .admin-tabpanel>*{margin-top:0!important}
+.ap-main .admin-tabpanel>.hidden{display:none}
+/* Cajas de estado vacias (presentaciones, excels...) no se muestran hasta que tienen texto. */
+.ap-main .helper-box:empty{display:none}
+.ap-main .admin-card h2{letter-spacing:.005em}
+/* Selector de archivo con cara de boton. */
+.ap-main input[type=file]{font:600 13px var(--font-body);color:var(--ap-muted)}
+.ap-main input[type=file]::file-selector-button{margin-right:12px;min-height:38px;padding:0 14px;border:1px solid var(--ap-border);border-radius:10px;background:#fff;color:var(--ap-text);font:700 13px var(--font-body);cursor:pointer;transition:background .15s ease,border-color .15s ease}
+.ap-main input[type=file]::file-selector-button:hover{background:var(--ap-soft);border-color:var(--area-color,var(--ap-red))}
+
+/* Administrativo: libros privados (Cuota, CCT, DILOS) en tarjetas compactas. */
+.ap-libros{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.ap-libros.hidden{display:none}
+.ap-main .ap-libro{display:flex;flex-direction:column;margin:0;padding:18px;border-top:4px solid var(--area-color,var(--ap-gold))}
+.ap-main .ap-libro h2{margin:2px 0 6px;font-size:1.35rem}
+.ap-main .ap-libro>p:not(.helper-box):not(.reg-estado){font-size:12px!important;line-height:1.45;margin-bottom:12px!important}
+.ap-main .ap-libro .admin-actions{display:grid!important;grid-template-columns:1fr;gap:8px!important;margin-top:auto}
+.ap-main .ap-libro .admin-input{max-width:none!important;width:100%;padding:8px}
+.ap-main .ap-libro .admin-btn{width:100%;min-height:42px}
+.ap-main .ap-libro .helper-box{margin-top:10px!important;font-size:12px}
+
+/* Presentaciones y Excels: tarjetas que generan un archivo. */
+#tabpanel-presentaciones:not(.hidden),#tabpanel-excels:not(.hidden){grid-template-columns:repeat(auto-fill,minmax(340px,1fr))}
+.ap-main .ap-gen{display:flex;flex-direction:column;position:relative;padding-top:68px}
+.ap-main .ap-gen::before{content:"";position:absolute;top:20px;left:22px;width:38px;height:38px;border-radius:12px;background:var(--ap-tint-red) no-repeat center/20px url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23d91f2d' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M3 4h18v12H3z'/%3E%3Cpath d='M8 20h8M12 16v4M8 12V9M12 12V7M16 12v-2'/%3E%3C/svg%3E")}
+#tabpanel-excels .ap-gen::before{background-color:var(--ap-tint-green);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231a7f4b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z'/%3E%3Cpath d='M14 3v6h6M9 13l4 5M13 13l-4 5'/%3E%3C/svg%3E")}
+.ap-main .ap-gen h2{margin-top:0}
+.ap-main .ap-gen .admin-actions{margin-top:auto;padding-top:14px}
+.ap-main .ap-gen .admin-actions .admin-select{flex:1 1 auto;min-width:0!important;height:auto}
+.ap-main .ap-gen .admin-actions .admin-btn{flex:1 1 auto;justify-content:center}
+
+@media(max-width:1180px){.ap-libros{grid-template-columns:1fr}}
+@media(max-width:620px){
+  #tabpanel-presentaciones:not(.hidden),#tabpanel-excels:not(.hidden){grid-template-columns:minmax(0,1fr)}
+  .ap-main .ap-gen{padding-top:64px}
+}
