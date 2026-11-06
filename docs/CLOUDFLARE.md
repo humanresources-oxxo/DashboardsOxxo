@@ -44,3 +44,7 @@ Desde v68 un empleado sin permisos solo lee `Configuracion`, `Catalogo_Asesores`
 ## Panel Conoxxo
 
 `conoxxo.html` (el panel de la app Conoxxo: empleados, PINs, altas, avisos, directorio) se publica aqui, junto a `admin.html` y detras de Access. La direccion vieja de la app (`conoxxo.plaza-oaxaca.workers.dev/admin/`) redirige a esta pagina. Quien lo use necesita su correo en la lista de Access **y** su numero y PIN de Conoxxo.
+
+## Si un cambio no aparece en Cloudflare
+
+Cada merge a `main` debe aparecer en el panel de Cloudflare (Workers y Pages → dashboardsoxxo → Implementaciones) como "Compilación" de `humanresources-oxxo`; el commit del bot "Versiona los assets … [skip ci]" sale como "Omitido", y es normal. Si el merge no aparece en esa lista, Cloudflare no recibio el aviso de GitHub (paso con #581): cualquier merge nuevo a `main` vuelve a compilar todo. En GitHub se ve igual: el commit del merge debe tener el check "Workers Builds: dashboardsoxxo".
