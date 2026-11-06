@@ -146,3 +146,54 @@ body{
   .ap-main .admin-tabpanel{animation:none}
   .ap-side,.ap-backdrop,.ap-quick__item,.ap-side .admin-tab{transition:none}
 }
+
+/* ── Cargar bases: paso a paso ────────────────────────── */
+#tabpanel-upload:not(.hidden){display:grid;gap:18px}
+#tabpanel-upload>*{min-width:0;margin-top:0}
+#tabpanel-upload>.hidden{display:none}
+.ap-main .admin-area-context{margin:0}
+.ap-pasos{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:0;padding:0;list-style:none;counter-reset:none}
+.ap-paso{position:relative;min-width:0}
+.ap-paso:not(:last-child)::after{content:"";position:absolute;top:50%;right:-10px;width:10px;height:2px;background:var(--ap-border)}
+.ap-paso.hecho:not(:last-child)::after{background:var(--ap-green)}
+.ap-paso__btn{display:flex;align-items:center;gap:12px;width:100%;min-height:64px;padding:12px 14px;border:1px solid var(--ap-border);border-radius:16px;background:#fff;color:var(--ap-text);text-align:left;cursor:pointer;transition:border-color .15s ease,box-shadow .15s ease,transform .15s ease}
+.ap-paso__btn:hover{transform:translateY(-1px);box-shadow:0 8px 18px rgba(45,20,18,.07)}
+.ap-paso__btn:focus-visible{outline:3px solid var(--ap-focus);outline-offset:2px}
+.ap-paso__num{display:grid;place-items:center;flex:0 0 34px;width:34px;height:34px;border-radius:50%;background:var(--ap-soft);border:1px solid var(--ap-border);color:var(--ap-muted);font:800 15px var(--font-body)}
+.ap-paso__copy{display:grid;min-width:0}
+.ap-paso__copy strong{font-size:14px;font-weight:800}
+.ap-paso__copy small{color:var(--ap-muted);font-size:11.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ap-paso.actual .ap-paso__btn{border-color:var(--area-color,var(--ap-red));box-shadow:0 0 0 3px var(--area-soft,var(--ap-tint-red))}
+.ap-paso.actual .ap-paso__num{background:var(--area-color,var(--ap-red));border-color:transparent;color:#fff}
+.ap-paso.hecho .ap-paso__num{background:var(--ap-green);border-color:transparent;color:transparent;position:relative}
+.ap-paso.hecho .ap-paso__num::after{content:"";position:absolute;width:9px;height:15px;border:solid #fff;border-width:0 3px 3px 0;transform:translate(0,-2px) rotate(45deg)}
+.ap-paso.malo .ap-paso__btn{border-color:#f1c5c8;box-shadow:0 0 0 3px var(--ap-tint-red)}
+.ap-paso.malo .ap-paso__num{background:var(--ap-red);border-color:transparent;color:#fff}
+.ap-paso.malo small{color:var(--ap-red-dark)}
+
+.ap-carga{margin-top:0}
+.ap-carga__paso{transition:box-shadow .2s ease,border-color .2s ease}
+.ap-main .ap-carga__paso--actual{border-color:var(--area-color,var(--ap-red));box-shadow:0 0 0 3px var(--area-soft,var(--ap-tint-red)),0 10px 28px rgba(45,20,18,.06)}
+.ap-carga__paso h2{display:flex;align-items:center;gap:10px}
+.ap-carga__num{display:grid;place-items:center;flex:0 0 28px;width:28px;height:28px;border-radius:50%;background:var(--area-color,var(--ap-red));color:#fff;font:800 14px var(--font-body)}
+.ap-carga__sub{margin-top:22px;padding-top:18px;border-top:1px solid var(--ap-border)}
+.ap-carga__publica .preview-head{align-items:center}
+.ap-carga__publica .admin-upload-actions{grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:10px}
+.ap-carga__publica .admin-connection{margin-top:14px}
+.ap-extra-title{margin:14px 0 -4px;font-family:var(--font-display);font-size:1.5rem;color:var(--ap-text)}
+@media(max-width:960px){
+  .ap-pasos{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .ap-paso:nth-child(2)::after{display:none}
+}
+@media(max-width:620px){
+  .ap-paso__btn{min-height:56px;padding:10px;gap:9px}
+  .ap-paso__num{flex-basis:28px;width:28px;height:28px;font-size:13px}
+  .ap-paso.hecho .ap-paso__num::after{width:7px;height:12px}
+  .ap-paso__copy strong{font-size:13px}
+  .ap-carga__publica .admin-upload-actions{grid-template-columns:1fr}
+}
+/* El borde de color ahora marca el paso actual, no siempre la primera tarjeta. */
+#tabpanel-upload .ap-carga>.admin-card:first-child:not(.ap-carga__paso--actual){border-top-width:1px;border-top-color:rgba(222,214,207,.85)}
+/* Que el encabezado fijo no tape la tarjeta al bajar a un paso. */
+.ap-main [data-paso-card],.ap-main #correos-dia,.ap-main #admin-preview-section{scroll-margin-top:120px}
+@media(max-width:620px){.ap-main [data-paso-card],.ap-main #correos-dia,.ap-main #admin-preview-section{scroll-margin-top:84px}}
