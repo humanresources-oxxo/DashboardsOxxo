@@ -241,4 +241,9 @@ body{background:var(--ap-bg);color:var(--ap-text)}
 .correos-dia__estado:empty{display:none}
 .correos-dia__estado[data-tipo="ok"]{color:#157a49}
 .correos-dia__estado[data-tipo="error"]{color:#a91f26}
-@media (max-width:640px){.correos-dia__fila{grid-template-columns:1fr}}
+.correos-dia__auto{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:8px 12px;margin:0 0 12px;padding:12px 14px;border:1px dashed var(--ap-border);border-radius:var(--ap-radius-sm);background:#fbf8f5}
+.correos-dia__auto strong{display:block;font-size:14px}
+.correos-dia__auto small{display:block;color:var(--ap-muted);font-size:12px;font-weight:600;overflow-wrap:anywhere}
+.correos-dia__check{grid-column:1/-1;display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700}
+.correos-dia__fila [data-aprobar]{grid-column:2/-1}
+@media (max-width:640px){.correos-dia__fila,.correos-dia__auto{grid-template-columns:1fr}.correos-dia__fila [data-aprobar]{grid-column:auto}}

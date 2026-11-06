@@ -515,6 +515,22 @@
   }
 
   // ── El correo (.eml) ────────────────────────────────────
+  // HTML del correo. Las imagenes van por cid: en el .eml el cid es el
+  // Content-ID ("captura1"); en Power Automate es el nombre del adjunto
+  // ("captura1.png"), por eso el nombre lo decide quien llama.
+  // firma: solo para Power Automate, que (a diferencia del Outlook clasico) no
+  // agrega la firma automatica de la cuenta.
+  function cuerpoCorreo(correo, imagenes, fecha, banner, cid, firma = false) {
+    const img = (id, ancho) => `<p style="margin:12px 0"><img src="cid:${cid(id)}" width="${ancho}" style="display:block;width:${ancho}px;max-width:100%;height:auto;border:0" alt=""></p>`;
+    const cuerpo = [
+      banner ? `<p style="margin:0 0 8px"><img src="cid:${cid('banner')}" width="420" style="display:block;width:420px;height:auto;border:0" alt=""></p>` : '',
+      correo.saludo(fecha),
+      ...imagenes.map((im, i) => img(`captura${i + 1}`, Math.min(900, im.ancho))),
+      firma ? `<p style="font-family:'Courier New',monospace"><b><i>!!Saludos Cordiales!!</i></b></p><p style="margin:8px 0 0"><img src="cid:${cid('firma')}" width="620" style="display:block;width:620px;max-width:100%;height:auto;border:0" alt=""></p>` : '',
+    ].join('\n');
+    return `<html><head><meta charset="utf-8"></head><body style="font-family:Aptos,Calibri,Arial,sans-serif;font-size:11pt;color:#111">${cuerpo}</body></html>`;
+  }
+
   async function armarEml(correo, imagenes, archivo, fecha) {
     const limite = 'oxxo_mixed_' + Date.now().toString(36), rel = 'oxxo_rel_' + Date.now().toString(36);
     const partes = [];
@@ -522,13 +538,7 @@
     // cuenta ("!!Saludos Cordiales!!" + tarjeta) al abrir el borrador, y con
     // la del archivo salia dos veces.
     const banner = await imagenDelSitio('assets/correo/banner.png');
-    const img = (cid, ancho) => `<p style="margin:12px 0"><img src="cid:${cid}" width="${ancho}" style="display:block;width:${ancho}px;max-width:100%;height:auto;border:0" alt=""></p>`;
-    const cuerpo = [
-      banner ? `<p style="margin:0 0 8px"><img src="cid:banner" width="420" style="display:block;width:420px;height:auto;border:0" alt=""></p>` : '',
-      correo.saludo(fecha),
-      ...imagenes.map((im, i) => img(`captura${i + 1}`, Math.min(900, im.ancho))),
-    ].join('\n');
-    const html = `<html><head><meta charset="utf-8"></head><body style="font-family:Aptos,Calibri,Arial,sans-serif;font-size:11pt;color:#111">${cuerpo}</body></html>`;
+    const html = cuerpoCorreo(correo, imagenes, fecha, banner, (n) => n);
 
     partes.push(`--${rel}\r\nContent-Type: text/html; charset=UTF-8\r\nContent-Transfer-Encoding: base64\r\n\r\n${enLineas(b64(html))}`);
     const inline = async (cid, blob) => partes.push(`--${rel}\r\nContent-Type: image/png; name="${cid}.png"\r\nContent-Transfer-Encoding: base64\r\nContent-ID: <${cid}>\r\nContent-Disposition: inline; filename="${cid}.png"\r\n\r\n${enLineas(await aBase64(blob))}`);
@@ -558,6 +568,75 @@
     return new Blob([lineas.join('\r\n')], { type: 'message/rfc822' });
   }
 
+  // ── Envio automatico (Power Automate) ───────────────────
+  // El panel deja un .json en una carpeta de OneDrive (sincronizada en la PC);
+  // un flujo de Power Automate lo toma, pide la aprobacion de Angel y envia el
+  // correo con su cuenta (docs/CORREOS_POWER_AUTOMATE.md). Escribir en la
+  // carpeta usa la File System Access API: Edge/Chrome la traen; Brave la
+  // tiene apagada (brave://flags/#file-system-access-api).
+  async function armarPaquete(correo, imagenes, archivo, fecha) {
+    const [banner, firma] = await Promise.all([imagenDelSitio('assets/correo/banner.png'), imagenDelSitio('assets/correo/firma.png')]);
+    const adjuntos = [];
+    if (banner) adjuntos.push({ Name: 'banner.png', ContentBytes: await aBase64(banner) });
+    if (firma) adjuntos.push({ Name: 'firma.png', ContentBytes: await aBase64(firma) });
+    for (let i = 0; i < imagenes.length; i++) adjuntos.push({ Name: `captura${i + 1}.png`, ContentBytes: await aBase64(imagenes[i].blob) });
+    if (archivo) adjuntos.push({ Name: archivo.name, ContentBytes: await aBase64(archivo) });
+    return {
+      formato: 'conoxxo-correo-1',
+      correo: correo.id,
+      para: PARA.join(';'),
+      cc: correo.cc.join(';'),
+      asunto: correo.asunto(fecha),
+      html: cuerpoCorreo(correo, imagenes, fecha, banner, (n) => `${n}.png`, Boolean(firma)),
+      resumen: `${correo.nombre} · ${fechaTexto(fecha)} · ${archivo ? `Excel: ${archivo.name}` : 'sin Excel adjunto'}`,
+      adjuntos,
+    };
+  }
+
+  const PUEDE_CARPETA = typeof window.showDirectoryPicker === 'function';
+  const AUTO_CLAVE = 'oxxo_correos_auto';
+  function baseCarpeta() {
+    return new Promise((ok, mal) => {
+      const r = indexedDB.open('oxxo-correos', 1);
+      r.onupgradeneeded = () => r.result.createObjectStore('ajustes');
+      r.onsuccess = () => ok(r.result);
+      r.onerror = () => mal(r.error);
+    });
+  }
+  async function carpetaGuardada() {
+    try {
+      const db = await baseCarpeta();
+      return await new Promise((ok) => { const q = db.transaction('ajustes').objectStore('ajustes').get('carpeta'); q.onsuccess = () => ok(q.result || null); q.onerror = () => ok(null); });
+    } catch (_) { return null; }
+  }
+  async function guardarCarpeta(h) {
+    const db = await baseCarpeta();
+    await new Promise((ok, mal) => { const t = db.transaction('ajustes', 'readwrite'); t.objectStore('ajustes').put(h, 'carpeta'); t.oncomplete = ok; t.onerror = () => mal(t.error); });
+  }
+  // pedir=true solo dentro de un clic (el navegador lo exige para preguntar).
+  async function carpetaLista(pedir) {
+    const h = await carpetaGuardada();
+    if (!h) return null;
+    const modo = { mode: 'readwrite' };
+    if ((await h.queryPermission(modo)) === 'granted') return h;
+    if (pedir && (await h.requestPermission(modo)) === 'granted') return h;
+    return null;
+  }
+  async function mandarAPowerAutomate(correo, avisar, pedir) {
+    const carpeta = await carpetaLista(pedir);
+    if (!carpeta) throw new Error('falta dar permiso a la carpeta de OneDrive (botón "Activar" arriba).');
+    const fecha = new Date();
+    const imagenes = await capturar(correo, avisar);
+    avisar('Dejando el correo en OneDrive…');
+    const paquete = await armarPaquete(correo, imagenes, archivos[correo.dashboard], fecha);
+    const nombre = `${correo.id} ${fecha.getFullYear()}-${mm(fecha)}-${dd(fecha)} ${String(fecha.getHours()).padStart(2, '0')}${String(fecha.getMinutes()).padStart(2, '0')}${String(fecha.getSeconds()).padStart(2, '0')}.json`;
+    const fh = await carpeta.getFileHandle(nombre, { create: true });
+    const w = await fh.createWritable();
+    await w.write(new Blob([JSON.stringify(paquete)], { type: 'application/json' }));
+    await w.close();
+    return nombre;
+  }
+
   function descargar(blob, nombre) {
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
@@ -573,14 +652,51 @@
       <span class="admin-eyebrow">Recursos Humanos · Outlook</span>
       <h2>Correos del día</h2>
       <p style="color:var(--ap-muted);font-size:13px;font-weight:600;margin:0 0 14px">Después de publicar Estructura, Bajas o Aprovechamiento, prepara su correo: se descarga un archivo que el <strong>Outlook clásico</strong> abre como correo nuevo con destinatarios, asunto, imágenes del dashboard actualizado y el Excel adjunto. Solo revisa y da <strong>Enviar</strong>.</p>
+      <div class="correos-dia__auto" data-auto>
+        <div><strong>Envío automático con aprobación</strong><small data-auto-estado>Revisando…</small></div>
+        <button class="admin-btn secondary" type="button" data-carpeta>Elegir carpeta de OneDrive</button>
+        <label class="correos-dia__check"><input type="checkbox" data-auto-al-publicar> Mandar a aprobación al publicar</label>
+      </div>
       <div class="correos-dia">${CORREOS.map((c) => `
         <div class="correos-dia__fila" data-correo="${c.id}">
           <div><strong>${c.nombre}</strong><small data-archivo>Sin Excel todavía: publica la base o elige el archivo.</small></div>
           <label class="admin-btn secondary correos-dia__elegir">Elegir Excel<input type="file" accept=".xlsx,.xls,.xlsm,.csv" hidden></label>
           <button class="admin-btn primary" type="button" data-preparar>Preparar correo</button>
+          <button class="admin-btn secondary" type="button" data-aprobar hidden>Mandar a aprobación</button>
           <p class="correos-dia__estado" data-estado role="status" aria-live="polite"></p>
         </div>`).join('')}
       </div>`;
+    const auto = raiz.querySelector('[data-auto]');
+    const autoEstado = auto.querySelector('[data-auto-estado]');
+    const botonCarpeta = auto.querySelector('[data-carpeta]');
+    const alPublicar = auto.querySelector('[data-auto-al-publicar]');
+    try { alPublicar.checked = localStorage.getItem(AUTO_CLAVE) === '1'; } catch (_) { /* sin storage */ }
+    alPublicar.addEventListener('change', () => { try { localStorage.setItem(AUTO_CLAVE, alPublicar.checked ? '1' : '0'); } catch (_) { /* sin storage */ } });
+    const refrescarAuto = async () => {
+      if (!PUEDE_CARPETA) {
+        autoEstado.innerHTML = 'Este navegador no deja guardar en carpetas. En Brave: abre <b>brave://flags/#file-system-access-api</b>, ponlo en <b>Enabled</b> y reinicia Brave.';
+        botonCarpeta.hidden = true; alPublicar.disabled = true;
+        return;
+      }
+      const h = await carpetaGuardada();
+      const lista = h && (await carpetaLista(false));
+      botonCarpeta.textContent = !h ? 'Elegir carpeta de OneDrive' : lista ? 'Cambiar carpeta' : 'Activar';
+      autoEstado.textContent = !h ? 'Elige la carpeta de OneDrive que vigila tu flujo de Power Automate.'
+        : lista ? `Listo: los correos se dejan en "${h.name}" y te llega la aprobación.` : `Carpeta "${h.name}": da clic en Activar para dar permiso en esta sesión.`;
+      raiz.querySelectorAll('[data-aprobar]').forEach((b) => { b.hidden = !h; });
+    };
+    botonCarpeta.addEventListener('click', async () => {
+      try {
+        const h = await carpetaGuardada();
+        if (h && botonCarpeta.textContent === 'Activar') await carpetaLista(true);
+        else await guardarCarpeta(await window.showDirectoryPicker({ id: 'conoxxo-correos', mode: 'readwrite' }));
+      } catch (error) {
+        if (error?.name !== 'AbortError') autoEstado.textContent = `No se pudo usar la carpeta: ${error.message || error}`;
+      }
+      refrescarAuto();
+    });
+    refrescarAuto();
+
     CORREOS.forEach((c) => {
       const fila = raiz.querySelector(`[data-correo="${c.id}"]`);
       const estado = fila.querySelector('[data-estado]');
@@ -612,7 +728,34 @@
           boton.disabled = false;
         }
       });
+      const aprobar = async (pedir) => {
+        const boton = fila.querySelector('[data-aprobar]');
+        boton.disabled = true;
+        estado.dataset.tipo = '';
+        try {
+          await mandarAPowerAutomate(c, (t) => { estado.textContent = t; }, pedir);
+          estado.dataset.tipo = 'ok';
+          estado.textContent = `Enviado a aprobación${archivos[c.dashboard] ? '' : ' (sin Excel adjunto)'}: en unos minutos te llega el aviso de Power Automate.`;
+        } catch (error) {
+          estado.dataset.tipo = 'error';
+          estado.textContent = `No se mandó a aprobación: ${error.message || error}`;
+        } finally {
+          boton.disabled = false;
+        }
+      };
+      c.aprobar = aprobar;
+      fila.querySelector('[data-aprobar]').addEventListener('click', () => aprobar(true));
     });
+  }
+
+  // Al publicar, si esta activado, cada correo del dashboard se manda solo a
+  // aprobacion (uno tras otro: cada captura usa su propio iframe).
+  let cola = Promise.resolve();
+  function enviarAlPublicar(key) {
+    let activo = false;
+    try { activo = localStorage.getItem(AUTO_CLAVE) === '1'; } catch (_) { /* sin storage */ }
+    if (!activo || !PUEDE_CARPETA) return;
+    CORREOS.filter((c) => c.dashboard === key && c.aprobar).forEach((c) => { cola = cola.then(() => c.aprobar(false)); });
   }
 
   window.addEventListener('oxxo:base-publicada', (e) => {
@@ -620,6 +763,7 @@
     if (!file) return;
     archivos[key] = file;
     CORREOS.filter((c) => c.dashboard === key).forEach((c) => c.refrescar && c.refrescar());
+    enviarAlPublicar(key);
   });
 
   function iniciar() {
@@ -629,5 +773,5 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', iniciar);
   else iniciar();
 
-  window.OXXO_CORREOS = { CORREOS, armarEml, capturar, leerEstructura, laminaEstructura, leerBajas, laminaBajas, dibujarLamina };
+  window.OXXO_CORREOS = { CORREOS, armarEml, armarPaquete, capturar, leerEstructura, laminaEstructura, leerBajas, laminaBajas, dibujarLamina };
 })();
