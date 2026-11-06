@@ -246,6 +246,13 @@
     $('admin-dilos-panel')?.classList.toggle('hidden',area!=='administrativo');
     $('admin-upload-workspace').classList.toggle('hidden',!hasUpload);
     $('admin-preview-section').classList.toggle('hidden',!hasUpload);
+    $('admin-publish-section')?.classList.toggle('hidden',!hasUpload);
+    $('ap-pasos')?.classList.toggle('hidden',!hasUpload);
+    // Correos del dia y el directorio de contacto son de bases de RH
+    // (Estructura, Bajas, Aprovechamiento): solo se muestran en esa area.
+    $('correos-dia')?.classList.toggle('hidden',area!=='rh');
+    $('contact-directory-section')?.classList.toggle('hidden',area!=='rh');
+    $('ap-extra-title')?.classList.toggle('hidden',area!=='rh');
     if(!hasUpload)return;
     fillDashboardSelect(area);
     autoSelectSheet();

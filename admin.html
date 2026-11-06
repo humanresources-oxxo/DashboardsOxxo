@@ -171,20 +171,58 @@
       <p class="helper-box" id="dilos-admin-ultima" style="margin-top:12px">Entra al área Administrativo para ver la última carga.</p>
       <p class="reg-estado" id="dilos-admin-estado" role="status" aria-live="polite" hidden></p>
     </section>
-    <section class="admin-grid" id="admin-upload-workspace">
-      <aside class="admin-card">
-        <h2>1. Selecciona base</h2>
+    <ol class="ap-pasos" id="ap-pasos" aria-label="Pasos para publicar una base">
+      <li class="ap-paso" data-paso="1"><button type="button" class="ap-paso__btn" data-paso-ir="1"><span class="ap-paso__num" aria-hidden="true">1</span><span class="ap-paso__copy"><strong>Elige la base</strong><small data-paso-nota>Dashboard destino</small></span></button></li>
+      <li class="ap-paso" data-paso="2"><button type="button" class="ap-paso__btn" data-paso-ir="2"><span class="ap-paso__num" aria-hidden="true">2</span><span class="ap-paso__copy"><strong>Sube el Excel</strong><small data-paso-nota>Arrastra o selecciona</small></span></button></li>
+      <li class="ap-paso" data-paso="3"><button type="button" class="ap-paso__btn" data-paso-ir="3"><span class="ap-paso__num" aria-hidden="true">3</span><span class="ap-paso__copy"><strong>Revisa</strong><small data-paso-nota>Validación y vista previa</small></span></button></li>
+      <li class="ap-paso" data-paso="4"><button type="button" class="ap-paso__btn" data-paso-ir="4"><span class="ap-paso__num" aria-hidden="true">4</span><span class="ap-paso__copy"><strong>Publica</strong><small data-paso-nota>Se actualiza el dashboard</small></span></button></li>
+    </ol>
+    <section class="admin-grid ap-carga" id="admin-upload-workspace">
+      <aside class="admin-card ap-carga__paso" data-paso-card="1">
+        <h2><span class="ap-carga__num">1</span>Elige la base</h2>
         <label class="admin-label" for="dashboard-select">Dashboard destino</label>
         <select class="admin-select" id="dashboard-select"></select>
-        <label class="admin-label" for="sheet-select">Hoja del Excel</label>
-        <select class="admin-select" id="sheet-select" disabled><option value="">Sube un Excel primero</option></select>
+        <h2 class="ap-carga__sub"><span class="ap-carga__num">2</span>Sube el Excel</h2>
         <label for="file-input" class="admin-label">Archivo</label>
         <div class="drop-zone" id="drop-zone">
           <strong>Subir Excel</strong>
           <span>Arrastra el archivo aqui o haz clic para seleccionar</span>
           <input class="hidden" type="file" id="file-input" accept=".xlsx,.xls,.xlsm,.csv" />
         </div>
-        <div class="admin-publish-state" id="publish-state">Publicacion no configurada</div>
+        <label class="admin-label" for="sheet-select">Hoja del Excel</label>
+        <select class="admin-select" id="sheet-select" disabled><option value="">Sube un Excel primero</option></select>
+      </aside>
+      <section class="admin-card ap-carga__paso" data-paso-card="3">
+        <div class="preview-head"><h2><span class="ap-carga__num">3</span>Revisa la validación</h2><div class="preview-meta" id="file-meta">Sin archivo cargado</div></div>
+        <div class="status-list" id="status-list"></div>
+        <div class="helper-box" id="admin-guidance">Selecciona el dashboard y sube un Excel. El panel revisara columnas, filas vacias y datos clave antes de publicar.</div>
+      </section>
+    </section>
+    <section class="admin-card" id="admin-preview-section">
+      <div class="preview-head"><h2>Vista previa de lo que se publicará</h2><div class="preview-meta" id="preview-meta">0 filas</div></div>
+      <div class="table-wrap">
+        <table class="preview-table" id="preview-table">
+          <tbody><tr><td style="padding:28px;text-align:center;color:var(--ap-muted)">Aun no hay datos para mostrar.</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+    <section class="admin-card ap-carga__paso ap-carga__publica" id="admin-publish-section" data-paso-card="4">
+        <div class="preview-head"><h2><span class="ap-carga__num">4</span>Publica</h2><div class="admin-publish-state" id="publish-state">Publicacion no configurada</div></div>
+        <div class="publish-impact" id="publish-impact" aria-label="Resumen de publicación">
+          <div class="publish-impact__item"><span>Área</span><strong id="impact-area">—</strong></div>
+          <div class="publish-impact__item"><span>Destino</span><strong id="impact-target">—</strong></div>
+          <div class="publish-impact__item"><span>Filas</span><strong id="impact-rows">—</strong></div>
+          <div class="publish-impact__item"><span>Modo</span><strong id="impact-mode">—</strong></div>
+        </div>
+        <div class="admin-actions admin-upload-actions">
+          <button type="button" class="admin-btn primary" id="publish-btn" disabled>Publicar en Sheets</button>
+          <button type="button" class="admin-btn secondary" id="download-csv-btn" disabled>Descargar CSV</button>
+        </div>
+        <section class="publication-result hidden" id="publication-result" aria-live="polite">
+          <div class="publication-result__head"><strong id="publication-result-title">Resultado de publicación</strong><span id="publication-result-area">—</span></div>
+          <p id="publication-result-text"></p>
+          <div class="publication-result__facts" id="publication-result-facts"></div>
+        </section>
         <details class="admin-connection">
           <summary>Configuración de conexión</summary>
           <label class="admin-label" for="apps-script-url">URL de Apps Script</label>
@@ -192,30 +230,10 @@
           <p>Usa este respaldo solo si necesitas actualizar la conexión de publicación.</p>
           <button class="admin-btn secondary" type="button" id="save-config-btn">Guardar URL</button>
         </details>
-        <div class="admin-actions admin-upload-actions">
-          <button type="button" class="admin-btn primary" id="publish-btn" disabled>Publicar en Sheets</button>
-          <button type="button" class="admin-btn secondary" id="download-csv-btn" disabled>Descargar CSV</button>
-        </div>
-      </aside>
-      <section class="admin-card">
-        <div class="preview-head"><h2>2. Validacion</h2><div class="preview-meta" id="file-meta">Sin archivo cargado</div></div>
-        <div class="status-list" id="status-list"></div>
-        <div class="helper-box" id="admin-guidance">Selecciona el dashboard y sube un Excel. El panel revisara columnas, filas vacias y datos clave antes de publicar.</div>
-        <div class="publish-impact" id="publish-impact" aria-label="Resumen de publicación">
-          <div class="publish-impact__item"><span>Área</span><strong id="impact-area">—</strong></div>
-          <div class="publish-impact__item"><span>Destino</span><strong id="impact-target">—</strong></div>
-          <div class="publish-impact__item"><span>Filas</span><strong id="impact-rows">—</strong></div>
-          <div class="publish-impact__item"><span>Modo</span><strong id="impact-mode">—</strong></div>
-        </div>
-        <section class="publication-result hidden" id="publication-result" aria-live="polite">
-          <div class="publication-result__head"><strong id="publication-result-title">Resultado de publicación</strong><span id="publication-result-area">—</span></div>
-          <p id="publication-result-text"></p>
-          <div class="publication-result__facts" id="publication-result-facts"></div>
-        </section>
-      </section>
     </section>
-    <section class="admin-card" id="correos-dia" style="margin-top:18px"></section>
-    <section class="admin-card" id="contact-directory-section" style="margin-top:18px">
+    <h2 class="ap-extra-title" id="ap-extra-title">Otras herramientas de esta área</h2>
+    <section class="admin-card" id="correos-dia"></section>
+    <section class="admin-card" id="contact-directory-section">
       <h2>Directorio privado de contacto · Bajas</h2>
       <p style="color:var(--ap-muted);font-size:13px;font-weight:600;margin:0 0 16px">Carga la plantilla operativa para habilitar la descarga protegida de teléfonos. El sistema extrae únicamente <strong>N° personal</strong> y <strong>Teléfono</strong>; RFC, CURP, IMSS, domicilio y las demás columnas no se guardan.</p>
       <div class="admin-actions" style="align-items:center">
@@ -232,7 +250,7 @@
         <div class="helper-box" id="contact-directory-migrate-status" style="margin-top:12px">Requiere la propiedad de script <strong>DIRECTORIO_CONTACTOS_SPREADSHEET_ID</strong> con el ID del archivo privado.</div>
       </div>
     </section>
-    <section class="admin-card hidden" id="manual-entry-section" style="margin-top:18px">
+    <section class="admin-card hidden" id="manual-entry-section">
       <h2>Bajas otras plazas · Respaldo manual</h2>
       <p style="color:var(--ap-muted);font-size:13px;font-weight:600;margin:0 0 16px">Esto ya se calcula solo al publicar la base de arriba (Bajas diarias) desde el Excel ABC. Usa este formulario solo si necesitas corregir una plaza a mano. Al publicar se ordenan automáticamente de mayor a menor y aparecen en el ranking del Dashboard 2.</p>
       <div class="table-wrap" style="margin-bottom:16px;max-height:none">
@@ -250,7 +268,7 @@
         <button class="admin-btn primary" type="button" id="manual-publish-btn">Publicar</button>
       </div>
     </section>
-    <section class="admin-card hidden" id="manual-entry-d3-section" style="margin-top:18px">
+    <section class="admin-card hidden" id="manual-entry-d3-section">
       <h2>Aprovechamiento otras plazas · Respaldo manual</h2>
       <p style="color:var(--ap-muted);font-size:13px;font-weight:600;margin:0 0 16px">Esto ya se calcula solo al publicar la base de arriba (Estructura) desde la hoja "PLAZAS" del Excel. Usa este formulario solo si necesitas corregir una plaza a mano (0–100). Al publicar se ordenan automáticamente y aparecen en el ranking del Dashboard 3.</p>
       <div class="table-wrap" style="margin-bottom:16px;max-height:none">
@@ -268,7 +286,7 @@
         <button class="admin-btn primary" type="button" id="manual-publish-d3-btn">Publicar</button>
       </div>
     </section>
-    <section class="admin-card hidden" id="manual-entry-d2plan-section" style="margin-top:18px">
+    <section class="admin-card hidden" id="manual-entry-d2plan-section">
       <h2>Plan de Acción · Análisis de Bajas (captura mensual)</h2>
       <p style="color:var(--ap-muted);font-size:13px;font-weight:600;margin:0 0 16px">Captura el plan de acción del mes (hallazgo, acción propuesta, responsable, plazo, indicador de éxito y prioridad). Se muestra en la página "Análisis de Bajas" del Dashboard 2. Agrega o quita filas según necesites.</p>
       <div class="table-wrap" style="margin-bottom:16px;max-height:none">
@@ -292,14 +310,6 @@
       <div class="admin-actions">
         <button class="admin-btn" type="button" id="manual-add-d2plan-row">+ Agregar fila</button>
         <button class="admin-btn primary" type="button" id="manual-publish-d2plan-btn">Publicar</button>
-      </div>
-    </section>
-    <section class="admin-card" id="admin-preview-section" style="margin-top:18px">
-      <div class="preview-head"><h2>3. Vista previa</h2><div class="preview-meta" id="preview-meta">0 filas</div></div>
-      <div class="table-wrap">
-        <table class="preview-table" id="preview-table">
-          <tbody><tr><td style="padding:28px;text-align:center;color:var(--ap-muted)">Aun no hay datos para mostrar.</td></tr></tbody>
-        </table>
       </div>
     </section>
     </section>
@@ -545,6 +555,7 @@
   <script src="js/acta-registro.js?v=61cfaed7"></script>
   <script src="js/admin-correos.js?v=61cfaed7"></script>
   <script src="js/admin-inicio.js?v=61cfaed7"></script>
+  <script src="js/admin-pasos.js?v=61cfaed7"></script>
   <script>
     (function(){
       // Menu lateral: cada boton .admin-tab abre su seccion (tabpanel-<data-tab>),
@@ -581,6 +592,8 @@
         b.addEventListener('click', function(){
           var tab = document.querySelector('.admin-tab[data-tab="' + b.dataset.ir + '"]');
           if(tab) tab.click();
+          // Correos del dia vive en el area RH de "Cargar bases".
+          if(b.dataset.irA === 'correos-dia'){ var rh = document.querySelector('.admin-area[data-admin-area="rh"]'); if(rh && !rh.classList.contains('active')) rh.click(); }
           var destino = b.dataset.irA && document.getElementById(b.dataset.irA);
           if(destino) setTimeout(function(){ destino.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 60);
         });
