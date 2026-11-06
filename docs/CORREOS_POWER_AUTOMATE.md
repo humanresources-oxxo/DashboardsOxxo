@@ -28,12 +28,9 @@ publicar para renovar el permiso de la carpeta.
 
 - **Carpeta**: `/Conoxxo Correos`
 - Parámetros avanzados → **Inferir tipo de contenido**: `No`
-- Configuración del desencadenador (⋯ → Configuración) → **Condiciones del
-  desencadenador** → agregar:
-
-  ```
-  @endsWith(triggerOutputs()?['headers']?['x-ms-file-name'], '.json')
-  ```
+- Sin condiciones del desencadenador: en las revisiones sin archivo nuevo el
+  nombre llega vacío y una condición como `endsWith(...)` truena el flujo
+  (InvalidTemplate). En la carpeta solo deja archivos el panel.
 
 ### Acción: *Analizar JSON* (Operación de datos)
 
