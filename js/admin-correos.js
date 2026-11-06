@@ -515,18 +515,20 @@
   }
 
   // ── El correo (.eml) ────────────────────────────────────
-  // HTML del correo. Las imagenes van por cid: en el .eml el cid es el
-  // Content-ID ("captura1"); en Power Automate es el nombre del adjunto
-  // ("captura1.png"), por eso el nombre lo decide quien llama.
+  // HTML del correo. src(nombre) da la fuente de cada imagen: en el .eml es
+  // "cid:captura1" (parte inline); en Power Automate va la imagen misma como
+  // data: URI, porque "Enviar correo (V2)" no enlaza cid con sus adjuntos
+  // (las imagenes llegaban rotas) y Exchange si convierte las data: URI en
+  // imagenes dentro del correo.
   // firma: solo para Power Automate, que (a diferencia del Outlook clasico) no
   // agrega la firma automatica de la cuenta.
-  function cuerpoCorreo(correo, imagenes, fecha, banner, cid, firma = false) {
-    const img = (id, ancho) => `<p style="margin:12px 0"><img src="cid:${cid(id)}" width="${ancho}" style="display:block;width:${ancho}px;max-width:100%;height:auto;border:0" alt=""></p>`;
+  function cuerpoCorreo(correo, imagenes, fecha, banner, src, firma = false) {
+    const img = (id, ancho) => `<p style="margin:12px 0"><img src="${src(id)}" width="${ancho}" style="display:block;width:${ancho}px;max-width:100%;height:auto;border:0" alt=""></p>`;
     const cuerpo = [
-      banner ? `<p style="margin:0 0 8px"><img src="cid:${cid('banner')}" width="420" style="display:block;width:420px;height:auto;border:0" alt=""></p>` : '',
+      banner ? `<p style="margin:0 0 8px"><img src="${src('banner')}" width="420" style="display:block;width:420px;height:auto;border:0" alt=""></p>` : '',
       correo.saludo(fecha),
       ...imagenes.map((im, i) => img(`captura${i + 1}`, Math.min(900, im.ancho))),
-      firma ? `<p style="font-family:'Courier New',monospace"><b><i>!!Saludos Cordiales!!</i></b></p><p style="margin:8px 0 0"><img src="cid:${cid('firma')}" width="620" style="display:block;width:620px;max-width:100%;height:auto;border:0" alt=""></p>` : '',
+      firma ? `<p style="font-family:'Courier New',monospace"><b><i>!!Saludos Cordiales!!</i></b></p><p style="margin:8px 0 0"><img src="${src('firma')}" width="620" style="display:block;width:620px;max-width:100%;height:auto;border:0" alt=""></p>` : '',
     ].join('\n');
     return `<html><head><meta charset="utf-8"></head><body style="font-family:Aptos,Calibri,Arial,sans-serif;font-size:11pt;color:#111">${cuerpo}</body></html>`;
   }
@@ -538,7 +540,7 @@
     // cuenta ("!!Saludos Cordiales!!" + tarjeta) al abrir el borrador, y con
     // la del archivo salia dos veces.
     const banner = await imagenDelSitio('assets/correo/banner.png');
-    const html = cuerpoCorreo(correo, imagenes, fecha, banner, (n) => n);
+    const html = cuerpoCorreo(correo, imagenes, fecha, banner, (n) => `cid:${n}`);
 
     partes.push(`--${rel}\r\nContent-Type: text/html; charset=UTF-8\r\nContent-Transfer-Encoding: base64\r\n\r\n${enLineas(b64(html))}`);
     const inline = async (cid, blob) => partes.push(`--${rel}\r\nContent-Type: image/png; name="${cid}.png"\r\nContent-Transfer-Encoding: base64\r\nContent-ID: <${cid}>\r\nContent-Disposition: inline; filename="${cid}.png"\r\n\r\n${enLineas(await aBase64(blob))}`);
@@ -576,18 +578,19 @@
   // tiene apagada (brave://flags/#file-system-access-api).
   async function armarPaquete(correo, imagenes, archivo, fecha) {
     const [banner, firma] = await Promise.all([imagenDelSitio('assets/correo/banner.png'), imagenDelSitio('assets/correo/firma.png')]);
-    const adjuntos = [];
-    if (banner) adjuntos.push({ Name: 'banner.png', ContentBytes: await aBase64(banner) });
-    if (firma) adjuntos.push({ Name: 'firma.png', ContentBytes: await aBase64(firma) });
-    for (let i = 0; i < imagenes.length; i++) adjuntos.push({ Name: `captura${i + 1}.png`, ContentBytes: await aBase64(imagenes[i].blob) });
-    if (archivo) adjuntos.push({ Name: archivo.name, ContentBytes: await aBase64(archivo) });
+    const fuentes = {};
+    if (banner) fuentes.banner = banner;
+    if (firma) fuentes.firma = firma;
+    imagenes.forEach((im, i) => { fuentes[`captura${i + 1}`] = im.blob; });
+    for (const k of Object.keys(fuentes)) fuentes[k] = `data:image/png;base64,${await aBase64(fuentes[k])}`;
+    const adjuntos = archivo ? [{ Name: archivo.name, ContentBytes: await aBase64(archivo) }] : [];
     return {
       formato: 'conoxxo-correo-1',
       correo: correo.id,
       para: PARA.join(';'),
       cc: correo.cc.join(';'),
       asunto: correo.asunto(fecha),
-      html: cuerpoCorreo(correo, imagenes, fecha, banner, (n) => `${n}.png`, Boolean(firma)),
+      html: cuerpoCorreo(correo, imagenes, fecha, banner, (n) => fuentes[n], Boolean(firma)),
       resumen: `${correo.nombre} · ${fechaTexto(fecha)} · ${archivo ? `Excel: ${archivo.name}` : 'sin Excel adjunto'}`,
       adjuntos,
     };

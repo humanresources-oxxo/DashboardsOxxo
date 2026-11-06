@@ -93,8 +93,8 @@ publicar para renovar el permiso de la carpeta.
     body('Analizar_JSON')?['adjuntos']
     ```
 
-Las imágenes van por `cid:` con el nombre del adjunto (`captura1.png`,
-`firma.png`), así que Outlook las muestra dentro del correo.
+La lámina y la firma van dentro del HTML (como `data:` URI); en `adjuntos`
+solo viaja el Excel. (Con `cid:` + adjuntos, el V2 las dejaba rotas.)
 
 ### Opcional: limpiar la carpeta
 
