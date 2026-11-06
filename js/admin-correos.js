@@ -56,6 +56,8 @@
         { selector: '#d2-analysis-panels', listo: '#tabla-compromiso table' },
         { selector: 'section.d2-plazas', listo: '#d2-plazas-summary *' },
       ],
+      listoLamina: ['#tabla-compromiso table tbody tr', '#tabla-plazas .plaza-rank-row', '#kpi-section .kpi-card__value'],
+      lamina: async (doc, fecha, win) => laminaBajas(await leerBajas(doc, win), fecha),
     },
     {
       id: 'aprovechamiento', dashboard: 'd3', nombre: 'Aprovechamiento',
@@ -114,7 +116,7 @@
         await esperarA(() => correo.listoLamina.every((sel) => doc.querySelector(sel)), 90000, correo.nombre);
         await esperar(800);
         avisar(`Armando la lámina de ${correo.nombre}…`);
-        return [await dibujarLamina(correo.lamina(doc, new Date()))];
+        return [await dibujarLamina(await correo.lamina(doc, new Date(), win))];
       }
       for (const c of correo.capturas) {
         await esperarA(() => doc.querySelector(c.selector) && doc.querySelector(c.listo), 90000, correo.nombre);
@@ -242,7 +244,10 @@
   })();
   const ACEBO = `<svg class="lm-acebo" viewBox="0 0 120 70" width="120" height="70"><path d="M60 38 C40 20 18 22 6 36 C22 34 30 44 34 56 C42 44 52 42 60 38Z" fill="#1f7a4a"/><path d="M60 38 C80 20 102 22 114 36 C98 34 90 44 86 56 C78 44 68 42 60 38Z" fill="#2c9a5f"/><circle cx="52" cy="36" r="9" fill="#e30613"/><circle cx="66" cy="32" r="9" fill="#c4070f"/><circle cx="60" cy="46" r="9" fill="#e30613"/><circle cx="49" cy="33" r="2.6" fill="rgba(255,255,255,.7)"/></svg>`;
 
-  function laminaEstructura(d, fecha, navidad = fecha.getMonth() === 11 || fecha.getMonth() === 10 || (fecha.getMonth() === 0 && fecha.getDate() <= 6)) {
+  // Misma ventana que js/temporada.js: del 1 de noviembre al 6 de enero.
+  const enTemporadaNavidad = (f) => f.getMonth() === 10 || f.getMonth() === 11 || (f.getMonth() === 0 && f.getDate() <= 6);
+
+  function laminaEstructura(d, fecha, navidad = enTemporadaNavidad(fecha)) {
     const k = (n) => d.kpis[n] || { valor: '—', nota: '' };
     const total = num(k('total vacantes').valor), lider = num(k('lider').valor), enc = num(k('encargado').valor), ayu = num(k('ayudante').valor);
     const antigua = k('vacante más antigua');
@@ -311,6 +316,106 @@
       </div>`;
   }
 
+  // Bajas: los numeros del Dashboard 2 ya pintado (compromiso vs resultado,
+  // tarjetas y ranking de plazas del mes). La tabla del dashboard abrevia los
+  // nombres ("Mirna M.L."); aqui van completos, buscandolos en el catalogo
+  // con la misma abreviatura del dashboard (shortAsesorName).
+  async function leerBajas(doc, win) {
+    const kpis = {};
+    doc.querySelectorAll('#kpi-section .kpi-card').forEach((k) => {
+      kpis[k.dataset.kpi || txt(k.querySelector('.kpi-card__label')).toLowerCase()] = { valor: txt(k.querySelector('.kpi-card__value')), nota: txt(k.querySelector('.kpi-card__delta')) };
+    });
+    const completos = new Map();
+    try {
+      const cat = await win.OXXO.loadAsesorCatalog();
+      Array.from(cat.byCr.values()).forEach((i) => { if (i.asesor && win.shortAsesorName) completos.set(win.shortAsesorName(i.asesor), i.asesor); });
+    } catch (_) { /* sin catalogo: nombres como en el dashboard */ }
+    const filas = Array.from(doc.querySelectorAll('#tabla-compromiso table tbody tr')).map((tr) => {
+      const c = tr.cells, corto = txt(c[0]);
+      return { nombre: completos.get(corto) || corto, pendiente: tr.classList.contains('is-pendiente'), bajas: num(txt(c[1])), comp: txt(c[2]), desfase: txt(c[3]) };
+    });
+    const pie = doc.querySelector('#tabla-compromiso table tfoot tr');
+    const total = pie ? { bajas: txt(pie.cells[1]), comp: txt(pie.cells[2]), desfase: txt(pie.cells[3]) } : {};
+    // Con alcance de plaza el ranking del dashboard muestra solo Oaxaca hasta
+    // pulsar "Ver todas las plazas"; el iframe es oculto, asi que se pulsa aqui.
+    const verTodas = doc.getElementById('plazas-scope-toggle');
+    if (verTodas && !verTodas.hidden && /^ver todas/i.test(txt(verTodas))) verTodas.click();
+    const plazas = Array.from(doc.querySelectorAll('#tabla-plazas .plaza-rank-row')).map((li) => ({
+      plaza: txt(li.querySelector('.plaza-rank-top strong')), bajas: num(txt(li.querySelector('.plaza-rank-value'))),
+      pct: txt(li.querySelector('.plaza-rank-pct')), propia: li.classList.contains('is-current'),
+    }));
+    const alcance = txt(doc.querySelector('[data-d2-scope="compromiso"]'));
+    return { kpis, filas, total, plazas, alcance };
+  }
+
+  function laminaBajas(d, fecha, navidad = enTemporadaNavidad(fecha)) {
+    const k = (n) => d.kpis[n] || { valor: '—', nota: '' };
+    const total = num(d.total.bajas || k('todos').valor), comp = num(d.total.comp), desf = total - comp;
+    const pend = d.filas.find((f) => f.pendiente);
+    const asesores = d.filas.filter((f) => !f.pendiente);
+    const maxB = Math.max(1, ...d.filas.map((f) => f.bajas));
+    const maxP = Math.max(1, ...d.plazas.map((p) => p.bajas));
+    const propia = d.plazas.findIndex((p) => p.propia);
+    const empate = propia >= 0 ? d.plazas.filter((p, i) => i !== propia && p.bajas === d.plazas[propia].bajas).map((p) => p.plaza) : [];
+    const rotT = k('rotTemp');
+    const corte = `${dd(fecha)} ${MESES[fecha.getMonth()].slice(0, 3)} ${fecha.getFullYear()}`;
+    const mes = (k('todos').nota || '').replace(/^Con filtros activos$/, '');
+    const color = (b) => (b <= 1 ? 'verde' : b <= 3 ? 'ambar' : b <= 5 ? 'naranja' : 'rojo');
+    const fila = (f) => {
+      const dv = num(f.desfase) * (String(f.desfase).trim().startsWith('-') ? -1 : 1);
+      return `<tr${f.pendiente ? ' class="lm-pend"' : ''}>
+        <td class="lm-asesor">${esc(f.pendiente ? 'Bajas sin asesor confirmado' : nombrePropio(f.nombre))}</td>
+        <td class="lm-vac"><span class="lm-pillnum lm-pillnum--${f.pendiente ? 'gris' : color(f.bajas)}">${f.bajas}</span><span class="lm-track"><span class="lm-bar lm-bar--${f.pendiente ? 'gris' : color(f.bajas)}" style="width:${Math.max(4, Math.round(f.bajas / maxB * 100))}%"></span></span></td>
+        <td>${esc(f.comp)}</td>
+        <td class="${dv > 0 ? 'lm-rojo' : 'lm-verde'}"><b>${dv > 0 ? '+' : ''}${dv}</b></td>
+      </tr>`;
+    };
+    return `
+      <div class="lm${navidad ? ' lm--navidad' : ''}">
+        ${navidad ? FOQUITOS : ''}
+        <header class="lm-cab">
+          <span class="lm-pill">Plaza Oaxaca</span>
+          <span class="lm-sub">Bajas del mes · Tablero ABC · Corte ${esc(corte)}</span>
+          <span class="lm-liston"><svg viewBox="0 0 700 90" width="600" height="90" preserveAspectRatio="none"><path d="M10 52 C120 10 230 10 350 46 S580 86 690 30" fill="none" stroke="#e30613" stroke-width="30" stroke-linecap="round"/><path d="M10 66 C120 26 230 26 350 62 S580 100 690 46" fill="none" stroke="#f6c400" stroke-width="12" stroke-linecap="round"/></svg>${navidad ? ACEBO : ''}</span>
+        </header>
+        <section class="lm-kpis">
+          <div class="lm-kpi">${anillo([{ valor: Math.min(total, comp || total), color: desf > 0 ? '#e30613' : '#1f7a4a' }, { valor: Math.max(0, comp - total), color: '#efe7df' }], total)}
+            <div><b>BAJAS DEL MES</b><small>${esc(mes || 'mes vigente')} · comp. ${comp}</small></div></div>
+          <div class="lm-kpi"><span class="lm-num${String(Math.abs(desf)).length > 1 ? ' lm-num--largo' : ''} ${desf > 0 ? 'lm-rojo' : 'lm-verde'}">${desf > 0 ? '+' : ''}${desf}</span>
+            <div><b>DESFASE VS COMPROMISO</b><small>${desf > 0 ? 'por arriba del compromiso' : 'por debajo del compromiso'}</small></div></div>
+          <div class="lm-kpi"><span class="lm-num lm-oro">${esc(rotT.valor)}</span>
+            <div><b>ROTACIÓN TEMPRANA</b><small>${esc(rotT.nota)}</small></div></div>
+          <div class="lm-kpi"><span class="lm-num">${propia >= 0 ? `${propia + 1}°` : '—'}</span>
+            <div><b>LUGAR EN LA REGIÓN</b><small>${empate.length ? `de ${d.plazas.length} · empate con ${esc(empate.join(", "))}` : `de ${d.plazas.length} plazas · ${propia >= 0 ? esc(d.plazas[propia].pct) : ""}`}</small></div></div>
+        </section>
+        <div class="lm-cuerpo">
+          <section class="lm-card">
+            <h2>Compromiso vs resultado por asesor</h2>
+            <table class="lm-tabla">
+              <thead>
+                <tr class="lm-grupos"><th></th><th colspan="3"><span class="lm-grupo-rojo">BAJAS DEL MES</span></th></tr>
+                <tr><th>ASESOR</th><th>BAJAS</th><th>COMP.</th><th>DESFASE</th></tr>
+              </thead>
+              <tbody>${asesores.map(fila).join('')}
+                ${pend ? `<tr class="lm-sep"><td colspan="4">SIN RESPONSABLE IDENTIFICADO</td></tr>${fila(pend)}` : ''}</tbody>
+              <tfoot><tr><td>Total plaza</td><td class="lm-vac"><b>${total}</b></td><td>${comp}</td><td class="${desf > 0 ? 'lm-rojo' : 'lm-verde'}">${desf > 0 ? '+' : ''}${desf}</td></tr></tfoot>
+            </table>
+            <p class="lm-leyenda">Color de bajas: <span class="lm-pillnum lm-pillnum--verde">0-1</span> <span class="lm-pillnum lm-pillnum--ambar">2-3</span> <span class="lm-pillnum lm-pillnum--naranja">4-5</span> <span class="lm-pillnum lm-pillnum--rojo">6+</span> · Desfase = bajas − compromiso.</p>
+          </section>
+          <section class="lm-card">
+            <h2>Ranking de plazas · bajas del mes</h2>
+            ${d.plazas.map((p, i) => `<div class="lm-plaza${p.propia ? ' propia' : ''}">
+              <div class="lm-plaza-cab"><span class="lm-rank">${i + 1}</span><b>${esc(p.plaza)}</b>${p.propia ? '<small>TU PLAZA</small>' : ''}</div>
+              <div class="lm-fila"><span>BAJAS</span><span class="lm-track"><span class="lm-bar" style="width:${Math.max(6, Math.round(p.bajas / maxP * 100))}%"></span></span><b>${p.bajas}</b></div>
+              <div class="lm-fila lm-fila--sub"><span>PARTICIPACIÓN</span><em>${esc(p.pct)}</em></div>
+            </div>`).join('')}
+            <p class="lm-nota">Total región: ${d.plazas.reduce((x, p) => x + p.bajas, 0)} bajas en ${d.plazas.length} plazas.</p>
+          </section>
+        </div>
+        <footer class="lm-pie">${navidad ? '❄ ' : ''}Conoxxo · Plaza Oaxaca · generada ${fecha.toLocaleDateString('es-MX')}, ${fecha.toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit' })}${navidad ? ' · ¡Felices fiestas! ❄' : ''}</footer>
+      </div>`;
+  }
+
   const ESTILOS_LAMINA = `
     .lm{position:relative;width:1632px;padding:30px 36px 22px;background:#fff;color:#241a17;font-family:'Plus Jakarta Sans','Barlow',Arial,sans-serif;box-sizing:border-box;overflow:hidden}
     .lm *{box-sizing:border-box}
@@ -329,7 +434,8 @@
     .lm-kpi small{display:block;margin-top:8px;color:#3a302b;font-size:15px;white-space:nowrap}
     .lm-kpi small i{display:inline-block;width:10px;height:10px;margin:0 5px 1px 8px;border-radius:50%}
     .lm-kpi small i:first-child{margin-left:0}
-    .lm-num{min-width:96px;font-size:66px;font-weight:800;line-height:1;text-align:center}
+    .lm-num{flex:none;min-width:96px;font-size:66px;font-weight:800;line-height:1;text-align:center;letter-spacing:-.02em}
+    .lm-num--largo{font-size:50px}
     .lm-rojo{color:#e30613}.lm-verde{color:#1f7a4a}.lm-oro{color:#c9a227}
     .lm-cuerpo{display:grid;grid-template-columns:minmax(0,2.15fr) minmax(0,1fr);gap:22px}
     .lm-card{padding:22px;border-radius:28px;background:#f4f0ec;box-shadow:0 6px 18px rgba(60,40,30,.10)}
@@ -372,6 +478,13 @@
     .lm-tienda b{color:#e30613;font-size:20px}
     .lm-nota{margin:8px 12px 0;color:#6e605b;font-size:14px;font-weight:600}
     .lm-pie{margin-top:16px;color:#8b7f78;font-size:14px}
+    .lm-pillnum{display:inline-grid;place-items:center;min-width:38px;height:32px;padding:0 8px;border-radius:9px;color:#fff;font-weight:800;font-size:18px}
+    .lm-pillnum--verde,.lm-bar--verde{background:#1f7a4a}.lm-pillnum--ambar,.lm-bar--ambar{background:#f6c400}.lm-pillnum--naranja,.lm-bar--naranja{background:#f28c18}.lm-pillnum--rojo,.lm-bar--rojo{background:#e30613}.lm-pillnum--gris,.lm-bar--gris{background:#9a8f8a}
+    .lm-pillnum--ambar{color:#241a17}
+    .lm-leyenda .lm-pillnum{min-width:0;height:24px;font-size:13px;vertical-align:1px}
+    .lm-grupo-rojo{border-color:#e30613!important;color:#e30613!important}
+    .lm-sep td{padding-top:14px;border-bottom:2px solid #241a17;color:#6e605b;font-size:13px;font-weight:800;letter-spacing:.04em;text-align:left}
+    .lm-pend td{color:#3a302b}
     .lm-leyenda{margin:14px 6px 0;color:#6e605b;font-size:15px;font-weight:600}
     .lm-leyenda .lm-foco{margin:0 6px 0 0}
   `;
@@ -516,5 +629,5 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', iniciar);
   else iniciar();
 
-  window.OXXO_CORREOS = { CORREOS, armarEml, capturar, leerEstructura, laminaEstructura, dibujarLamina };
+  window.OXXO_CORREOS = { CORREOS, armarEml, capturar, leerEstructura, laminaEstructura, leerBajas, laminaBajas, dibujarLamina };
 })();
