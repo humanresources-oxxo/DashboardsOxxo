@@ -134,7 +134,8 @@
         <div class="admin-commercial-panel__badge">D100</div>
       </div>
     </section>
-    <section class="admin-card hidden" id="admin-cuota-panel">
+    <div class="ap-libros hidden" id="ap-libros">
+    <section class="admin-card ap-libro hidden" id="admin-cuota-panel">
       <span class="admin-eyebrow">Administrativo · Libro privado aparte</span>
       <h2>Cuota Sindical</h2>
       <p style="color:var(--ap-muted);font-size:13px;font-weight:600;margin:0 0 14px">Sube el Excel completo de nómina (concepto "Desc. Cuota Sindical"). Va entero a la hoja <strong>Base</strong> de su propio libro privado de Google Sheets, nunca al libro de los dashboards, y reemplaza la carga anterior. Solo se actualiza desde aquí; el <a href="dashboards/cuota-sindical.html">dashboard</a> es de solo lectura y muestra totales, sin nombres.</p>
@@ -147,7 +148,7 @@
       <p class="helper-box" id="cuota-admin-ultima" style="margin-top:12px">Entra al área Administrativo para ver la última carga.</p>
       <p class="reg-estado" id="cuota-admin-estado" role="status" aria-live="polite" hidden></p>
     </section>
-    <section class="admin-card hidden" id="admin-cct-panel">
+    <section class="admin-card ap-libro hidden" id="admin-cct-panel">
       <span class="admin-eyebrow">Administrativo · Solo app Conoxxo</span>
       <h2>Contratos colectivos (CCT)</h2>
       <p style="color:var(--ap-muted);font-size:13px;font-weight:600;margin:0 0 14px">Sube el Excel de contratos colectivos (hojas <strong>CCTs Tiendas</strong> y <strong>CCT ejercicio …</strong>). No se muestra en ningún dashboard de este sitio: va a su propio libro privado y solo lo ve la app Conoxxo, en su pantalla "Contratos colectivos". Reemplaza la carga anterior. Solo viajan indicadores; los nombres de responsables y las ligas a SharePoint no se envían.</p>
@@ -159,7 +160,7 @@
       <p class="helper-box" id="cct-admin-ultima" style="margin-top:12px">Entra al área Administrativo para ver la última carga.</p>
       <p class="reg-estado" id="cct-admin-estado" role="status" aria-live="polite" hidden></p>
     </section>
-    <section class="admin-card hidden" id="admin-dilos-panel">
+    <section class="admin-card ap-libro hidden" id="admin-dilos-panel">
       <span class="admin-eyebrow">Administrativo · Solo app Conoxxo</span>
       <h2>Casos DILOS</h2>
       <p style="color:var(--ap-muted);font-size:13px;font-weight:600;margin:0 0 14px">Sube el reporte DILOS de casos abiertos de la Zona Centro Sur (hoja <strong>ZCS</strong>). No se muestra en ningún dashboard de este sitio: va a su propio libro privado y solo lo ve la app Conoxxo, en su pantalla "Casos DILOS". Reemplaza la carga anterior. El nombre del facilitador no se envía; la fecha del corte se toma del nombre del archivo.</p>
@@ -171,6 +172,7 @@
       <p class="helper-box" id="dilos-admin-ultima" style="margin-top:12px">Entra al área Administrativo para ver la última carga.</p>
       <p class="reg-estado" id="dilos-admin-estado" role="status" aria-live="polite" hidden></p>
     </section>
+    </div>
     <ol class="ap-pasos" id="ap-pasos" aria-label="Pasos para publicar una base">
       <li class="ap-paso" data-paso="1"><button type="button" class="ap-paso__btn" data-paso-ir="1"><span class="ap-paso__num" aria-hidden="true">1</span><span class="ap-paso__copy"><strong>Elige la base</strong><small data-paso-nota>Dashboard destino</small></span></button></li>
       <li class="ap-paso" data-paso="2"><button type="button" class="ap-paso__btn" data-paso-ir="2"><span class="ap-paso__num" aria-hidden="true">2</span><span class="ap-paso__copy"><strong>Sube el Excel</strong><small data-paso-nota>Arrastra o selecciona</small></span></button></li>
@@ -384,7 +386,7 @@
       </div>
     </section>
     <section class="admin-tabpanel hidden" id="tabpanel-presentaciones" aria-labelledby="ap-title">
-    <section class="admin-card">
+    <section class="admin-card ap-gen">
       <h2>Presentación Foro Bienestar Días Martes</h2>
       <p style="color:var(--ap-muted);font-size:13px;font-weight:600;margin:0 0 16px">Genera un .pptx con el indicador principal de cada dashboard, tomado en vivo de Google Sheets (Vacantes, Bajas, Aprovechamiento, Tiempo Extra, Ausentismos y Alineación TREO).</p>
       <div class="admin-actions">
@@ -392,18 +394,18 @@
       </div>
       <div class="helper-box" id="pptx-status" style="margin-top:12px"></div>
     </section>
-    <section class="admin-card" style="margin-top:18px">
+    <section class="admin-card ap-gen">
       <h2>Presentación RAE</h2>
       <p style="color:var(--ap-muted);font-size:13px;font-weight:600;margin:0 0 16px">Genera un .pptx con la estructura del Reporte de Análisis Ejecutivo: KPI principal, gráfica de dona por categoría y ranking por Asesor/Plaza para cada dashboard, tomado en vivo de Google Sheets.</p>
       <div class="admin-actions" style="align-items:center;gap:12px;flex-wrap:wrap">
         <label for="pptx-rae-mes" style="font-size:12px;font-weight:700;color:var(--ap-muted)">Mes de Vacantes/Bajas:</label>
-        <select id="pptx-rae-mes" style="min-width:180px"><option value="">Más reciente</option></select>
+        <select class="admin-select" id="pptx-rae-mes" style="min-width:180px"><option value="">Más reciente</option></select>
         <button class="admin-btn primary" type="button" id="generate-pptx-rae-btn"><svg class="icon-inline" viewBox="0 0 24 24" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>Generar Presentación RAE</button>
       </div>
       <p style="color:var(--ap-muted);font-size:11.5px;font-weight:600;margin:8px 0 0">Vacantes y Bajas se agrupan por mes de carga; si ya se subió un mes nuevo y quieres una presentación del mes anterior, selecciónalo aquí. Aprovechamiento y TREO siempre usan la última foto disponible en Sheets (no acumulan histórico).</p>
       <div class="helper-box" id="pptx-rae-status" style="margin-top:12px"></div>
     </section>
-    <section class="admin-card" style="margin-top:18px">
+    <section class="admin-card ap-gen">
       <h2>Presentación por Asesor</h2>
       <p style="color:var(--ap-muted);font-size:13px;font-weight:600;margin:0 0 16px">Elige un asesor y genera un .pptx con sus datos: Vacantes, Bajas, Aprovechamiento y TREO, tomados en vivo de Google Sheets (mismas reglas ya verificadas de las otras presentaciones).</p>
       <div class="admin-actions" style="align-items:center;gap:12px">
@@ -414,7 +416,7 @@
     </section>
     </section>
     <section class="admin-tabpanel hidden" id="tabpanel-excels" aria-labelledby="ap-title">
-    <section class="admin-card">
+    <section class="admin-card ap-gen">
       <h2>Indicadores ATs</h2>
       <p style="color:var(--ap-muted);font-size:13px;font-weight:600;margin:0 0 16px">Descarga el Excel de Indicadores por AT con Aprovechamiento de estructura, Vacantes en estructura y Alineación de estructura actualizados en vivo desde Google Sheets (mismos datos que Vacantes/Aprovechamiento/TREO). El resto de los indicadores (NPS, Ausentismo, Rotación, % Apego) se conservan tal cual para llenarse a mano.</p>
       <div class="admin-actions">
