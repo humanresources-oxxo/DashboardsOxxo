@@ -210,7 +210,7 @@
   // Mismo lenguaje visual que la Ficha de Plaza (dashboards/ficha-plaza.html):
   // pildora roja, liston rojo/amarillo, tarjetas con anillo y tabla con
   // columnas agrupadas. En diciembre lleva adornos navideños (navidad=true).
-  const anillo = (partes, centro, tam = 104, grosor = 13) => {
+  const anillo = (partes, centro, tam = 104, grosor = 13, fuente = 30) => {
     const r = (tam - grosor) / 2, c = 2 * Math.PI * r;
     const total = partes.reduce((x, p) => x + p.valor, 0) || 1;
     let off = 0;
@@ -220,7 +220,7 @@
       off += largo;
       return arco;
     }).join('');
-    return `<svg viewBox="0 0 ${tam} ${tam}" width="${tam}" height="${tam}"><circle cx="${tam / 2}" cy="${tam / 2}" r="${r}" fill="none" stroke="#efe7df" stroke-width="${grosor}"/>${arcos}<text x="50%" y="50%" dy=".35em" text-anchor="middle" font-size="30" font-weight="800" fill="#241a17" font-family="Plus Jakarta Sans, Arial">${esc(centro)}</text></svg>`;
+    return `<svg viewBox="0 0 ${tam} ${tam}" width="${tam}" height="${tam}"><circle cx="${tam / 2}" cy="${tam / 2}" r="${r}" fill="none" stroke="#efe7df" stroke-width="${grosor}"/>${arcos}<text x="50%" y="50%" dy=".35em" text-anchor="middle" font-size="${fuente}" font-weight="800" fill="#241a17" font-family="Plus Jakarta Sans, Arial">${esc(centro)}</text></svg>`;
   };
   const num = (v) => Number(String(v).replace(/[^\d.]/g, '')) || 0;
   // Nombres como vienen; solo los que llegan todo en mayusculas o minusculas
@@ -423,6 +423,9 @@
   // let: no cuelgan de window), por eso se leen con eval en su ventana. El
   // dashboard se deja sin filtros: AT_DATA sale de los datos filtrados.
   const META_PLAZA = 92.5, META_AT = 95;
+  // En línea (no por clase): la barra de Oaxaca conserva su semáforo; el rojo
+  // de .propia la hacía ver fuera de meta.
+  const SEMAFORO = { verde: '#1f7a4a', ambar: '#f6c400', rojo: '#e30613' };
   function leerAprovechamiento(doc, win) {
     const kpis = {};
     doc.querySelectorAll('#kpi-section .kpi-card').forEach((k) => {
@@ -490,7 +493,7 @@
           <span class="lm-liston"><svg viewBox="0 0 700 90" width="600" height="90" preserveAspectRatio="none"><path d="M10 52 C120 10 230 10 350 46 S580 86 690 30" fill="none" stroke="#e30613" stroke-width="30" stroke-linecap="round"/><path d="M10 66 C120 26 230 26 350 62 S580 100 690 46" fill="none" stroke="#f6c400" stroke-width="12" stroke-linecap="round"/></svg>${navidad ? ACEBO : ''}</span>
         </header>
         <section class="lm-kpis">
-          <div class="lm-kpi">${anillo([{ valor: comp, color: '#1f7a4a' }, { valor: inc, color: '#f6c400' }, { valor: crit, color: '#e30613' }], `${Math.round(general)}%`)}
+          <div class="lm-kpi">${anillo([{ valor: comp, color: '#1f7a4a' }, { valor: inc, color: '#f6c400' }, { valor: crit, color: '#e30613' }], `${general.toFixed(1)}%`, 104, 13, 22)}
             <div><b>APROVECHAMIENTO</b><small>${esc(k('aprovechamiento general').valor)} · meta ${META_PLAZA}%</small></div></div>
           <div class="lm-kpi"><span class="lm-num lm-num--largo ${brecha >= 0 ? 'lm-verde' : 'lm-rojo'}">${brecha >= 0 ? '+' : ''}${brecha.toFixed(1)}</span>
             <div><b>PUNTOS VS META</b><small>${brecha >= 0 ? 'por arriba de la meta' : 'por debajo de la meta'}</small></div></div>
@@ -516,7 +519,7 @@
             <h2>Comparativo por plaza</h2>
             ${d.plazas.map((p, i) => `<div class="lm-plaza${i === propia ? ' propia' : ''}">
               <div class="lm-plaza-cab"><span class="lm-rank">${i + 1}</span><b>${esc(nombrePropio(p.plaza))}</b>${i === propia ? '<small>TU PLAZA</small>' : ''}</div>
-              <div class="lm-fila"><span>EC %</span><span class="lm-track lm-track--meta"><span class="lm-bar lm-bar--${colorEc(p.ec, META_PLAZA)}" style="width:${Math.max(3, Math.min(100, p.ec)).toFixed(1)}%"></span><i style="left:${META_PLAZA}%"></i></span><b>${p.ec.toFixed(1)}</b></div>
+              <div class="lm-fila"><span>EC %</span><span class="lm-track lm-track--meta"><span class="lm-bar" style="width:${Math.max(3, Math.min(100, p.ec)).toFixed(1)}%;background:${SEMAFORO[colorEc(p.ec, META_PLAZA)]}"></span><i style="left:${META_PLAZA}%"></i></span><b>${p.ec.toFixed(1)}</b></div>
             </div>`).join('')}
             <p class="lm-nota">Línea = meta ${META_PLAZA}%. ${enMeta} de ${d.plazas.length} plazas en meta.</p>
           </section>
