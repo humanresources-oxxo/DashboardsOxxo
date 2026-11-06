@@ -102,6 +102,7 @@
         if(error)error.textContent='';
         lock.classList.add('hidden');
         releaseLock();
+        document.dispatchEvent(new CustomEvent('oxxo:admin-unlocked'));
         const warmup=()=>window.OXXO_ADMIN_ASSETS?.warmup().catch(error=>console.warn('[OXXO] Recursos avanzados pendientes.',error));
         if('requestIdleCallback' in window)window.requestIdleCallback(warmup,{timeout:4000});
         else setTimeout(warmup,1500);
@@ -210,10 +211,6 @@
     select.innerHTML=available.map(d=>`<option value="${d.key}">${d.label}</option>`).join('');
     select.disabled=!available.length;
   }
-  function selectUploadTab(){
-    const uploadTab=document.querySelector('.admin-tab[data-tab="upload"]');
-    if(uploadTab&&!uploadTab.classList.contains('active'))uploadTab.click();
-  }
   function setAdminArea(area){
     if(!ADMIN_AREAS[area])return;
     currentAdminArea=area;
@@ -229,10 +226,9 @@
     $('admin-area-title').textContent=config.title;
     $('admin-area-description').textContent=config.description;
     $('admin-area-count').textContent=`${available.length} ${available.length===1?'base':'bases'}`;
-    $('admin-upload-tab-label').textContent='Cargar y Publicar Bases';
     $('tabpanel-upload').dataset.adminArea=area;
-    document.querySelectorAll('.admin-tab').forEach(tab=>tab.classList.toggle('hidden',area!=='rh'&&!['upload','calidad','bitacora','consola','mapa'].includes(tab.dataset.tab)));
-    if(area!=='rh')selectUploadTab();
+    // El area solo filtra lo que se carga en "Cargar bases"; el menu lateral
+    // muestra siempre todas las secciones.
     // Comercial tiene dos cosas distintas: PromosD100 (se edita directo en
     // Sheets, panel informativo fijo) y bases que SI se suben por Excel (ej.
     // Dashboard 14 - Avance Comercial). El panel de Promos se muestra siempre
@@ -322,7 +318,7 @@
   // js/admin-reasignaciones.js) publiquen con el MISMO mecanismo -- misma
   // URL, misma contrasena, mismo manejo de CORS/modo compatible -- sin
   // duplicar esa logica ni exponer el password directamente.
-  window.OXXO_ADMIN_CTX = { getAdminPassword: () => adminPassword, publishUrl, postAdminPayload, isoDate };
+  window.OXXO_ADMIN_CTX = { getAdminPassword: () => adminPassword, publishUrl, postAdminPayload, isoDate, getDashboards: () => dashboards };
   function bind(){$('drop-zone').addEventListener('click',()=>$('file-input').click());$('file-input').addEventListener('change',event=>handleFile(event.target.files[0]));['dragenter','dragover'].forEach(ev=>$('drop-zone').addEventListener(ev,event=>{event.preventDefault();$('drop-zone').classList.add('drag');}));['dragleave','drop'].forEach(ev=>$('drop-zone').addEventListener(ev,event=>{event.preventDefault();$('drop-zone').classList.remove('drag');}));$('drop-zone').addEventListener('drop',event=>handleFile(event.dataTransfer.files[0]));$('sheet-select').addEventListener('change',event=>{state.sheetName=event.target.value;loadCurrentSheet();});$('dashboard-select').addEventListener('change',()=>{autoSelectSheet();loadCurrentSheet();toggleManualSection();});document.querySelectorAll('.admin-area').forEach(button=>button.addEventListener('click',()=>setAdminArea(button.dataset.adminArea)));$('manual-publish-btn').addEventListener('click',publishManual);$('manual-publish-d3-btn').addEventListener('click',publishManualD3);$('manual-publish-d2plan-btn')?.addEventListener('click',publishManualD2Plan);$('manual-add-d2plan-row')?.addEventListener('click',addPlanRow);document.addEventListener('click',event=>{if(event.target.classList.contains('plan-row-remove')){const tr=event.target.closest('tr');const tbody=tr?.parentElement;if(tbody&&tbody.children.length>1)tr.remove();}});$('apps-script-url').addEventListener('input',updatePublishState);$('download-csv-btn').addEventListener('click',downloadCsv);$('publish-btn').addEventListener('click',publish);$('save-config-btn').addEventListener('click',()=>{const url=$('apps-script-url').value.trim();if(!url){alert('No hay URL para guardar.');return;}localStorage.setItem(ADMIN_CONFIG_KEY,url);updatePublishState();alert('URL guardada en este navegador.');});}
   // La URL guardada en localStorage (de un "Guardar" anterior) ya NO tiene prioridad sobre
   // la que trae el codigo: cada vez que se redeploya el Apps Script, DEFAULT_UPLOAD_URL

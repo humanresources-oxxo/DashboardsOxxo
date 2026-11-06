@@ -13,6 +13,7 @@
   <link rel="preconnect" href="https://script.googleusercontent.com" />
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
 <link rel="stylesheet" href="css/admin-layout.css?v=297a876f">
+<link rel="stylesheet" href="css/admin-shell.css?v=297a876f">
 </head>
 <body>
   <div class="admin-lock" id="admin-lock" aria-modal="true" role="dialog" aria-labelledby="admin-lock-title" aria-describedby="admin-lock-text">
@@ -38,28 +39,78 @@
     <div class="publication-toast__copy"><strong id="publication-toast-title">Publicación completada</strong><span id="publication-toast-text">Los datos ya están disponibles.</span></div>
     <button class="publication-toast__close" id="publication-toast-close" type="button" aria-label="Cerrar aviso">×</button>
   </aside>
-  <nav class="topbar">
-    <a class="topbar__brand" href="index.html">
-      <div class="topbar__logo"><img src="assets/oxxo-logo-original.png" alt="OXXO" style="width:100%;height:100%;object-fit:contain"></div>
-      <div><div class="topbar__title">Panel Admin</div><div class="topbar__subtitle">Carga y validacion de bases</div></div>
-    </a>
-    <div class="topbar__meta"><a href="conoxxo.html" class="topbar__back" title="Empleados, PINs, altas, avisos y directorio de la app">Panel Conoxxo</a><a href="index.html" class="topbar__back">Inicio</a></div>
-  </nav>
-  <main class="admin-shell">
-    <section class="admin-hero">
-      <div class="admin-hero__top" data-oxxo-scope-mount>
-        <div>
-          <div class="admin-eyebrow">Operacion guiada</div>
-          <h1 class="admin-title">Administrador de bases</h1>
-          <p class="admin-sub">Carga un Excel, valida columnas obligatorias y prepara los datos para el dashboard correcto. La contrasena se valida al publicar en Sheets.</p>
-        </div>
-        <div class="admin-runtime-pills">
-          <div class="admin-pill">Plaza Oaxaca - Google Sheets</div>
-          <div class="admin-pill runtime" id="admin-runtime-version" role="status">Apps Script · verificando…</div>
-        </div>
+  <div class="ap-app">
+    <aside class="ap-side" id="ap-side" aria-label="Menú del panel">
+      <a class="ap-brand" href="index.html" title="Ir a los dashboards">
+        <span class="ap-brand__logo"><img src="assets/oxxo-logo-original.png" alt="OXXO"></span>
+        <span class="ap-brand__copy"><strong>Panel Admin</strong><small>Dashboards Ats · Plaza Oaxaca</small></span>
+      </a>
+      <nav class="admin-tabs ap-nav" aria-label="Secciones del panel">
+        <button class="admin-tab ap-nav__item active" type="button" data-tab="inicio" data-title="Inicio" data-desc="Resumen del panel: cómo están las bases y accesos rápidos." aria-current="page"><svg class="icon-inline" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11 12 4l9 7"></path><path d="M5 10v10h14V10"></path><path d="M10 20v-6h4v6"></path></svg>Inicio</button>
+        <p class="ap-nav__group">Publicar</p>
+        <button class="admin-tab ap-nav__item" type="button" data-tab="upload" data-title="Cargar bases" data-desc="Sube un Excel, revisa la validación y publica la base del dashboard. Aquí también están los correos del día y las capturas manuales."><svg class="icon-inline" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>Cargar bases</button>
+        <p class="ap-nav__group">Revisar</p>
+        <button class="admin-tab ap-nav__item" type="button" data-tab="calidad" data-title="Calidad de datos" data-desc="Revisa disponibilidad, volumen, encabezados y vigencia de las bases conectadas."><svg class="icon-inline" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v16H4z"></path><path d="m8 12 3 3 5-6"></path></svg>Calidad de datos</button>
+        <button class="admin-tab ap-nav__item" type="button" data-tab="bitacora" data-title="Bitácora y respaldos" data-desc="Estado de cada base, publicaciones registradas y restauración de respaldos."><svg class="icon-inline" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18H6z"></path><path d="M9 8h6M9 12h6M9 16h4"></path></svg>Bitácora y respaldos</button>
+        <button class="admin-tab ap-nav__item" type="button" data-tab="consola" data-title="Estado y avisos" data-desc="Qué fuentes necesitan atención y avisos en tiempo real para los dashboards."><svg class="icon-inline" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4z"></path><path d="m8 9 3 3-3 3M13 15h3"></path></svg>Estado y avisos</button>
+        <button class="admin-tab ap-nav__item" type="button" data-tab="mapa" data-title="Mapa del sistema" data-desc="De dónde viene cada dato, cómo se transforma y en qué pantallas termina."><svg class="icon-inline" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="6" r="2"></circle><circle cx="19" cy="6" r="2"></circle><circle cx="12" cy="18" r="2"></circle><path d="M7 6h10M6 8l5 8M18 8l-5 8"></path></svg>Mapa del sistema</button>
+        <p class="ap-nav__group">Generar</p>
+        <button class="admin-tab ap-nav__item" type="button" data-tab="presentaciones" data-title="Presentaciones" data-desc="Genera las presentaciones de Foro Bienestar, RAE y por asesor."><svg class="icon-inline" viewBox="0 0 24 24" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>Presentaciones</button>
+        <button class="admin-tab ap-nav__item" type="button" data-tab="excels" data-title="Excels" data-desc="Descarga el Excel de Indicadores por AT."><svg class="icon-inline" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>Excels</button>
+        <p class="ap-nav__group">Catálogos y registros</p>
+        <button class="admin-tab ap-nav__item" type="button" data-tab="reasignaciones" data-title="Reasignaciones" data-desc="Quién cubre las tiendas que se quedaron sin asesor."><svg class="icon-inline" viewBox="0 0 24 24" aria-hidden="true"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>Reasignaciones</button>
+        <button class="admin-tab ap-nav__item" type="button" data-tab="actas" data-title="Registro de actas" data-desc="Actas enviadas desde Actas y Formatos, por tienda y por empleado."><svg class="icon-inline" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="14 3 14 9 20 9"></polyline><path d="M8 13h8M8 17h5"></path></svg>Registro de actas</button>
+      </nav>
+      <div class="ap-side__foot">
+        <div class="admin-pill runtime" id="admin-runtime-version" role="status">Apps Script · verificando…</div>
+        <a class="ap-side__link" href="conoxxo.html" title="Empleados, PINs, altas, avisos y directorio de la app">Panel Conoxxo</a>
+        <a class="ap-side__link" href="index.html">Ver dashboards</a>
       </div>
+    </aside>
+    <button class="ap-backdrop" id="ap-backdrop" type="button" aria-label="Cerrar menú" tabindex="-1"></button>
+    <div class="ap-main">
+      <header class="ap-header">
+        <button class="ap-menu-btn" id="ap-menu-btn" type="button" aria-controls="ap-side" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"></path></svg><span>Menú</span></button>
+        <div class="ap-header__copy">
+          <span class="ap-header__eyebrow" id="ap-eyebrow">Panel Admin</span>
+          <h1 class="ap-header__title" id="ap-title">Inicio</h1>
+          <p class="ap-header__desc" id="ap-desc">Resumen del panel: cómo están las bases y accesos rápidos.</p>
+        </div>
+      </header>
+  <main class="admin-shell">
+    <section class="admin-tabpanel" id="tabpanel-inicio" aria-labelledby="ap-title">
+      <section class="ap-welcome">
+        <div class="ap-welcome__copy">
+          <span class="ap-welcome__hello" id="ap-saludo">Hola</span>
+          <h2>¿Qué quieres hacer hoy?</h2>
+          <p>Todo lo que publicas aquí llega a los dashboards de Plaza Oaxaca. Empieza por una acción rápida o revisa cómo están las bases.</p>
+        </div>
+        <div class="ap-quick" role="list">
+          <button class="ap-quick__item" type="button" role="listitem" data-ir="upload"><span class="ap-quick__icon"><svg class="icon-inline" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg></span><strong>Cargar una base</strong><small>Excel → validar → publicar</small></button>
+          <button class="ap-quick__item" type="button" role="listitem" data-ir="upload" data-ir-a="correos-dia"><span class="ap-quick__icon"><svg class="icon-inline" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16v12H4z"></path><path d="m4 7 8 6 8-6"></path></svg></span><strong>Correos del día</strong><small>Estructura, Bajas, Aprovechamiento</small></button>
+          <button class="ap-quick__item" type="button" role="listitem" data-ir="consola"><span class="ap-quick__icon"><svg class="icon-inline" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4z"></path><path d="m8 9 3 3-3 3M13 15h3"></path></svg></span><strong>Publicar un aviso</strong><small>Mantenimiento o incidencias</small></button>
+          <button class="ap-quick__item" type="button" role="listitem" data-ir="presentaciones"><span class="ap-quick__icon"><svg class="icon-inline" viewBox="0 0 24 24" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg></span><strong>Presentaciones</strong><small>Foro, RAE y por asesor</small></button>
+        </div>
+      </section>
+      <section class="ap-salud" aria-labelledby="ap-salud-titulo">
+        <div class="ap-section-head">
+          <div><h2 id="ap-salud-titulo">Cómo están las bases</h2><p>Según la última publicación de cada una.</p></div>
+          <button class="admin-btn secondary" type="button" id="ap-salud-actualizar">Actualizar</button>
+        </div>
+        <div class="ap-salud__kpis" id="ap-salud-kpis">
+          <div class="ap-kpi ok"><span>Al día</span><strong>—</strong></div>
+          <div class="ap-kpi warn"><span>Por actualizar</span><strong>—</strong></div>
+          <div class="ap-kpi bad"><span>Requieren atención</span><strong>—</strong></div>
+          <div class="ap-kpi"><span>Sin registro</span><strong>—</strong></div>
+        </div>
+        <div class="ap-salud__grid">
+          <div class="ap-panel"><h3>Necesitan atención</h3><ul class="ap-lista" id="ap-atencion"><li class="ap-lista__vacio">Consultando…</li></ul></div>
+          <div class="ap-panel"><h3>Últimas publicaciones</h3><ul class="ap-lista" id="ap-recientes"><li class="ap-lista__vacio">Consultando…</li></ul></div>
+        </div>
+      </section>
     </section>
-    <nav class="admin-areas" role="tablist" aria-label="Área del Panel Admin">
+    <section class="admin-tabpanel hidden" id="tabpanel-upload" aria-labelledby="ap-title" data-admin-area="rh">
+    <nav class="admin-areas" role="tablist" aria-label="Área de las bases">
       <button class="admin-area active" type="button" role="tab" aria-selected="true" data-admin-area="rh">
         <span class="admin-area__icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"></path></svg></span>
         <span class="admin-area__copy"><strong>Recursos Humanos</strong><span>Talento, estructura y operación</span></span>
@@ -77,18 +128,6 @@
       <div><strong id="admin-area-title">Recursos Humanos</strong><span id="admin-area-description">12 bases disponibles y herramientas de seguimiento.</span></div>
       <span id="admin-area-count">12 bases</span>
     </div>
-    <nav class="admin-tabs" role="tablist">
-      <button class="admin-tab active" type="button" role="tab" aria-selected="true" data-tab="upload"><svg class="icon-inline" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg><span id="admin-upload-tab-label">Cargar y Publicar Bases</span></button>
-      <button class="admin-tab" type="button" role="tab" aria-selected="false" data-tab="calidad"><svg class="icon-inline" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v16H4z"></path><path d="m8 12 3 3 5-6"></path></svg>Calidad de datos</button>
-      <button class="admin-tab" type="button" role="tab" aria-selected="false" data-tab="bitacora"><svg class="icon-inline" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18H6z"></path><path d="M9 8h6M9 12h6M9 16h4"></path></svg>Bitácora</button>
-      <button class="admin-tab" type="button" role="tab" aria-selected="false" data-tab="consola"><svg class="icon-inline" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4z"></path><path d="m8 9 3 3-3 3M13 15h3"></path></svg>Consola y avisos</button>
-      <button class="admin-tab" type="button" role="tab" aria-selected="false" data-tab="mapa"><svg class="icon-inline" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="6" r="2"></circle><circle cx="19" cy="6" r="2"></circle><circle cx="12" cy="18" r="2"></circle><path d="M7 6h10M6 8l5 8M18 8l-5 8"></path></svg>Mapa del sistema</button>
-      <button class="admin-tab" type="button" role="tab" aria-selected="false" data-tab="presentaciones"><svg class="icon-inline" viewBox="0 0 24 24" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>Presentaciones</button>
-      <button class="admin-tab" type="button" role="tab" aria-selected="false" data-tab="excels"><svg class="icon-inline" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>Excels</button>
-      <button class="admin-tab" type="button" role="tab" aria-selected="false" data-tab="reasignaciones"><svg class="icon-inline" viewBox="0 0 24 24" aria-hidden="true"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>Reasignaciones</button>
-      <button class="admin-tab" type="button" role="tab" aria-selected="false" data-tab="actas"><svg class="icon-inline" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="14 3 14 9 20 9"></polyline><path d="M8 13h8M8 17h5"></path></svg>Registro de actas</button>
-    </nav>
-    <section class="admin-tabpanel" id="tabpanel-upload" role="tabpanel" data-admin-area="rh">
     <section class="admin-commercial-panel admin-card hidden" id="admin-commercial-panel">
       <div class="admin-commercial-panel__layout">
         <div><div class="admin-commercial-panel__eyebrow">Comunicación comercial</div><h2>PromosD100</h2><p>Las promociones se actualizan directamente en la pestaña “Promociones” del Google Sheets principal. Desde aquí puedes abrir la hoja para editar vigencias, imágenes, categorías y orden, o revisar el dashboard publicado.</p><div class="admin-actions"><a class="admin-btn primary" id="abrir-sheets" href="#" target="_blank" rel="noopener">Abrir Google Sheets</a><a class="admin-btn secondary" href="dashboards/promociones.html" target="_blank" rel="noopener">Ver PromosD100</a></div></div>
@@ -264,7 +303,7 @@
       </div>
     </section>
     </section>
-    <section class="admin-tabpanel hidden" id="tabpanel-calidad" role="tabpanel">
+    <section class="admin-tabpanel hidden" id="tabpanel-calidad" aria-labelledby="ap-title">
       <section class="admin-card">
         <div class="preview-head"><div><h2>Salud de las fuentes</h2><p style="color:var(--ap-muted);font-size:13px;font-weight:600;margin:4px 0 0">Revisa disponibilidad, volumen, encabezados críticos y vigencia de las bases conectadas.</p></div><button class="admin-btn primary" type="button" id="quality-refresh-btn">Ejecutar diagnóstico</button></div>
         <div class="quality-summary" id="quality-summary">
@@ -276,7 +315,7 @@
         <div class="table-wrap" style="margin-top:10px;max-height:560px"><table class="preview-table quality-table"><thead><tr><th>Área / fuente</th><th>Estado</th><th>Filas</th><th>Último corte</th><th>Revisión</th><th>Acción</th></tr></thead><tbody id="quality-table-body"><tr><td colspan="6" class="quality-empty">Diagnóstico pendiente.</td></tr></tbody></table></div>
       </section>
     </section>
-    <section class="admin-tabpanel hidden" id="tabpanel-bitacora" role="tabpanel">
+    <section class="admin-tabpanel hidden" id="tabpanel-bitacora" aria-labelledby="ap-title">
       <section class="admin-card">
         <div class="preview-head"><div><h2>Control operativo y respaldos</h2><p style="color:var(--ap-muted);font-size:13px;font-weight:600;margin:4px 0 0">Consulta el estado de cada base y restaura cualquiera de sus tres respaldos más recientes.</p></div><button class="admin-btn primary" type="button" id="audit-refresh-btn">Actualizar resumen</button></div>
         <div class="admin-overview-summary" id="admin-overview-summary"><div class="overview-kpi"><span>Bases monitoreadas</span><strong>—</strong></div><div class="overview-kpi ok"><span>Con respaldo</span><strong>—</strong></div><div class="overview-kpi"><span>Respaldos vigentes</span><strong>—</strong></div><div class="overview-kpi"><span>Por revisar</span><strong>—</strong></div></div>
@@ -289,7 +328,7 @@
         <div class="table-wrap" style="margin-top:14px;max-height:560px"><table class="preview-table audit-table"><thead><tr><th>Fecha</th><th>Fuente</th><th>Publicación</th><th>Usuario</th><th>Estado</th><th>Respaldo</th></tr></thead><tbody id="audit-table-body"><tr><td colspan="6" class="quality-empty">Bitácora pendiente.</td></tr></tbody></table></div>
       </section>
     </section>
-    <section class="admin-tabpanel hidden" id="tabpanel-mapa" role="tabpanel">
+    <section class="admin-tabpanel hidden" id="tabpanel-mapa" aria-labelledby="ap-title">
       <section class="admin-card">
         <div class="preview-head"><div><h2>Mapa del sistema y flujo de datos</h2><p style="color:var(--ap-muted);font-size:13px;font-weight:600;margin:4px 0 0">Consulta de dónde viene cada dato, cómo se transforma y en qué pantallas termina.</p></div><span class="admin-pill" style="background:var(--ap-tint-red);color:var(--ap-red-dark);border-color:var(--ap-border)">Plaza Oaxaca</span></div>
         <div class="system-map-flow" aria-label="Flujo general del sistema">
@@ -309,7 +348,7 @@
         <div class="system-map-shared"><article><strong>Catálogo de asesores</strong><span>Relaciona CR y tienda con el asesor vigente; evita repetir ese dato en cada base.</span></article><article><strong>Reasignaciones</strong><span>Sustituye temporalmente al asesor del catálogo en todas las pantallas que usan tienda o CR.</span></article><article><strong>Configuración</strong><span>Centraliza pestañas, plaza, fechas de actualización y la URL de Apps Script.</span></article><article><strong>Avisos del sistema</strong><span>La consola publica mensajes globales, por área o dashboard sin alterar sus datos.</span></article></div>
       </section>
     </section>
-    <section class="admin-tabpanel hidden" id="tabpanel-consola" role="tabpanel">
+    <section class="admin-tabpanel hidden" id="tabpanel-consola" aria-labelledby="ap-title">
       <div class="console-layout">
         <section class="admin-card">
           <div class="preview-head"><div><h2>Estado operativo</h2><p style="color:var(--ap-muted);font-size:13px;font-weight:600;margin:4px 0 0">Revisa qué fuentes están vigentes y cuáles necesitan atención.</p></div><button class="admin-btn primary" type="button" id="console-refresh-btn">Actualizar estado</button></div>
@@ -334,7 +373,7 @@
         </section>
       </div>
     </section>
-    <section class="admin-tabpanel hidden" id="tabpanel-presentaciones" role="tabpanel">
+    <section class="admin-tabpanel hidden" id="tabpanel-presentaciones" aria-labelledby="ap-title">
     <section class="admin-card">
       <h2>Presentación Foro Bienestar Días Martes</h2>
       <p style="color:var(--ap-muted);font-size:13px;font-weight:600;margin:0 0 16px">Genera un .pptx con el indicador principal de cada dashboard, tomado en vivo de Google Sheets (Vacantes, Bajas, Aprovechamiento, Tiempo Extra, Ausentismos y Alineación TREO).</p>
@@ -364,7 +403,7 @@
       <div class="helper-box" id="pptx-asesor-status" style="margin-top:12px"></div>
     </section>
     </section>
-    <section class="admin-tabpanel hidden" id="tabpanel-excels" role="tabpanel">
+    <section class="admin-tabpanel hidden" id="tabpanel-excels" aria-labelledby="ap-title">
     <section class="admin-card">
       <h2>Indicadores ATs</h2>
       <p style="color:var(--ap-muted);font-size:13px;font-weight:600;margin:0 0 16px">Descarga el Excel de Indicadores por AT con Aprovechamiento de estructura, Vacantes en estructura y Alineación de estructura actualizados en vivo desde Google Sheets (mismos datos que Vacantes/Aprovechamiento/TREO). El resto de los indicadores (NPS, Ausentismo, Rotación, % Apego) se conservan tal cual para llenarse a mano.</p>
@@ -374,7 +413,7 @@
       <div class="helper-box" id="indicadores-status" style="margin-top:12px"></div>
     </section>
     </section>
-    <section class="admin-tabpanel hidden" id="tabpanel-reasignaciones" role="tabpanel">
+    <section class="admin-tabpanel hidden" id="tabpanel-reasignaciones" aria-labelledby="ap-title">
     <section class="admin-card">
       <h2>Reasignaciones · Tiendas sin asesor vigente</h2>
       <p style="color:var(--ap-muted);font-size:13px;font-weight:600;margin:0 0 16px">Cuando un asesor deja la empresa, sus tiendas quedan "Sin Asesor Asignado" en el catálogo hasta que se les asigne un AT nuevo. Mientras tanto, agrega aquí quién las cubre para que todos los dashboards (Mi Tienda, Mi Dashboard, reportes, etc.) muestren lo mismo — sin esperar a que alguien edite código. Los cambios no aplican hasta que le des <strong>Publicar</strong>.</p>
@@ -415,7 +454,7 @@
     </section>
     </section>
 
-    <section class="admin-tabpanel hidden" id="tabpanel-actas" role="tabpanel">
+    <section class="admin-tabpanel hidden" id="tabpanel-actas" aria-labelledby="ap-title">
     <section class="admin-card">
       <span class="admin-eyebrow">Relaciones laborales · Libro privado</span>
       <h2>Registro de actas</h2>
@@ -467,6 +506,8 @@
     </dialog>
     </section>
   </main>
+    </div>
+  </div>
   <dialog class="restore-dialog" id="restore-dialog" aria-labelledby="restore-dialog-title">
     <div class="restore-dialog__head"><div><div class="restore-dialog__eyebrow">Restauración protegida</div><h2 id="restore-dialog-title">Comparar respaldo</h2></div><button class="restore-dialog__close" type="button" id="restore-dialog-close" aria-label="Cerrar">×</button></div>
     <div class="restore-dialog__body">
@@ -503,18 +544,51 @@
   <script src="js/dilos-conoxxo.js?v=297a876f"></script>
   <script src="js/acta-registro.js?v=297a876f"></script>
   <script src="js/admin-correos.js?v=297a876f"></script>
+  <script src="js/admin-inicio.js?v=297a876f"></script>
   <script>
     (function(){
+      // Menu lateral: cada boton .admin-tab abre su seccion (tabpanel-<data-tab>),
+      // pone su titulo en el encabezado y deja la liga directa (#bitacora).
+      // Las herramientas siguen escuchando el clic en su .admin-tab.
       var tabs = document.querySelectorAll('.admin-tab');
+      var body = document.body, menuBtn = document.getElementById('ap-menu-btn');
+      function menu(abierto){
+        body.classList.toggle('ap-menu-open', abierto);
+        if(menuBtn) menuBtn.setAttribute('aria-expanded', String(abierto));
+      }
       tabs.forEach(function(tab){
         tab.addEventListener('click', function(){
-          tabs.forEach(function(t){ t.classList.remove('active'); t.setAttribute('aria-selected','false'); });
-          tab.classList.add('active'); tab.setAttribute('aria-selected','true');
+          tabs.forEach(function(t){ t.classList.remove('active'); t.removeAttribute('aria-current'); });
+          tab.classList.add('active'); tab.setAttribute('aria-current','page');
           document.querySelectorAll('.admin-tabpanel').forEach(function(p){ p.classList.add('hidden'); });
           var panel = document.getElementById('tabpanel-' + tab.dataset.tab);
           if(panel) panel.classList.remove('hidden');
+          document.getElementById('ap-title').textContent = tab.dataset.title || tab.textContent.trim();
+          document.getElementById('ap-desc').textContent = tab.dataset.desc || '';
+          var grupo = tab.previousElementSibling;
+          while(grupo && !grupo.classList.contains('ap-nav__group')) grupo = grupo.previousElementSibling;
+          document.getElementById('ap-eyebrow').textContent = grupo ? 'Panel Admin · ' + grupo.textContent : 'Panel Admin';
+          try { history.replaceState(null, '', tab.dataset.tab === 'inicio' ? location.pathname + location.search : '#' + tab.dataset.tab); } catch(e) {}
+          menu(false);
+          window.scrollTo(0, 0);
         });
       });
+      if(menuBtn) menuBtn.addEventListener('click', function(){ menu(!body.classList.contains('ap-menu-open')); });
+      document.getElementById('ap-backdrop').addEventListener('click', function(){ menu(false); });
+      document.addEventListener('keydown', function(e){ if(e.key === 'Escape' && body.classList.contains('ap-menu-open')){ menu(false); if(menuBtn) menuBtn.focus(); } });
+      // Accesos rapidos del Inicio: abren la seccion y, si se pide, bajan a una tarjeta.
+      document.querySelectorAll('[data-ir]').forEach(function(b){
+        b.addEventListener('click', function(){
+          var tab = document.querySelector('.admin-tab[data-tab="' + b.dataset.ir + '"]');
+          if(tab) tab.click();
+          var destino = b.dataset.irA && document.getElementById(b.dataset.irA);
+          if(destino) setTimeout(function(){ destino.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 60);
+        });
+      });
+      // Liga directa: admin.html#calidad abre esa seccion.
+      var inicial = (location.hash || '').slice(1);
+      var tabInicial = inicial && document.querySelector('.admin-tab[data-tab="' + inicial + '"]');
+      if(tabInicial) document.addEventListener('oxxo:admin-unlocked', function(){ tabInicial.click(); }, { once: true });
       document.addEventListener('DOMContentLoaded', function(){ OXXO_ACTA_REGISTRO.montar(); OXXO_CUOTA.montarAdmin(); OXXO_CCT.montarAdmin(); OXXO_DILOS.montarAdmin(); });
     })();
   </script>
